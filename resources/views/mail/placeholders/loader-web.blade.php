@@ -1,0 +1,1 @@
+<x-frontent.loader-component></x-frontent.loader-component>

@@ -1,0 +1,3515 @@
+<!-- new chat vue -->
+<template>
+    <!-- Wrapper untuk Chat dan Right Sidebar -->
+    <div class="chat-wrapper">
+        <div class="main-chat">
+            <!-- Chat Header -->
+            <div class="chat-header-main">
+                <span class="name">{{ detail.name }}</span>
+                <div class="controls">
+                    <button class="btn-control d-lg-none" @click="$emit('toggle-left-sidebar')">
+                        <i class="bx bx-menu"></i>
+                    </button>
+                    <button class="btn-control" @click="changeTakeOver(!detail.takeover)">
+                        <i class="bx bx-bot"></i>
+                        <span class="d-none d-sm-inline">{{ $t('chat.bot_' + (detail.takeover ? 'off' : 'on')) }}</span>
+                    </button>
+                    <select class="status-select" v-model="detail.status" @change="changeStatus">
+                        <option value="open">{{ $t('status.open') }}</option>
+                        <option value="resolved">{{ $t('status.resolved') }}</option>
+                        <option value="block">{{ $t('status.block') }}</option>
+                    </select>
+                    <button class="btn-control d-none d-lg-inline" @click="toggleRightSidebar">
+                        <i class="bx bx-menu"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chatMessages" @scroll="handleChatScroll">
+                <div v-if="message.loader" class="d-flex justify-content-center p-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+
+                <!-- Messages List -->
+                <div v-for="(msg, index) in filteredMessages" :key="msg.id" :id="'msg-' + msg.id">
+
+                    <div v-if="shouldShowDateSeparator(index)" class="date-separator">
+                        {{ formatDateSeparator(msg.datetime.date) }}
+                    </div>
+
+                    <div class="message" :class="msg.sent_by === 'system' ? 'sent' : 'received'">
+                        <div class="message-wrapper">
+
+
+                            <!-- Message Actions -->
+                            <div class="message-actions">
+                                <div class="action-menu-btn" @click="toggleActionMenu(msg.id)">
+                                    <i class="bx bx-dots-vertical-rounded"></i>
+                                </div>
+                                <div class="dropdown-menu-custom" :class="{ show: activeDropdownId === msg.id }">
+                                    <div class="dropdown-item-custom" @click="replyToMessage(msg)">
+                                        <i class="bx bx-reply"></i>
+                                        <span>{{ $t('common.reply') }}</span>
+                                    </div>
+                                    <div class="dropdown-item-custom delete" @click="deleteMessage(msg.id, index)">
+                                        <i class="bx bx-trash"></i>
+                                        <span>{{ $t('common.delete') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="message" :class="msg.sent_by === 'system' ? 'sent' : 'received'">
+                                <!-- Message Bubble -->
+                                <div class="message-bubble">
+                                    <!-- Sender Info (untuk pesan dari system/admin) -->
+                                    <div class="message-sender-info" v-if="msg.sent_by === 'system'">
+                                        <span class="sender-name">{{ msg.sent_by_name || msg.user?.name }}</span>
+                                        <span class="sender-separator">•</span>
+                                        <span class="sender-date">{{ msg.datetime.date }}</span>
+                                    </div>
+
+                                    <div class="message-sender-info" v-else> 
+                                        <span class="sender-date">{{ msg.datetime.date }}</span>
+                                    </div>
+
+                                    <!-- Reply Quote -->
+                                    <div class="reply-quote" v-if="msg.reply_to" @click="scrollToMessage(msg.reply_id)">
+                                        <div class="reply-quote-sender">{{ msg.reply_to }}</div>
+                                        <div class="reply-quote-text">{{ truncateText(msg.reply_text, 60) }}</div>
+                                    </div>
+
+                                    <!-- Image -->
+                                    <div v-if="msg.media_type === 'image' && msg.media_url" class="message-media">
+                                        <img :src="msg.media_url" alt="image"
+                                            @click="openImagePreview(msg.media_url)" />
+                                    </div>
+
+                                    <!-- Video -->
+                                    <div v-if="msg.media_type === 'video' && msg.media_url" class="message-media">
+                                        <video controls>
+                                            <source :src="msg.media_url" type="video/mp4" />
+                                        </video>
+                                    </div>
+
+                                    <!-- Audio -->
+                                    <div v-if="msg.media_type === 'audio' && msg.media_url"
+                                        class="message-media audio-media">
+                                        <audio controls>
+                                            <source :src="msg.media_url" type="audio/mpeg" />
+                                        </audio>
+                                    </div>
+
+                                    <!-- Sticker Compact -->
+                                    <div v-if="msg.media_type === 'sticker' && msg.media_url"
+                                        class="sticker-compact-wrapper"
+                                        @click="openStickerLightbox(msg.media_url)"
+                                        title="Tap untuk lihat stiker">
+                                        <img
+                                            :src="msg.media_url"
+                                            alt="sticker"
+                                            class="sticker-compact-img"
+                                            @error="onStickerError($event)"
+                                        />
+                                        <div class="sticker-fallback" style="display:none;">
+                                            <span>&#127991;</span>
+                                            <small>Sticker</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Document -->
+                                    <div v-if="isDocumentType(msg.media_type) && msg.media_url"
+                                        class="message-document">
+                                        <div class="document-icon">
+                                            <i :class="getDocumentIcon(msg.media_type)"></i>
+                                        </div>
+                                        <div class="document-info">
+                                            <div class="document-name">{{ getFileName(msg.media_url, msg.original_name) }}</div>
+                                            <div class="document-size">{{ formatFileSize(msg.media_size) }}</div>
+                                        </div>
+                                        <a :href="msg.media_url" target="_blank" class="document-download">
+                                            <i class="bx bx-download"></i>
+                                        </a>
+                                    </div>
+
+                                    <!-- Message Text -->
+                                    <div class="message-text" v-if="msg.message" v-html="formattedText(msg.message)">
+                                    </div>
+
+                                    <!-- Message Time -->
+                                    <div class="message-time">
+                                        {{ msg.datetime.time }}
+                                        <i class="bx bx-check-double" v-if="msg.sent_by === 'system'"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Reply Bar -->
+            <div class="reply-bar" :class="{ show: replyingTo }">
+                <div style="width: 3px; height: 40px; background-color: #10b981; border-radius: 2px;"></div>
+                <div class="reply-bar-content">
+                    <div class="reply-bar-label">{{ $t('chat.reply_to') }}</div>
+                    <div class="reply-bar-text">{{ replyingTo?.message || '' }}</div>
+                </div>
+                <div class="reply-bar-close" @click="cancelReply">
+                    <i class="bx bx-x"></i>
+                </div>
+            </div>
+
+            <transition name="fade">
+                <div v-if="pasteIndicator.show" class="paste-indicator">
+                    {{ pasteIndicator.message }}
+                </div>
+            </transition>
+
+            <!-- Chat Input Area -->
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <!-- Template Panel -->
+                    <div class="template-panel" v-if="templatePanel.show" @click.stop>
+                        <!-- Template List View -->
+                        <div v-if="!templatePanel.selectedTemplate">
+                            <div class="template-panel-header">
+                                <span><i class="bx bx-notepad"></i> Templates</span>
+                                <button class="template-close" @click="closeTemplatePanel"><i class="bx bx-x"></i></button>
+                            </div>
+                            <div class="template-search">
+                                <input type="text" v-model="templatePanel.search" @input="searchTemplates" placeholder="Search templates..." />
+                            </div>
+                            <div class="template-list" v-if="!templatePanel.loading">
+                                <div class="template-item" v-for="tmpl in templatePanel.list" :key="tmpl.id"
+                                    @click="selectTemplate(tmpl)">
+                                    <div class="template-item-header">
+                                        <span class="template-name">{{ tmpl.name }}</span>
+                                        <span class="template-badge" :class="tmpl.category?.toLowerCase()">{{ tmpl.category }}</span>
+                                    </div>
+                                    <div class="template-item-meta">
+                                        <span v-if="tmpl.header_type && tmpl.header_type !== 'text'" class="template-media-tag">
+                                            <i :class="tmpl.header_type === 'image' ? 'bx bx-image' : tmpl.header_type === 'video' ? 'bx bx-video' : 'bx bx-file'"></i>
+                                            {{ tmpl.header_type }}
+                                        </span>
+                                        <span v-if="tmpl.body_params > 0" class="template-param-tag">
+                                            <i class="bx bx-edit"></i> {{ tmpl.body_params }} params
+                                        </span>
+                                    </div>
+                                    <div class="template-preview-text">{{ truncateText(tmpl.body_text, 80) }}</div>
+                                </div>
+                                <div v-if="templatePanel.list.length === 0" class="template-empty">
+                                    No templates found
+                                </div>
+                            </div>
+                            <div class="template-loading" v-else>
+                                <i class="bx bx-loader-alt bx-spin"></i> Loading...
+                            </div>
+                        </div>
+
+                        <!-- Template Detail / Preview View -->
+                        <div v-else>
+                            <div class="template-panel-header">
+                                <button class="template-back" @click="templatePanel.selectedTemplate = null">
+                                    <i class="bx bx-arrow-back"></i>
+                                </button>
+                                <span>{{ templatePanel.selectedTemplate.name }}</span>
+                                <button class="template-close" @click="closeTemplatePanel"><i class="bx bx-x"></i></button>
+                            </div>
+
+                            <!-- Media Upload (if template has media header) -->
+                            <div class="template-media-upload" v-if="templatePanel.selectedTemplate.header_type && ['image','video','document'].includes(templatePanel.selectedTemplate.header_type)">
+                                <label class="template-media-label">
+                                    <i :class="templatePanel.selectedTemplate.header_type === 'image' ? 'bx bx-image-add' : templatePanel.selectedTemplate.header_type === 'video' ? 'bx bx-video-plus' : 'bx bx-file'"></i>
+                                    <span v-if="!templatePanel.headerMediaName">Upload {{ templatePanel.selectedTemplate.header_type }}</span>
+                                    <span v-else>{{ templatePanel.headerMediaName }}</span>
+                                    <input type="file" ref="templateMediaInput" @change="handleTemplateMedia" style="display:none"
+                                        :accept="templatePanel.selectedTemplate.header_type === 'image' ? 'image/*' : templatePanel.selectedTemplate.header_type === 'video' ? 'video/*' : '*'" />
+                                </label>
+                            </div>
+
+                            <!-- Parameters -->
+                            <div class="template-params" v-if="templatePanel.selectedTemplate.body_params > 0">
+                                <div class="template-param-field" v-for="i in templatePanel.selectedTemplate.body_params" :key="i">
+                                    <label>Parameter {{ i }}</label>
+                                    <input type="text" v-model="templatePanel.params[i-1]"
+                                        :placeholder="i === 1 ? detail.name : 'Parameter ' + i" />
+                                </div>
+                            </div>
+
+                            <!-- Preview -->
+                            <div class="template-preview-box">
+                                <div class="template-preview-label">Preview</div>
+                                <div class="template-preview-card">
+                                    <div class="tpc-header" v-if="templatePanel.selectedTemplate.header_type === 'text' && templatePanel.selectedTemplate.header_text">
+                                        <strong>{{ templatePanel.selectedTemplate.header_text }}</strong>
+                                    </div>
+                                    <div class="tpc-header" v-if="templatePanel.selectedTemplate.header_type === 'image' && templatePanel.headerMediaPreview">
+                                        <img :src="templatePanel.headerMediaPreview" style="max-width:100%;border-radius:6px" />
+                                    </div>
+                                    <div class="tpc-body">{{ getTemplatePreview() }}</div>
+                                    <div class="tpc-footer" v-if="templatePanel.selectedTemplate.footer_text">
+                                        {{ templatePanel.selectedTemplate.footer_text }}
+                                    </div>
+                                    <div class="tpc-buttons" v-if="templatePanel.selectedTemplate.buttons?.length">
+                                        <div class="tpc-btn" v-for="(btn, bi) in templatePanel.selectedTemplate.buttons" :key="bi">
+                                            {{ btn.text }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Send Button -->
+                            <div class="template-actions">
+                                <button class="template-cancel-btn" @click="templatePanel.selectedTemplate = null">Cancel</button>
+                                <button class="template-send-btn" @click="sendTemplateMessage" :disabled="templatePanel.sending || !canSendTemplate()">
+                                    <i class="bx bx-send" v-if="!templatePanel.sending"></i>
+                                    <i class="bx bx-loader-alt bx-spin" v-else></i>
+                                    Send Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Replies Panel -->
+                    <div class="quick-replies-panel" :class="{ show: quickReplyPopup.show }">
+                        <div class="quick-replies-header">
+                            <span>{{ $t('quick_reply.title') }}</span>
+                            <a href="javascript:void(0)" class="manage-quick-reply" @click="manageQuickReply">
+                                {{ $t('quick_reply.manage') }}
+                            </a>
+                        </div>
+                        <div class="quick-reply-item" v-for="(item, index) in quick_replies" :key="index"
+                            :class="{ selected: quickReplyPopup.selectedIndex === index }"
+                            @click="selectQuickReply(item)">
+                            <div class="quick-reply-title">
+                                <span>{{ item.name }}:</span>
+                            </div>
+                            <div class="quick-reply-preview">{{ truncateText(item.content, 100) }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Input Controls (when takeover is active) -->
+                    <template v-if="detail.takeover">
+                        <div class="plus-menu-container" style="position: relative;">
+                            <button class="input-btn" @click="togglePlusMenu">
+                                <i class="bx bx-plus"></i>
+                            </button>
+                            <div class="plus-menu-dropdown" v-if="showPlusMenu">
+                                <div class="plus-menu-item" @click="openTemplatePanel" v-if="detail.from === 'waba'">
+                                    <i class="bx bx-notepad"></i>
+                                    <span>Template</span>
+                                </div>
+                                <div class="plus-menu-item" @click="openQuickReplyFromMenu">
+                                    <i class="bx bx-reply"></i>
+                                    <span>Quick Reply</span>
+                                </div>
+                                <div class="plus-menu-item" @click="triggerFileFromMenu">
+                                    <i class="bx bx-paperclip"></i>
+                                    <span>Attach File</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="input-btn" @click="toggleEmoji">
+                            <i class="bx bx-smile"></i>
+                        </button>
+                        <input type="file" ref="fileInput" style="display: none" @change="handleFileChange"
+                            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+                        <textarea class="chat-input" ref="chatInput" v-model="send.text" @input="onMessageInput"
+                            @keydown="handleKeyDown" @paste="handlePaste"
+                            @keydown.arrow-down.prevent="navigateQuickReplies('down')"
+                            @keydown.arrow-up.prevent="navigateQuickReplies('up')" @keydown.esc="hideQuickReplies"
+                            :placeholder="$t('chat.type_message') + ' ' + $t('chat.quick_reply_hint')"
+                            rows="1"></textarea>
+
+                        <button class="input-btn primary" @click="sendMessage" :disabled="send.loader">
+                            <i class="bx bx-send"></i>
+                        </button>
+                        <button class="input-btn success" @click="resolved" v-if="detail.status !== 'resolved'">
+                            <i class="bx bx-check"></i>
+                        </button>
+                    </template>
+
+                    <!-- Takeover Button (when not active) -->
+                    <template v-else>
+                        <button class="btn btn-info w-100" @click="changeTakeOver(true)">
+                            <i class="bx bx-hand-stop me-2"></i>
+                            {{ $t('chat.takeover_conversation') }}
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Emoji Picker -->
+            <div class="emoji-picker-wrapper" v-if="showEmojiPicker">
+                <Picker :data="emojiIndex" set="twitter" @select="showEmoji" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal File Preview -->
+    <div class="sidebar-right" v-if="showRightSidebar" id="rightSidebar">
+        <div class="sidebar-right-header">
+            {{ $t('info.information') }}
+        </div>
+
+        <!-- User Profile -->
+        <div class="user-profile">
+            <div class="user-avatar-large">
+                <img :src="detail.photo" :alt="detail.name" />
+                <div class="whatsapp-badge" v-if="detail.from === 'whatsapp' || detail.from === 'waba'">
+                    <i class="bx bxl-whatsapp"></i>
+                </div>
+            </div>
+            <div class="user-name">{{ detail.name }}</div>
+            <div class="user-phone">
+                <span>{{ detail.phone }}</span>
+                <i class="bx bx-copy copy-icon" @click="copyPhone"></i>
+            </div>
+        </div>
+
+        <!-- 24H Conversation Window (WABA only) -->
+        <div class="window-status-card" v-if="detail.from === 'waba'">
+            <div class="window-status" :class="isInsideWindow ? 'inside' : 'outside'">
+                <i :class="isInsideWindow ? 'bx bx-chat' : 'bx bx-time-five'"></i>
+                <span>{{ isInsideWindow ? 'Inside 24H Window' : 'Outside 24H Window' }}</span>
+                <span class="window-badge" :class="isInsideWindow ? 'badge-inside' : 'badge-outside'">
+                    {{ isInsideWindow ? 'Free Message' : 'Template Only' }}
+                </span>
+            </div>
+            <div class="window-timer" v-if="isInsideWindow && windowTimeLeft">
+                <i class="bx bx-timer"></i>
+                <small>Expires in {{ windowTimeLeft }}</small>
+            </div>
+            <div class="window-timer expired" v-if="!isInsideWindow && detail.last_incoming_at">
+                <i class="bx bx-info-circle"></i>
+                <small>Last reply {{ windowExpiredAgo }}</small>
+            </div>
+        </div>
+
+        <!-- Info Sections -->
+        <div class="info-section">
+            <!-- Handle By -->
+            <div class="info-item">
+                <div class="info-label">{{ $t('info.handle_by') }}</div>
+                <select class="info-select" v-model="detail.handled" @change="selectUser">
+                    <option v-for="user in users" :key="user.id" :value="user">
+                        {{ user.name }}
+                    </option>
+                </select>
+            </div>
+
+            <!-- Collaborator -->
+            <div class="info-item">
+                <div class="info-header-row">
+                    <div class="info-label">{{ $t('info.collaborator') }}</div>
+                    <a href="javascript:void(0)" class="btn-add" @click="showAddCollaborator = true">{{
+                        $t('info.add_team')
+                    }}</a>
+                </div>
+                <div v-for="collab in detail.collabolators" :key="collab.id" class="collaborator-item mb-2">
+                    <span>{{ collab.name }}</span>
+                    <i class="bx bx-x remove-btn" @click="removeCollab(collab.id)"></i>
+                </div>
+                <select v-if="showAddCollaborator" class="info-select mt-2" @change="selectCollabolator"
+                    v-model="info_collabolator.form">
+                    <option :value="null">{{ $t('info.select_collaborator') }}</option>
+                    <option v-for="user in users" :key="user.id" :value="user">
+                        {{ user.name }}
+                    </option>
+                </select>
+            </div>
+
+            <!-- Label -->
+            <div class="info-item">
+                <div class="info-header-row">
+                    <div class="info-label">{{ $t('info.label') }}</div>
+                    <a href="javascript:void(0)" class="btn-add" @click="showAddLabel = true">{{ $t('info.add_label')
+                    }}</a>
+                </div>
+                <div class="tag-container">
+                    <span v-for="label in detail.label" :key="label.id" class="tag-item">
+                        {{ label.name }}
+                        <i class="bx bx-x remove-tag" @click="removeLabel(label.id)"></i>
+                    </span>
+                </div>
+                <select v-if="showAddLabel" class="info-select mt-2" @change="selectLabel" v-model="info_label.form">
+                    <option :value="null">{{ $t('info.select_label') }}</option>
+                    <option v-for="label in info_label.labels" :key="label.id" :value="label">
+                        {{ label.name }}
+                    </option>
+                </select>
+            </div>
+
+            <div class="info-item">
+    <div class="info-header-row">
+        <div class="info-label">{{ $t('info.pipeline_stage') || 'Pipeline & Stage' }}</div>
+        <a href="javascript:void(0)" class="btn-add" @click="showAddPipeline = true">
+            {{ $t('info.change_pipeline') || 'Ubah Pipeline' }}
+        </a>
+    </div>
+    
+    <!-- Display Current Pipeline & Stage -->
+    <div v-if="detail.pipeline && detail.pipeline.id" class="pipeline-display">
+        <div class="pipeline-badge">
+            <i class="bx bx-git-branch"></i>
+            <span>{{ detail.pipeline.name }}</span>
+        </div>
+        <div v-if="detail.pipeline.stage && detail.pipeline.stage.id" class="stage-badge">
+            <i class="bx bx-flag"></i>
+            <span>{{ detail.pipeline.stage.name }}</span>
+            <i class="bx bx-x remove-tag" @click="removePipelineAndStage"></i>
+        </div>
+    </div>
+    <div v-else class="empty-state-inline">
+        {{ $t('info.no_pipeline') || 'Belum ada pipeline' }}
+    </div>
+    
+    <!-- Form untuk Add/Change Pipeline & Stage -->
+    <div v-if="showAddPipeline" class="pipeline-form mt-3">
+        <!-- Select Pipeline -->
+        <select 
+            class="info-select mb-2" 
+            v-model="info_pipeline.form_pipeline" 
+            @change="selectPipeline"
+        >
+            <option :value="null">{{ $t('info.select_pipeline') || 'Pilih Pipeline' }}</option>
+            <option 
+                v-for="pipeline in info_pipeline.pipelines" 
+                :key="pipeline.id" 
+                :value="pipeline"
+            >
+                {{ pipeline.name }}
+            </option>
+        </select>
+        
+        <!-- Select Stage (muncul setelah pilih pipeline) -->
+        <select 
+            v-if="info_pipeline.form_pipeline" 
+            class="info-select" 
+            v-model="info_pipeline.form_stage" 
+            @change="selectStage"
+            :disabled="info_pipeline.loading_stages"
+        >
+            <option :value="null">
+                {{ info_pipeline.loading_stages ? 'Loading...' : ($t('info.select_stage') || 'Pilih Stage') }}
+            </option>
+            <option 
+                v-for="stage in info_pipeline.stages" 
+                :key="stage.id" 
+                :value="stage"
+            >
+                {{ stage.name }}
+            </option>
+        </select>
+    </div>
+</div>
+
+
+            <!-- Category -->
+            <div class="info-item">
+                <div class="info-header-row">
+                    <div class="info-label">{{ $t('info.category') || 'Kategori' }}</div>
+                    <a href="javascript:void(0)" class="btn-add" @click="showAddCategory = true">
+                        {{ $t('info.add_category') || 'Tambah Kategori' }}
+                    </a>
+                </div>
+                <div class="tag-container">
+                    <span v-if="detail.category" class="tag-item category-tag">
+                        {{ detail.category.name }}
+                        <i class="bx bx-x remove-tag" @click="removeCategory"></i>
+                    </span>
+                    <span v-else class="empty-state-inline">
+                        {{ $t('info.no_category') || 'Belum ada kategori' }}
+                    </span>
+                </div>
+                <select v-if="showAddCategory" class="info-select mt-2" @change="selectCategory"
+                    v-model="info_category.form">
+                    <option :value="null">{{ $t('info.select_category') || 'Pilih Kategori' }}</option>
+                    <option v-for="category in categories" :key="category.id" :value="category">
+                        {{ category.name }}
+                    </option>
+                </select>
+            </div>
+
+            <!-- Device Set -->
+            <div class="info-item">
+                <div class="info-header-row">
+                    <div class="info-label">{{ $t('info.device_channel') || 'Device/Channel' }}</div>
+                    <a href="javascript:void(0)" class="btn-add" @click="openChangeDeviceModal">
+                        {{ $t('info.change_device') || 'Ganti Device' }}
+                    </a>
+                </div>
+                <div class="device-info-container">
+                    <div class="device-badge" :class="'badge-' + detail.from">
+                        <i :class="getChannelIcon(detail.from)"></i>
+                        <span>{{ getChannelName(detail.from) }}</span>
+                    </div>
+                    <div class="device-name">
+                        {{ detail.device || detail.livechat || 'No Device' }}
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Additional Data -->
+            <div class="info-item">
+                <div class="info-header-row">
+                    <div class="info-label">{{ $t('info.additional_data') }}</div>
+                    <a href="javascript:void(0)" class="btn-add" @click="openAdditionalModal">{{ $t('info.add_data')
+                    }}</a>
+                </div>
+                <div v-if="detail.additional.data.length === 0" class="empty-state">
+                    {{ $t('info.no_additional_data') }}
+                </div>
+                <div v-else>
+                    <div v-for="(info, i) in detail.additional.data" :key="i" class="mb-2">
+                        <label class="info-label small">{{ info.name }}</label>
+                        <input v-if="info.type === 'text'" type="text" class="info-input" v-model="info.value"
+                            @change="updateAdditional" />
+                        <input v-else-if="info.type === 'number'" type="number" class="info-input" v-model="info.value"
+                            @change="updateAdditional" />
+                        <input v-else-if="info.type === 'date'" type="date" class="info-input" v-model="info.value"
+                            @change="updateAdditional" />
+                        <select v-else-if="info.type === 'options'" class="info-select" v-model="info.value"
+                            @change="updateAdditional">
+                            <option v-for="opt in info.options" :key="opt" :value="opt">{{ opt }}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="info-item">
+                <div class="info-label">{{ $t('info.notes') }}</div>
+                <input type="text" class="info-input" v-model="detail.additional.note" @change="updateAdditional"
+                    :placeholder="$t('info.notes')" />
+            </div>
+
+            <!-- Detail Data -->
+            <div class="info-item">
+                <div class="info-label">{{ $t('info.detail_data') }}</div>
+                <div class="detail-row">
+                    <span class="detail-label">{{ $t('info.assigned_by') }}</span>
+                    <span class="detail-value">{{ detail.detail.assignment_by || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">{{ $t('info.handled_by') }}</span>
+                    <span class="detail-value">{{ detail.handled?.name || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">{{ $t('info.resolved_by') }}</span>
+                    <span class="detail-value">{{ detail.detail.resolved_by || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">{{ $t('info.created_at') }}</span>
+                    <span class="detail-value">{{ detail.detail.created_at || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">{{ $t('info.resolved_at') }}</span>
+                    <span class="detail-value">{{ detail.detail.resolved_at || '-' }}</span>
+                </div>
+            </div>
+
+            <!-- Block/Unblock Button -->
+            <div class="info-item" v-if="detail.status !== 'resolved'">
+                <button v-if="detail.status === 'open'" class="btn btn-danger w-100" @click="blockUnblock">
+                    {{ $t('info.block_user') }}
+                </button>
+                <button v-else-if="detail.status === 'block'" class="btn btn-info w-100" @click="blockUnblock">
+                    {{ $t('info.unblock_user') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal File Preview -->
+    <!-- Sticker Lightbox -->
+    <div v-if="stickerLightbox.show"
+        class="sticker-lightbox-overlay"
+        @click="closeStickerLightbox">
+        <div class="sticker-lightbox-box" @click.stop>
+            <button class="sticker-lightbox-close" @click="closeStickerLightbox">
+                <i class="bx bx-x"></i>
+            </button>
+            <img :src="stickerLightbox.url" alt="sticker full" class="sticker-lightbox-img" />
+        </div>
+    </div>
+
+    <div class="modal fade" id="filePreviewModal" ref="filePreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">{{ $t('file.preview') }}</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="filePreview.type === 'image'" class="text-center">
+                        <img :src="filePreview.url" class="img-fluid" />
+                    </div>
+                    <div v-else-if="filePreview.type === 'video'" class="text-center">
+                        <video controls class="w-100">
+                            <source :src="filePreview.url" type="video/mp4" />
+                        </video>
+                    </div>
+                    <div v-else-if="filePreview.type === 'document'" class="text-center py-4">
+                        <div class="document-preview-card mx-auto" style="max-width: 360px; background: #f8f9fa; border-radius: 12px; padding: 24px; border: 1px solid #e9ecef;">
+                            <i class="bx bxs-file-doc" style="font-size: 48px; color: #4e73df;"></i>
+                            <div class="mt-3 fw-semibold" style="word-break: break-all;">{{ filePreview.fileName }}</div>
+                            <div class="text-muted small mt-1">{{ filePreview.fileSize }}</div>
+                        </div>
+                    </div>
+                    <textarea class="form-control mt-3" v-model="send.text" rows="3"
+                        :placeholder="$t('file.add_caption')"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" @click="confirmSendFile" :disabled="send.loader">
+                        <i class="bx bx-send me-2"></i>
+                        {{ send.loader ? $t('chat.sending') : $t('chat.send') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Quick Reply Management -->
+    <div class="modal fade" id="quickReplyModal" ref="quickReplyModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">{{ $t('quick_reply.manage') }}</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <button class="btn btn-primary" @click="openAddQuickReply">
+                            <i class="bx bx-plus me-2"></i>
+                            {{ $t('quick_reply.add') }}
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>{{ $t('quick_reply.name') }}</th>
+                                    <th>{{ $t('quick_reply.content') }}</th>
+                                    <th>{{ $t('quick_reply.action') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(qr, index) in quick_reply_all" :key="qr.id">
+                                    <td>{{ qr.name }}</td>
+                                    <td>{{ truncateText(qr.content, 50) }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning me-1" @click="editQuickReply(qr, index)">
+                                            <i class="bx bx-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" @click="deleteQuickReply(qr.id)">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Add/Edit Quick Reply -->
+    <div class="modal fade" id="addQuickReplyModal" ref="addQuickReplyModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">{{ quickReplyForm.id ? $t('quick_reply.edit') : $t('quick_reply.add') }} {{
+                        $t('quick_reply.title') }}</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ $t('quick_reply.name') }}</label>
+                        <input type="text" class="form-control" v-model="quickReplyForm.name" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ $t('quick_reply.content') }}</label>
+                        <textarea class="form-control" v-model="quickReplyForm.content" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ $t('quick_reply.file_optional') }}</label>
+                        <input type="file" class="form-control" @change="handleQuickReplyFile" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" @click="saveQuickReply" :disabled="send.loader">
+                        <i class="bx bx-save me-2"></i>
+                        {{ send.loader ? $t('quick_reply.saving') : $t('quick_reply.save') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Additional Data -->
+    <div class="modal fade" id="additionalModal" ref="additionalModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">{{ $t('additional.add_field') }}</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ $t('additional.field_name') }}</label>
+                        <input type="text" class="form-control" v-model="additionalForm.name" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ $t('additional.field_type') }}</label>
+                        <select class="form-select" v-model="additionalForm.type">
+                            <option value="text">{{ $t('additional.type_text') }}</option>
+                            <option value="number">{{ $t('additional.type_number') }}</option>
+                            <option value="date">{{ $t('additional.type_date') }}</option>
+                            <option value="options">{{ $t('additional.type_options') }}</option>
+                        </select>
+                    </div>
+                    <div v-if="additionalForm.type === 'options'" class="mb-3">
+                        <label class="form-label">{{ $t('additional.options_hint') }}</label>
+                        <input type="text" class="form-control" v-model="additionalForm.optionsText"
+                            :placeholder="$t('additional.options_placeholder')" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" @click="saveAdditionalField">
+                        <i class="bx bx-save me-2"></i>
+                        {{ $t('common.save') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Change Device -->
+    <div class="modal fade" id="changeDeviceModal" ref="changeDeviceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">{{ $t('info.change_device') || 'Ganti Device/Channel' }}</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Channel Type Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">{{ $t('info.channel_type') || 'Tipe Channel' }}</label>
+                        <select class="form-select" v-model="deviceForm.type" @change="loadDevices">
+                            <option value="whatsapp">WhatsApp </option>
+                            <option value="waba">WhatsApp Business API</option>
+                            <option value="telegram">Telegram</option>
+                            <option value="livechat">LiveChat</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="messanger">Messanger</option>
+                        </select>
+                    </div>
+
+                    <!-- Device Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">{{ $t('info.select_device') || 'Pilih Device' }}</label>
+                        <select class="form-select" v-model="deviceForm.device_id" :disabled="deviceForm.loading">
+                            <option :value="null">
+                                {{ deviceForm.loading ? 'Loading...' : (deviceForm.devices.length === 0 ? 'Tidak ada device' : 'Pilih Device') }}
+                            </option>
+                            <option v-for="device in deviceForm.devices" :key="device.id" :value="device.id">
+                                {{ device.name || device.phone }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Current Info -->
+                    <div class="alert alert-info">
+                        <small>
+                            <strong>Current:</strong> {{ getChannelName(detail.from) }} - {{ detail.device ||
+                            detail.livechat }}
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">
+                        {{ $t('common.cancel') || 'Batal' }}
+                    </button>
+                    <button class="btn btn-primary" @click="saveDeviceChange"
+                        :disabled="deviceForm.saving || !deviceForm.device_id">
+                        <i class="bx bx-save me-2"></i>
+                        {{ deviceForm.saving ? 'Menyimpan...' : ($t('common.save') || 'Simpan') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+import socket from "@/socket";
+import NProgress from "nprogress";
+import 'emoji-mart-vue-fast/css/emoji-mart.css'
+import { Picker, EmojiIndex } from "emoji-mart-vue-fast/src";
+import data from 'emoji-mart-vue-fast/data/all.json'
+let emojiIndex = new EmojiIndex(data);
+
+export default {
+    name: "Chat",
+    components: {
+        Picker,
+    },
+    data() {
+        return {
+            currentChatId: null, // Track current chat
+            socketInitialized: false,
+            emojiIndex: emojiIndex,
+            showEmojiPicker: false,
+            showPlusMenu: false,
+            templatePanel: {
+                show: false,
+                loading: false,
+                list: [],
+                search: '',
+                selectedTemplate: null,
+                params: [],
+                headerMediaFile: null,
+                headerMediaName: '',
+                headerMediaPreview: null,
+                sending: false,
+            },
+            showRightSidebar: false,
+            showAddCollaborator: false,
+            showAddCategory: false,
+            showAddLabel: false,
+            showAddPipeline: false,
+            activeDropdownId: null,
+            replyingTo: null,
+            detail: {
+                id: "",
+                name: "",
+                phone: "",
+                photo: "",
+                device_id: null,
+                status: "open",
+                from: "",
+                device: "",
+                takeover: false,
+                handled: null,
+                category: null,
+                label: [],
+                collabolators: [],
+                additional: {
+                    data: [],
+                    note: "",
+                },
+                pipeline:{
+                    id:null,
+                    name:"",
+                    stage:{
+                        id:null,
+                        name:""
+                    }
+                },
+                detail: {
+                    assignment_by: "",
+                    resolved_by: "",
+                    created_at: "",
+                    resolved_at: "",
+                },
+            },
+            message: {
+                loader: false,
+                list: [],
+                page: 1,
+                hasMoreMessages: true,
+                search: "",
+            },
+            send: {
+                loader: false,
+                type: "text",
+                text: "",
+                file: null,
+            },
+            users: [],
+            categories: [],
+            deviceForm: {
+                type: 'whatsapp',
+                device_id: null,
+                devices: [],
+                loading: false,
+                saving: false,
+            },
+            info_label: {
+                labels: [],
+                form: null,
+            },
+            info_pipeline: {
+            pipelines: [],
+            stages: [],
+            form_pipeline: null,
+            form_stage: null,
+            loading_stages: false,
+        },
+            info_category: {
+                form: null,
+            },
+            info_collabolator: {
+                form: null,
+            },
+            quick_replies: [],
+            quick_reply_all: [],
+            quickReplyPopup: {
+                show: false,
+                loading: false,
+                selectedIndex: 0,
+            },
+            quickReplyForm: {
+                id: null,
+                name: "",
+                content: "",
+                file: null,
+            },
+            additionalForm: {
+                name: "",
+                type: "text",
+                optionsText: "",
+            },
+            stickerLightbox: {
+                show: false,
+                url: '',
+            },
+            filePreview: {
+                type: "",
+                url: "",
+            },
+            pasteIndicator: {
+                show: false,
+                message: ''
+            },
+            devices: [],
+            shouldScrollToBottom: true,
+            isUserScrolling: false,
+        };
+    },
+    computed: {
+        isInsideWindow() {
+            if (!this.detail || !this.detail.last_incoming_at) return false;
+            const lastMsg = new Date(this.detail.last_incoming_at);
+            const now = new Date();
+            const diffMs = now - lastMsg;
+            return diffMs < 24 * 60 * 60 * 1000;
+        },
+        windowTimeLeft() {
+            if (!this.detail || !this.detail.last_incoming_at) return null;
+            const lastMsg = new Date(this.detail.last_incoming_at);
+            const expires = new Date(lastMsg.getTime() + 24 * 60 * 60 * 1000);
+            const now = new Date();
+            const diffMs = expires - now;
+            if (diffMs <= 0) return null;
+            const hours = Math.floor(diffMs / (60 * 60 * 1000));
+            const mins = Math.floor((diffMs % (60 * 60 * 1000)) / (60 * 1000));
+            if (hours > 0) return hours + 'h ' + mins + 'm';
+            return mins + ' min';
+        },
+        windowExpiredAgo() {
+            if (!this.detail || !this.detail.last_incoming_at) return '';
+            const lastMsg = new Date(this.detail.last_incoming_at);
+            const now = new Date();
+            const diffMs = now - lastMsg;
+            const hours = Math.floor(diffMs / (60 * 60 * 1000));
+            if (hours < 24) return hours + ' hours ago';
+            const days = Math.floor(hours / 24);
+            return days + ' day' + (days > 1 ? 's' : '') + ' ago';
+        },
+
+        filteredMessages() {
+            if (!this.message.search) return this.message.list;
+            return this.message.list.filter(msg =>
+                msg.message?.toLowerCase().includes(this.message.search.toLowerCase())
+            );
+        },
+    },
+    methods: {
+
+         prefillMessageFromQuery() {
+        const queryText = this.$route.query.text;
+        
+        if (queryText) {
+            try {
+                // Decode URL-encoded text
+                this.send.text = decodeURIComponent(queryText);
+                
+                console.log("✅ Message pre-filled:", this.send.text);
+                
+                // Auto-resize textarea
+                this.$nextTick(() => {
+                    this.autoResizeTextarea();
+                    
+                    // Focus textarea
+                    if (this.$refs.chatInput) {
+                        this.$refs.chatInput.focus();
+                    }
+                });
+                
+                // Remove query param dari URL (clean up)
+                this.$router.replace({
+                    name: this.$route.name,
+                    params: this.$route.params,
+                    query: {} // Clear query
+                });
+                
+            } catch (error) {
+                console.error("❌ Error decoding text:", error);
+            }
+        }
+    },
+
+        
+        async getPipelines() {
+        try {
+            const response = await this.$axios.get(`/kanban/pipelines`);
+            this.info_pipeline.pipelines = response.data.pipelines;
+        } catch (error) {
+            console.error('Error getting pipelines:', error);
+        }
+    },
+
+    async getStagesByPipeline(pipelineId) {
+        if (!pipelineId) {
+            this.info_pipeline.stages = [];
+            return;
+        }
+        
+        this.info_pipeline.loading_stages = true;
+        try {
+            const response = await this.$axios.get(`/crm/labels`, {
+                params: { 
+                    type: 'CRM',
+                    pipeline_id: pipelineId  
+                }
+            });
+            this.info_pipeline.stages = response.data.labels;
+        } catch (error) {
+            console.error('Error getting stages:', error);
+            this.info_pipeline.stages = [];
+        } finally {
+            this.info_pipeline.loading_stages = false;
+        }
+    },
+
+    async selectPipeline() {
+        if (!this.info_pipeline.form_pipeline) {
+            this.info_pipeline.stages = [];
+            this.info_pipeline.form_stage = null;
+            return;
+        }
+         
+        await this.getStagesByPipeline(this.info_pipeline.form_pipeline.id);
+         
+        this.info_pipeline.form_stage = null;
+    },
+    
+    async selectStage() {
+        if (!this.info_pipeline.form_stage || !this.info_pipeline.form_pipeline) {
+            return;
+        }
+        
+        // Update detail local
+        this.detail.pipeline = {
+            id: this.info_pipeline.form_pipeline.id,
+            name: this.info_pipeline.form_pipeline.name,
+            stage: {
+                id: this.info_pipeline.form_stage.id,
+                name: this.info_pipeline.form_stage.name
+            }
+        };
+        
+        // Reset forms
+        this.info_pipeline.form_pipeline = null;
+        this.info_pipeline.form_stage = null;
+        
+        // Post ke backend
+        await this.postPipelineAndStage();
+        
+        // Hide dropdown
+        this.showAddPipeline = false;
+    },
+
+    async postPipelineAndStage() {
+        try {
+            const response = await this.$axios.post(
+                `/crm/labels/pipeline/${this.$route.params.chatid}`,
+                {
+                    pipeline_id: this.detail.pipeline?.id || null,
+                    label: this.detail.pipeline?.stage?.id || null
+                }
+            );
+            
+            console.log('✅ Pipeline & Stage updated:', response.data);
+            
+            this.$showToast(
+                'Pipeline & Stage berhasil diupdate',
+                'success',
+                3000
+            );
+        } catch (error) {
+            console.error('❌ Error updating pipeline:', error);
+            this.$showToast(
+                'Gagal update Pipeline & Stage',
+                'error',
+                3000
+            );
+        }
+    },
+
+     async removePipelineAndStage() {
+        if (!confirm('Hapus Pipeline & Stage?')) return;
+        
+        this.detail.pipeline = {
+            id: null,
+            name: "",
+            stage: {
+                id: null,
+                name: ""
+            }
+        };
+        
+        await this.postPipelineAndStage();
+    },
+
+        /**
+   * Get channel icon
+   */
+        getChannelIcon(type) {
+            const icons = {
+                whatsapp: 'bx bxl-whatsapp',
+                waba: 'bx bxl-whatsapp',
+                telegram: 'bx bxl-telegram',
+                livechat: 'bx bx-message-dots',
+            };
+            return icons[type] || 'bx bx-message';
+        },
+
+        /**
+         * Get channel name
+         */
+        getChannelName(type) {
+            const names = {
+                whatsapp: 'WhatsApp',
+                waba: 'WhatsApp Business API',
+                telegram: 'Telegram',
+                livechat: 'LiveChat',
+            };
+            return names[type] || type;
+        },
+
+        /**
+         * Open change device modal
+         */
+        openChangeDeviceModal() {
+            // Set current type and device
+            this.deviceForm.type = this.detail.from;
+            this.deviceForm.device_id = this.detail.device_id;
+
+            // Load devices for current type
+            this.loadDevices();
+
+
+            // Show modal
+            const modal = new bootstrap.Modal(this.$refs.changeDeviceModal, {
+                backdrop: false,
+                keyboard: false,
+            });
+            modal.show();
+        },
+
+        /**
+         * Load devices based on selected type
+         */
+        async loadDevices() {
+            this.deviceForm.loading = true;
+            this.deviceForm.devices = [];
+            this.deviceForm.device_id = null;
+
+            try {
+                const response = await this.$axios.get('/crm/devices', {
+                    params: { type: this.deviceForm.type }
+                });
+
+                this.deviceForm.devices = response.data.data || [];
+
+                // Auto-select current device if same type
+                if (this.deviceForm.type === this.detail.from && this.detail.device_id) {
+                    this.deviceForm.device_id = this.detail.device_id;
+                }
+
+                console.log('✅ Devices loaded:', this.deviceForm.devices.length);
+            } catch (error) {
+                console.error('❌ Error loading devices:', error);
+
+                this.$showToast(
+                    `Gagal memuat daftar device. Silakan coba lagi.`,
+                    "error",
+                    3000
+                );
+            } finally {
+                this.deviceForm.loading = false;
+            }
+        },
+
+        /**
+         * Save device change
+         */
+        async saveDeviceChange() {
+            if (!this.deviceForm.device_id) {
+                this.$showToast(
+                    `Pilih Device terlebih dahulu`,
+                    "error",
+                    3000
+                );
+                return;
+            }
+
+            // Confirm if changing type
+            if (this.deviceForm.type !== this.detail.from) {
+                const confirmed = confirm(
+                    `Anda akan mengubah channel dari ${this.getChannelName(this.detail.from)} ke ${this.getChannelName(this.deviceForm.type)}. Lanjutkan?`
+                );
+                if (!confirmed) return;
+            }
+
+            this.deviceForm.saving = true;
+
+            try {
+                const response = await this.$axios.post(
+                    `/crm/devices/change/${this.$route.params.chatid}`,
+                    {
+                        type: this.deviceForm.type,
+                        device: this.deviceForm.device_id,
+                        from: this.deviceForm.type, // Backend expects 'from' parameter
+                    }
+                );
+
+                console.log('✅ Device changed successfully:', response.data);
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(this.$refs.changeDeviceModal);
+                modal?.hide();
+
+                // Reload information to get updated data
+                await this.getInformation();
+
+                this.$showToast(
+                    `Device berhasil di ubah`,
+                    "info",
+                    3000
+                );
+            } catch (error) {
+                console.error('❌ Error changing device:', error);
+                this.$showToast(
+                    `Gagal mengubah device. Silakan coba lagi.`,
+                    "error",
+                    3000
+                );
+            } finally {
+                this.deviceForm.saving = false;
+            }
+        },
+
+
+        showEmoji(emoji) {
+            this.send.text = this.send.text + emoji.native;
+        },
+
+        async selectCategory() {
+            if (!this.info_category.form) return;
+
+            this.detail.category = this.info_category.form;
+            this.info_category.form = null;
+
+            await this.postCategory();
+
+            // Hide dropdown
+            this.showAddCategory = false;
+        },
+
+        async removeCategory() {
+            if (!confirm('Hapus kategori ini?')) return;
+
+            this.detail.category = null;
+            await this.postCategory();
+        },
+
+        async postCategory() {
+            try {
+                const response = await this.$axios.post(
+                    `/crm/categories/change/${this.$route.params.chatid}`,
+                    {
+                        category: {
+                            id: this.detail.category?.id || null
+                        }
+                    }
+                );
+
+                console.log('✅ Category updated:', response.data);
+
+                // Update detail jika backend return data
+                if (response.data.category) {
+                    this.detail.category = response.data.category;
+                }
+            } catch (error) {
+                console.error('❌ Error updating category:', error);
+            }
+        },
+
+
+        handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Cegah default newline
+                this.sendMessage();
+            }
+        },
+
+        async handlePaste(event) {
+            const items = event.clipboardData?.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+
+                if (item.type.indexOf('image') !== -1) {
+                    event.preventDefault();
+
+                    const file = item.getAsFile();
+                    if (!file) continue;
+
+                    await this.processPastedImage(file);
+                    break;
+                }
+            }
+        },
+
+        async processPastedImage(file) {
+            console.log('📋 Pasted image:', file.name, file.type);
+
+            const timestamp = Date.now();
+            const extension = file.type.split('/')[1] || 'png';
+            const renamedFile = new File(
+                [file],
+                `pasted-image-${timestamp}.${extension}`,
+                { type: file.type }
+            );
+
+            this.send.file = renamedFile;
+            this.send.type = "media";
+
+            this.filePreview.type = "image";
+            this.filePreview.url = URL.createObjectURL(renamedFile);
+
+            this.showFilePreviewModal();
+        },
+
+        showPasteIndicator(message) {
+            this.pasteIndicator.show = true;
+            this.pasteIndicator.message = message;
+
+            setTimeout(() => {
+                this.pasteIndicator.show = false;
+            }, 2000);
+        },
+
+        async processPastedImage(file) {
+            console.log('📋 Pasted image:', file.name, file.type);
+
+            // Show indicator
+            this.showPasteIndicator('📋 Image terpaste! Siap dikirim...');
+
+            // Rename file dengan timestamp untuk uniqueness
+            const timestamp = Date.now();
+            const extension = file.type.split('/')[1] || 'png';
+            const renamedFile = new File(
+                [file],
+                `pasted-image-${timestamp}.${extension}`,
+                { type: file.type }
+            );
+
+            // Set file ke send object
+            this.send.file = renamedFile;
+            this.send.type = "media";
+
+            // Create preview URL
+            this.filePreview.type = "image";
+            this.filePreview.url = URL.createObjectURL(renamedFile);
+
+            // Show preview modal
+            this.showFilePreviewModal();
+        },
+
+
+        autoResizeTextarea() {
+            const textarea = this.$refs.chatInput;
+            if (!textarea) return;
+
+            textarea.style.height = 'auto'; // Reset height
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'; // Max 120px
+        },
+
+
+        // === Message Management ===
+        async getInformation() {
+            try {
+                const response = await this.$axios.get(`/crm/information-detail/${this.$route.params.chatid}`);
+                this.detail = response.data;
+                this.getMessages();
+                this.markToRead();
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async getMessages(page = 1, prepend = false) {
+            try {
+                this.message.loader = true;
+                const response = await this.$axios.get(`/crm/messages/${this.$route.params.chatid}`, {
+                    params: { page, limit: 20 }
+                });
+
+                let newMessages = response.data.messages;
+
+                if (prepend) {
+                    this.message.list = [...newMessages, ...this.message.list];
+                    this.$nextTick(() => {
+                        const chatArea = document.querySelector('.chat-messages');
+                        chatArea.scrollTop = 100;
+                    });
+                } else {
+                    this.message.list = newMessages;
+                    this.$nextTick(() => {
+                        this.scrollToBottom();
+                    });
+                }
+
+                this.message.page = page;
+                this.message.hasMoreMessages = newMessages.length > 0;
+                this.message.loader = false;
+            } catch (error) {
+                console.error(error);
+                this.message.loader = false;
+            }
+        },
+
+        async sendMessage() {
+            if (!this.send.text && !this.send.file) return;
+
+            NProgress.start();
+            this.send.loader = true;
+
+            try {
+                const formData = new FormData();
+                formData.append("message", this.send.text);
+                formData.append("type", this.send.type);
+
+                if (this.replyingTo) {
+                    formData.append("reply_to", this.replyingTo.id);
+                    formData.append("reply_text", this.replyingTo.message || "");
+                }
+
+                if (this.send.file) {
+                    formData.append("file", this.send.file);
+                }
+
+                const response = await this.$axios.post(
+                    `crm/send-message/${this.$route.params.chatid}`,
+                    formData,
+                    { headers: { "Content-Type": "multipart/form-data" } }
+                );
+
+                socket.emit(`crm-update`, response.data);
+
+                this.send = { loader: false, type: "text", text: "", file: null };
+                this.replyingTo = null;
+                this.shouldScrollToBottom = true;
+
+                this.$nextTick(() => {
+                    if (this.$refs.chatInput) {
+                        this.$refs.chatInput.style.height = 'auto';
+                    }
+                });
+
+
+                NProgress.done();
+            } catch (error) {
+                console.error(error);
+                this.send.loader = false;
+                NProgress.done();
+            }
+        },
+
+        async deleteMessage(id, index) {
+            if (!confirm("Hapus pesan ini?")) return;
+            try {
+                await this.$axios.delete(`/crm/action/delete/${id}`);
+                this.message.list.splice(index, 1);
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async markToRead() {
+            try {
+                await this.$axios.post(`/crm/mark-read/${this.$route.params.chatid}`);
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        // === Reply Management ===
+        replyToMessage(msg) {
+            this.replyingTo = msg;
+            this.activeDropdownId = null;
+            this.$nextTick(() => {
+                this.$refs.chatInput?.focus();
+            });
+        },
+
+        cancelReply() {
+            this.replyingTo = null;
+        },
+
+        scrollToMessage(msgId) {
+            const element = document.getElementById('msg-' + msgId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.classList.add('highlight');
+                setTimeout(() => element.classList.remove('highlight'), 2000);
+            }
+        },
+
+        // === Quick Reply ===
+        async onMessageInput() {
+
+            this.autoResizeTextarea();
+
+            if (this.send.text.startsWith("/")) {
+                const keyword = this.send.text.substring(1);
+                this.quickReplyPopup.show = true;
+                this.quickReplyPopup.loading = true;
+                await this.getQuickReplies(keyword);
+            } else {
+                this.hideQuickReplies();
+            }
+        },
+
+        async getQuickReplies(search) {
+            try {
+                const response = await this.$axios.get(`/crm/quick-replies`, {
+                    params: { name: search }
+                });
+                this.quick_replies = response.data.data;
+                this.quickReplyPopup.loading = false;
+            } catch (error) {
+                this.quick_replies = [];
+                this.quickReplyPopup.loading = false;
+            }
+        },
+
+        selectQuickReply(item) {
+            let content = item.content;
+            content = content.replace(/{name}/g, this.detail.name);
+            content = content.replace(/{phone}/g, this.detail.phone);
+
+            this.send.text = content;
+            this.hideQuickReplies();
+            this.$refs.chatInput?.focus();
+            this.$nextTick(() => {
+                this.autoResizeTextarea();
+            });
+        },
+
+        navigateQuickReplies(direction) {
+            if (this.quick_replies.length === 0) return;
+            if (direction === "down") {
+                this.quickReplyPopup.selectedIndex = (this.quickReplyPopup.selectedIndex + 1) % this.quick_replies.length;
+            } else {
+                this.quickReplyPopup.selectedIndex = (this.quickReplyPopup.selectedIndex - 1 + this.quick_replies.length) % this.quick_replies.length;
+            }
+        },
+
+        hideQuickReplies() {
+            this.quickReplyPopup.show = false;
+        },
+
+        manageQuickReply() {
+            this.getQuickRepliesAll();
+            const modal = new bootstrap.Modal(this.$refs.quickReplyModal, {
+                backdrop: false,
+                keyboard: false,
+            });
+            modal.show();
+        },
+
+        async getQuickRepliesAll() {
+            try {
+                const response = await this.$axios.get(`/crm/quick-replies`, {
+                    params: { page: 1, limit: 50 }
+                });
+                this.quick_reply_all = response.data.data;
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        openAddQuickReply() {
+            this.quickReplyForm = { id: null, name: "", content: "", file: null };
+            const modal = new bootstrap.Modal(this.$refs.addQuickReplyModal, {
+                backdrop: false,
+                keyboard: false,
+            });
+            modal.show();
+        },
+
+        editQuickReply(qr, index) {
+            this.quickReplyForm = { ...qr, file: null };
+            const modal = new bootstrap.Modal(this.$refs.addQuickReplyModal, {
+                backdrop: false,
+                keyboard: false,
+            });
+            modal.show();
+        },
+
+        async saveQuickReply() {
+            this.send.loader = true;
+            try {
+                const formData = new FormData();
+                formData.append("name", this.quickReplyForm.name);
+                formData.append("content", this.quickReplyForm.content);
+                if (this.quickReplyForm.file) {
+                    formData.append("media", this.quickReplyForm.file);
+                }
+
+                const url = this.quickReplyForm.id
+                    ? `/crm/quick-replies/update/${this.quickReplyForm.id}`
+                    : `/crm/quick-replies/create`;
+
+                await this.$axios.post(url, formData, {
+                    headers: { "Content-Type": "multipart/form-data" }
+                });
+
+                this.send.loader = false;
+                const modal = bootstrap.Modal.getInstance(this.$refs.addQuickReplyModal, {
+                    backdrop: false,
+                    keyboard: false,
+                });
+                modal?.hide();
+                this.getQuickRepliesAll();
+            } catch (error) {
+                console.error(error);
+                this.send.loader = false;
+            }
+        },
+
+        async deleteQuickReply(id) {
+            if (!confirm("Hapus quick reply ini?")) return;
+            try {
+                await this.$axios.delete(`/crm/quick-replies/remove/${id}`);
+                this.getQuickRepliesAll();
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        handleQuickReplyFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                this.quickReplyForm.file = file;
+            }
+        },
+
+        // === File Management ===
+        triggerFileInput() {
+            this.$refs.fileInput?.click();
+        },
+
+        handleFileChange(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            this.send.file = file;
+
+            if (file.type.startsWith("image")) {
+                this.send.type = "media";
+                this.filePreview.type = "image";
+                this.filePreview.url = URL.createObjectURL(file);
+                this.showFilePreviewModal();
+            } else if (file.type.startsWith("video")) {
+                this.send.type = "media";
+                this.filePreview.type = "video";
+                this.filePreview.url = URL.createObjectURL(file);
+                this.showFilePreviewModal();
+            } else {
+                this.send.type = "document";
+                this.filePreview.type = "document";
+                this.filePreview.fileName = file.name;
+                this.filePreview.fileSize = this.formatFileSize(file.size);
+                this.showFilePreviewModal();
+            }
+        },
+
+        showFilePreviewModal() {
+            const modal = new bootstrap.Modal(this.$refs.filePreviewModal, {
+                backdrop: false,
+                keyboard: false,
+            });
+            modal.show();
+        },
+
+        confirmSendFile() {
+            const modal = bootstrap.Modal.getInstance(this.$refs.filePreviewModal, {
+                backdrop: false,
+                keyboard: false,
+            });
+            modal?.hide();
+            this.sendMessage();
+        },
+
+        openImagePreview(url) {
+            window.open(url, '_blank');
+        },
+
+        // === Contact Info Management ===
+        async selectUser() {
+            try {
+                const response = await this.$axios.post(
+                    `/crm/users/user-change/${this.$route.params.chatid}`,
+                    { handled: this.detail.handled }
+                );
+                this.detail.detail.assignment_by = response.data.detail.assignment_by;
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async selectLabel() {
+            if (!this.info_label.form) return;
+            const exists = this.detail.label.some(l => l.id === this.info_label.form.id);
+            if (!exists) {
+                this.detail.label.push(this.info_label.form);
+                this.info_label.form = null;
+                await this.postLabel();
+            }
+            this.showAddLabel = false;
+        },
+
+        async removeLabel(id) {
+            this.detail.label = this.detail.label.filter(l => l.id !== id);
+            await this.postLabel();
+        },
+
+        async postLabel() {
+            try {
+                await this.$axios.post(`/crm/labels/change/${this.$route.params.chatid}`, {
+                    labels: this.detail.label
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async selectCollabolator() {
+            if (!this.info_collabolator.form) return;
+            const exists = this.detail.collabolators.some(c => c.id === this.info_collabolator.form.id);
+            if (!exists) {
+                this.detail.collabolators.push(this.info_collabolator.form);
+                this.info_collabolator.form = null;
+                await this.postCollab();
+            }
+            this.showAddCollaborator = false;
+        },
+
+        async removeCollab(id) {
+            this.detail.collabolators = this.detail.collabolators.filter(c => c.id !== id);
+            await this.postCollab();
+        },
+
+        async postCollab() {
+            try {
+                await this.$axios.post(`/crm/users/collabolator/${this.$route.params.chatid}`, {
+                    collabolator: this.detail.collabolators
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        openAdditionalModal() {
+            this.additionalForm = { name: "", type: "text", optionsText: "" };
+            const modal = new bootstrap.Modal(this.$refs.additionalModal, {
+                backdrop: false,
+                keyboard: false,
+            });
+            modal.show();
+        },
+
+        saveAdditionalField() {
+            const newField = {
+                name: this.additionalForm.name,
+                type: this.additionalForm.type,
+                value: "",
+                options: this.additionalForm.type === "options"
+                    ? this.additionalForm.optionsText.split(",").map(o => o.trim())
+                    : []
+            };
+            this.detail.additional.data.push(newField);
+            this.updateAdditional();
+            const modal = bootstrap.Modal.getInstance(this.$refs.additionalModal, {
+                backdrop: false,
+                keyboard: false,
+            });
+            modal?.hide();
+        },
+
+        async updateAdditional() {
+            try {
+                await this.$axios.post(`/crm/action/change-additional/${this.$route.params.chatid}`, {
+                    note: this.detail.additional.note,
+                    additional_data: this.detail.additional.data
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async blockUnblock() {
+            const newStatus = this.detail.status === "block" ? "open" : "block";
+            try {
+                await this.$axios.post(`/crm/action/block/${this.$route.params.chatid}`, {
+                    status: newStatus
+                });
+                this.detail.status = newStatus;
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async resolved(status) {
+            try {
+                const response = await this.$axios.post(`/crm/action/resolved/${this.$route.params.chatid}`);
+                this.detail.status = status;
+                this.detail.detail.resolved_by = response.data.detail.resolved_by;
+                this.detail.detail.resolved_at = response.data.detail.resolved_at;
+                this.detail.takeover = false;
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async changeTakeOver(status) {
+            try {
+                const response = await this.$axios.post(`/crm/takeover-message/${this.$route.params.chatid}`, {
+                    takeover: status
+                });
+                this.detail.takeover = response.data.status;
+                this.detail.handled = response.data.handled;
+                this.detail.detail.assignment_by = response.data.detail.assignment_by;
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async changeStatus() {
+             this.resolved(this.detail.status);
+        },
+
+        copyPhone() {
+            navigator.clipboard.writeText(this.detail.phone);
+            this.$showToast(
+                `Nomor Telpon di salin`,
+                "info",
+                3000
+            );
+        },
+
+        // === UI Helpers ===
+        toggleActionMenu(msgId) {
+            this.activeDropdownId = this.activeDropdownId === msgId ? null : msgId;
+        },
+
+        toggleRightSidebar() {
+            this.showRightSidebar = !this.showRightSidebar;
+        },
+
+        togglePlusMenu() {
+            this.showPlusMenu = !this.showPlusMenu;
+            if (this.showPlusMenu) {
+                this.showEmojiPicker = false;
+                this.closeTemplatePanel();
+            }
+        },
+
+        openQuickReplyFromMenu() {
+            this.showPlusMenu = false;
+            this.send.text = '/';
+            this.$nextTick(() => {
+                this.$refs.chatInput?.focus();
+                this.onMessageInput();
+            });
+        },
+
+        triggerFileFromMenu() {
+            this.showPlusMenu = false;
+            this.triggerFileInput();
+        },
+
+        async openTemplatePanel() {
+            this.showPlusMenu = false;
+            this.showEmojiPicker = false;
+            this.templatePanel.show = true;
+            this.templatePanel.selectedTemplate = null;
+            this.templatePanel.search = '';
+            await this.loadTemplates();
+        },
+
+        closeTemplatePanel() {
+            this.templatePanel.show = false;
+            this.templatePanel.selectedTemplate = null;
+            this.templatePanel.params = [];
+            this.templatePanel.headerMediaFile = null;
+            this.templatePanel.headerMediaName = '';
+            this.templatePanel.headerMediaPreview = null;
+        },
+
+        async loadTemplates() {
+            this.templatePanel.loading = true;
+            try {
+                const response = await this.$axios.get(`/crm/templates/${this.$route.params.chatid}`, {
+                    params: { search: this.templatePanel.search }
+                });
+                this.templatePanel.list = response.data.data || [];
+            } catch (e) {
+                console.error('Failed to load templates', e);
+                this.templatePanel.list = [];
+            }
+            this.templatePanel.loading = false;
+        },
+
+        searchTemplates: _.debounce(function () {
+            this.loadTemplates();
+        }, 300),
+
+        selectTemplate(tmpl) {
+            this.templatePanel.selectedTemplate = tmpl;
+            this.templatePanel.params = [];
+            this.templatePanel.headerMediaFile = null;
+            this.templatePanel.headerMediaName = '';
+            this.templatePanel.headerMediaPreview = null;
+            // Auto-fill first param with customer name
+            if (tmpl.body_params > 0) {
+                this.templatePanel.params[0] = this.detail.name || '';
+                for (let i = 1; i < tmpl.body_params; i++) {
+                    this.templatePanel.params[i] = '';
+                }
+            }
+        },
+
+        handleTemplateMedia(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            this.templatePanel.headerMediaFile = file;
+            this.templatePanel.headerMediaName = file.name;
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    this.templatePanel.headerMediaPreview = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                this.templatePanel.headerMediaPreview = null;
+            }
+        },
+
+        getTemplatePreview() {
+            if (!this.templatePanel.selectedTemplate) return '';
+            let text = this.templatePanel.selectedTemplate.body_text || '';
+            this.templatePanel.params.forEach((param, i) => {
+                text = text.replace(`{{${i + 1}}}`, param || `[param ${i + 1}]`);
+            });
+            return text;
+        },
+
+        canSendTemplate() {
+            const tmpl = this.templatePanel.selectedTemplate;
+            if (!tmpl) return false;
+
+            // Check media requirement
+            if (tmpl.header_type && ['image', 'video', 'document'].includes(tmpl.header_type)) {
+                if (!this.templatePanel.headerMediaFile) return false;
+            }
+
+            // Check all params filled
+            if (tmpl.body_params > 0) {
+                for (let i = 0; i < tmpl.body_params; i++) {
+                    if (!this.templatePanel.params[i]?.trim()) return false;
+                }
+            }
+
+            return true;
+        },
+
+        async sendTemplateMessage() {
+            if (!this.canSendTemplate()) return;
+
+            this.templatePanel.sending = true;
+            try {
+                const tmpl = this.templatePanel.selectedTemplate;
+                const formData = new FormData();
+                formData.append('template_id', tmpl.id);
+
+                // Parameters
+                this.templatePanel.params.forEach((param, i) => {
+                    formData.append(`parameters[${i}]`, param);
+                });
+
+                // Media
+                if (this.templatePanel.headerMediaFile) {
+                    formData.append('header_media', this.templatePanel.headerMediaFile);
+                }
+
+                const response = await this.$axios.post(
+                    `/crm/send-template/${this.$route.params.chatid}`,
+                    formData,
+                    { headers: { 'Content-Type': 'multipart/form-data' } }
+                );
+
+                if (response.data.status === 200) {
+                    // Add message to chat
+                    this.getMessages();
+                    this.closeTemplatePanel();
+                } else {
+                    alert('Failed: ' + (response.data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error('Send template error', e);
+                alert('Error: ' + (e.response?.data?.error || e.message));
+            }
+            this.templatePanel.sending = false;
+        },
+
+        toggleEmoji() {
+            this.showEmojiPicker = !this.showEmojiPicker;
+        },
+
+        insertEmoji(emoji) {
+            this.send.text += emoji.native;
+            this.showEmojiPicker = false;
+        },
+
+        scrollToBottom() {
+            if (!this.shouldScrollToBottom) return;
+            const messageContent = document.querySelector(".chat-messages");
+            if (messageContent) {
+                messageContent.scrollTop = messageContent.scrollHeight;
+            }
+        },
+
+        handleChatScroll(e) {
+            const element = e.target;
+            this.isUserScrolling = true;
+
+            const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 100;
+            this.shouldScrollToBottom = isNearBottom;
+
+            if (element.scrollTop <= 50 && this.message.hasMoreMessages && !this.message.loader) {
+                this.getMessages(this.message.page + 1, true);
+            }
+        },
+
+        // === Utility Methods ===
+        formattedText(text) {
+            if (!text) return "";
+            // Escape HTML first
+            let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            // Template label
+            html = html.replace(/\[Template: ([^\]]+)\]/g, '<span style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:4px;padding:2px 8px;font-size:11px;margin-bottom:4px;opacity:0.8">📋 Template: $1</span>');
+            // WhatsApp formatting
+            html = html.replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
+            html = html.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+            html = html.replace(/~([^~\n]+)~/g, '<del>$1</del>');
+            html = html.replace(/```([^`]+)```/g, '<code>$1</code>');
+            // Button rendering
+            html = html.replace(/🔘 (.+)/g, '<div style="display:flex;align-items:center;gap:6px;margin:3px 0;padding:6px 12px;background:rgba(255,255,255,0.12);border-radius:8px;border:1px solid rgba(255,255,255,0.2)"><i class="bx bx-link-external" style="font-size:14px"></i><span>$1</span></div>');
+            // URLs
+            html = html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" style="color:#0ea5e9;text-decoration:underline">$1</a>');
+            // Newlines
+            html = html.replace(/\n/g, '<br>');
+            return html;
+        },
+
+        truncateText(text, length) {
+            if (!text) return "";
+            return text.length > length ? text.substring(0, length) + "..." : text;
+        },
+
+        formatDate() {
+            const today = new Date();
+            return today.toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "short",
+                year: "numeric"
+            });
+        },
+
+        isDocumentType(type) {
+            return ['document', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'file'].includes(type);
+        },
+
+        getDocumentIcon(type) {
+            const icons = {
+                document: 'bx bxs-file-doc',
+                pdf: 'bx bxs-file-pdf',
+                doc: 'bx bxs-file-doc',
+                docx: 'bx bxs-file-doc',
+                xls: 'bx bxs-file',
+                xlsx: 'bx bxs-file',
+                ppt: 'bx bxs-file',
+                pptx: 'bx bxs-file',
+            };
+            return icons[type] || 'bx bxs-file';
+        },
+
+        getFileName(url, originalName = null) {
+            if (originalName) return originalName;
+            if (!url) return "File";
+            const parts = url.split("/");
+            return parts[parts.length - 1] || "File";
+        },
+
+        formatFileSize(bytes) {
+            if (!bytes) return "";
+            const sizes = ["Bytes", "KB", "MB", "GB"];
+            const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+            return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
+        },
+
+        async getUsers() {
+            try {
+                const response = await this.$axios.get(`/users/components`);
+                this.users = response.data.users;
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async getLabels() {
+            try {
+                const response = await this.$axios.get(`/crm/labels`);
+                this.info_label.labels = response.data.labels;
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        async getCategories() {
+            try {
+                const response = await this.$axios.get(`/crm/categories`);
+                this.categories = response.data.categories;
+            } catch (error) {
+                console.error(error);
+            }
+        },
+
+        /**
+        * Setup socket listeners dengan proper cleanup
+        */
+        setupSocketListeners(chatId) {
+            // Cleanup listener lama dulu
+            this.cleanupSocketListeners();
+
+            // Set current chat ID
+            this.currentChatId = chatId;
+
+            // Listener 1: Specific untuk chat ini
+            socket.on(`update-message-${chatId}`, this.handleNewMessage);
+
+            // Listener 2: Global listener sebagai fallback
+            socket.on('update-chat-list', this.handleGlobalUpdate);
+
+            // Listener 3: Error handling
+            socket.on('error', this.handleSocketError);
+
+            console.log(`✅ Socket listeners setup for chat: ${chatId}`);
+            this.socketInitialized = true;
+        },
+
+        /**
+        * Cleanup semua socket listeners
+        */
+        cleanupSocketListeners() {
+            if (this.currentChatId) {
+                socket.off(`update-message-${this.currentChatId}`, this.handleNewMessage);
+                console.log(`🧹 Cleaned up listener for chat: ${this.currentChatId}`);
+            }
+            socket.off('update-chat-list', this.handleGlobalUpdate);
+            socket.off('error', this.handleSocketError);
+            this.socketInitialized = false;
+        },
+
+        /**
+        * Handle pesan baru dari event spesifik
+        */
+        handleNewMessage(newMessage) {
+            const exists = this.message.list.find(m => m.id === newMessage.id);
+            if (exists) {
+                console.log('⚠️ Message already exists, skipping');
+                return;
+            }
+
+            this.message.list.push(newMessage);
+
+            this.$nextTick(() => {
+                if (this.shouldScrollToBottom) {
+                    this.scrollToBottom();
+                }
+                this.markToRead();
+            });
+        },
+
+        /**
+  * Handle update dari global event (fallback)
+  */
+        handleGlobalUpdate(data) {
+            if (data.conversation_id === this.$route.params.chatid) {
+                const newMessage = {
+                    id: data.id || Date.now(),
+                    message: data.message,
+                    sent_by: data.sent_by || 'user',
+                    sent_by_name: data.sent_by_name,
+                    media_type: data.media_type,
+                    media_url: data.media_url,
+                    media_size: data.media_size,
+                    datetime: {
+                        date: data.datetime.date,
+                        time: data.datetime.time,
+                    },
+                    user: {
+                        name: data.user.name,
+                    },
+                    // ✅ TAMBAHKAN INI - Data reply untuk quote
+                    reply_to: data.reply_to || null,
+                    reply_id: data.reply_id || null,
+                    reply_text: data.reply_text || null,
+                    reply_type: data.reply_type || null,
+                    reply_media_url: data.reply_media_url || null,
+                };
+
+                this.handleNewMessage(newMessage);
+            }
+        },
+
+        /**
+         * Handle socket errors
+         */
+        handleSocketError(error) {
+            console.error('❌ Socket error:', error);
+        },
+
+        shouldShowDateSeparator(index) {
+            if (index === 0) return true;
+
+            const currentMsg = this.filteredMessages[index];
+            const prevMsg = this.filteredMessages[index - 1];
+
+            return currentMsg.datetime.date !== prevMsg.datetime.date;
+        },
+
+        formatDateSeparator(dateStr) {
+            // dateStr format: "08/11/2025"
+            const [day, month, year] = dateStr.split('/');
+            const date = new Date(year, month - 1, day);
+
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            // Reset time untuk perbandingan
+            today.setHours(0, 0, 0, 0);
+            yesterday.setHours(0, 0, 0, 0);
+            date.setHours(0, 0, 0, 0);
+
+            if (date.getTime() === today.getTime()) {
+                return 'Hari Ini';
+            } else if (date.getTime() === yesterday.getTime()) {
+                return 'Kemarin';
+            } else {
+                return date.toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                });
+            }
+        },
+    },
+
+    mounted() {
+            // 24H Window timer - refresh every minute
+            this._windowTimer = setInterval(() => {
+                this.$forceUpdate();
+            }, 60000);
+
+        this.getInformation();
+        this.getUsers();
+        this.getLabels();
+        this.getCategories();
+        this.getPipelines();
+        this.getQuickRepliesAll();
+
+        this.prefillMessageFromQuery();
+
+        if (this.$route.params.chatid) {
+            this.setupSocketListeners(this.$route.params.chatid);
+        }
+
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.message-actions')) {
+                this.activeDropdownId = null;
+            }
+            if (!e.target.closest('.emoji-picker') && !e.target.closest('.input-btn') && !e.target.closest('.plus-menu-container')) {
+                this.showPlusMenu = false;
+                this.showEmojiPicker = false;
+            }
+        });
+    },
+
+    beforeUnmount() {
+            if (this._windowTimer) clearInterval(this._windowTimer);
+
+        // Proper cleanup
+        this.cleanupSocketListeners();
+    },
+
+    watch: {
+        "$route.params.chatid": {
+            handler(newChatId, oldChatId) {
+                if (this.$route.name === "chat_room" && newChatId) {
+                    console.log(`🔄 Chat changed: ${oldChatId} → ${newChatId}`);
+
+                    // Reset message state
+                    this.message = {
+                        loader: true,
+                        list: [],
+                        page: 1,
+                        hasMoreMessages: true,
+                        search: "",
+                    };
+                    this.shouldScrollToBottom = true;
+
+                    // Setup listener baru dengan chat ID baru
+                    this.setupSocketListeners(newChatId);
+
+                    // Load data
+                    this.getInformation();
+
+                    this.$nextTick(() => {
+                        this.prefillMessageFromQuery();
+                    });
+                
+                }
+            },
+            immediate: true,
+        },
+    },
+};
+</script>
+
+<style scoped>
+.chat-wrapper {
+    display: flex;
+    flex: 1;
+    height: 100;
+    overflow: hidden;
+}
+
+.main-chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    position: relative;
+}
+
+.chat-header-main {
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.reply-bar {
+    flex-shrink: 0;
+}
+
+.chat-input-area {
+    flex-shrink: 0;
+    background-color: #fff;
+    border-top: 1px solid #e5e7eb;
+    z-index: 10;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 24px;
+    font-size: 14px;
+    resize: none;
+    /* Disable manual resize */
+    max-height: 120px;
+    /* Max 5-6 lines */
+    overflow-y: auto;
+    line-height: 1.5;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.chat-input::placeholder {
+    color: #9ca3af;
+}
+
+/* Auto-resize textarea */
+.chat-input::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat-input::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-input::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+}
+
+.sidebar-right {
+    flex-shrink: 0;
+    width: 320px;
+    overflow-y: auto;
+}
+
+.quick-replies-panel {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    z-index: 999;
+}
+
+/* Message Styles */
+.message-wrapper {
+    position: relative;
+}
+
+.message-actions {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+}
+
+.message.received .message-actions {
+    right: -35px;
+}
+
+.message.sent .message-actions {
+    left: -35px;
+}
+
+.dropdown-menu-custom {
+    position: absolute;
+    z-index: 9999;
+}
+
+.message.received .dropdown-menu-custom {
+    right: 0;
+    top: 100%;
+}
+
+.message.sent .dropdown-menu-custom {
+    left: 0;
+    top: 100%;
+}
+
+/* Highlight effect for scrolled messages */
+@keyframes highlight {
+    0% {
+        background-color: rgba(59, 130, 246, 0.2);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.message.highlight {
+    animation: highlight 2s ease;
+}
+
+/* Media Document Styling */
+/* ── Compact Sticker ── */
+.sticker-compact-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    cursor: pointer;
+    border-radius: 10px;
+    background: transparent;
+    transition: transform 0.15s ease;
+    padding: 0;
+    vertical-align: middle;
+}
+.sticker-compact-wrapper:hover {
+    transform: scale(1.1);
+}
+.sticker-compact-img {
+    width: 80px !important;
+    height: 80px !important;
+    max-width: 80px !important;
+    max-height: 80px !important;
+    min-width: 80px !important;
+    min-height: 80px !important;
+    object-fit: contain;
+    border-radius: 6px;
+    display: block;
+}
+.sticker-fallback {
+    width: 80px;
+    height: 80px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.05);
+    border-radius: 8px;
+    font-size: 26px;
+    color: #888;
+}
+.sticker-fallback small {
+    font-size: 10px;
+    color: #aaa;
+    margin-top: 2px;
+}
+/* ── Sticker Lightbox ── */
+.sticker-lightbox-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.80);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInBg 0.18s ease;
+}
+@keyframes fadeInBg {
+    from { opacity: 0; } to { opacity: 1; }
+}
+.sticker-lightbox-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: popInSticker 0.2s ease;
+}
+@keyframes popInSticker {
+    from { transform: scale(0.6); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+.sticker-lightbox-img {
+    max-width: 300px;
+    max-height: 300px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 14px;
+}
+.sticker-lightbox-close {
+    position: absolute;
+    top: -14px; right: -14px;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    color: #333;
+    z-index: 1;
+}
+.sticker-lightbox-close:hover { background: #f0f0f0; }
+
+.message-media img,
+.message-media video {
+    max-width: 300px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.message-media audio {
+    width: 100%;
+    max-width: 300px;
+}
+
+.message-document {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    max-width: 300px;
+}
+
+.document-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #3b82f6;
+    color: white;
+    border-radius: 8px;
+    font-size: 20px;
+}
+
+.document-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.document-name {
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #1f2937;
+}
+
+.document-size {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.document-download {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    border-radius: 50%;
+    color: #3b82f6;
+    transition: all 0.2s;
+}
+
+.document-download:hover {
+    background-color: #dbeafe;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .chat-wrapper {
+        position: relative;
+    }
+
+    .sidebar-right {
+        position: fixed;
+        right: -320px;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        transition: right 0.3s ease;
+        width: 320px;
+    }
+
+    .sidebar-right:not(.hidden) {
+        right: 0;
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar-right {
+        width: 100%;
+        right: -100%;
+    }
+
+    .sidebar-right:not(.hidden) {
+        right: 0;
+    }
+
+    .message-media img,
+    .message-media video {
+        max-width: 100%;
+    }
+}
+
+.emoji-picker-wrapper {
+    position: absolute;
+    bottom: 80px;
+    /* Fixed dari 6% */
+    left: 10px;
+    z-index: 1000;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* FIXED: Audio Media Styling with proper padding */
+.message-media.audio-media {
+    padding: 12px;
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    margin: 4px 0;
+}
+
+.message-media audio {
+    width: 100%;
+    max-width: 300px;
+    min-width: 250px;
+    /* Biar ga terlalu kecil */
+}
+
+/* Sender Info Styling */
+.message-sender-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 12px;
+}
+
+.sender-name {
+    font-weight: 600;
+    color: #10b981;
+}
+
+.sender-separator {
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+.sender-date {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* Untuk pesan received (dari customer) */
+.message.received .message-sender-info .sender-name {
+    color: #3b82f6;
+}
+
+/* Paste Indicator */
+.paste-indicator {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #10b981;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    z-index: 100;
+    white-space: nowrap;
+    margin-bottom: 8px;
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.category-tag {
+    background-color: #dbeafe !important;
+    color: #1e40af !important;
+}
+
+.category-tag .remove-tag {
+    color: #1e40af;
+    opacity: 0.8;
+}
+
+.category-tag .remove-tag:hover {
+    opacity: 1;
+}
+
+/* Empty state inline */
+.empty-state-inline {
+    display: inline-block;
+    color: #9ca3af;
+    font-size: 13px;
+    font-style: italic;
+}
+
+
+.device-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.device-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    width: fit-content;
+}
+
+.device-badge i {
+    font-size: 16px;
+}
+
+/* Channel badges dengan warna berbeda */
+.badge-whatsapp {
+    background-color: #25d366;
+    color: white;
+}
+
+.badge-waba {
+    background-color: #128c7e;
+    color: white;
+}
+
+.badge-telegram {
+    background-color: #0088cc;
+    color: white;
+}
+
+.badge-livechat {
+    background-color: #8b5cf6;
+    color: white;
+}
+
+.device-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Modal Form Styling */
+.form-select:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+}
+
+.alert-info {
+    background-color: #dbeafe;
+    border-color: #93c5fd;
+    color: #1e40af;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.alert-info small {
+    display: block;
+    margin: 0;
+}
+
+/* Pipeline & Stage Display */
+.pipeline-display {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pipeline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: #dbeafe;
+    color: #1e40af;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    width: fit-content;
+}
+
+.pipeline-badge i {
+    font-size: 16px;
+}
+
+.stage-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: #dcfce7;
+    color: #166534;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    width: fit-content;
+    margin-left: 16px;
+}
+
+.stage-badge i.bx-flag {
+    font-size: 14px;
+}
+
+.stage-badge .remove-tag {
+    margin-left: 4px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.stage-badge .remove-tag:hover {
+    opacity: 1;
+}
+
+.pipeline-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ============================
+   Chat Input Bar - Beautified
+   ============================ */
+.chat-input-area {
+    padding: 12px 16px;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.input-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6b7280;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.input-btn:hover {
+    background: #e5e7eb;
+    color: #374151;
+    transform: scale(1.05);
+}
+
+.input-btn.primary {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: white;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+}
+
+.input-btn.primary:hover {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+    transform: scale(1.08);
+}
+
+.input-btn.primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.input-btn.success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.input-btn.success:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    transform: scale(1.08);
+}
+
+.chat-input {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.chat-input:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+/* ============================
+   + Menu Dropdown
+   ============================ */
+.plus-menu-container {
+    position: relative;
+}
+
+.plus-menu-dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    overflow: hidden;
+    z-index: 100;
+    min-width: 160px;
+    animation: slideUp 0.15s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.plus-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 14px;
+    color: #374151;
+}
+
+.plus-menu-item:hover {
+    background: #f3f4f6;
+}
+
+.plus-menu-item i {
+    font-size: 18px;
+    color: #6b7280;
+}
+
+/* ============================
+   Template Panel
+   ============================ */
+.template-panel {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    max-height: 420px;
+    overflow-y: auto;
+    z-index: 999;
+    animation: slideUp 0.2s ease;
+}
+
+.template-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1f2937;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+}
+
+.template-panel-header span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.template-close, .template-back {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: #6b7280;
+    padding: 2px;
+    border-radius: 4px;
+}
+
+.template-close:hover, .template-back:hover {
+    color: #374151;
+    background: #f3f4f6;
+}
+
+.template-search {
+    padding: 8px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    position: sticky;
+    top: 52px;
+    background: white;
+    z-index: 1;
+}
+
+.template-search input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+}
+
+.template-search input:focus {
+    border-color: #0ea5e9;
+}
+
+.template-list {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.template-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.template-item:hover {
+    background: #f9fafb;
+}
+
+.template-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.template-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1f2937;
+}
+
+.template-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.template-badge.marketing {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.template-badge.utility {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.template-badge.authentication {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.template-item-meta {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.template-media-tag, .template-param-tag {
+    font-size: 11px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.template-preview-text {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.template-empty, .template-loading {
+    padding: 24px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* Template Detail */
+.template-media-upload {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.template-media-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    border: 2px dashed #d1d5db;
+    border-radius: 10px;
+    cursor: pointer;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.template-media-label:hover {
+    border-color: #0ea5e9;
+    color: #0ea5e9;
+}
+
+.template-media-label i {
+    font-size: 22px;
+}
+
+.template-params {
+    padding: 12px 16px;
+}
+
+.template-param-field {
+    margin-bottom: 8px;
+}
+
+.template-param-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.template-param-field input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+}
+
+.template-param-field input:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 2px rgba(14,165,233,0.1);
+}
+
+.template-preview-box {
+    padding: 12px 16px;
+}
+
+.template-preview-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.template-preview-card {
+    background: #f0f9f4;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #1f2937;
+    border-left: 4px solid #25d366;
+}
+
+.tpc-header {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.tpc-body {
+    white-space: pre-wrap;
+}
+
+.tpc-footer {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.tpc-buttons {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tpc-btn {
+    text-align: center;
+    padding: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #0ea5e9;
+}
+
+.template-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid #e5e7eb;
+    position: sticky;
+    bottom: 0;
+    background: white;
+}
+
+.template-cancel-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    color: #374151;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.template-cancel-btn:hover {
+    background: #f3f4f6;
+}
+
+.template-send-btn {
+    flex: 2;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.template-send-btn:hover {
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    box-shadow: 0 4px 12px rgba(14,165,233,0.3);
+}
+
+.template-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* 24H Conversation Window */
+.window-status-card {
+    padding: 4px 16px 8px;
+}
+.window-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+.window-status.inside {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+.window-status.outside {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+.window-status i {
+    font-size: 18px;
+}
+.window-badge {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.badge-inside {
+    background: #065f46;
+    color: #d1fae5;
+}
+.badge-outside {
+    background: #991b1b;
+    color: #fee2e2;
+}
+.window-timer {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    color: #6b7280;
+    margin-top: 6px;
+    font-size: 12px;
+}
+.window-timer i {
+    font-size: 14px;
+}
+.window-timer.expired {
+    color: #9ca3af;
+}
+
+</style>

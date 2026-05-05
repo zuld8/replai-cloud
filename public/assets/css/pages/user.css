@@ -1,0 +1,294 @@
+.user-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.avatar-status {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 16px;
+    height: 16px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    background: #0EA5E9;
+}
+
+.gender-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   USERS PAGE BEAUTIFICATION — Replai CRM Sky-Blue Theme
+   ═══════════════════════════════════════════════════════ */
+
+/* ── USER CARD ──────────────────────────────────────── */
+.user-card {
+    border: 1px solid #E8F0FE !important;
+    border-radius: 16px !important;
+    box-shadow: 0 2px 10px rgba(0,102,204,0.07) !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+    overflow: hidden !important;
+    position: relative;
+}
+.user-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 10px 30px rgba(0,102,204,0.15) !important;
+    border-color: #BAD4FF !important;
+}
+
+/* Gradient top stripe */
+.user-card::before {
+    content: '';
+    display: block;
+    height: 3px;
+    background: linear-gradient(90deg, #0055CC 0%, #00AAFF 50%, #0055CC 100%);
+    background-size: 200% 100%;
+    animation: ua-shimmer 3s ease-in-out infinite;
+    position: relative;
+}
+@keyframes ua-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── AVATAR ─────────────────────────────────────────── */
+.user-card .avatar-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+}
+.user-card .avatar-status {
+    position: absolute !important;
+    bottom: 3px !important;
+    right: 3px !important;
+    width: 11px !important;
+    height: 11px !important;
+    border-radius: 50% !important;
+    background: #22C55E !important;
+    border: 2px solid #fff !important;
+}
+
+/* ── NAME & INFO ────────────────────────────────────── */
+.user-card h6 {
+    font-size: 0.94rem !important;
+    font-weight: 700 !important;
+    color: #1E293B !important;
+    margin-bottom: 0.15rem !important;
+}
+.user-card .user-info-line {
+    font-size: 0.73rem !important;
+    color: #64748B !important;
+    margin-bottom: 0.18rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── BADGES ─────────────────────────────────────────── */
+.user-card .badge {
+    font-size: 0.67rem !important;
+    padding: 0.28em 0.7em !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+}
+
+/* ── PLATFORM CHIPS ─────────────────────────────────── */
+.platform-chips {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 0.55rem 0 0.25rem;
+}
+.platform-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 0.63rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+}
+.platform-chip:hover { opacity: 0.85; }
+.pc-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.pchip-device    { background:#DCFCE7; color:#15803D; }
+.pchip-device .pc-dot { background:#15803D; }
+.pchip-waba      { background:#DBEAFE; color:#1D4ED8; }
+.pchip-waba .pc-dot   { background:#1D4ED8; }
+.pchip-telegram  { background:#E0F2FE; color:#0369A1; }
+.pchip-telegram .pc-dot { background:#0369A1; }
+.pchip-instagram { background:#FCE7F3; color:#BE185D; }
+.pchip-instagram .pc-dot { background:#BE185D; }
+.pchip-messenger { background:#EDE9FE; color:#6D28D9; }
+.pchip-messenger .pc-dot { background:#6D28D9; }
+.pchip-livechat  { background:#FEF3C7; color:#92400E; }
+.pchip-livechat .pc-dot  { background:#92400E; }
+
+/* Divider inside card */
+.card-divider {
+    border: none;
+    border-top: 1px solid #F1F5F9;
+    margin: 0.6rem 0 0.4rem;
+}
+
+/* ── ACTION BUTTONS ─────────────────────────────────── */
+.user-card .btn-list { gap: 6px !important; }
+.user-card .btn-outline-primary {
+    border-color: #0066CC !important;
+    color: #0066CC !important;
+    border-radius: 10px !important;
+    font-size: 0.78rem !important;
+    padding: 0.32rem 0.85rem !important;
+    font-weight: 600 !important;
+    transition: all 0.15s !important;
+}
+.user-card .btn-outline-primary:hover {
+    background: linear-gradient(135deg,#0055CC,#0099FF) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 3px 10px rgba(0,102,204,0.3) !important;
+}
+.user-card .btn-outline-danger {
+    border-radius: 10px !important;
+    padding: 0.32rem 0.65rem !important;
+    font-size: 0.78rem !important;
+}
+
+/* ── PAGE HEADER CARD ───────────────────────────────── */
+.card.custom-card > .card-body.py-3 {
+    border-left: 4px solid #0066CC !important;
+    border-radius: 0 0 0 0 !important;
+}
+
+/* ── ADD BUTTON ─────────────────────────────────────── */
+.btn-primary {
+    background: linear-gradient(135deg,#0055CC,#0099FF) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em !important;
+    box-shadow: 0 4px 14px rgba(0,102,204,0.3) !important;
+    transition: transform 0.15s, box-shadow 0.15s !important;
+}
+.btn-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(0,102,204,0.4) !important;
+}
+
+/* ── SEARCH ─────────────────────────────────────────── */
+#searchUser {
+    border-radius: 10px !important;
+    border-color: #BFDBFE !important;
+    font-size: 0.85rem !important;
+}
+#searchUser:focus {
+    border-color: #0099FF !important;
+    box-shadow: 0 0 0 3px rgba(0,153,255,0.12) !important;
+}
+
+/* ── MODAL IMPROVEMENTS ─────────────────────────────── */
+#addUserModal .modal-header,
+#editUserModal .modal-header {
+    background: linear-gradient(135deg,#0055AA,#0099FF) !important;
+    color: #fff !important;
+    border-radius: 0 !important;
+    padding: 1rem 1.25rem !important;
+}
+#addUserModal .modal-header .modal-title,
+#editUserModal .modal-header .modal-title {
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+}
+#addUserModal .modal-content,
+#editUserModal .modal-content {
+    border: none !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18) !important;
+}
+#addUserModal .input-group-text,
+#editUserModal .input-group-text {
+    background: #EFF6FF !important;
+    border-color: #BFDBFE !important;
+    color: #0066CC !important;
+}
+#addUserModal .form-control:focus,
+#editUserModal .form-control:focus,
+#addUserModal .form-select:focus,
+#editUserModal .form-select:focus {
+    border-color: #0099FF !important;
+    box-shadow: 0 0 0 3px rgba(0,153,255,0.13) !important;
+}
+#addUserModal .modal-footer,
+#editUserModal .modal-footer {
+    background: #F8FAFC !important;
+    border-top: 1px solid #E2E8F0 !important;
+    padding: 0.75rem 1.25rem !important;
+}
+#addUserModal .btn-primary,
+#editUserModal .btn-primary {
+    background: linear-gradient(135deg,#0055CC,#0099FF) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    padding: 0.48rem 1.5rem !important;
+    box-shadow: 0 4px 12px rgba(0,102,204,0.3) !important;
+}
+
+/* Platform group title in modal */
+.platform-group-title {
+    font-size: 0.71rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748B;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ptitle-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+
+/* form-check styling in modal platforms */
+.modal .form-check-input:checked {
+    background-color: #0066CC !important;
+    border-color: #0066CC !important;
+}
+.modal .form-check-label {
+    font-size: 0.82rem !important;
+    color: #334155 !important;
+}
+
+/* Upload area in modal */
+#uploadArea, #editUploadArea {
+    border: 2px dashed #BAD4FD !important;
+    background: #F0F9FF !important;
+    transition: border-color 0.2s, background 0.2s !important;
+}
+#uploadArea:hover, #editUploadArea:hover {
+    border-color: #0099FF !important;
+    background: #E0F2FE !important;
+}

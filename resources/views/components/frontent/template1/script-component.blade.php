@@ -1,0 +1,9 @@
+<script src="{{asset('assets/frontend/template1/libs/jquery/dist/jquery.min.js')}}"></script>
+<script src="{{asset('assets/frontend/template1/libs/popper.js/dist/umd/popper.min.js')}}"></script>
+<script src="{{asset('assets/frontend/template1/libs/bootstrap/dist/js/bootstrap.min.js')}}"></script>
+<script src="{{asset('assets/frontend/template1/libs/headroom.js/dist/headroom.min.js')}}"></script>
+<script src="{{asset('assets/frontend/template1/libs/onscreen/dist/on-screen.umd.min.js')}}"></script>
+<script src="{{asset('assets/frontend/template1/libs/waypoints/lib/jquery.waypoints.min.js')}}"></script>
+<script src="{{asset('assets/frontend/template1/libs/jarallax/dist/jarallax.min.js')}}"></script>
+<script src="{{asset('assets/frontend/template1/libs/smooth-scroll/dist/smooth-scroll.polyfills.min.js')}}"></script>
+<script src="{{asset('assets/frontend/template1/js/front.js')}}"></script>

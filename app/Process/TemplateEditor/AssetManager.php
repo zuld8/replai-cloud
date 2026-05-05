@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Process\TemplateEditor;
+
+use App\Process\MasterData\UploadImageProcess;
+
+class AssetManager
+{
+    public array $assets = [];
+    public ?string $upload = null;
+    public ?string $uploadName = null;
+    public array $headers = [];
+    public int $autoAdd = 1;
+    public string $uploadText = 'Drop files here or click to upload';
+    public string $addBtnText = 'Add image';
+    public int $dropzone = 1;
+    public int $openAssetsOnDrop = 0;
+    public string $modalTitle = 'Upload Images';
+    public bool $showUrlInput = false;
+
+    function __construct(UploadImageProcess $uploadImageProcess, AssetEmailTemplateRepository $assetRepository)
+    {
+        $this->headers['X-CSRF-TOKEN'] = csrf_token();
+        $this->upload = $uploadImageProcess->getUploadUrlEmail();    
+        $this->uploadName = 'file';
+
+        $this->assets = $assetRepository->getAllMediaLinks();
+    }
+}

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwhatsmail_pro_version=self.webpackChunkwhatsmail_pro_version||[]).push([[459],{7459:(r,e,s)=>{s.r(e),s.d(e,{default:()=>t});var a=s(6934);const n={},t=(0,s(6262).A)(n,[["render",function(r,e){var s=(0,a.g2)("router-view");return(0,a.uX)(),(0,a.Wv)(s)}]])}}]);

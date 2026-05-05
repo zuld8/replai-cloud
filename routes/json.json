@@ -1,0 +1,624 @@
+{
+  "info": {
+    "name": "CRM Kanban API",
+    "description": "Complete API collection for CRM Kanban management system with pipelines, labels, and contact cards",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "7|TL7N1k8Di3CnoTLhMwmHJBEL3jzSD0VSwjcsmTOW81fc705c",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api-service/app/kanban",
+      "type": "string"
+    },
+    {
+      "key": "store_id",
+      "value": "1567374d-3e24-466c-9206-473357abcc0a",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Pipelines",
+      "item": [
+        {
+          "name": "Get All Pipelines",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pipelines",
+              "host": ["{{base_url}}"],
+              "path": ["pipelines"]
+            },
+            "description": "Retrieve all pipelines for the store"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Pipeline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sales Pipeline\",\n  \"color\": \"#3b82f6\",\n  \"template\": \"sales\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pipelines",
+              "host": ["{{base_url}}"],
+              "path": ["pipelines"]
+            },
+            "description": "Create new pipeline with optional template (default, sales, service, custom)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Pipeline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Sales Pipeline\",\n  \"color\": \"#10b981\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pipelines/:pipeline_id",
+              "host": ["{{base_url}}"],
+              "path": ["pipelines", ":pipeline_id"],
+              "variable": [
+                {
+                  "key": "pipeline_id",
+                  "value": "1",
+                  "description": "Pipeline ID"
+                }
+              ]
+            },
+            "description": "Update existing pipeline"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Pipeline",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pipelines/:pipeline_id",
+              "host": ["{{base_url}}"],
+              "path": ["pipelines", ":pipeline_id"],
+              "variable": [
+                {
+                  "key": "pipeline_id",
+                  "value": "1",
+                  "description": "Pipeline ID to delete"
+                }
+              ]
+            },
+            "description": "Delete pipeline (will also delete all associated labels)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Pipeline management endpoints"
+    },
+    {
+      "name": "Labels",
+      "item": [
+        {
+          "name": "Get All Labels",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/labels?pipeline_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["labels"],
+              "query": [
+                {
+                  "key": "pipeline_id",
+                  "value": "1",
+                  "description": "Filter by pipeline ID"
+                }
+              ]
+            },
+            "description": "Get all labels, optionally filtered by pipeline"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Label",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Follow Up\",\n  \"color\": \"#f59e0b\",\n  \"position\": 2,\n  \"pipeline_segment_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/labels",
+              "host": ["{{base_url}}"],
+              "path": ["labels"]
+            },
+            "description": "Create new label/stage in pipeline. Position will auto-shift other labels."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Label",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hot Lead\",\n  \"color\": \"#ef4444\",\n  \"position\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/labels/:label_id",
+              "host": ["{{base_url}}"],
+              "path": ["labels", ":label_id"],
+              "variable": [
+                {
+                  "key": "label_id",
+                  "value": "1",
+                  "description": "Label ID to update"
+                }
+              ]
+            },
+            "description": "Update label name, color, or position"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Label",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/labels/:label_id",
+              "host": ["{{base_url}}"],
+              "path": ["labels", ":label_id"],
+              "variable": [
+                {
+                  "key": "label_id",
+                  "value": "1",
+                  "description": "Label ID to delete"
+                }
+              ]
+            },
+            "description": "Delete label (only if no contacts are using it)"
+          },
+          "response": []
+        },
+        {
+          "name": "Reorder Labels",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"labels\": [\n    {\n      \"id\": 1,\n      \"position\": 1\n    },\n    {\n      \"id\": 2,\n      \"position\": 2\n    },\n    {\n      \"id\": 3,\n      \"position\": 3\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/labels/reorder",
+              "host": ["{{base_url}}"],
+              "path": ["labels", "reorder"]
+            },
+            "description": "Bulk reorder labels by providing array of label IDs with new positions"
+          },
+          "response": []
+        }
+      ],
+      "description": "Label/Stage management endpoints"
+    },
+    {
+      "name": "Contacts",
+      "item": [
+        {
+          "name": "Create Contact in Label",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"phone\": \"628123456789\",\n  \"email\": \"john@example.com\",\n  \"category_id\": 1,\n  \"label_id\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/stores/create-contact",
+              "host": ["{{base_url}}"],
+              "path": ["stores", "create-contact"]
+            },
+            "description": "Quick create contact directly in a specific label/stage"
+          },
+          "response": []
+        }
+      ],
+      "description": "Contact/Store management in Kanban"
+    },
+    {
+      "name": "Kanban Board",
+      "item": [
+        {
+          "name": "Get Kanban Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/data?pipeline_id=1&search=&category=&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["data"],
+              "query": [
+                {
+                  "key": "pipeline_id",
+                  "value": "1",
+                  "description": "Pipeline ID to load"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by name, email, or phone"
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "description": "Filter by category ID"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "description": "Number of contacts per label"
+                }
+              ]
+            },
+            "description": "Get complete kanban board data with all labels and contacts"
+          },
+          "response": []
+        },
+        {
+          "name": "Load More Stores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/load-more/:label_id?offset=20&per_page=20&search=&category=",
+              "host": ["{{base_url}}"],
+              "path": ["load-more", ":label_id"],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "20",
+                  "description": "Number of already loaded contacts"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "description": "Number of contacts to load"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search query"
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "description": "Category filter"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "label_id",
+                  "value": "1",
+                  "description": "Label ID to load more contacts from"
+                }
+              ]
+            },
+            "description": "Pagination - load more contacts for specific label"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Store Label (Drag & Drop)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"store_id\": \"abc-123\",\n  \"label_id\": 2,\n  \"position\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/update-label",
+              "host": ["{{base_url}}"],
+              "path": ["update-label"]
+            },
+            "description": "Move contact card to different label (drag & drop between columns). Set label_id to null for virtual column."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Position (Reorder in Column)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "storeid",
+                "value": "{{store_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stores\": [\n    {\n      \"id\": \"store-1\",\n      \"position\": 0\n    },\n    {\n      \"id\": \"store-2\",\n      \"position\": 1\n    },\n    {\n      \"id\": \"store-3\",\n      \"position\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/update-position",
+              "host": ["{{base_url}}"],
+              "path": ["update-position"]
+            },
+            "description": "Reorder contacts within same label (drag & drop within column)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Kanban board operations and drag & drop functionality"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}

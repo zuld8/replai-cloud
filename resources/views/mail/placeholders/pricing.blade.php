@@ -1,0 +1,1 @@
+<x-frontent.pricing-content-component></x-frontent.pricing-content-component>

@@ -1,0 +1,1 @@
+<x-frontent.script-component></x-frontent.script-component>

@@ -1,0 +1,469 @@
+<?php
+
+namespace App\Http\Controllers\Whatsapp\Waba;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\Waba\Broadcast\BroadcastDetailResource;
+use App\Models\Blash\BlashWhatsapp;
+use App\Models\MetaAccount; 
+use App\Observers\Blash\BlashDetailObserver;
+use App\Observers\Blash\BlashWhatsappObserver;
+use App\Observers\WhatsappOfficial\WhatsappBroadcastObserver;
+use App\Observers\WhatsappOfficial\WhatsappOfficialServiceObserver;
+use App\Observers\WhatsappOfficial\WhatsappTemplateServiceObserver;
+use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\DB;
+
+class WhatsappBroadcastController extends Controller
+{
+
+    protected $whatsappBroadcastOberver;
+    protected $whatsappTemplateObserver;
+    protected $whatsappServiceObserver;
+    protected $blastObserver;
+    protected $blastDetailObserver;
+
+    public function __construct(
+        WhatsappBroadcastObserver $whatsappBroadcastOberver,
+        WhatsappTemplateServiceObserver $whatsappTemplateObserver,
+        WhatsappOfficialServiceObserver $whatsappServiceObserver,
+        BlashWhatsappObserver $blastObserver,
+        BlashDetailObserver $blastDetailObserver
+    ) {
+        $this->whatsappBroadcastOberver     = $whatsappBroadcastOberver;
+        $this->whatsappTemplateObserver     = $whatsappTemplateObserver;
+        $this->whatsappServiceObserver      = $whatsappServiceObserver;
+        $this->blastObserver                = $blastObserver;
+        $this->blastDetailObserver          = $blastDetailObserver;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 1. Broadcast List
+    |--------------------------------------------------------------------------
+    */
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 0. Broadcast List - Server-Side DataTable
+    |--------------------------------------------------------------------------
+    */
+
+    public function listData(Request $request, MetaAccount $meta)
+    {
+        $businessId = $meta->business_id;
+
+        // ✅ Use cached stat columns — fast, accurate, no JOIN subquery needed
+        // stat_* columns updated by: MarkCompletedBroadcasts (every 5min) + broadcast:refresh-stats (every 30min)
+        $query = \DB::table('blash_whatsapps as bw')
+            ->leftJoin('categories as c',       'c.id', '=', 'bw.category_id')
+            ->leftJoin('message_templates as t', 't.id', '=', 'bw.template_id')
+            ->where('bw.business_id', $businessId)
+            ->where('bw.meta_account_id', $meta->id)
+            ->where('bw.use', 'whatsapp')
+            ->where('bw.waba', 'yes')
+            ->select([
+                'bw.id',
+                'bw.name',
+                'bw.schedule',
+                'bw.status',
+                'bw.created_at',
+                \DB::raw('COALESCE(c.name, "-") as category_name'),
+                \DB::raw('COALESCE(t.name, "-") as template_name'),
+                'bw.stat_total as total_recipients',
+                'bw.stat_sent as total_sent',
+                'bw.stat_delivered as total_delivered',
+                'bw.stat_delivery_failed as total_failed',
+                'bw.stat_read as total_queued',
+            ])
+            ->orderBy('bw.created_at', 'desc');
+
+        // Status filter using cached stat columns
+        if ($request->status_filter === 'done') {
+            $query->where('bw.stat_total', '>', 0);
+        } elseif ($request->status_filter === 'pending') {
+            $query->where('bw.stat_total', 0);
+        }
+
+        // Filter: current month
+        if ($request->month_filter) {
+            $query->whereMonth('bw.created_at', now()->month)
+                  ->whereYear('bw.created_at', now()->year);
+        }
+
+        return DataTables::of($query)
+            ->addColumn('title_col', function ($row) {
+                return '<div class="d-flex flex-column">
+                    <span class="fw-600 text-dark">' . e($row->name) . '</span>
+                    <small class="text-muted">' . \Carbon\Carbon::parse($row->created_at)->diffForHumans() . '</small>
+                </div>';
+            })
+            ->addColumn('schedule_col', function ($row) {
+                $dt = \Carbon\Carbon::parse($row->schedule);
+                $isPast = $dt->isPast();
+                return '<div class="d-flex flex-column">
+                    <span class="' . ($isPast ? 'text-muted' : 'text-primary fw-500') . '">'
+                    . $dt->format('d M Y') . '</span>
+                    <small class="text-secondary">' . $dt->format('H:i') . ' WIB</small>
+                </div>';
+            })
+            ->addColumn('status_col', function ($row) {
+                $status    = $row->status;
+                $total     = (int) $row->total_recipients;
+                $sent      = (int) $row->total_sent;
+                $delivered = (int) $row->total_delivered;
+                $read      = (int) $row->total_queued;  // stat_read mapped as total_queued
+                $failed    = (int) $row->total_failed;
+
+                // ── Menunggu: belum ada penerima ──────────────────────────────
+                if ($total === 0) {
+                    return '<span class="badge bg-secondary-transparent text-secondary rounded-pill px-3">
+                        <i class="bx bx-time me-1"></i>Menunggu
+                    </span>';
+                }
+
+                $pct          = round($sent / $total * 100);
+                // Delivery rate = (delivered + read) / total — sama dengan halaman detail
+                $deliveryRate = $total > 0 ? round(($delivered + $read) / $total * 100) : 0;
+                $sentFull     = number_format($sent);
+                $totalFull    = number_format($total);
+                $delivFull    = number_format($delivered + $read);
+                $failFull     = number_format($failed);
+                $subtext      = $sentFull . '/' . $totalFull . ' terkirim &middot; ' . $delivFull . ' delivered+dibaca &middot; ' . $failFull . ' gagal';
+
+                // ── Gagal total ────────────────────────────────────────────────
+                if ($status === 'failed') {
+                    return '<div class="d-flex flex-column gap-1">
+                        <span class="badge bg-danger-transparent text-danger rounded-pill px-3">
+                            <i class="bx bx-x-circle me-1"></i>Gagal
+                        </span>
+                        <small class="text-muted" style="font-size:0.7rem;">0/' . $totalFull . ' terkirim</small>
+                    </div>';
+                }
+
+                // ── Sedang proses ──────────────────────────────────────────────
+                if ($status === 'processing') {
+                    return '<div class="d-flex flex-column gap-1">
+                        <span class="badge bg-info-transparent text-info rounded-pill px-3">
+                            <i class="bx bx-loader-alt bx-spin me-1"></i>Proses ' . $pct . '%
+                        </span>
+                        <small class="text-muted" style="font-size:0.7rem;">' . $sentFull . '/' . $totalFull . ' terkirim</small>
+                    </div>';
+                }
+
+                // ── Selesai: warna berdasarkan delivery rate ───────────────────
+                // ≥80% → Hijau  |  60–79% → Biru  |  40–59% → Orange  |  <40% → Merah
+                if ($deliveryRate >= 80) {
+                    $badgeClass = 'bg-success-transparent text-success';
+                    $icon       = 'bx-check-double';
+                    $label      = 'Selesai Baik';
+                } elseif ($deliveryRate >= 60) {
+                    $badgeClass = 'bg-primary-transparent text-primary';
+                    $icon       = 'bx-check-circle';
+                    $label      = 'Selesai';
+                } elseif ($deliveryRate >= 40) {
+                    $badgeClass = 'bg-warning-transparent text-warning';
+                    $icon       = 'bx-check-circle';
+                    $label      = 'Parsial';
+                } else {
+                    $badgeClass = 'bg-danger-transparent text-danger';
+                    $icon       = 'bx-error-circle';
+                    $label      = 'Perlu Perhatian';
+                }
+
+                return '<div class="d-flex flex-column gap-1">
+                    <span class="badge ' . $badgeClass . ' rounded-pill px-3">
+                        <i class="bx ' . $icon . ' me-1"></i>' . $label . ' (' . $deliveryRate . '% delivery rate)
+                    </span>
+                    <small class="text-muted" style="font-size:0.7rem;">' . $subtext . '</small>
+                </div>';
+            })
+            ->addColumn('action_col', function ($row) use ($meta) {
+                $editUrl   = route('waba.broadcast.update', [$meta->id, $row->id]);
+                $detailUrl = route('waba.broadcast.detail', [$meta->id, $row->id]);
+                $deleteUrl = route('blash.delete', $row->id);
+                return '<div class="d-flex gap-1">
+                    <a href="' . $editUrl . '" class="btn btn-sm btn-outline-warning btn-icon" title="Edit">
+                        <i class="bx bx-pencil"></i>
+                    </a>
+                    <a href="' . $detailUrl . '" class="btn btn-sm btn-outline-info btn-icon" title="Detail">
+                        <i class="bx bx-detail"></i>
+                    </a>
+                    <a href="' . $deleteUrl . '" class="btn btn-sm btn-outline-danger btn-icon deletebutton" title="Hapus">
+                        <i class="bx bx-trash"></i>
+                    </a>
+                </div>';
+            })
+            ->rawColumns(['title_col', 'schedule_col', 'status_col', 'action_col'])
+            ->make(true);
+    }
+
+    public function index(Request $request, MetaAccount $meta)
+    {
+        $broadcast     = $this->whatsappBroadcastOberver->getData($request, $meta->id)->get();
+        return view('waba.broadcast.index', ['page'    => __('page.wa.page'), 'breadcumb' => true], compact('broadcast', 'meta'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. Create Broadcast
+    |--------------------------------------------------------------------------
+    */
+
+    public function create(MetaAccount $meta)
+    {
+        return view('waba.broadcast.create', ['page'   => __('page.wa.add'), 'breadcumb' => true], compact('meta'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. Create Data
+    |--------------------------------------------------------------------------
+    */
+
+    public function store(MetaAccount $meta, Request $request)
+    {
+        
+        $this->validate($request, [
+            'category'          => 'required',
+            'name'              => 'required',
+            'schedule'          => 'required',
+            'template'          => 'required',
+            'metadata'          => 'required',
+            'devices'           => 'required',
+            'whatsapp_sender'   => 'required|in:sequence,spin,random'
+        ]); 
+ 
+        try {
+
+            DB::beginTransaction();
+
+            $files  = '';
+            if ($request->has('files')) {
+                $files  = $this->uploadImage($request, 'files', 'template');
+            }
+
+            $this->whatsappBroadcastOberver->createData($request, $meta->id, $files);
+
+            DB::commit();
+
+            return response()->json([
+                'status'    => true,
+                'message'   =>  __('general.success_add_data')
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'    => false,
+                'line'      => $e->getLine(),
+                'message'   => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. Update Page
+    |--------------------------------------------------------------------------
+    */
+
+    public function update(MetaAccount $meta, BlashWhatsapp $blash)
+    {
+        return view('waba.broadcast.update', ['page' => __('page.wa.update'), 'breadcumb' => true], compact('meta', 'blash'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Edit Data
+    |--------------------------------------------------------------------------
+    */
+
+    public function edit(MetaAccount $meta, BlashWhatsapp $blash, Request $request)
+    {
+        $this->validate($request, [
+            'category'          => 'required',
+            'name'              => 'required',
+            'schedule'          => 'required',
+            'template'          => 'required',
+            'metadata'          => 'required',
+            'devices'           => 'required',
+            'whatsapp_sender'   => 'required|in:sequence,spin,random'
+        ]);
+
+
+        try {
+
+            DB::beginTransaction();
+
+            $files  = '';
+            if ($request->has('files')) {
+                $files  = $this->uploadImage($request, 'files', 'template');
+            }
+
+            $this->whatsappBroadcastOberver->updateData($request, $blash, $files);
+
+            DB::commit();
+
+            return response()->json([
+                'status'    => true,
+                'message'   =>  __('general.success_update')
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'    => false,
+                'line'      => $e->getLine(),
+                'message'   => $e->getMessage()
+            ], 422);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 6. Detail Page
+    |--------------------------------------------------------------------------
+    */
+
+    public function details(MetaAccount $meta, BlashWhatsapp $blash)
+    {
+        return response()->json([
+            'status'    => true,
+            'detail'    => BroadcastDetailResource::make($blash)
+        ], 200);
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 7. Details List
+    |--------------------------------------------------------------------------
+    */
+
+    public function detail(Request $request, MetaAccount $meta, BlashWhatsapp $blash)
+    {
+        return view('waba.broadcast.detail', ['page'  => __('page.wa.detail'), 'breadcumb' => true], compact('blash', 'meta'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 8. Detail DataTable (AJAX) - WABA Broadcast
+    |--------------------------------------------------------------------------
+    */
+
+    public function detailData(Request $request, MetaAccount $meta, BlashWhatsapp $blash)
+    {
+        // Aggregate stats with delivery tracking
+        $statsRaw = \DB::table('blash_details')
+            ->where('blash_whatsapp_id', $blash->id)
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN sending_status='yes' THEN 1 ELSE 0 END) as sent,
+                SUM(CASE WHEN sending_status='no'  THEN 1 ELSE 0 END) as failed,
+                SUM(CASE WHEN delivery_status='delivered' THEN 1 ELSE 0 END) as delivered,
+                SUM(CASE WHEN delivery_status='read' THEN 1 ELSE 0 END) as `read`,
+                SUM(CASE WHEN delivery_status='failed' THEN 1 ELSE 0 END) as delivery_failed
+            ")
+            ->first();
+
+        $total  = (int) ($statsRaw->total  ?? 0);
+        $sent   = (int) ($statsRaw->sent   ?? 0);
+        $failed = (int) ($statsRaw->failed ?? 0);
+        $delivered = (int) ($statsRaw->delivered ?? 0);
+        $read   = (int) ($statsRaw->read ?? 0);
+        $deliveryFailed = (int) ($statsRaw->delivery_failed ?? 0);
+        $rate   = $total > 0 ? round($sent / $total * 100, 1) : 0;
+
+        // Build base query
+        $query = \DB::table('blash_details as bd')
+            ->leftJoin('stores as s', 's.id', '=', 'bd.store_id')
+            ->where('bd.blash_whatsapp_id', $blash->id)
+            ->select([
+                'bd.id',
+                \DB::raw('COALESCE(s.name, "-") as store_name'),
+                'bd.phone',
+                'bd.sending_status',
+                'bd.delivery_status',
+                'bd.delivery_error',
+                'bd.reports',
+                'bd.sending',
+                'bd.created_at',
+            ]);
+
+        // Status filter
+        if ($request->status_filter === 'yes') {
+            $query->where('bd.sending_status', 'yes');
+        } elseif ($request->status_filter === 'no') {
+            $query->where('bd.sending_status', 'no');
+        }
+
+        return DataTables::of($query)
+            ->addColumn('store', fn($row) => $row->store_name ?? '-')
+            ->addColumn('phone', fn($row) => $row->phone ?? '-')
+            ->addColumn('sending_status_col', function ($row) {
+                $ds = $row->delivery_status ?? ($row->sending_status === 'yes' ? 'sent' : 'failed');
+                return match($ds) {
+                    'delivered' => '<span class="badge bg-success-transparent text-success px-3 py-1 rounded-pill">'
+                        . '<i class="bx bx-check-double me-1"></i>Delivered</span>',
+                    'read' => '<span class="badge bg-info-transparent text-info px-3 py-1 rounded-pill">'
+                        . '<i class="bx bx-show me-1"></i>Dibaca</span>',
+                    'sent' => '<span class="badge bg-warning-transparent text-warning px-3 py-1 rounded-pill">'
+                        . '<i class="bx bx-check me-1"></i>Terkirim</span>',
+                    'queued' => '<span class="badge bg-secondary-transparent text-secondary px-3 py-1 rounded-pill">'
+                        . '<i class="bx bx-time me-1"></i>Antrian</span>',
+                    'failed' => '<span class="badge bg-danger-transparent text-danger px-3 py-1 rounded-pill">'
+                        . '<i class="bx bx-x-circle me-1"></i>Gagal</span>',
+                    default => '<span class="badge bg-secondary-transparent text-secondary px-3 py-1 rounded-pill">'
+                        . '<i class="bx bx-question-mark me-1"></i>' . e($ds) . '</span>',
+                };
+            })
+            ->addColumn('log', function ($row) {
+                $error = $row->delivery_error ?? $row->reports ?? null;
+                if (!$error) {
+                    if ($row->delivery_status === 'delivered') {
+                        return '<span class="text-success"><i class="bx bx-check-double me-1"></i>Sampai ke HP</span>';
+                    } elseif ($row->delivery_status === 'read') {
+                        return '<span class="text-info"><i class="bx bx-show me-1"></i>Pesan dibaca</span>';
+                    }
+                    return '<span class="text-muted">-</span>';
+                }
+
+                $r = @json_decode($error, true);
+                if (is_array($r)) {
+                    $code = $r['code'] ?? '';
+                    $title = $r['title'] ?? $r['message'] ?? $error;
+                    
+                    $explanations = [
+                        131049 => ['Spam Filter', 'Meta memblokir pesan untuk menjaga ekosistem WhatsApp tetap sehat'],
+                        131026 => ['Undeliverable', 'Nomor tidak aktif atau tidak terdaftar WhatsApp'],
+                        131047 => ['Rate Limit', 'Terlalu banyak pesan dikirim, coba lagi nanti'],
+                        131051 => ['Unsupported Type', 'Tipe pesan tidak didukung oleh penerima'],
+                        131053 => ['Media Error', 'Gagal mengirim media, file terlalu besar atau format salah'],
+                        130472 => ['Template Paused', 'Template di-pause oleh Meta karena kualitas rendah'],
+                        132000 => ['Template Error', 'Template tidak ditemukan atau parameter tidak sesuai'],
+                        131042 => ['Business Policy', 'Pesan melanggar kebijakan bisnis WhatsApp'],
+                        368 => ['Temporarily Blocked', 'Akun sementara diblokir karena melanggar kebijakan'],
+                    ];
+                    
+                    if (isset($explanations[$code])) {
+                        $lbl = $explanations[$code][0];
+                        $desc = $explanations[$code][1];
+                        return "<div style=\"max-width:280px\"><span class=\"badge bg-danger-transparent text-danger mb-1\">{$lbl} ({$code})</span><br><small class=\"text-muted\">{$desc}</small></div>";
+                    }
+                    
+                    $safeTitle = e(substr($title, 0, 120));
+                    return "<div style=\"max-width:280px\">" . ($code ? "<span class=\"badge bg-warning-transparent text-warning mb-1\">Error {$code}</span><br>" : "") . "<small class=\"text-muted\">{$safeTitle}</small></div>";
+                }
+                
+                $safeError = e(substr($error, 0, 120));
+                return "<small class=\"text-danger\">{$safeError}</small>";
+            })
+            ->addColumn('date', function ($row) {
+                $ts = $row->sending ?? $row->created_at;
+                return $ts ? \Carbon\Carbon::parse($ts)->format('d M Y H:i') : '-';
+            })
+            ->rawColumns(['sending_status_col', 'log'])
+            ->with(compact('total', 'sent', 'failed', 'delivered', 'read', 'deliveryFailed', 'rate'))
+            ->make(true);
+    }
+}

@@ -1,0 +1,7 @@
+1. Catatan migrasi new version  17 november
+- migrasi semuda data history chat ke store_id, 
+
+UPDATE history_chats hc
+INNER JOIN stores s ON s.history_chat_id = hc.id
+SET hc.store_id = s.id
+WHERE hc.store_id IS NULL;

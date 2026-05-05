@@ -1,0 +1,27 @@
+import { Router } from "express";
+import { body, query } from "express-validator";
+import requestValidator from "../middlewares/requestValidator.js";
+import sessionValidator from "../middlewares/sessionValidator.js";
+import * as controller from "../controllers/sessionsController.js";
+
+const router = Router();
+
+router.get("/find/:id", sessionValidator, controller.find);
+router.get('/get-contacts/:id', query('id').notEmpty(),requestValidator, sessionValidator, controller.getContacts)
+router.get("/server-status", controller.find);
+
+router.get("/status/:id", sessionValidator, controller.status);
+
+router.post(
+    "/add",
+    body("id").notEmpty(),
+    body("notification").notEmpty(),
+    body('history').notEmpty(),
+    body("isLegacy").notEmpty(),
+    requestValidator,
+    controller.add
+);
+
+router.delete("/delete/:id", sessionValidator, controller.del);
+
+export default router;

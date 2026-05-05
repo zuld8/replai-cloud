@@ -1,0 +1,477 @@
+/* ========================================
+   Period Info
+   ======================================== */
+
+.period-info {
+    background: #000;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    box-shadow: var(--shadow);
+}
+
+/* ========================================
+   Summary Cards (Stats)
+   ======================================== */
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--dark-color);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.stat-detail {
+    font-size: 13px;
+    color: #666;
+}
+
+/* ========================================
+   Charts Section
+   ======================================== */
+
+.charts-section {
+    margin-bottom: 24px;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    height: 100%;
+}
+
+.chart-header {
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dark-color);
+}
+
+.chart-body {
+    position: relative;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-legend {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.legend-label {
+    color: #666;
+}
+
+/* ========================================
+   Performance Table
+   ======================================== */
+
+.performance-table {
+    margin: 0;
+    width: 100%;
+}
+
+.performance-table thead {
+    background: #f8f9fa;
+}
+
+.performance-table thead th {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #666;
+    padding: 16px;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.performance-table thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.performance-table thead th.sortable:hover {
+    background: #e9ecef;
+    color: var(--primary-color);
+}
+
+.performance-table thead th.sortable i {
+    opacity: 0.3;
+    margin-left: 4px;
+    transition: opacity 0.2s ease;
+}
+
+.performance-table thead th.sortable:hover i {
+    opacity: 0.7;
+}
+
+.performance-table tbody td {
+    padding: 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.performance-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.performance-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Agent Info in Table */
+.agent-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.agent-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e0e0e0;
+}
+
+.agent-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.agent-name {
+    font-weight: 600;
+    color: var(--dark-color);
+    font-size: 14px;
+}
+
+.agent-email {
+    font-size: 12px;
+    color: #999;
+}
+
+/* Metrics in Table */
+.metric-value {
+    font-weight: 600;
+    color: var(--dark-color);
+    font-size: 14px;
+}
+
+.metric-badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.engagement-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.engagement-progress {
+    width: 60px;
+    height: 4px;
+    border-radius: 2px;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.action-buttons .btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+/* ========================================
+   Empty State
+   ======================================== */
+
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.empty-text {
+    color: #999;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+@media (max-width: 1200px) {
+    .stat-value {
+        font-size: 28px;
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 992px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .stat-card {
+        margin-bottom: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .conversation-rate-container {
+        padding: 16px;
+    }
+
+    .page-header {
+        padding: 24px;
+    }
+
+    .page-title {
+        font-size: 24px;
+    }
+
+    .filters-card {
+        padding: 16px;
+    }
+
+    .search-box input {
+        min-width: 200px;
+    }
+
+    .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .table-actions {
+        width: 100%;
+    }
+
+    .search-box input {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .stat-icon {
+        margin: 0 auto;
+    }
+
+    .performance-table {
+        font-size: 12px;
+    }
+
+    .agent-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .agent-name {
+        font-size: 13px;
+    }
+
+    .agent-email {
+        font-size: 11px;
+    }
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+
+@media print {
+    .page-header,
+    .filters-card,
+    .header-right,
+    .action-buttons,
+    .search-box {
+        display: none !important;
+    }
+
+    .conversation-rate-container {
+        padding: 0;
+    }
+
+    .stat-card,
+    .chart-card,
+    .table-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+    }
+
+    .performance-table {
+        font-size: 10px;
+    }
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-card,
+.chart-card,
+.table-card {
+    animation: fadeIn 0.5s ease;
+}
+
+.stat-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+.stat-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.stat-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+.stat-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.agent-detail-header { 
+    padding: 32px;
+    margin-bottom: 24px; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.agent-profile {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.agent-profile-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e0e0e0;
+}
+
+.agent-profile-name {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    color: #333;
+}
+
+.agent-profile-email {
+    color: #666;
+    margin: 4px 0;
+}
+
+.agent-header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.year-selector select {
+    min-width: 120px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}

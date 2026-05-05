@@ -1,0 +1,1175 @@
+@extends('layouts.app')
+
+@section('content')
+
+<style>
+/* ============================================
+   DASHBOARD ENHANCEMENT - CSS Only
+   Zero Lag, No New Libraries
+   ============================================ */
+.dashboard-enhanced .card {
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    overflow: hidden;
+    background: #fff;
+}
+.dashboard-enhanced a .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+/* Greeting */
+.dash-greeting {
+    background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 60%, #38BDF8 100%);
+    border-radius: 16px;
+    padding: 1.4rem 2rem;
+    margin-bottom: 1.25rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+.dash-greeting::after {
+    content: '';
+    position: absolute;
+    right: -20px; top: -20px;
+    width: 120px; height: 120px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+}
+.dash-greeting::before {
+    content: '';
+    position: absolute;
+    right: 60px; bottom: -30px;
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+}
+.dash-greeting h4 { font-weight: 700; font-size: 1.2rem; margin-bottom: 0.2rem; }
+.dash-greeting p  { opacity: 0.88; font-size: 0.85rem; margin-bottom: 0; }
+
+/* Top 4 cards */
+.dash-top-card { text-decoration: none !important; }
+.dash-top-card .card { border-radius: 16px; min-height: 130px; }
+.dash-top-card .card-body { padding: 1.2rem 1rem; }
+.dash-top-card img { width: 48px !important; height: 48px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12)); }
+.dash-top-card h3 { font-size: 1.6rem; font-weight: 700; color: #1a1a2e; margin-top: 4px; }
+.dash-top-card h6 { font-size: 0.76rem; font-weight: 500; color: #6b7280; }
+.dash-top-card:nth-child(1) .card { border-top: 3px solid #25D366; }
+.dash-top-card:nth-child(2) .card { border-top: 3px solid #128C7E; }
+.dash-top-card:nth-child(3) .card { border-top: 3px solid #3B82F6; }
+.dash-top-card:nth-child(4) .card { border-top: 3px solid #F59E0B; }
+
+/* Date filter buttons */
+.date-filter-btn { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; font-weight: 500; transition: all 0.15s; }
+.date-filter-btn:hover { background: #e2e8f0; color: #334155; }
+.date-filter-btn.active { background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%); color: #fff; border-color: transparent; }
+
+/* Chart cards */
+.dash-chart-card .card { border-radius: 14px; }
+.dash-chart-card .card-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 1.25rem;
+    border-radius: 14px 14px 0 0;
+}
+.dash-chart-card .card-title { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
+.dash-chart-card .card-subtitle { font-size: 0.76rem; color: #94a3b8; }
+
+/* Label card */
+.dash-label-card .card { border-radius: 14px; min-height: 300px; }
+.dash-label-card .card-header { background: linear-gradient(135deg,#f0fdf4,#ecfdf5); border-bottom: 1px solid #d1fae5; border-radius: 14px 14px 0 0; }
+.dash-label-card .card-title { font-weight: 700; color: #0C4A6E; font-size: 0.92rem; }
+
+/* Log card */
+.dash-log-item { transition: background 0.15s; border-radius: 8px; padding: 0.6rem 0.75rem; margin-bottom: 4px; }
+.dash-log-item:hover { background: #f8fafc; }
+
+@media (max-width: 768px) {
+    .dash-greeting { padding: 1rem 1.25rem; }
+    .dash-greeting h4 { font-size: 1rem; }
+    .dash-top-card img { width: 38px !important; height: 38px; }
+    .dash-top-card h3 { font-size: 1.25rem; }
+}
+
+.chart-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; 
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: 12px 12px 0 0;
+}
+.chart-selector {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 10px;
+    background: #fff; border: 1px solid #e2e8f0;
+    font-size: 0.82rem; font-weight: 600; color: #1e293b;
+    cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    padding-right: 30px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.chart-selector:hover { border-color: #38BDF8; }
+.chart-selector:focus { outline: none; border-color: #38BDF8; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+.date-filter-btn {
+    background: #fff; color: #64748b; border: 1px solid #e2e8f0;
+    font-weight: 600; font-size: 0.72rem;
+    padding: 5px 16px; border-radius: 20px;
+    cursor: pointer; transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.date-filter-btn:hover { background: #F0F9FF; color: #0284C7; border-color: #BAE6FD; }
+.date-filter-btn.active {
+    background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 2px 6px rgba(14,165,233,0.3);
+}
+.chart-body { padding: 16px 12px 8px; min-height: 260px; }
+.chart-card-wrap {
+    background: #fff; border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+    border: 1px solid #f1f5f9; overflow: hidden;
+}
+.card:has(#chartViewSelector) { border-radius: 14px; border: 1px solid #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04); overflow: hidden; }
+.card:has(#chartViewSelector) > .card-header { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 12px 20px; }
+.card:has(#chartViewSelector) > .card-body { padding: 16px 12px 8px; }
+
+
+/* Dashboard Polish */
+.dashboard-enhanced .card {
+    border-radius: 14px !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02) !important;
+    transition: box-shadow 0.2s ease !important;
+    overflow: hidden;
+}
+.dashboard-enhanced .card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04) !important;
+}
+.dash-greeting {
+    border-radius: 14px !important;
+    padding: 1.25rem 1.5rem !important;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.2) !important;
+    border: none !important;
+}
+.dash-greeting h4 {
+    font-weight: 800 !important;
+    font-size: 1.15rem !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.dash-greeting p {
+    font-size: 0.82rem !important;
+    opacity: 0.9 !important;
+}
+.dash-top-card .card {
+    border-radius: 14px !important;
+    transition: all 0.2s ease !important;
+    border: 1px solid #E2E8F0 !important;
+}
+.dash-top-card .card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08) !important;
+}
+.dash-top-card h3 {
+    font-weight: 800 !important;
+    font-size: 1.35rem !important;
+    color: #1E293B !important;
+}
+.dash-top-card small {
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: #64748B !important;
+}
+.dash-label-card .card {
+    border-radius: 14px !important;
+    overflow: hidden;
+}
+.dash-label-card .card-header {
+    background: linear-gradient(135deg, #F8FAFC, #F1F5F9) !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    padding: 14px 20px !important;
+}
+.dash-log-item {
+    border-radius: 10px !important;
+    padding: 0.7rem 0.85rem !important;
+    border: 1px solid transparent !important;
+    transition: all 0.15s ease !important;
+}
+.dash-log-item:hover {
+    background: #F0F9FF !important;
+    border-color: #BAE6FD !important;
+}
+.dash-chart-card .card-title {
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    color: #1E293B !important;
+}
+
+</style>
+
+<div class="dashboard-enhanced">
+
+{{-- Greeting --}}
+<div class="dash-greeting">
+    <h4>👋 Halo, {{ auth()->user()->name ?? 'User' }}!</h4>
+    <p>Ringkasan aktivitas bisnis {{ config('app.name') }} bulan ini.</p>
+</div>
+
+{{-- Row 1: Label chart + Top 4 stats --}}
+<div class="row">
+    <div class="col-lg-7 col-sm-12">
+        <div class="dash-label-card">
+            <div class="card custom-card">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <select id="chartViewSelector" class="chart-selector" class="form-select form-select-sm" style="width:auto;font-size:0.85rem;font-weight:700;border:2px solid #3B82F6;color:#1D4ED8;border-radius:10px;padding:6px 32px 6px 12px;background-color:#EFF6FF;cursor:pointer;">
+                            <option value="label" selected>📊 Messages By Label</option>
+                            <option value="pesan-masuk">📥 Pesan Masuk</option>
+                            <option value="broadcast">📤 Broadcast</option>
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center gap-1" id="dateFilterGroup" style="display:none;">
+                            <button class="date-filter-btn active" data-days="7" onclick="window._chartFilter(7)" style="font-size:0.72rem;border-radius:20px;padding:4px 14px;cursor:pointer;">7 Hari</button>
+                            <button class="date-filter-btn" data-days="30" onclick="window._chartFilter(30)" style="font-size:0.72rem;border-radius:20px;padding:4px 14px;cursor:pointer;">30 Hari</button>
+                            <button class="date-filter-btn" data-days="90" onclick="window._chartFilter(90)" style="font-size:0.72rem;border-radius:20px;padding:4px 14px;cursor:pointer;">90 Hari</button>
+                    </div>
+                </div>
+                <div class="card-body" style="min-height:280px;">
+                    <div id="labelLeads"></div>
+                    <div id="pesanMasukChart" style="display:none;"></div>
+                    <div id="broadcastSummaryChart" style="display:none;"></div>
+                    <div id="chartLoading" style="display:none;text-align:center;padding:4rem 0;">
+                        <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                        <p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Memuat data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5 col-sm-12">
+        <div class="row g-2">
+            <a href="{{route('device')}}" class="col-4 dash-top-card text-decoration-none">
+                <div class="card text-center mb-0 dash-platform-card">
+                    <div class="card-body py-3 px-2">
+                        <div class="dash-platform-icon" style="background:linear-gradient(135deg,#25D366,#128C7E);">
+                            <i class="bx bxl-whatsapp" style="font-size:22px;color:#fff;"></i>
+                        </div>
+                        <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">WA Personal</h6>
+                        @if(($summary['unofficial'] ?? 0) > 0)
+                            <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['unofficial'])}}</h3>
+                        @else
+                            <span class="dash-connect-btn">Connect →</span>
+                        @endif
+                    </div>
+                </div>
+            </a>
+            <a href="{{route('waba')}}" class="col-4 dash-top-card text-decoration-none">
+                <div class="card text-center mb-0 dash-platform-card">
+                    <div class="card-body py-3 px-2">
+                        <div class="dash-platform-icon" style="background:linear-gradient(135deg,#075E54,#128C7E);">
+                            <i class="bx bxl-whatsapp" style="font-size:22px;color:#fff;"></i>
+                        </div>
+                        <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">WABA</h6>
+                        @if(($summary['official'] ?? 0) > 0)
+                            <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['official'])}}</h3>
+                        @else
+                            <span class="dash-connect-btn">Connect →</span>
+                        @endif
+                    </div>
+                </div>
+            </a>
+            <a href="{{route('telegrams')}}" class="col-4 dash-top-card text-decoration-none">
+                <div class="card text-center mb-0 dash-platform-card">
+                    <div class="card-body py-3 px-2">
+                        <div class="dash-platform-icon" style="background:linear-gradient(135deg,#0088CC,#229ED9);">
+                            <i class="bx bxl-telegram" style="font-size:22px;color:#fff;"></i>
+                        </div>
+                        <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">Telegram</h6>
+                        @if(($summary['telegram'] ?? 0) > 0)
+                            <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['telegram'])}}</h3>
+                        @else
+                            <span class="dash-connect-btn">Connect →</span>
+                        @endif
+                    </div>
+                </div>
+            </a>
+            <a href="{{route('messenger')}}" class="col-4 dash-top-card text-decoration-none">
+                <div class="card text-center mb-0 dash-platform-card">
+                    <div class="card-body py-3 px-2">
+                        <div class="dash-platform-icon" style="background:linear-gradient(135deg,#0084FF,#00C6FF);">
+                            <i class="bx bxl-messenger" style="font-size:22px;color:#fff;"></i>
+                        </div>
+                        <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">Messenger</h6>
+                        @if(($summary['messenger'] ?? 0) > 0)
+                            <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['messenger'])}}</h3>
+                        @else
+                            <span class="dash-connect-btn">Connect →</span>
+                        @endif
+                    </div>
+                </div>
+            </a>
+            <a href="{{route('instagram')}}" class="col-4 dash-top-card text-decoration-none">
+                <div class="card text-center mb-0 dash-platform-card">
+                    <div class="card-body py-3 px-2">
+                        <div class="dash-platform-icon" style="background:linear-gradient(135deg,#E4405F,#C13584,#833AB4);">
+                            <i class="bx bxl-instagram" style="font-size:22px;color:#fff;"></i>
+                        </div>
+                        <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">Instagram</h6>
+                        @if(($summary['instagram'] ?? 0) > 0)
+                            <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['instagram'])}}</h3>
+                        @else
+                            <span class="dash-connect-btn">Connect →</span>
+                        @endif
+                    </div>
+                </div>
+            </a>
+            <a href="{{route('livechats')}}" class="col-4 dash-top-card text-decoration-none">
+                <div class="card text-center mb-0 dash-platform-card">
+                    <div class="card-body py-3 px-2">
+                        <div class="dash-platform-icon" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">
+                            <i class="bx bx-chat" style="font-size:22px;color:#fff;"></i>
+                        </div>
+                        <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">Live Chat</h6>
+                        @if(($summary['livechats'] ?? 0) > 0)
+                            <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['livechats'])}}</h3>
+                        @else
+                            <span class="dash-connect-btn">Connect →</span>
+                        @endif
+                    </div>
+                </div>
+            </a>
+        </div>
+    
+    
+    <!-- Stat Mini Cards -->
+    <div class="row g-2 mt-2">
+        <div class="col-4"><div class="card mb-0" style="border-radius:10px;border:1px dashed #CBD5E1;background:linear-gradient(135deg,#F8FAFC,#F1F5F9);box-shadow:none;"><div class="card-body py-2 px-2 text-center"><small class="text-muted" style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">CONTACT / LEADS</small><h5 class="mb-0 mt-1" style="font-weight:800;font-size:1.1rem;color:#1e293b;">{{number_format($summary['stores'])}}</h5></div></div></div>
+        <div class="col-4"><div class="card mb-0" style="border-radius:10px;border:1px dashed #CBD5E1;background:linear-gradient(135deg,#F8FAFC,#F1F5F9);box-shadow:none;"><div class="card-body py-2 px-2 text-center"><small class="text-muted" style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">CATEGORY</small><h5 class="mb-0 mt-1" style="font-weight:800;font-size:1.1rem;color:#1e293b;">{{number_format($summary['categories'])}}</h5></div></div></div>
+        <div class="col-4">
+            <a href="{{route('finetunnel')}}" class="text-decoration-none">
+                <div class="card mb-0" style="border-radius:10px;border:1px dashed #CBD5E1;background:linear-gradient(135deg,#F8FAFC,#F1F5F9);box-shadow:none;transition:all 0.2s ease;">
+                    <div class="card-body py-2 px-2 text-center">
+                        <small class="text-muted" style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">AI AGENTS</small>
+                        @if(($summary['finetunnels'] ?? 0) > 0)
+                            <h5 class="mb-0 mt-1" style="font-weight:800;font-size:1.1rem;color:#1e293b;">{{number_format($summary['finetunnels'])}}</h5>
+                        @else
+                            <div class="mt-1">
+                                <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;font-weight:700;color:#F59E0B;background:#FFFBEB;border:1px dashed #FCD34D;border-radius:20px;padding:3px 10px;">
+                                    <i class="bx bx-plus" style="font-size:0.85rem;"></i> Buat
+                                </span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+</div>  <!-- end row (chart + platform) -->
+    
+{{-- Row 4.5: Broadcast Status Hybrid --}}
+<div class="row mb-3">
+    <div class="col-lg-6 col-sm-12 mb-3 mb-lg-0">
+        <div class="card custom-card" style="border-radius:14px;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.06);height:100%;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border-bottom:1px solid #BFDBFE;border-radius:14px 14px 0 0;padding:1rem 1.25rem;">
+                <div>
+                    <h6 class="mb-0 fw-700" style="color:#0C4A6E;font-size:0.92rem;">💬 5 Pesan Baru di CRM</h6>
+                    <small style="font-size:0.72rem;color:#60A5FA;">Pesan masuk terbaru yang perlu ditangani</small>
+                </div>
+                <a href="{{ route('crm') }}" class="btn btn-sm btn-outline-light rounded-pill px-3" style="font-size:0.75rem;">Buka CRM →</a>
+            </div>
+            <div class="card-body p-0" style="max-height:340px;overflow-y:auto;">
+                @forelse($crmMessages['newest'] ?? [] as $msg)
+                <a href="{{ url('app/crm/chat/' . $msg['id']) }}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;cursor:pointer;color:inherit;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <div class="flex-shrink-0" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0369A1,#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.75rem;">
+                        {{ strtoupper(substr($msg['name'] ?? '?', 0, 2)) }}
+                    </div>
+                    <div class="flex-1" style="min-width:0;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold text-truncate" style="font-size:0.82rem;color:#1e293b;max-width:160px;">{{ $msg['name'] ?? '-' }}</span>
+                            <div class="d-flex align-items-center gap-1">
+                                @if($msg['unread'] > 0)
+                                <span style="background:#0EA5E9;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;font-weight:700;">{{ $msg['unread'] }}</span>
+                                @endif
+                                <small class="text-muted" style="font-size:0.68rem;">{{ $msg['last_message_at'] ? \Carbon\Carbon::parse($msg['last_message_at'])->diffForHumans() : '-' }}</small>
+                            </div>
+                        </div>
+                        <p class="mb-0 text-truncate" style="font-size:0.75rem;color:#6b7280;">
+                            @if($msg['last_message_type'] === 'image') 📷 Foto
+                            @elseif($msg['last_message_type'] === 'video') 🎥 Video
+                            @elseif($msg['last_message_type'] === 'document') 📄 Dokumen
+                            @elseif($msg['last_message_type'] === 'audio') 🎵 Audio
+                            @else {{ Str::limit($msg['last_message'] ?? '-', 50) }}
+                            @endif
+                        </p>
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            @if($msg['from'] === 'waba')
+                            <span style="font-size:0.6rem;background:#F0F9FF;color:#0EA5E9;padding:1px 5px;border-radius:4px;font-weight:600;">WABA</span>
+                            @elseif($msg['from'] === 'whatsapp')
+                            <span style="font-size:0.6rem;background:#F0FDF4;color:#16A34A;padding:1px 5px;border-radius:4px;font-weight:600;">WA</span>
+                            @else
+                            <span style="font-size:0.6rem;background:#F1F5F9;color:#64748B;padding:1px 5px;border-radius:4px;font-weight:600;">{{ strtoupper($msg['from'] ?? '-') }}</span>
+                            @endif
+                            <span style="font-size:0.65rem;color:#9ca3af;">{{ $msg['phone'] ?? '' }}</span>
+                        </div>
+                    </div>
+                </a>
+                @empty
+                <div class="text-center py-4">
+                    <i class="bx bx-chat" style="font-size:2rem;color:#d1d5db;"></i>
+                    <p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Tidak ada pesan baru</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 col-sm-12">
+        <div class="card custom-card" style="border-radius:14px;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.06);height:100%;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border-bottom:1px solid #FED7AA;border-radius:14px 14px 0 0;padding:1rem 1.25rem;">
+                <div>
+                    <h6 class="mb-0 fw-700" style="color:#1e293b;font-size:0.92rem;">⏳ Pesan Belum Dibalas</h6>
+                    <div class="d-flex align-items-center gap-1 mt-1">
+                        <button class="unreplied-filter active" data-days="7"   onclick="filterUnreplied(7,this)"  style="font-size:0.65rem;padding:2px 8px;border-radius:20px;border:1px solid #F97316;background:#F97316;color:#fff;cursor:pointer;font-weight:600;">7 Hari</button>
+                        <button class="unreplied-filter"        data-days="30"  onclick="filterUnreplied(30,this)" style="font-size:0.65rem;padding:2px 8px;border-radius:20px;border:1px solid #FED7AA;background:transparent;color:#9A3412;cursor:pointer;font-weight:600;">30 Hari</button>
+                        <button class="unreplied-filter"        data-days="0"   onclick="filterUnreplied(0,this)"  style="font-size:0.65rem;padding:2px 8px;border-radius:20px;border:1px solid #FED7AA;background:transparent;color:#9A3412;cursor:pointer;font-weight:600;">Semua</button>
+                    </div>
+                </div>
+                <a href="{{ route('crm') }}" class="btn btn-sm btn-outline-light rounded-pill px-3" style="font-size:0.75rem;">Buka CRM →</a>
+            </div>
+            <div class="card-body p-0" id="unrepliedBody" style="max-height:340px;overflow-y:auto;">
+                @forelse($crmMessages['oldest'] ?? [] as $msg)
+                <a href="{{ url('app/crm/chat/' . $msg['id']) }}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;cursor:pointer;color:inherit;" onmouseover="this.style.background='#FFFBEB'" onmouseout="this.style.background='transparent'">
+                    <div class="flex-shrink-0" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.75rem;">
+                        {{ strtoupper(substr($msg['name'] ?? '?', 0, 2)) }}
+                    </div>
+                    <div class="flex-1" style="min-width:0;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold text-truncate" style="font-size:0.82rem;color:#1e293b;max-width:160px;">{{ $msg['name'] ?? '-' }}</span>
+                            <span style="font-size:0.68rem;color:#DC2626;font-weight:600;">
+                                🕐 {{ $msg['wait_time'] ?? '-' }}
+                            </span>
+                        </div>
+                        <p class="mb-0 text-truncate" style="font-size:0.75rem;color:#6b7280;">
+                            @if($msg['last_message_type'] === 'image') 📷 Foto
+                            @elseif($msg['last_message_type'] === 'video') 🎥 Video
+                            @elseif($msg['last_message_type'] === 'document') 📄 Dokumen
+                            @elseif($msg['last_message_type'] === 'audio') 🎵 Audio
+                            @else {{ Str::limit($msg['last_message'] ?? '-', 50) }}
+                            @endif
+                        </p>
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            @if($msg['from'] === 'waba')
+                            <span style="font-size:0.6rem;background:#F0F9FF;color:#0EA5E9;padding:1px 5px;border-radius:4px;font-weight:600;">WABA</span>
+                            @elseif($msg['from'] === 'whatsapp')
+                            <span style="font-size:0.6rem;background:#F0FDF4;color:#16A34A;padding:1px 5px;border-radius:4px;font-weight:600;">WA</span>
+                            @else
+                            <span style="font-size:0.6rem;background:#F1F5F9;color:#64748B;padding:1px 5px;border-radius:4px;font-weight:600;">{{ strtoupper($msg['from'] ?? '-') }}</span>
+                            @endif
+                            <span style="font-size:0.65rem;color:#9ca3af;">{{ $msg['phone'] ?? '' }}</span>
+                        </div>
+                    </div>
+                </a>
+                @empty
+                <div class="text-center py-4">
+                    <i class="bx bx-check-circle" style="font-size:2rem;color:#34D399;"></i>
+                    <p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Semua pesan sudah dibalas 🎉</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row mb-3" id="broadcastStatusSection">
+    <div class="col-12">
+        <div class="card custom-card" style="border-radius:14px;border:none;box-shadow:0 4px 20px rgba(14,165,233,0.15),0 1px 4px rgba(0,0,0,0.06);overflow:hidden;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#0369a1 0%,#0284C7 50%,#0EA5E9 100%);border-bottom:none;border-radius:14px 14px 0 0;padding:0.85rem 1.5rem;position:relative;overflow:hidden;">
+                <!-- subtle wave/glow top right -->
+                <div style="position:absolute;top:-50%;right:-5%;width:220px;height:220px;background:radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 60%);border-radius:50%;pointer-events:none;"></div>
+                <div style="position:relative;z-index:1;display:flex;align-items:center;gap:0.625rem;">
+                    <span style="font-size:1.1rem;">🚀</span>
+                    <div>
+                        <h6 class="mb-0 fw-700" style="color:#fff;font-size:0.9rem;">Status Broadcast Terakhir</h6>
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            <span style="width:5px;height:5px;border-radius:50%;background:#86efac;display:inline-block;animation:pulse-dot 2s infinite;"></span>
+                            <small style="font-size:0.68rem;color:rgba(255,255,255,0.75);">Diperbarui setiap 5 menit</small>
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ route('broadcast') }}" class="btn btn-sm rounded-pill px-3" style="font-size:0.72rem;background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.3);position:relative;z-index:1;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">Lihat Semua →</a>
+            </div>
+            <div class="card-body p-0">
+                <!-- Skeleton loader -->
+                <div id="broadcastSkeleton" style="padding:1.25rem;">
+                    <div style="height:60px;background:linear-gradient(90deg,#f1f5f9 25%,#e5e7eb 50%,#f1f5f9 75%);background-size:200% 100%;border-radius:8px;animation:shimmer 1.5s infinite;"></div>
+                    <div style="height:60px;background:linear-gradient(90deg,#f1f5f9 25%,#e5e7eb 50%,#f1f5f9 75%);background-size:200% 100%;border-radius:8px;margin-top:8px;animation:shimmer 1.5s infinite;"></div>
+                </div>
+                <!-- Real content -->
+                <div id="broadcastStatusList" style="display:none;"></div>
+                <!-- Empty state -->
+                <div id="broadcastEmpty" style="display:none;text-align:center;padding:2rem;">
+                    <i class="bx bx-broadcast" style="font-size:2.5rem;color:#d1d5db;"></i>
+                    <p class="text-muted mt-2 mb-0" style="font-size:0.85rem;">Belum ada data broadcast</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(52,211,153,0.8); }
+    50% { opacity: 0.6; box-shadow: 0 0 12px rgba(52,211,153,0.5); }
+}
+/* ── Compact single-row blast items ─────────────────────────────── */
+.blast-item {
+    padding: 0.6rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.12s ease;
+}
+.blast-item:last-child { border-bottom: none; }
+.blast-item:hover { background: #f8fbff; }
+
+.blast-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 36px;
+}
+.blast-icon  { font-size: 0.9rem; flex-shrink: 0; }
+.blast-name  {
+    font-weight: 600;
+    font-size: 0.84rem;
+    color: #1e293b;
+    min-width: 120px;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.blast-time  {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.blast-total {
+    font-size: 0.72rem;
+    color: #64748b;
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 2px 7px;
+    background: #f1f5f9;
+    border-radius: 20px;
+    font-weight: 500;
+}
+.blast-progress {
+    flex: 1;
+    min-width: 60px;
+    height: 6px;
+    border-radius: 10px;
+    background: #e9eef4;
+    overflow: hidden;
+}
+.blast-progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.7s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.blast-pct {
+    font-size: 0.82rem;
+    font-weight: 700;
+    min-width: 38px;
+    text-align: right;
+    flex-shrink: 0;
+}
+.blast-sent {
+    font-size: 0.75rem;
+    color: #0EA5E9;
+    font-weight: 600;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.blast-fail {
+    font-size: 0.75rem;
+    color: #EF4444;
+    font-weight: 600;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+</style>
+
+
+<style>
+/* Chart card design */
+.date-filter-btn {
+    background: #fff;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+    font-size: 0.72rem;
+    padding: 5px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.date-filter-btn:hover {
+    background: #F0F9FF;
+    color: #0284C7;
+    border-color: #BAE6FD;
+}
+.date-filter-btn.active {
+    background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 2px 6px rgba(14,165,233,0.3);
+}
+#chartViewSelector {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 32px 6px 14px;
+    border-radius: 10px;
+    background: #EFF6FF;
+    border: 2px solid #3B82F6;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1D4ED8;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.15);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+#chartViewSelector:hover { border-color: #2563EB; background: #DBEAFE; box-shadow: 0 2px 12px rgba(59,130,246,0.3); }
+#chartViewSelector:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+</style>
+
+<script>
+(function() {
+    function getStatusColor(rate) {
+        if (rate >= 90) return '#0EA5E9'; // green
+        if (rate >= 60) return '#F59E0B'; // yellow
+        return '#EF4444'; // red
+    }
+    function getStatusIcon(rate) {
+        if (rate >= 90) return '🟢';
+        if (rate >= 60) return '🟡';
+        return '🔴';
+    }
+    function timeAgo(dateStr) {
+        const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+        if (diff < 60) return diff + ' detik lalu';
+        if (diff < 3600) return Math.floor(diff/60) + ' menit lalu';
+        if (diff < 86400) return Math.floor(diff/3600) + ' jam lalu';
+        return Math.floor(diff/86400) + ' hari lalu';
+    }
+
+    function renderBroadcasts(data) {
+        if (!data || data.length === 0) {
+            document.getElementById('broadcastSkeleton').style.display = 'none';
+            document.getElementById('broadcastEmpty').style.display = 'block';
+            return;
+        }
+
+        let html = '';
+        data.forEach((b) => {
+            const color = getStatusColor(b.rate);
+            const icon  = getStatusIcon(b.rate);
+            const name  = b.name.length > 28 ? b.name.slice(0, 26) + '…' : b.name;
+            const total = (b.total||0).toLocaleString();
+            const sent  = (b.sent||0).toLocaleString();
+            const fail  = (b.failed||0).toLocaleString();
+
+            html += `<div class="blast-item">
+                <div class="blast-row">
+                    <span class="blast-icon">${icon}</span>
+                    <span class="blast-name" title="${b.name}">${name}</span>
+                    <span class="blast-time">${timeAgo(b.created_at)}</span>
+                    <span class="blast-total">${total} penerima</span>
+                    <div class="blast-progress">
+                        <div class="blast-progress-bar" style="width:${b.rate}%;background:${color};"></div>
+                    </div>
+                    <span class="blast-pct" style="color:${color};">${b.rate}%</span>
+                    <span class="blast-sent">✅ ${sent}</span>
+                    <span class="blast-fail">✗ ${fail}</span>
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('broadcastSkeleton').style.display = 'none';
+        document.getElementById('broadcastStatusList').innerHTML = html;
+        document.getElementById('broadcastStatusList').style.display = 'block';
+    }
+
+    // Fetch after 600ms to not block initial render
+    setTimeout(function() {
+        fetch('/app/dashboard/broadcast-status')
+            .then(r => r.json())
+            .then(data => renderBroadcasts(data))
+            .catch(function(e) {
+                console.error('Broadcast status error:', e);
+                document.getElementById('broadcastSkeleton').style.display = 'none';
+                document.getElementById('broadcastEmpty').style.display = 'block';
+            });
+    }, 600);
+})();
+</script>
+
+</div>{{-- end .dashboard-enhanced --}}
+
+<script src="{{ cache_asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
+<script>
+    var mycolor = getComputedStyle(document.documentElement).getPropertyValue('--primary-rgb').trim() || '16,185,129';
+    let chart1;
+    const interactionChartEl = document.querySelector("#interactionChart");
+
+    function fetchInteraction() {
+        fetch('/app/dashboard/interaction')
+            .then(r => r.json())
+            .then(data => {
+                const { dates, totals } = data;
+                const options = {
+                    series: [{ name: "{{ __('dashboard.conversation') }}", data: totals }],
+                    chart: { type: "area", height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+                    colors: ["rgba(" + mycolor + ", 0.85)"],
+                    fill: { type: "gradient", gradient: { shadeIntensity:1, opacityFrom:0.4, opacityTo:0.02, stops:[0,90,100] } },
+                    dataLabels: { enabled: false },
+                    stroke: { curve: "smooth", width: 2.5 },
+                    grid: { show: true, borderColor: 'rgba(0,0,0,0.05)', strokeDashArray: 4, padding: { left:10, right:10 } },
+                    xaxis: {
+                        type: "category", categories: dates,
+                        axisBorder: { show:false }, axisTicks: { show:false },
+                        labels: { style: { fontSize:"11px", colors:"#9ca3af", fontWeight:500 } },
+                    },
+                    yaxis: { labels: { formatter: v => v.toLocaleString(), style: { fontSize:"12px", colors:"#9ca3af" } } },
+                    tooltip: { theme: 'light', style: { fontSize:'12px' } }
+                };
+                if (chart1) { chart1.updateOptions(options); }
+                else { chart1 = new ApexCharts(interactionChartEl, options); chart1.render(); }
+            })
+            .catch(e => console.error("Interaction chart error:", e));
+    }
+
+    fetchInteraction();
+
+
+
+</script>
+
+<script>
+// Dashboard Chart View Switcher v6
+(function() {
+    'use strict';
+    var selector = document.getElementById('chartViewSelector');
+    var dateGroup = document.getElementById('dateFilterGroup');
+    var labelEl = document.getElementById('labelLeads');
+    var pesanEl = document.getElementById('pesanMasukChart');
+    var bcEl = document.getElementById('broadcastSummaryChart');
+    var loadingEl = document.getElementById('chartLoading');
+    var _view = 'label';
+    var _rid = 0;
+    var _charts = { label: null, pesan: null, bc: null };
+    var _dataCache = {}; // Client-side cache for chart data
+    var _xhr = null; // Single XHR - cancel previous
+
+    // Hide date filter on load
+    if (dateGroup) dateGroup.style.display = 'none';
+
+    function _destroy(key) {
+        if (_charts[key]) { try { _charts[key].destroy(); } catch(e) {} _charts[key] = null; }
+    }
+    function _destroyAll() { _destroy('label'); _destroy('pesan'); _destroy('bc'); }
+    function _abortXhr() { if (_xhr) { try { _xhr.abort(); } catch(e) {} _xhr = null; } }
+
+    function _hideAll() {
+        if (labelEl) { labelEl.style.display = 'none'; labelEl.innerHTML = ''; }
+        if (pesanEl) { pesanEl.style.display = 'none'; pesanEl.innerHTML = ''; }
+        if (bcEl) { bcEl.style.display = 'none'; bcEl.innerHTML = ''; }
+        if (loadingEl) loadingEl.style.display = 'none';
+    }
+
+    // Inline onclick calls this
+    window._chartFilter = function(days) {
+        console.log('[v6] filter days=' + days + ' view=' + _view);
+        // Update buttons
+        if (dateGroup) {
+            var b = dateGroup.querySelectorAll('.date-filter-btn');
+            for (var i = 0; i < b.length; i++) {
+                b[i].classList.remove('active');
+                if (parseInt(b[i].getAttribute('data-days')) === days) b[i].classList.add('active');
+            }
+        }
+        if (_view === 'pesan-masuk') _fetchPesan(days);
+        else if (_view === 'broadcast') _fetchBC(days);
+    };
+
+    // Dropdown
+    if (selector) {
+        selector.onchange = function() {
+            _abortXhr();
+            _destroyAll();
+            _hideAll();
+            _view = this.value;
+            console.log('[v6] view=' + _view);
+
+            if (_view === 'label') {
+                if (dateGroup) dateGroup.style.display = 'none';
+                _loadLabel();
+            } else {
+                if (dateGroup) dateGroup.style.display = 'flex';
+                // Set 7 hari active and fetch
+                window._chartFilter(7);
+            }
+        };
+    }
+
+
+    // === CACHED DATA RENDERERS ===
+    function _renderLabel(resp) {
+        _destroy('label');
+        var labels = [], series = [], colors = [];
+        var labelData = resp.labels;
+        if (labelData && !Array.isArray(labelData)) labelData = Object.values(labelData);
+        if (labelData && labelData.length) {
+            for (var i = 0; i < labelData.length; i++) {
+                labels.push(labelData[i].label);
+                series.push(labelData[i].data);
+                colors.push(labelData[i].color);
+            }
+        }
+        if (series.length === 0) {
+            labelEl.innerHTML = '<div style="text-align:center;padding:3rem;color:#9ca3af">Tidak ada data label</div>';
+            return;
+        }
+        labelEl.innerHTML = '';
+        _charts.label = new ApexCharts(labelEl, {
+            series: series,
+            chart: { height: 280, type: 'donut', fontFamily: 'inherit', dropShadow: { enabled: true, top: 2, left: 0, blur: 6, color: 'rgba(0,0,0,0.08)', opacity: 0.15 } },
+            colors: colors.length ? colors : ['#0EA5E9','#0EA5E9','#F59E0B','#EF4444','#0369A1','#38BDF8','#14B8A6','#F97316'],
+            labels: labels,
+            legend: { position: 'bottom', fontSize: '12px', fontWeight: 600, labels: { colors: '#475569' }, markers: { width: 10, height: 10, radius: 3 }, itemMargin: { horizontal: 8, vertical: 4 } },
+            dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }, dropShadow: { enabled: false } },
+            plotOptions: { pie: { donut: { size: '60%', labels: { show: true, name: { fontSize: '13px', fontWeight: 600, color: '#64748b' }, value: { fontSize: '24px', fontWeight: 800, color: '#1e293b', offsetY: 4 }, total: { show: true, label: 'Total', fontSize: '13px', fontWeight: 600, color: '#94a3b8', formatter: function(w) { return w.globals.spikeFilter ? 0 : w.globals.spikeFilter || w.globals.series.reduce(function(a,b){return a+b},0); } } } } } },
+            stroke: { width: 3, colors: ['#fff'] },
+            tooltip: { style: { fontSize: '12px' }, y: { formatter: function(v) { return v + ' chat'; } } }
+        });
+        _charts.label.render();
+    }
+
+    function _renderPesanChart(data) {
+        _destroy('pesan');
+        if (pesanEl) { pesanEl.innerHTML = ''; pesanEl.style.display = 'block'; }
+        _charts.pesan = new ApexCharts(pesanEl, {
+            series: [{ name: 'Pesan Masuk', data: data.totals || [] }],
+            chart: { type: 'area', height: 270, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false } },
+            colors: ['#0EA5E9'],
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.0, stops: [0, 80, 100] } },
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 3, lineCap: 'round' },
+            grid: { show: true, borderColor: '#f1f5f9', padding: { left: 8, right: 8 } },
+            xaxis: { categories: data.dates || [], axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { fontSize: '10px', colors: '#94a3b8', fontWeight: 500 }, rotate: -45 } },
+            yaxis: { labels: { style: { fontSize: '11px', colors: '#94a3b8', fontWeight: 500 }, formatter: function(v) { return v >= 1000 ? (v/1000).toFixed(1) + 'k' : Math.round(v); } } },
+            tooltip: { theme: 'light', style: { fontSize: '12px' }, y: { formatter: function(v) { return v.toLocaleString() + ' pesan'; } } },
+            subtitle: { text: 'Total: ' + (data.grand_total || 0).toLocaleString() + ' pesan', align: 'right', offsetY: 6, style: { fontSize: '14px', fontWeight: 800, color: '#0EA5E9' } }
+        });
+        _charts.pesan.render();
+    }
+
+    function _renderBCChart(data) {
+        _destroy('bc');
+        if (bcEl) { bcEl.innerHTML = ''; bcEl.style.display = 'block'; }
+        _charts.bc = new ApexCharts(bcEl, {
+            series: [{ name: 'Terkirim', data: data.sent || [] }, { name: 'Gagal', data: data.failed || [] }],
+            chart: { type: 'bar', height: 270, toolbar: { show: false }, fontFamily: 'inherit', stacked: true },
+            colors: ['#0EA5E9', '#F43F5E'],
+            dataLabels: { enabled: false },
+            grid: { show: true, borderColor: '#f1f5f9', padding: { left: 8, right: 8 } },
+            xaxis: { categories: data.dates || [], axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { fontSize: '10px', colors: '#94a3b8', fontWeight: 500 }, rotate: -45 } },
+            yaxis: { labels: { style: { fontSize: '11px', colors: '#94a3b8', fontWeight: 500 }, formatter: function(v) { return v >= 1000 ? (v/1000).toFixed(1) + 'k' : Math.round(v); } } },
+            plotOptions: { bar: { borderRadius: 6, columnWidth: '55%' } },
+            legend: { position: 'top', fontSize: '12px', fontWeight: 600, labels: { colors: '#475569' } },
+            tooltip: { theme: 'light', style: { fontSize: '12px' }, y: { formatter: function(v) { return v.toLocaleString(); } } },
+            subtitle: { text: (data.grand_sent||0).toLocaleString() + ' terkirim · ' + (data.grand_failed||0).toLocaleString() + ' gagal', align: 'right', offsetY: 6, style: { fontSize: '13px', fontWeight: 700, color: '#374151' } }
+        });
+        _charts.bc.render();
+    }
+    // === END CACHED RENDERERS ===
+
+
+    
+    function _loadLabel() {
+        if (!labelEl) return;
+        if (dateGroup) dateGroup.style.display = 'none';
+        _abortXhr();
+        _destroy('label');
+
+        // Check cache first
+        if (_dataCache['label']) {
+            labelEl.style.display = 'block';
+            _renderLabel(_dataCache['label']);
+            return;
+        }
+
+        labelEl.innerHTML = '<div style="text-align:center;padding:3rem"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
+        labelEl.style.display = 'block';
+
+        var x = new XMLHttpRequest();
+        _xhr = x;
+        x.open('GET', '/app/dashboard/label-leads');
+        x.timeout = 15000;
+        x.onload = function() {
+            _xhr = null;
+            try {
+                var resp = JSON.parse(x.responseText);
+                _dataCache['label'] = resp; // Cache it
+                var resp = JSON.parse(x.responseText);
+                var labels = [], series = [], colors = [];
+                var labelData = resp.labels;
+                if (labelData && !Array.isArray(labelData)) labelData = Object.values(labelData);
+                if (labelData && labelData.length) {
+                    for (var i = 0; i < labelData.length; i++) {
+                        labels.push(labelData[i].label);
+                        series.push(labelData[i].data);
+                        colors.push(labelData[i].color);
+                    }
+                }
+                if (series.length === 0) {
+                    labelEl.innerHTML = '<div style="text-align:center;padding:3rem;color:#9ca3af">Tidak ada data label</div>';
+                    return;
+                }
+                labelEl.innerHTML = '';
+                _charts.label = new ApexCharts(labelEl, {
+                    series: series,
+                    chart: { height: 280, type: 'donut', fontFamily: 'inherit', dropShadow: { enabled: true, top: 2, left: 0, blur: 6, color: 'rgba(0,0,0,0.08)', opacity: 0.15 } },
+                    colors: colors.length ? colors : ['#0EA5E9','#0EA5E9','#F59E0B','#EF4444','#0369A1','#38BDF8','#14B8A6','#F97316'],
+                    labels: labels,
+                    legend: { position: 'bottom', fontSize: '12px', fontWeight: 600, labels: { colors: '#475569' }, markers: { width: 10, height: 10, radius: 3 }, itemMargin: { horizontal: 8, vertical: 4 } },
+                    dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }, dropShadow: { enabled: false } },
+                    plotOptions: { pie: { donut: { size: '60%', labels: { show: true, name: { fontSize: '13px', fontWeight: 600, color: '#64748b' }, value: { fontSize: '24px', fontWeight: 800, color: '#1e293b', offsetY: 4 }, total: { show: true, label: 'Total', fontSize: '13px', fontWeight: 600, color: '#94a3b8', formatter: function(w) { return w.globals.spikeFilter ? 0 : w.globals.spikeFilter || w.globals.series.reduce(function(a,b){return a+b},0); } } } } } },
+                    stroke: { width: 3, colors: ['#fff'] },
+                    tooltip: { style: { fontSize: '12px' }, y: { formatter: function(v) { return v + ' chat'; } } }
+                });
+                _charts.label.render();
+            } catch(e) { labelEl.innerHTML = '<div style="text-align:center;padding:3rem;color:#ef4444">Error</div>'; }
+        };
+        x.onerror = x.ontimeout = function() { _xhr = null; labelEl.innerHTML = '<div style="text-align:center;padding:3rem;color:#ef4444">Gagal memuat</div>'; };
+        x.send();
+    }
+
+    function _fetchPesan(days) {
+        // Check cache first
+        var cKey = 'pesan_' + days;
+        if (_dataCache[cKey]) {
+            _destroy('pesan');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (pesanEl) { pesanEl.innerHTML = ''; pesanEl.style.display = 'block'; }
+            _renderPesanChart(_dataCache[cKey]);
+            return;
+        }
+        _abortXhr();         // Cancel any in-flight request
+        _destroy('pesan');   // Destroy existing chart
+        if (pesanEl) pesanEl.innerHTML = '';
+        if (pesanEl) pesanEl.style.display = 'none';
+        if (loadingEl) loadingEl.style.display = 'block';
+
+        console.log('[v6] fetch pesan days=' + days);
+        var myId = ++_rid;
+        var x = new XMLHttpRequest();
+        _xhr = x;
+        x.open('GET', '/app/dashboard/pesan-masuk?days=' + days);
+        x.timeout = 15000;
+        x.onload = function() {
+            _xhr = null;
+            if (myId !== _rid) { console.log('[v6] STALE pesan'); return; }
+            if (loadingEl) loadingEl.style.display = 'none';
+            try {
+                var data = JSON.parse(x.responseText);
+                _dataCache['pesan_' + days] = data;
+                console.log('[v6] pesan ok: total=' + data.grand_total);
+                _destroy('pesan'); // Double-destroy in case
+                if (pesanEl) { pesanEl.innerHTML = ''; pesanEl.style.display = 'block'; }
+                if (!data.totals || data.totals.length === 0) {
+                    if (pesanEl) {
+                        pesanEl.innerHTML = '<div style="text-align:center;padding:3rem;color:#9ca3af"><i style="font-size:2.5rem;">📭</i><p style="margin-top:8px;font-size:0.85rem;">Belum ada pesan masuk dalam periode ini</p></div>';
+                        pesanEl.style.display = 'block';
+                    }
+                    return;
+                }
+                _charts.pesan = new ApexCharts(pesanEl, {
+                    series: [{ name: 'Pesan Masuk', data: data.totals || [] }],
+                    chart: { type: 'area', height: 270, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, sparkline: { enabled: false } },
+                    colors: ['#0EA5E9'],
+                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.0, stops: [0, 80, 100], colorStops: [{ offset: 0, color: '#38BDF8', opacity: 0.4 }, { offset: 100, color: '#0EA5E9', opacity: 0 }] } },
+                    dataLabels: { enabled: false },
+                    stroke: { curve: 'smooth', width: 3, lineCap: 'round' },
+                    grid: { show: true, borderColor: '#f1f5f9', strokeDashArray: 0, padding: { left: 8, right: 8 }, xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
+                    markers: { size: 0, hover: { size: 6, sizeOffset: 3 }, strokeWidth: 2, strokeColors: '#fff', colors: ['#0EA5E9'] },
+                    xaxis: { categories: data.dates || [], axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { fontSize: '10px', colors: '#94a3b8', fontWeight: 500 }, rotate: -45 }, crosshairs: { show: true, stroke: { color: '#e2e8f0', width: 1, dashArray: 3 } } },
+                    yaxis: { labels: { style: { fontSize: '11px', colors: '#94a3b8', fontWeight: 500 }, formatter: function(v) { return v >= 1000 ? (v/1000).toFixed(1) + 'k' : Math.round(v); } } },
+                    tooltip: { theme: 'light', style: { fontSize: '12px' }, marker: { show: true }, x: { show: true }, y: { formatter: function(v) { return v.toLocaleString() + ' pesan'; } } },
+                    subtitle: { text: 'Total: ' + (data.grand_total || 0).toLocaleString() + ' pesan', align: 'right', offsetY: 6, style: { fontSize: '14px', fontWeight: 800, color: '#0EA5E9' } }
+                });
+                _charts.pesan.render();
+            } catch(e) { console.error('[v6] pesan err:', e); }
+        };
+        x.onerror = x.ontimeout = x.onabort = function() {
+            _xhr = null;
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (pesanEl) {
+                pesanEl.innerHTML = '<div style="text-align:center;padding:3rem;color:#9ca3af"><i style="font-size:2rem;">📭</i><p style="margin-top:8px;font-size:0.85rem;">Belum ada data pesan masuk</p></div>';
+                pesanEl.style.display = 'block';
+            }
+        };
+        x.send();
+    }
+
+    function _fetchBC(days) {
+        // Check cache first
+        var cKey = 'bc_' + days;
+        if (_dataCache[cKey]) {
+            _destroy('bc');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (bcEl) { bcEl.innerHTML = ''; bcEl.style.display = 'block'; }
+            _renderBCChart(_dataCache[cKey], days);
+            return;
+        }
+        _abortXhr();
+        _destroy('bc');
+        if (bcEl) bcEl.innerHTML = '';
+        if (bcEl) bcEl.style.display = 'none';
+        if (loadingEl) loadingEl.style.display = 'block';
+
+        console.log('[v6] fetch bc days=' + days);
+        var myId = ++_rid;
+        var x = new XMLHttpRequest();
+        _xhr = x;
+        x.open('GET', '/app/dashboard/broadcast-summary?days=' + days);
+        x.timeout = 15000;
+        x.onload = function() {
+            _xhr = null;
+            if (myId !== _rid) { console.log('[v6] STALE bc'); return; }
+            if (loadingEl) loadingEl.style.display = 'none';
+            try {
+                var data = JSON.parse(x.responseText);
+                _dataCache['bc_' + days] = data;
+                console.log('[v6] bc ok: sent=' + data.grand_sent);
+                _destroy('bc');
+                if (bcEl) { bcEl.innerHTML = ''; bcEl.style.display = 'block'; }
+                _charts.bc = new ApexCharts(bcEl, {
+                    series: [
+                        { name: 'Terkirim', data: data.sent || [] },
+                        { name: 'Gagal', data: data.failed || [] }
+                    ],
+                    chart: { type: 'bar', height: 270, toolbar: { show: false }, fontFamily: 'inherit', stacked: true },
+                    colors: ['#0EA5E9', '#F43F5E'],
+                    dataLabels: { enabled: false },
+                    grid: { show: true, borderColor: '#f1f5f9', strokeDashArray: 0, padding: { left: 8, right: 8 }, xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
+                    xaxis: { categories: data.dates || [], axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { fontSize: '10px', colors: '#94a3b8', fontWeight: 500 }, rotate: -45 }, crosshairs: { show: false } },
+                    yaxis: { labels: { style: { fontSize: '11px', colors: '#94a3b8', fontWeight: 500 }, formatter: function(v) { return v >= 1000 ? (v/1000).toFixed(1) + 'k' : Math.round(v); } } },
+                    plotOptions: { bar: { borderRadius: 6, columnWidth: '55%', colors: { backgroundBarColors: ['#f8fafc'], backgroundBarOpacity: 0.5, backgroundBarRadius: 6 } } },
+                    legend: { position: 'top', fontSize: '12px', fontWeight: 600, labels: { colors: '#475569' }, markers: { width: 10, height: 10, radius: 3 }, itemMargin: { horizontal: 12 } },
+                    tooltip: { theme: 'light', style: { fontSize: '12px' }, y: { formatter: function(v) { return v.toLocaleString(); } } },
+                    subtitle: { text: '📤 ' + (data.grand_sent || 0).toLocaleString() + ' terkirim  ·  ❌ ' + (data.grand_failed || 0).toLocaleString() + ' gagal', align: 'right', offsetY: 6, style: { fontSize: '13px', fontWeight: 700, color: '#374151' } }
+                });
+                _charts.bc.render();
+            } catch(e) { console.error('[v6] bc err:', e); }
+        };
+        x.onerror = x.ontimeout = x.onabort = function() {
+            _xhr = null;
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (bcEl) {
+                bcEl.innerHTML = '<div style="text-align:center;padding:3rem;color:#9ca3af"><i style="font-size:2rem;">📭</i><p style="margin-top:8px;font-size:0.85rem;">Belum ada data broadcast</p></div>';
+                bcEl.style.display = 'block';
+            }
+        };
+        x.send();
+    }
+
+    _loadLabel();
+})();
+</script>
+
+
+<script>
+// ── Pesan Belum Dibalas — filter by days ──────────────────────
+function filterUnreplied(days, btn) {
+    // Update active button styles
+    document.querySelectorAll('.unreplied-filter').forEach(function(b) {
+        b.style.background    = 'transparent';
+        b.style.color         = '#9A3412';
+        b.style.borderColor   = '#FED7AA';
+        b.classList.remove('active');
+    });
+    btn.style.background  = '#F97316';
+    btn.style.color       = '#fff';
+    btn.style.borderColor = '#F97316';
+    btn.classList.add('active');
+
+    var body = document.getElementById('unrepliedBody');
+    if (!body) return;
+    body.innerHTML = '<div class="text-center py-4"><small class="text-muted" style="font-size:0.78rem;">⏳ Memuat...</small></div>';
+
+    fetch('/app/dashboard/unreplied?days=' + days)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data || !data.length) {
+                body.innerHTML = '<div class="text-center py-4"><i class="bx bx-check-circle" style="font-size:2rem;color:#34D399;"></i><p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Semua pesan sudah dibalas 🎉</p></div>';
+                return;
+            }
+            var html = data.map(function(msg) {
+                var badge = '';
+                if (msg.from === 'waba')       badge = '<span style="font-size:0.6rem;background:#F0F9FF;color:#0EA5E9;padding:1px 5px;border-radius:4px;font-weight:600;">WABA</span>';
+                else if (msg.from === 'whatsapp') badge = '<span style="font-size:0.6rem;background:#F0FDF4;color:#16A34A;padding:1px 5px;border-radius:4px;font-weight:600;">WA</span>';
+                else badge = '<span style="font-size:0.6rem;background:#F1F5F9;color:#64748B;padding:1px 5px;border-radius:4px;font-weight:600;">' + ((msg.from || '-').toUpperCase()) + '</span>';
+
+                var txt = msg.last_message || '-';
+                if      (msg.last_message_type === 'image')    txt = '📷 Foto';
+                else if (msg.last_message_type === 'video')    txt = '🎥 Video';
+                else if (msg.last_message_type === 'document') txt = '📄 Dokumen';
+                else if (msg.last_message_type === 'audio')    txt = '🎵 Audio';
+                else txt = txt.substring(0, 50);
+
+                var initials = ((msg.name || '?').substring(0, 2)).toUpperCase();
+                return '<a href="/app/crm/chat/' + msg.id + '" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none"'
+                    + ' style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;cursor:pointer;color:inherit;"'
+                    + ' onmouseover="this.style.background='#FFFBEB'" onmouseout="this.style.background='transparent'">'
+                    + '<div class="flex-shrink-0" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.75rem;">' + initials + '</div>'
+                    + '<div class="flex-1" style="min-width:0;">'
+                    + '<div class="d-flex justify-content-between align-items-center">'
+                    + '<span class="fw-semibold text-truncate" style="font-size:0.82rem;color:#1e293b;max-width:160px;">' + (msg.name || '-') + '</span>'
+                    + '<span style="font-size:0.68rem;color:#DC2626;font-weight:600;">🕐 ' + (msg.wait_time || '-') + '</span>'
+                    + '</div>'
+                    + '<p class="mb-0 text-truncate" style="font-size:0.75rem;color:#6b7280;">' + txt + '</p>'
+                    + '<div class="d-flex align-items-center gap-1 mt-1">' + badge
+                    + '<span style="font-size:0.65rem;color:#9ca3af;">' + (msg.phone || '') + '</span>'
+                    + '</div></div></a>';
+            }).join('');
+            body.innerHTML = html;
+        })
+        .catch(function() {
+            body.innerHTML = '<div class="text-center py-3"><small class="text-muted">Gagal memuat data</small></div>';
+        });
+}
+
+// Auto-load 7 hari on page ready
+document.addEventListener('DOMContentLoaded', function() {
+    var defaultBtn = document.querySelector('.unreplied-filter[data-days="7"]');
+    if (defaultBtn) filterUnreplied(7, defaultBtn);
+});
+</script>
+
+@endsection

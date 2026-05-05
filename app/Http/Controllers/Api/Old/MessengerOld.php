@@ -1,0 +1,1420 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\Crm\MessagestResource;
+use App\Models\Admin\License;
+use App\Models\ChatBot\ChatBot;
+use App\Models\Courier\CourierFineTunnel;
+use App\Models\InternalSetting;
+use App\Models\Master\Label;
+use App\Models\Meta\MessengerAccount;
+use App\Models\Setting;
+use App\Observers\ChatBot\BiteshipServiceObserver;
+use App\Observers\ChatBot\GeminiAiServiceObserver;
+use App\Observers\ChatBot\HistoryChatObserver;
+use App\Observers\ChatBot\OpenAiServiceObserver;
+use App\Observers\ChatBot\RajaOngkirServiceObserver;
+use App\Observers\Store\StoreObserver;
+use App\Services\Platform\MesaangerService;
+use App\Supports\MimeTypes;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
+class MessengerController extends Controller
+{
+    protected $historyChatObserver;
+    protected $storeObserver;
+    protected $openAiServiceObserver;
+    protected $geminiAiServiceObserver;
+    protected $rajaOngkirObserver;
+    protected $biteshipServiceObserver;
+    protected $typeMimeData;
+    protected $generalSetting;
+    protected $messengerService;
+
+    public function __construct(
+        HistoryChatObserver $historyChatObserver,
+        StoreObserver $storeObserver,
+        OpenAiServiceObserver $openAiServiceObserver,
+        GeminiAiServiceObserver $geminiAiServiceObserver,
+        RajaOngkirServiceObserver $rajaOngkirObserver,
+        BiteshipServiceObserver $biteshipServiceObserver,
+        MesaangerService $messengerService
+    ) {
+        $this->historyChatObserver = $historyChatObserver;
+        $this->storeObserver = $storeObserver;
+        $this->openAiServiceObserver = $openAiServiceObserver;
+        $this->geminiAiServiceObserver = $geminiAiServiceObserver;
+        $this->rajaOngkirObserver = $rajaOngkirObserver;
+        $this->biteshipServiceObserver = $biteshipServiceObserver;
+        $this->messengerService = $messengerService;
+        $this->typeMimeData = MimeTypes::TYPE_MAP;
+        $this->generalSetting = Setting::where('merchant_id', null)->first([
+            'open_ai_key',
+            'ai_option',
+            'cek_ongkir_option_api',
+            'cek_ongkir_api',
+            'ongkir_method'
+        ]);
+    }
+
+    /**
+     * Handle webhook requests (GET for verification, POST for events)
+     */
+    public function handle(Request $request)
+    {
+        if ($request->isMethod('get')) {
+            return $this->verifyWebhook($request);
+        }
+
+        if ($request->isMethod('post')) {
+            return $this->processWebhook($request);
+        }
+
+        return response('Method not allowed', 405);
+    }
+
+    /**
+     * Verify webhook - Handle GET request from Meta
+     */
+    private function verifyWebhook(Request $request)
+    {
+        $mode = $request->get('hub_mode');
+        $token = $request->get('hub_verify_token');
+        $challenge = $request->get('hub_challenge');
+
+        // Verify the token matches
+        $license = License::first(['purchase']);
+        $verifyToken = $license->purchase;
+
+        if ($mode === 'subscribe' && $token === $verifyToken) {
+            return response($challenge, 200)
+                ->header('Content-Type', 'text/plain');
+        }
+
+        return response('Forbidden', 403);
+    }
+
+    /**
+     * Process incoming webhook events
+     */
+    private function processWebhook(Request $request)
+    {
+        try {
+            $data = $request->all();
+
+            Log::info('Messenger webhook received', ['data' => $data]);
+
+            if (!isset($data['entry'])) {
+                return response()->json(['status' => 'ok']);
+            }
+
+            foreach ($data['entry'] as $entry) {
+                if (!isset($entry['messaging'])) {
+                    continue;
+                }
+
+                foreach ($entry['messaging'] as $messaging) {
+                    if (isset($messaging['delivery'])) {
+                        Log::info('Messenger delivery report received', [
+                            'mids' => $messaging['delivery']['mids'] ?? []
+                        ]);
+                        continue;
+                    }
+
+                    if (isset($messaging['read'])) {
+                        Log::info('Messenger read receipt received');
+                        continue;
+                    }
+
+                    if (isset($messaging['message']['is_echo']) && $messaging['message']['is_echo'] === true) {
+                        Log::info('Messenger echo message skipped', [
+                            'mid' => $messaging['message']['mid'] ?? null
+                        ]);
+                        continue;
+                    }
+
+                    // Process normal messages only
+                    $this->processMessage($messaging, $entry['id']);
+                }
+            }
+
+            return response()->json(['status' => 'ok']);
+        } catch (\Exception $e) {
+            Log::error('Messenger Callback Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['status' => 'error'], 500);
+        }
+    }
+
+    /**
+     * Process individual message
+     */
+    private function processMessage(array $messaging, string $pageId)
+    {
+        try {
+            // Get Messenger account
+            $messengerAccount = MessengerAccount::where('page_id', $pageId)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$messengerAccount) {
+                Log::warning("Messenger account not found for page ID: {$pageId}");
+                return false;
+            }
+
+            // Parse message data
+            $messageData = $this->parseMessageData($messaging);
+            if (!$messageData) {
+                return false;
+            }
+
+            DB::transaction(function () use ($messageData, $messengerAccount) {
+                // Get or create chat history
+                $histories = $this->getOrCreateHistory($messageData, $messengerAccount);
+                if (!$histories) {
+                    return false;
+                }
+
+                // Check if chat is blocked
+                if ($histories->status === 'block') {
+                    return true;
+                }
+
+                // Check daily limit
+                if ($this->isDailyLimitExceeded($messengerAccount)) {
+                    return true;
+                }
+
+                // Check for duplicate message
+                if ($this->isDuplicateMessage($histories, $messageData['messageId'])) {
+                    return true;
+                }
+
+                // Parse message content
+                $messageContent = $this->parseMessageContent($messageData['rawMessage']);
+
+                // Download media if needed
+                $mediaInfo = $this->handleMediaDownload($messengerAccount, $messageContent, $messageData['messageType']);
+
+                // Update chat status
+                $this->updateChatStatus($histories);
+
+                // Save user message
+                $userMessage = $this->saveUserMessage($histories, $messageData, $messageContent, $mediaInfo);
+
+                // Handle audio transcription
+                $this->handleAudioTranscription($messageContent, $mediaInfo);
+
+                // Process labels
+                if (!empty($messageContent['message'])) {
+                    $this->processLabels($messengerAccount, $histories, $messageContent['message']);
+                }
+
+                // Send welcome message if first interaction
+                $welcomeMessage = $this->handleWelcomeMessage($messengerAccount, $histories);
+
+                // Send webhook if configured
+                $this->sendWebhook($messengerAccount, $messageData, $mediaInfo);
+
+                // Process auto replies
+                $replyMessage = $this->processAutoReplies($messengerAccount, $histories, $messageContent);
+
+                // Trigger real-time events
+                $this->triggerEmit($replyMessage, $userMessage, $welcomeMessage);
+            });
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Error processing Messenger message: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Parse message data from webhook
+     */
+    private function parseMessageData(array $messaging): ?array
+    {
+        if (!isset($messaging['sender']['id']) || !isset($messaging['message'])) {
+            return null;
+        }
+
+        $message = $messaging['message'];
+        $messageType = 'text';
+
+        if (isset($message['attachments'])) {
+            $attachment = $message['attachments'][0];
+            $messageType = $attachment['type'] ?? 'text';
+        }
+
+        return [
+            'messageId' => $message['mid'],
+            'from' => $messaging['sender']['id'],
+            'timestamp' => $messaging['timestamp'] ?? time() * 1000,
+            'messageType' => $messageType,
+            'rawMessage' => $message
+        ];
+    }
+
+    /**
+     * Get or create chat history
+     */
+    private function getOrCreateHistory(array $messageData, MessengerAccount $messengerAccount): mixed
+    {
+        $histories = $this->historyChatObserver->getByNumber(
+            'personal',
+            $messageData['from'],
+            null,
+            'messanger',
+            null,
+            null,
+            null,
+            null,
+            $messengerAccount->id
+        );
+
+        if (!$histories) {
+            // Get sender info from Messenger API
+            $senderInfo = $this->getSenderInfo($messengerAccount, $messageData['from']);
+
+            $histories = $this->historyChatObserver->createData(
+                null,
+                'personal',
+                $messageData['from'],
+                null,
+                $messengerAccount->business->merchant_id ?? null,
+                $messengerAccount->business_id,
+                $senderInfo['name'] ?? 'Messenger User',
+                'messanger',
+                null,
+                null,
+                $senderInfo['profile_pic'] ?? null,
+                null,
+                null,
+                $messengerAccount->id
+            );
+        }
+
+        return $histories;
+    }
+
+    /**
+     * Get sender information from Messenger API
+     */
+    private function getSenderInfo(MessengerAccount $messengerAccount, string $senderId): array
+    {
+        try {
+            $response = Http::withToken($messengerAccount->access_token)
+                ->get("https://graph.facebook.com/v21.0/{$senderId}", [
+                    'fields' => 'id,name,first_name,last_name,profile_pic'
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+ 
+                return [
+                    'name' => $data['name'] ?? ($data['first_name'] ?? 'Messenger User'),
+                    'profile_pic' => $data['profile_pic'] ?? null
+                ];
+            }
+ 
+        } catch (\Exception $e) {
+            Log::error('Failed to get Messenger sender info: ' . $e->getMessage());
+        }
+
+        return ['name' => 'Messenger User', 'profile_pic' => null];
+    }
+
+    /**
+     * Check if daily limit is exceeded
+     */
+    private function isDailyLimitExceeded(MessengerAccount $messengerAccount): bool
+    {
+        return $messengerAccount->daily_limit === 'yes' &&
+            $messengerAccount->daily_send >= $messengerAccount->limit_per_day;
+    }
+
+    /**
+     * Check for duplicate message
+     */
+    private function isDuplicateMessage($histories, string $messageId): bool
+    {
+        return $histories->details()
+            ->where('messageid', $messageId)
+            ->exists();
+    }
+
+    /**
+     * Parse message content
+     */
+    private function parseMessageContent(array $rawMessage): array
+    {
+        $message = '';
+        $mediaUrl = null;
+        $mimeType = null;
+        $messageType = 'text';
+
+        if (isset($rawMessage['text'])) {
+            $message = $rawMessage['text'];
+        }
+
+        if (isset($rawMessage['attachments'])) {
+            $attachment = $rawMessage['attachments'][0];
+            $messageType = $attachment['type'] ?? 'file';
+            $mediaUrl = $attachment['payload']['url'] ?? null;
+
+            switch ($messageType) {
+                case 'image':
+                    $mimeType = 'image/jpeg';
+                    break;
+                case 'video':
+                    $mimeType = 'video/mp4';
+                    break;
+                case 'audio':
+                    $mimeType = 'audio/mpeg';
+                    break;
+                case 'file':
+                    $mimeType = 'application/octet-stream';
+                    break;
+                default:
+                    $mimeType = 'application/octet-stream';
+            }
+        }
+
+        return [
+            'message' => $message,
+            'mediaUrl' => $mediaUrl,
+            'mimeType' => $mimeType,
+            'messageType' => $messageType
+        ];
+    }
+
+    /**
+     * Handle media download
+     */
+    private function handleMediaDownload(MessengerAccount $messengerAccount, array $messageContent, string $messageType): array
+    {
+        $mediaInfo = [
+            'status' => false,
+            'type' => null,
+            'size' => null,
+            'path' => null
+        ];
+
+        // Check time-based auto reply settings
+        if (!$this->checkingTimeAutoReply($messengerAccount)) {
+            return $mediaInfo;
+        }
+
+        if ($messageType === 'text' || empty($messageContent['mediaUrl'])) {
+            return $mediaInfo;
+        }
+
+        try {
+            // Download media from Messenger URL
+            $fileResponse = Http::get($messageContent['mediaUrl']);
+
+            if (!$fileResponse->successful()) {
+                throw new \Exception('Failed to download media');
+            }
+
+            $fileContent = $fileResponse->body();
+            $mimeType = $messageContent['mimeType'] ?? 'application/octet-stream';
+            $fileSize = strlen($fileContent);
+
+            // Check storage capacity
+            $setting = $messengerAccount->business;
+            $storageCheck = $this->checkStorage($setting, $fileSize);
+
+            if (!$storageCheck['available']) {
+                Log::warning("Storage full for business ID {$setting->id}");
+                return $mediaInfo;
+            }
+
+            // Determine subfolder based on MIME type
+            $subFolder = $this->getSubFolderByMimeType($mimeType);
+            $uploadPath = "folders/{$setting->id}/{$subFolder}/";
+            $this->ensureDirectoryExists($uploadPath);
+
+            // Save file
+            $extension = explode('/', $mimeType)[1] ?? 'bin';
+            $fileName = uniqid('msg_', true) . '.' . $extension;
+            $publicPath = 'uploads/' . $uploadPath . $fileName;
+            $fullPath = public_path($publicPath);
+
+            file_put_contents($fullPath, $fileContent);
+
+            // Get real file info
+            $mimeType = mime_content_type($fullPath);
+            $fileSize = filesize($fullPath);
+            $messageType = $this->getMessageTypeFromMime($mimeType);
+
+            $mediaInfo = [
+                'status' => true,
+                'type' => $mimeType,
+                'size' => $fileSize,
+                'path' => $publicPath,
+                'messageType' => $messageType
+            ];
+
+            Log::info("Messenger media stored: {$publicPath}");
+        } catch (\Exception $e) {
+            Log::error('Messenger media download error: ' . $e->getMessage());
+        }
+
+        return $mediaInfo;
+    }
+
+    /**
+     * Get message type from MIME type
+     */
+    private function getMessageTypeFromMime(string $mimeType): string
+    {
+        foreach ($this->typeMimeData as $type => $mimeTypes) {
+            if (in_array($mimeType, $mimeTypes)) {
+                return $type;
+            }
+        }
+        return 'file';
+    }
+
+    /**
+     * Update chat status to open
+     */
+    private function updateChatStatus($histories): void
+    {
+        if ($histories->status !== 'open') {
+            $histories->update(['status' => 'open']);
+        }
+    }
+
+    /**
+     * Save user message to database
+     */
+    private function saveUserMessage($histories, array $messageData, array $messageContent, array $mediaInfo): mixed
+    {
+        // Update or create store
+        $stores = $this->storeObserver->checkByNumber($histories->from_number, $histories->business_id);
+        if (!$stores) {
+            $store = $this->storeObserver->createByHistory($histories);
+            $histories->update(['store_id' => $store->id]);
+        }
+
+        // Create message record
+        $userMessage = $histories->details()->create([
+            'file_path' => $mediaInfo['path'],
+            'file_type' => $mediaInfo['type'],
+            'file_size' => $mediaInfo['size'],
+            'type' => $messageContent['messageType'],
+            'history_chat_id' => $histories->id,
+            'from' => 'user',
+            'message' => $messageContent['message'],
+            'remotejid' => $messageData['from'],
+            'messageid' => $messageData['messageId']
+        ]);
+
+        // Mark follow-ups
+        $this->markPreviousFollowUps($histories);
+
+        return $userMessage;
+    }
+
+    /**
+     * Mark previous messages as follow-up
+     */
+    private function markPreviousFollowUps($histories): void
+    {
+        $histories->details()
+            ->where('from', 'device')
+            ->where('is_follow_up', 'no')
+            ->update([
+                'is_follow_up' => 'yes',
+                'follow_up_id' => null
+            ]);
+    }
+
+    /**
+     * Handle audio transcription
+     */
+    private function handleAudioTranscription(array &$messageContent, array $mediaInfo): void
+    {
+        if ($messageContent['messageType'] === 'audio' && $mediaInfo['status']) {
+            $transcription = $this->openAiServiceObserver->checkAudioData(
+                $mediaInfo['path'],
+                $this->generalSetting->open_ai_key
+            );
+
+            if ($transcription['status']) {
+                $messageContent['message'] = $transcription['message'];
+            }
+        }
+    }
+
+    /**
+     * Process labels based on message content
+     */
+    private function processLabels(MessengerAccount $messengerAccount, $histories, string $message): void
+    {
+        if (!$messengerAccount->finetunnel || empty($message)) {
+            return;
+        }
+
+        $labelIds = explode(',', $messengerAccount->finetunnel->label);
+        $matchingLabel = Label::where('business_id', $messengerAccount->business_id)
+            ->where('type', 'keyword')
+            ->whereIn('id', $labelIds)
+            ->whereRaw("? REGEXP REPLACE(tag, ', ', '|')", [$message])
+            ->first(['id', 'name']);
+
+        if ($matchingLabel) {
+            $this->addLabelToHistory($histories, $matchingLabel);
+        }
+    }
+
+    /**
+     * Add label to chat history
+     */
+    private function addLabelToHistory($histories, $matchingLabel): void
+    {
+        $currentLabels = json_decode($histories->label, true) ?? [];
+        $alreadyExists = collect($currentLabels)->contains('id', $matchingLabel->id);
+
+        if (!$alreadyExists) {
+            $currentLabels[] = [
+                'id' => $matchingLabel->id,
+                'name' => $matchingLabel->name,
+            ];
+
+            $histories->update(['label' => json_encode($currentLabels)]);
+
+            if ($histories->store && $histories->store->label_id == null) {
+                $histories->store->update(['label_id' => $matchingLabel->id]);
+            }
+        }
+    }
+
+    /**
+     * Handle welcome message for first interaction
+     */
+    private function handleWelcomeMessage(MessengerAccount $messengerAccount, $histories): mixed
+    {
+        if (
+            !$messengerAccount->finetunnel ||
+            !$messengerAccount->finetunnel->welcome_message ||
+            $histories->details->count() > 1
+        ) {
+            return null;
+        }
+
+        $welcomeData = $this->prepareWelcomeMessageData($messengerAccount);
+        $messageText = str_replace('{name}', $histories->name ?? '', $messengerAccount->finetunnel->welcome_message ?? '');
+
+        $welcomeMessage = $histories->details()->create([
+            'message' => $messageText,
+            'file_path' => $welcomeData['path'],
+            'file_type' => $welcomeData['type'],
+            'file_size' => $welcomeData['size'],
+            'type' => $welcomeData['messageType'],
+            'history_chat_id' => $histories->id,
+            'from' => 'device'
+        ]);
+
+        $this->sendWelcomeMessageToUser($messengerAccount, $histories, $welcomeMessage);
+
+        return $welcomeMessage;
+    }
+
+    /**
+     * Prepare welcome message data
+     */
+    private function prepareWelcomeMessageData(MessengerAccount $messengerAccount): array
+    {
+        $messageType = 'text';
+        $imageData = [
+            'status' => false,
+            'type' => null,
+            'size' => null,
+            'path' => null
+        ];
+
+        if ($messengerAccount->finetunnel->welcome_image && file_exists($messengerAccount->finetunnel->welcome_image)) {
+            $filePath = public_path($messengerAccount->finetunnel->welcome_image);
+            $fileType = mime_content_type($filePath);
+            $fileSize = filesize($filePath);
+
+            $imageData = [
+                'status' => true,
+                'type' => $fileType,
+                'size' => $fileSize,
+                'path' => $messengerAccount->finetunnel->welcome_image
+            ];
+
+            $messageType = $this->getMessageTypeFromMime($fileType);
+        }
+
+        return [
+            'path' => $imageData['path'],
+            'type' => $imageData['type'],
+            'size' => $imageData['size'],
+            'messageType' => $messageType
+        ];
+    }
+
+    /**
+     * Send welcome message to user
+     */
+    private function sendWelcomeMessageToUser(MessengerAccount $messengerAccount, $histories, $welcomeMessage): void
+    {
+        $this->sendTextMessageToUser($messengerAccount, $histories, $welcomeMessage->message, $welcomeMessage);
+    }
+
+    /**
+     * Send webhook if configured
+     */
+    private function sendWebhook(MessengerAccount $messengerAccount, array $messageData, array $mediaInfo): void
+    {
+        // Messenger webhook implementation (if needed)
+    }
+
+    /**
+     * Process auto replies
+     */
+    private function processAutoReplies(MessengerAccount $messengerAccount, $histories, array $messageContent): mixed
+    {
+        $message = $messageContent['message'];
+
+        // Chatbot auto-reply
+        if ($this->shouldUseChatbot($messengerAccount, $histories)) {
+            return $this->processChatbotReply($messengerAccount, $histories, $message);
+        }
+
+        // AI auto-reply
+        if ($this->shouldUseAI($messengerAccount, $histories)) {
+            return $this->processAIReply($messengerAccount, $histories, $messageContent);
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if should use chatbot
+     */
+    private function shouldUseChatbot(MessengerAccount $messengerAccount, $histories): bool
+    {
+        return in_array($messengerAccount->auto_reply_method, ['chatbot', 'all']) &&
+            $histories->status !== 'block';
+    }
+
+    /**
+     * Check if should use AI
+     */
+    private function shouldUseAI(MessengerAccount $messengerAccount, $histories): bool
+    {
+        $settings = $messengerAccount->business;
+
+        return in_array($messengerAccount->auto_reply_method, ['ai', 'all']) &&
+            $histories->takeover === 'no' &&
+            $histories->status !== 'block' &&
+            $settings->is_online === 'yes' &&
+            $messengerAccount->finetunnel &&
+            $this->hasCredits($messengerAccount);
+    }
+
+    /**
+     * Process chatbot reply
+     */
+    private function processChatbotReply(MessengerAccount $messengerAccount, $histories, string $message): mixed
+    {
+        $reply = $this->autoReplyMessage($messengerAccount, $message, $histories->name, $histories->from_number);
+
+        if (!$reply['status']) {
+            return null;
+        }
+
+        $followUps = $messengerAccount->finetunnel ? $messengerAccount->finetunnel->follow_ups->count() : 0;
+
+        $replyMessage = $histories->details()->create([
+            'history_chat_id' => $histories->id,
+            'from' => 'device',
+            'is_follow_up' => $followUps > 0 ? 'no' : 'yes',
+            'message' => $reply['message_text'],
+        ]);
+
+        $this->sendTextMessageToUser($messengerAccount, $histories, $reply['message_text'], $replyMessage);
+
+        return $replyMessage;
+    }
+
+    /**
+     * Process AI reply
+     */
+    private function processAIReply(MessengerAccount $messengerAccount, $histories, array $messageContent): mixed
+    {
+        $fineTunnel = $messengerAccount->finetunnel;
+        $conversations = $histories->details_desc->take($fineTunnel->history_limit)->sortBy('created_at'); 
+        $imagePath = $messageContent['messageType'] === 'image' ? $messageContent['path'] ?? null : null;
+
+        $intentResponse = $this->openAiServiceObserver->detectIntent(
+            $fineTunnel,
+            $this->generalSetting->open_ai_key,
+            $messageContent['message'] ?? '',
+            $conversations,
+            $fineTunnel->model_ai,
+            $imagePath
+        );
+
+        $responseBody = json_decode($intentResponse->body());
+
+        if ($intentResponse->status() !== 200) {
+            return null;
+        }
+
+        return $this->handleAIResponse($responseBody, $messengerAccount, $histories, $fineTunnel);
+    }
+
+    /**
+     * Handle AI response based on intent
+     */
+    private function handleAIResponse($responseBody, MessengerAccount $messengerAccount, $histories, $fineTunnel): mixed
+    {
+        $intent = json_decode($responseBody->choices[0]->message->content);
+        $creditUsed = $responseBody->usage->total_tokens ?? 0;
+
+        // Normalize intent object
+        if (is_object($intent) && isset($intent->properties) && is_object($intent->properties)) {
+            foreach ($intent->properties as $key => $value) {
+                $intent->{$key} = $value;
+            }
+            unset($intent->properties);
+        }
+
+        $replyMessage = null;
+
+        switch ($intent->intent) {
+            case 'media':
+                $replyMessage = $this->handleMediaIntent($intent, $histories, $messengerAccount);
+                break;
+
+            case 'check_shipping':
+                $replyMessage = $this->handleShippingIntent($intent, $histories, $fineTunnel);
+                break;
+
+            case 'question':
+                $replyMessage = $this->handleQuestionIntent($intent, $histories, $messengerAccount);
+                break;
+        }
+
+        // Update credits
+        if ($creditUsed > 0) {
+            $this->updateCredits($creditUsed, $messengerAccount, $fineTunnel, $replyMessage);
+        }
+
+        // Check for transfer conditions
+        $this->checkTransferConditions($messengerAccount, $histories, $intent->message ?? '');
+
+        return $replyMessage;
+    }
+
+    /**
+     * Handle media intent
+     */
+    private function handleMediaIntent($intent, $histories, MessengerAccount $messengerAccount): mixed
+    {
+        $mediaUrls = $intent->medias ?? [];
+        $replyText = $intent->message ?? '';
+        $lastReplyMessage = null;
+
+        foreach ($mediaUrls as $mediaUrl) {
+            $mediaInfo = $this->getMediaInfo($mediaUrl);
+            $typeMessage = $this->getMessageTypeFromMime($mediaInfo['type'] ?? '');
+
+            if ($typeMessage === 'file') {
+                $typeMessage = 'document';
+            }
+
+            $replyMessage = $histories->details()->create([
+                'file_path' => $mediaUrl,
+                'file_type' => $mediaInfo['type'],
+                'file_size' => $mediaInfo['size'],
+                'history_chat_id' => $histories->id,
+                'from' => 'device',
+                'is_read' => 'yes',
+                'type' => $typeMessage,
+                'is_follow_up' => 'yes',
+                'message' => $replyText,
+                'credit_using' => 0,
+            ]);
+
+            $this->sendMediaMessageToUser($messengerAccount, $histories, $replyMessage, $typeMessage);
+            $lastReplyMessage = $replyMessage;
+        }
+
+        return $lastReplyMessage;
+    }
+
+    /**
+     * Handle shipping check intent
+     */
+    private function handleShippingIntent($intent, $histories, $fineTunnel): mixed
+    {
+        $settings = $histories->business;
+        $shippingConfig = $this->getShippingConfig($fineTunnel, $settings);
+
+        if (!$shippingConfig['available']) {
+            $replyText = 'Maaf kak 🙏, aku nggak bisa bantu cek ongkirnya langsung nih. Tapi kalau mau, aku bisa kasih cara atau link biar kakak bisa cek sendiri 😊';
+        } else {
+            $replyText = $this->processShippingCheck($intent, $fineTunnel, $settings);
+        }
+
+        $reply = $histories->details()->create([
+            'history_chat_id' => $histories->id,
+            'from' => 'device',
+            'is_read' => 'yes',
+            'is_follow_up' => 'yes',
+            'message' => $replyText,
+        ]);
+
+        $this->sendTextMessageToUser($histories->messenger, $histories, $replyText, $reply);
+
+        return $reply;
+    }
+
+    /**
+     * Handle question intent
+     */
+    private function handleQuestionIntent($intent, $histories, MessengerAccount $messengerAccount): mixed
+    {
+        $replyText = $this->cleanText($intent->message);
+
+        $reply = $histories->details()->create([
+            'history_chat_id' => $histories->id,
+            'from' => 'device',
+            'is_read' => 'yes',
+            'is_follow_up' => 'yes',
+            'message' => $replyText
+        ]);
+
+        $this->sendTextMessageToUser($messengerAccount, $histories, $replyText, $reply);
+        return $reply;
+    }
+
+    /**
+     * Check if account has credits
+     */
+    private function hasCredits(MessengerAccount $messengerAccount): bool
+    {
+        if (!($messengerAccount->business->merchant ?? null)) {
+            return true;
+        }
+
+        $topupLimit = $messengerAccount->business->package_active_topup->sisa_credit ?? 0;
+        $packageCredit = $messengerAccount->business->package_active->sisa_credit ?? 0;
+
+        return $topupLimit > 0 || $packageCredit > 0;
+    }
+
+    /**
+     * Auto reply message using chatbot
+     */
+    private function autoReplyMessage(MessengerAccount $messengerAccount, string $message, string $name, string $from): array
+    {
+        $chatBot = ChatBot::whereRaw("find_in_set('" . $messengerAccount->id . "',select_messanger)") 
+            ->with('template')
+            ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])
+            ->first();
+
+        if (!$chatBot) {
+            return ['status' => false, 'message' => null];
+        }
+
+        if ($chatBot->reply_method == 'text') {
+            $messageText = str_replace('{name}', $name ?? '', $chatBot->message);
+
+            return [
+                'status' => true,
+                'message_text' => $messageText,
+                'method' => $chatBot->reply_method,
+                'message' => ['text' => $messageText]
+            ];
+        }
+
+        return ['status' => false, 'message' => null];
+    }
+
+    /**
+     * Send text message to user via Messenger API
+     */
+    private function sendTextMessageToUser(MessengerAccount $messengerAccount, $histories, string $message, $replyMessage): void
+    {
+        try {
+            $response = $this->messengerService->sendMessage(
+                $messengerAccount,
+                'text',
+                $histories->from_number,
+                $message,
+                null,
+                null
+            );
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+                $replyMessage->update(['messageid' => $responseData['message_id'] ?? null]);
+            } else {
+                Log::error('Failed to send Messenger message', [
+                    'response' => $response->body()
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Messenger send message error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send media message to user via Messenger API
+     */
+    private function sendMediaMessageToUser(MessengerAccount $messengerAccount, $histories, $replyMessage, string $typeMessage): void
+    {
+        try {
+            $attachmentType = $typeMessage === 'document' ? 'file' : $typeMessage;
+            $response = $this->messengerService->sendMessage(
+                $messengerAccount,
+                'file',
+                $histories->from_number,
+                '',
+                $replyMessage->file_path,
+                $attachmentType
+            );
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+                $replyMessage->update(['messageid' => $responseData['message_id'] ?? null]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Messenger send media error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get shipping configuration
+     */
+    private function getShippingConfig($fineTunnel, $settings): array
+    {
+        $hasPackageAccess = ($settings->package_active && $settings->package_active->cek_ongkir === 'yes') ||
+            is_null($settings->merchant_id);
+
+        $hasRequiredConfig = $fineTunnel->couriers->count() > 0 &&
+            !empty($fineTunnel->zip_code) &&
+            (int)$fineTunnel->weight > 0;
+
+        return [
+            'available' => $hasPackageAccess && $hasRequiredConfig,
+            'region' => $fineTunnel->address ?? '',
+            'courier_codes' => $fineTunnel->couriers->pluck('code')->unique()->implode(','),
+            'weight' => (int)$fineTunnel->weight,
+        ];
+    }
+
+    /**
+     * Process shipping check
+     */
+    private function processShippingCheck($intent, $fineTunnel, Setting $settings): string
+    {
+        $posCode = $intent->pos_code ?? null;
+        $quantity = $intent->quantity ?? 1;
+        $address = $intent->address ?? '';
+        $replyMessage = $intent->message ?? '';
+
+        if ($posCode === "null" || $posCode === "" || $posCode == null) {
+            return $this->cleanText($replyMessage);
+        }
+
+        $apikey = $this->generalSetting->cek_ongkir_option_api === 'sistem'
+            ? $this->generalSetting->cek_ongkir_api
+            : $settings->cek_ongkir_api ?? '';
+        $apiMethod = $this->generalSetting->ongkir_method;
+
+        if ($apiMethod === 'rajaongkir') {
+            return $this->processRajaOngkir($fineTunnel, $apikey, $posCode, $replyMessage);
+        }
+
+        if ($apiMethod === 'biteship') {
+            return $this->processBiteship($fineTunnel, $apikey, $posCode, $quantity, $address, $replyMessage);
+        }
+
+        return 'Terjadi kesalahan, saat ini kami tidak dapat melakukan pengecekan ongkos kirim.';
+    }
+
+    /**
+     * Process RajaOngkir shipping
+     */
+    private function processRajaOngkir($fineTunnel, string $apikey, string $posCode, string $replyMessage): string
+    {
+        $allowedServices = CourierFineTunnel::where('finetunnel_id', $fineTunnel->id)
+            ->groupBy('code')
+            ->pluck('code')
+            ->implode('|');
+
+        $getOngkir = $this->rajaOngkirObserver->checkOngkir(
+            $apikey,
+            $fineTunnel->zip_code,
+            $posCode,
+            (int)$fineTunnel->weight,
+            $allowedServices
+        );
+
+        if ($getOngkir->status() === 200) {
+            $ongkirData = json_decode($getOngkir->body(), true);
+            foreach ($ongkirData['data'] as $ongkir) {
+                $replyMessage .= "- {$ongkir['name']} - {$ongkir['service']} ({$ongkir['etd']} hari): Rp " .
+                    number_format($ongkir['cost'], 0, ',', '.') . "\n";
+            }
+            return $replyMessage;
+        }
+
+        return 'Terjadi kesalahan, saat ini kami tidak dapat melakukan pengecekan ongkos kirim.';
+    }
+
+    /**
+     * Process Biteship shipping
+     */
+    private function processBiteship($fineTunnel, string $apikey, string $posCode, int $quantity, string $address, string $replyMessage): string
+    {
+        $allowedServices = CourierFineTunnel::where('finetunnel_id', $fineTunnel->id)
+            ->groupBy('code')
+            ->pluck('code')
+            ->implode(',');
+
+        $getOngkir = $this->biteshipServiceObserver->checkOngkir(
+            $apikey,
+            $fineTunnel->zip_code,
+            $posCode,
+            (int)$fineTunnel->weight,
+            $allowedServices,
+            $quantity
+        );
+
+        if ($getOngkir->status() === 200) {
+            $ongkirData = json_decode($getOngkir->body(), true);
+
+            $origin = $ongkirData['origin']['administrative_division_level_4_name'] . ', ' .
+                $ongkirData['origin']['administrative_division_level_3_name'] . ', ' .
+                $ongkirData['origin']['administrative_division_level_2_name'];
+
+            $reply = "📦 Detail Pengecekan Ongkos Kirim\n";
+            $reply .= "Jumlah barang: *{$quantity}*\n";
+            $reply .= "🚚 Pengiriman\n";
+            $reply .= "Dari: *{$origin}*\n";
+            $reply .= "Ke: *{$address}*\n";
+            $reply .= "Berikut detail ongkirnya:\n\n";
+
+            foreach ($ongkirData['pricing'] as $ongkir) {
+                $duration = $ongkir['duration'];
+                $courier = $ongkir['courier_name'];
+                $service = $ongkir['courier_service_name'];
+                $price = number_format($ongkir['price'], 0, ',', '.');
+
+                $reply .= "- $courier - $service ($duration): Rp $price\n";
+            }
+
+            return $reply;
+        }
+
+        return 'Terjadi kesalahan, saat ini kami tidak dapat melakukan pengecekan ongkos kirim.';
+    }
+
+    /**
+     * Update credits after AI usage
+     */
+    private function updateCredits(int $creditUsed, MessengerAccount $messengerAccount, $fineTunnel, $replyMessage): void
+    {
+        if ($creditUsed <= 0 || is_null($messengerAccount->business->merchant ?? null)) {
+            return;
+        }
+
+        $setting = InternalSetting::first(['credit_token_basic', 'credit_token_advance']);
+        $totalCreditUsing = $this->calculateCreditUsage($creditUsed, $fineTunnel->model_ai, $setting);
+
+        $this->deductCredits($messengerAccount, $totalCreditUsing);
+
+        if ($replyMessage) {
+            $replyMessage->update(['credit_using' => $totalCreditUsing]);
+        }
+    }
+
+    /**
+     * Calculate credit usage
+     */
+    private function calculateCreditUsage(int $creditUsed, string $modelAi, $setting): int
+    {
+        $creditPer250Tokens = 1;
+        $tokensPerCredit = $modelAi === 'advanced'
+            ? $setting->credit_token_advance
+            : $setting->credit_token_basic;
+
+        return ceil($creditUsed / $tokensPerCredit) * $creditPer250Tokens;
+    }
+
+    /**
+     * Deduct credits from package
+     */
+    private function deductCredits(MessengerAccount $messengerAccount, int $totalCreditUsing): void
+    {
+        $packageCredit = $messengerAccount->business->package_active->sisa_credit ?? 0;
+
+        if ($packageCredit > 0) {
+            $messengerAccount->business->package_active->update([
+                'using_credit_limit' => $messengerAccount->business->package_active->using_credit_limit + $totalCreditUsing
+            ]);
+        } else {
+            $messengerAccount->business->package_active_topup->update([
+                'using_credit_limit' => $messengerAccount->business->package_active_topup->using_credit_limit + $totalCreditUsing
+            ]);
+        }
+    }
+
+    /**
+     * Check transfer conditions
+     */
+    private function checkTransferConditions(MessengerAccount $messengerAccount, $histories, string $message): void
+    {
+        if ($histories->takeover !== 'no') {
+            return;
+        }
+
+        $termCondition = $messengerAccount->finetunnel->transfer_condition ?? null;
+        if (!$termCondition) {
+            return;
+        }
+
+        $keywords = array_map('trim', explode(',', $termCondition));
+        $term_text = strtolower($message);
+
+        foreach ($keywords as $keyword) {
+            if (stripos($term_text, strtolower($keyword)) === false) {
+                continue;
+            }
+
+            $histories->update(['takeover' => 'yes']);
+            break;
+        }
+    }
+
+    /**
+     * Clean text from unwanted characters
+     */
+    private function cleanText($text)
+    {
+        $text = preg_replace('/([^\(]+)\((https?:\/\/[^\s\)]+)\)/', '$1 $2', $text);
+        $text = preg_replace('/(https?:\/\/[^\s\]]+)\]/', '$1', $text);
+
+        preg_match_all('/https?:\/\/[^\s]+/', $text, $matches);
+        $urls = $matches[0];
+        foreach ($urls as $index => $url) {
+            $text = str_replace($url, "__URL{$index}__", $text);
+        }
+
+        $text = str_replace('**', '*', $text);
+        $text = preg_replace('/[\#\!\{\}\[\]\(\)]/', '', $text);
+        $text = preg_replace('/(?<=\s)[^\p{L}\p{N}-](?=\s)/u', '', $text);
+
+        $text = preg_replace_callback('/^.*$/m', function ($lineMatches) {
+            $line = $lineMatches[0];
+
+            return preg_replace_callback('/\S+/', function ($matches) use ($line) {
+                $word = $matches[0];
+
+                if (preg_match('/^__URL\d+__$/', $word)) return $word;
+                if (trim($line)[0] === '-' && $word === '-') return $word;
+
+                if (!preg_match('/^@[\p{L}\p{N}_-]+$/u', $word)) {
+                    $word = str_replace('@', '', $word);
+                }
+
+                if (strpos($word, '?') !== false && substr($word, -1) !== '?') {
+                    $word = str_replace('?', '', $word);
+                }
+                if (strpos($word, ':') !== false && substr($word, -1) !== ':') {
+                    $word = str_replace(':', '', $word);
+                }
+
+                if (preg_match('/^\d+\s?%$/', $word)) return $word;
+                if (preg_match('/^[$£€¥Rp]+\s?\d+([\.,]\d+)*$/', $word)) return $word;
+
+                return preg_replace(
+                    '/[^\p{L}\p{N}\.\,\;\_\-\?\:\%\/\$\@\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{2600}-\x{26FF}\x{2700}-\x{27BF}]/u',
+                    '',
+                    $word
+                );
+            }, $line);
+        }, $text);
+
+        $seen = [];
+        foreach ($urls as $index => $url) {
+            $placeholder = "__URL{$index}__";
+            if (!in_array($url, $seen)) {
+                $text = str_replace($placeholder, $url, $text);
+                $seen[] = $url;
+            } else {
+                $text = str_replace($placeholder, '', $text);
+            }
+        }
+
+        return $text;
+    }
+
+    /**
+     * Check time-based auto reply settings
+     */
+    private function checkingTimeAutoReply(MessengerAccount $messengerAccount): bool
+    {
+        if ($messengerAccount->auto_reply_certain_day == 'yes') {
+            if ($messengerAccount->days != null) {
+                $day = date("D");
+                $getCheck = MessengerAccount::where("id", $messengerAccount->id)
+                    ->whereRaw("find_in_set('" . $day . "',days)")
+                    ->count();
+
+                if ($getCheck == 0) {
+                    return false;
+                }
+            }
+        }
+
+        if ($messengerAccount->auto_reply_certain_time == 'yes') {
+            if ($messengerAccount->start_time != null) {
+                if ($messengerAccount->start_time > date("H:i")) {
+                    return false;
+                }
+
+                if ($messengerAccount->end_time < date("H:i")) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Get media info from URL
+     */
+    private function getMediaInfo($url)
+    {
+        $pathInfo = pathinfo($url);
+        $headers = get_headers($url, 1);
+
+        $size = isset($headers['Content-Length']) ? (int) $headers['Content-Length'] : null;
+        $type = isset($headers['Content-Type']) ? $headers['Content-Type'] : null;
+
+        return [
+            'type' => $type,
+            'size' => $size,
+            'path' => $pathInfo['dirname'] . '/' . $pathInfo['basename'],
+        ];
+    }
+
+    /**
+     * Trigger real-time events
+     */
+    private function triggerEmit($replyMessage, $userMessage, $welcomeMessage): void
+    {
+        $expressUrl = config('services.express.url') . '/trigger-whatsapp';
+
+        if ($welcomeMessage) {
+            Http::post($expressUrl, MessagestResource::make($welcomeMessage));
+        }
+
+        if ($userMessage) {
+            $response = Http::post($expressUrl, MessagestResource::make($userMessage));
+
+            if ($response->successful() && $replyMessage) {
+                Http::post($expressUrl, MessagestResource::make($replyMessage));
+            }
+        } elseif ($replyMessage) {
+            Http::post($expressUrl, MessagestResource::make($replyMessage));
+        }
+    }
+
+    /**
+     * Check storage availability
+     */
+    private function checkStorage($setting, $fileSize = 0): array
+    {
+        if ($setting->merchant) {
+            $totalSize = 0;
+            $path = "uploads/folders/{$setting->id}";
+
+            if (Storage::disk('local')->exists($path)) {
+                $files = Storage::disk('local')->allFiles($path);
+                foreach ($files as $file) {
+                    $totalSize += Storage::disk('local')->size($file);
+                }
+            }
+
+            $usedStorageMB = round($totalSize / 1024 / 1024, 2);
+            $fileSizeMB = round($fileSize / 1024 / 1024, 2);
+
+            $storageFromSubscribe = $setting->package_active ? (int)$setting->package_active->storage : 0;
+            $storageFromAddons = $setting->package_active_storage ? (int)$setting->package_active_storage->storage : 0;
+            $totalStorage = $storageFromSubscribe + $storageFromAddons;
+
+            $remainingStorage = $totalStorage - $usedStorageMB;
+
+            return [
+                'available' => $totalStorage > 0 && ($usedStorageMB + $fileSizeMB) <= $totalStorage,
+                'total_storage' => $totalStorage,
+                'used_storage' => $usedStorageMB,
+                'remaining_storage' => $remainingStorage,
+                'file_size' => $fileSizeMB,
+                'has_package' => $totalStorage > 0
+            ];
+        }
+
+        return [
+            'available' => true,
+            'total_storage' => 9999999,
+            'used_storage' => 0,
+            'remaining_storage' => 9999,
+            'file_size' => 9999,
+            'has_package' => 9999
+        ];
+    }
+
+    /**
+     * Ensure directory exists
+     */
+    private function ensureDirectoryExists($path): void
+    {
+        if (!file_exists('uploads/' . $path)) {
+            mkdir('uploads/' . $path, 0755, true);
+        }
+    }
+
+    /**
+     * Get subfolder based on MIME type
+     */
+    private function getSubFolderByMimeType(string $mimeType): string
+    {
+        $mainType = explode('/', $mimeType)[0];
+
+        switch ($mainType) {
+            case 'image':
+                return 'msg-images';
+            case 'video':
+                return 'msg-video';
+            case 'audio':
+                return 'msg-audio';
+            default:
+                return 'msg-document';
+        }
+    }
+}

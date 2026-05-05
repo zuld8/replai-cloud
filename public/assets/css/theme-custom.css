@@ -1,0 +1,685 @@
+/* Replai CRM - Custom Theme Override */
+/* Palette: Sky Blue + Soft Violet + Emerald + Sun Yellow + Rose */
+
+:root {
+    /* Primary = Sky Blue */
+    --primary-rgb: 14, 165, 233;
+    --primary: #0EA5E9;
+    --primary-bg-subtle: rgba(14, 165, 233, 0.1);
+    --primary-border-subtle: rgba(14, 165, 233, 0.25);
+    --primary01: rgba(14, 165, 233, 0.1);
+    --primary02: rgba(14, 165, 233, 0.2);
+    --primary03: rgba(14, 165, 233, 0.3);
+    --primary05: rgba(14, 165, 233, 0.5);
+    --primary08: rgba(14, 165, 233, 0.8);
+    --primary-text-emphasis: #0284C7;
+
+    /* Background */
+    --default-background: #F8F9FA;
+    --default-text-color: #1E293B;
+    --text-muted: #94A3B8;
+    --default-border: #E2E8F0;
+    --bootstrap-card-border: #E2E8F0;
+    --input-border: #E2E8F0;
+    --list-hover-focus-bg: #F0F9FF;
+}
+
+/* ========== BUTTONS ========== */
+.btn-primary {
+    background-color: #0EA5E9 !important;
+    border-color: #0EA5E9 !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #0284C7 !important;
+    border-color: #0284C7 !important;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35) !important;
+}
+.btn-outline-primary {
+    color: #0EA5E9 !important;
+    border-color: #0EA5E9 !important;
+}
+.btn-outline-primary:hover {
+    background-color: #0EA5E9 !important;
+    color: #fff !important;
+}
+
+.btn-success {
+    background-color: #34D399 !important;
+    border-color: #34D399 !important;
+}
+.btn-success:hover {
+    background-color: #10B981 !important;
+    border-color: #10B981 !important;
+}
+
+.btn-danger {
+    background-color: #F43F5E !important;
+    border-color: #F43F5E !important;
+}
+.btn-danger:hover {
+    background-color: #E11D48 !important;
+    border-color: #E11D48 !important;
+}
+
+.btn-warning {
+    background-color: #FFE66D !important;
+    border-color: #FFE66D !important;
+    color: #92400E !important;
+}
+
+.btn-secondary, .btn-info {
+    background-color: #C084FC !important;
+    border-color: #C084FC !important;
+}
+.btn-secondary:hover, .btn-info:hover {
+    background-color: #A855F7 !important;
+    border-color: #A855F7 !important;
+}
+
+/* ========== BADGES ========== */
+.badge.bg-primary, .bg-primary {
+    background-color: #0EA5E9 !important;
+}
+.badge.bg-success, .bg-success {
+    background-color: #34D399 !important;
+}
+.badge.bg-danger, .bg-danger {
+    background-color: #F43F5E !important;
+}
+.badge.bg-warning, .bg-warning {
+    background-color: #FFE66D !important;
+    color: #92400E !important;
+}
+.badge.bg-info, .bg-info {
+    background-color: #C084FC !important;
+}
+.badge.bg-secondary, .bg-secondary {
+    background-color: #94A3B8 !important;
+}
+
+/* Transparent variants */
+.bg-primary-transparent {
+    background-color: rgba(14, 165, 233, 0.1) !important;
+    color: #0284C7 !important;
+}
+.bg-success-transparent {
+    background-color: rgba(52, 211, 153, 0.15) !important;
+    color: #059669 !important;
+}
+.bg-danger-transparent {
+    background-color: rgba(244, 63, 94, 0.1) !important;
+    color: #E11D48 !important;
+}
+.bg-warning-transparent {
+    background-color: rgba(255, 230, 109, 0.2) !important;
+    color: #92400E !important;
+}
+.bg-info-transparent, .bg-secondary-transparent {
+    background-color: rgba(192, 132, 252, 0.1) !important;
+    color: #9333EA !important;
+}
+
+/* ========== LINKS ========== */
+a {
+    color: #0EA5E9;
+}
+a:hover {
+    color: #0284C7;
+}
+
+/* ========== HEADER ========== */
+.app-header {
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
+/* ========== CARDS ========== */
+.card {
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02) !important;
+    border-radius: 12px !important;
+}
+
+/* ========== TABLES ========== */
+.table thead th {
+    background: #F8FAFC !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #E2E8F0 !important;
+}
+.table tbody tr:hover {
+    background-color: #F0F9FF !important;
+}
+
+/* ========== FORMS ========== */
+.form-control:focus, .form-select:focus {
+    border-color: #0EA5E9 !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12) !important;
+}
+
+/* ========== PAGINATION ========== */
+.page-item.active .page-link {
+    background-color: #0EA5E9 !important;
+    border-color: #0EA5E9 !important;
+}
+.page-link {
+    color: #0EA5E9 !important;
+}
+.page-link:hover {
+    color: #0284C7 !important;
+    background-color: #F0F9FF !important;
+}
+
+/* ========== TABS & NAVS ========== */
+.nav-tabs .nav-link.active {
+    color: #0EA5E9 !important;
+    border-bottom-color: #0EA5E9 !important;
+}
+.nav-pills .nav-link.active {
+    background-color: #0EA5E9 !important;
+}
+
+/* ========== PROGRESS ========== */
+.progress-bar {
+    background-color: #0EA5E9 !important;
+}
+
+/* ========== SWITCHES & CHECKBOXES ========== */
+.form-check-input:checked {
+    background-color: #0EA5E9 !important;
+    border-color: #0EA5E9 !important;
+}
+
+/* ========== TEXT COLORS ========== */
+.text-primary {
+    color: #0EA5E9 !important;
+}
+.text-success {
+    color: #34D399 !important;
+}
+.text-danger {
+    color: #F43F5E !important;
+}
+.text-warning {
+    color: #D97706 !important;
+}
+.text-info {
+    color: #C084FC !important;
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(14, 165, 233, 0.2);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(14, 165, 233, 0.4);
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ========== DROPDOWN ========== */
+.dropdown-item.active, .dropdown-item:active {
+    background-color: #0EA5E9 !important;
+}
+
+/* ========== TOAST/ALERTS ========== */
+.alert-primary {
+    background-color: rgba(14, 165, 233, 0.1) !important;
+    border-color: rgba(14, 165, 233, 0.2) !important;
+    color: #0284C7 !important;
+}
+
+/* ========== ADDITIONAL GREEN OVERRIDES ========== */
+
+/* Header/Navbar background - if themed */
+.app-header.bg-primary,
+.app-header[style*="background"] {
+    background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%) !important;
+}
+
+/* CRM Chat top bar */
+.crm-header, 
+.chat-header,
+[class*="bg-success"],
+.bg-teal {
+    background-color: #0EA5E9 !important;
+}
+
+/* Override any remaining green backgrounds */
+.bg-success:not(.badge) {
+    background-color: #34D399 !important;
+}
+
+/* Dashboard greeting banner override */
+.dash-greeting {
+    background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 60%, #38BDF8 100%) !important;
+}
+
+/* Spinner colors */
+.spinner-border.text-success {
+    color: #0EA5E9 !important;
+}
+
+/* CRM specific - status badges */
+.badge[class*="success"] {
+    background-color: #34D399 !important;
+}
+
+/* Open/Pending/Assigned stat colors */
+.text-success {
+    color: #0EA5E9 !important;
+}
+
+/* Tab pill active overrides */
+.nav-link.active[class*="success"],
+.btn-success.active,
+.btn-outline-success.active {
+    background-color: #34D399 !important;
+    border-color: #34D399 !important;
+}
+
+/* Card stat icons with green backgrounds */
+.card .bg-success-transparent,
+.card .bg-primary-gradient {
+    background: rgba(14, 165, 233, 0.1) !important;
+}
+
+/* Broadcast page stat cards */
+.card[class*="success"] .card-body,
+.card-header.bg-success,
+.card-header.bg-primary {
+    background: linear-gradient(135deg, #0284C7, #0EA5E9) !important;
+    color: #fff !important;
+}
+
+/* Start Chat / Start Conversation buttons */
+.btn-success, 
+a.btn-success,
+button.btn-success {
+    background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%) !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3) !important;
+}
+
+/* Broadcast page banner */
+.card-header[style*="background"],
+div[style*="background"][style*="059669"],
+div[style*="background"][style*="10b981"],
+div[style*="background"][style*="10B981"] {
+    background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%) !important;
+}
+
+/* "Buka CRM" buttons */
+.btn-outline-success {
+    color: #0EA5E9 !important;
+    border-color: #0EA5E9 !important;
+}
+.btn-outline-success:hover {
+    background-color: #0EA5E9 !important;
+    color: #fff !important;
+}
+
+/* Green text anywhere */
+[style*="color: #059669"],
+[style*="color: #10b981"],
+[style*="color: #10B981"],
+[style*="color:#059669"],
+[style*="color:#10b981"] {
+    color: #0EA5E9 !important;
+}
+
+/* Stats number colors */
+.text-green, .text-teal, .text-emerald {
+    color: #0EA5E9 !important;
+}
+
+/* Breadcrumb active */
+.breadcrumb-item.active {
+    color: #0EA5E9 !important;
+}
+.breadcrumb-item a {
+    color: #0EA5E9 !important;
+}
+
+/* ========== PESAN BARU & BELUM DIBALAS CARDS ========== */
+
+/* Card headers with light gradients → make them solid colored with white text */
+/* Pesan Baru: blue header */
+.dashboard-enhanced .row .col-lg-6:first-child .custom-card > div:first-child[style*="gradient"] {
+    background: linear-gradient(135deg, #0284C7, #0EA5E9) !important;
+}
+.dashboard-enhanced .row .col-lg-6:first-child .custom-card > div:first-child h6 {
+    color: #fff !important;
+}
+.dashboard-enhanced .row .col-lg-6:first-child .custom-card > div:first-child small {
+    color: rgba(255,255,255,0.85) !important;
+}
+
+/* Pesan Belum: orange header */
+.dashboard-enhanced .row .col-lg-6:last-child .custom-card > div:first-child[style*="gradient"] {
+    background: linear-gradient(135deg, #EA580C, #F97316) !important;
+}
+.dashboard-enhanced .row .col-lg-6:last-child .custom-card > div:first-child h6 {
+    color: #fff !important;
+}
+.dashboard-enhanced .row .col-lg-6:last-child .custom-card > div:first-child small {
+    color: rgba(255,255,255,0.85) !important;
+}
+
+/* All custom-card headers with inline gradient backgrounds */
+.custom-card > div[style*="DBEAFE"],
+.custom-card > div[style*="dbeafe"],
+div[style*="linear-gradient"][style*="DBEAFE"] {
+    background: linear-gradient(135deg, #0284C7, #0EA5E9) !important;
+}
+div[style*="linear-gradient"][style*="DBEAFE"] h6,
+div[style*="linear-gradient"][style*="DBEAFE"] small {
+    color: #fff !important;
+}
+
+.custom-card > div[style*="FEF3C7"],
+.custom-card > div[style*="fef3c7"],
+div[style*="linear-gradient"][style*="FEF3C7"] {
+    background: linear-gradient(135deg, #EA580C, #F97316) !important;
+}
+div[style*="linear-gradient"][style*="FEF3C7"] h6,
+div[style*="linear-gradient"][style*="FEF3C7"] small {
+    color: #fff !important;
+}
+
+/* Buka CRM button on colored headers */
+div[style*="linear-gradient"] .btn-outline-light,
+div[style*="linear-gradient"] .btn-light {
+    background: rgba(255,255,255,0.2) !important;
+    border-color: rgba(255,255,255,0.4) !important;
+    color: #fff !important;
+    backdrop-filter: blur(4px);
+}
+div[style*="linear-gradient"] .btn-outline-light:hover,
+div[style*="linear-gradient"] .btn-light:hover {
+    background: rgba(255,255,255,0.35) !important;
+}
+
+/* Broadcast status banner */
+div[style*="linear-gradient"][style*="F59E0B"],
+div[style*="linear-gradient"][style*="D97706"] {
+    background: linear-gradient(135deg, #C084FC, #A855F7) !important;
+}
+div[style*="linear-gradient"][style*="F59E0B"] h6,
+div[style*="linear-gradient"][style*="F59E0B"] small,
+div[style*="linear-gradient"][style*="D97706"] h6,
+div[style*="linear-gradient"][style*="D97706"] small {
+    color: #fff !important;
+}
+
+/* Stat number colors in pesan cards */
+.custom-card .fw-700[style*="color:#0C4A6E"] {
+    color: #fff !important;
+}
+
+/* Online status dots - keep green */
+.status-dot, [style*="background:#22C55E"], [style*="background: #22C55E"] {
+    background: #22C55E !important;
+}
+
+/* Broadcast Status Section */
+#broadcastStatusSection .card-header[style*="gradient"],
+#broadcastStatusSection > div > div > div:first-child[style*="gradient"] {
+    background: linear-gradient(135deg, #7C3AED, #8B5CF6) !important;
+}
+#broadcastStatusSection h6 {
+    color: #fff !important;
+}
+#broadcastStatusSection small {
+    color: rgba(255,255,255,0.8) !important;
+}
+#broadcastStatusSection .btn-outline-light {
+    background: rgba(255,255,255,0.15) !important;
+    border-color: rgba(255,255,255,0.3) !important;
+    color: #fff !important;
+}
+#broadcastStatusSection .btn-outline-light:hover {
+    background: rgba(255,255,255,0.3) !important;
+}
+
+
+
+/* ═══ COMPACT PAGE HEADER (after h4+breadcrumb removal) ═══ */
+/* Kolaps ruang kosong page-header, tapi tetap ada untuk @yield('button') */
+/* ═══════════════════════════════════════════════════════
+   Page Header — Navbar clearance + Action Bar
+   Fix: .page padding-top clears the fixed navbar
+   Fix: .app-content negative margin-block-start removed
+   ═══════════════════════════════════════════════════════ */
+
+/* Push all .page content below the fixed navbar (3.875rem ≈ 62px) */
+.page {
+    padding-top: 3.875rem !important;
+}
+
+
+/* Button area on the right — nice airy spacing */
+.page-header-breadcrumb .right-page {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem 1.5rem 0.5rem !important;
+}
+
+/* Hide button area completely when empty — no wasted space */
+.page-header-breadcrumb .right-page:empty {
+    display: none !important;
+    padding: 0 !important;
+}
+
+/* Remove the negative top margin that pulls content up behind navbar */
+.main-content.app-content {
+    margin-block-start: 0 !important;
+}
+/* Tombol area: tampil rapi di kanan */
+.page-header-breadcrumb .right-page {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem;
+    padding: 0.6rem 1.5rem 0.1rem !important;
+    margin-left: auto;
+}
+
+/* Kalau right-page kosong (tidak ada button): sembunyikan, tidak ada ruang */
+.page-header-breadcrumb .right-page:empty {
+    display: none !important;
+    padding: 0 !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   Dashboard Depth & Polish — lightweight, no heavy blur
+   ═══════════════════════════════════════════════════════ */
+
+/* General card elevation — subtle lift */
+.dashboard-enhanced .card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03) !important;
+    border: 1px solid rgba(226,232,240,0.8) !important;
+    transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+.dashboard-enhanced .card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04) !important;
+}
+
+/* Platform cards — glass-like subtle effect */
+.dash-platform-card {
+    border-radius: 14px !important;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+    border: 1px solid rgba(226,232,240,0.6) !important;
+    position: relative;
+    overflow: hidden;
+}
+.dash-platform-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--platform-accent, #3B82F6);
+    border-radius: 14px 14px 0 0;
+}
+.dash-top-card:nth-child(1) .dash-platform-card { --platform-accent: #25D366; }
+.dash-top-card:nth-child(2) .dash-platform-card { --platform-accent: #075E54; }
+.dash-top-card:nth-child(3) .dash-platform-card { --platform-accent: #0088CC; }
+.dash-top-card:nth-child(4) .dash-platform-card { --platform-accent: #0084FF; }
+.dash-top-card:nth-child(5) .dash-platform-card { --platform-accent: #E4405F; }
+.dash-top-card:nth-child(6) .dash-platform-card { --platform-accent: #3B82F6; }
+
+.dash-platform-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* "Connect →" button for zero-value platforms */
+.dash-connect-btn {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #3B82F6;
+    background: #EFF6FF;
+    border: 1px dashed #93C5FD;
+    border-radius: 20px;
+    padding: 3px 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.dash-top-card:hover .dash-connect-btn {
+    background: #3B82F6;
+    color: #fff;
+    border-color: #3B82F6;
+    transform: scale(1.05);
+}
+
+/* Greeting banner — subtle glass effect */
+.dash-greeting {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 20px rgba(2,132,199,0.25) !important;
+}
+.dash-greeting::after {
+    content: '';
+    position: absolute;
+    top: -50%; right: -20%;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Stat mini cards (Contact/Leads, Category, AI Agents) — livelier */
+.dashboard-enhanced .row.g-2.mt-2 .card {
+    border: 1px solid #E2E8F0 !important;
+    border-left: 3px solid #3B82F6 !important;
+    background: #fff !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
+    transition: all 0.2s ease !important;
+}
+.dashboard-enhanced .row.g-2.mt-2 .col-4:nth-child(1) .card { border-left-color: #3B82F6 !important; }
+.dashboard-enhanced .row.g-2.mt-2 .col-4:nth-child(2) .card { border-left-color: #8B5CF6 !important; }
+.dashboard-enhanced .row.g-2.mt-2 .col-4:nth-child(3) .card { border-left-color: #F59E0B !important; }
+.dashboard-enhanced .row.g-2.mt-2 .card:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+}
+
+/* Chart card — cleaner elevation */
+.dash-label-card .card {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05) !important;
+    border: 1px solid rgba(226,232,240,0.7) !important;
+}
+
+/* Broadcast status cards — depth */
+.dashboard-enhanced .custom-card[style*="border-radius:16px"] {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05) !important;
+}
+
+/* Count-up animation for stat numbers */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.dash-top-card h3, .dashboard-enhanced .row.g-2.mt-2 h5 {
+    animation: fadeInUp 0.4s ease forwards;
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   ACTION BAR — page-header-breadcrumb
+   Dashboard (no button) = zero height, invisible
+   Pages with buttons   = proper action bar with bottom border
+   ════════════════════════════════════════════════════════════════ */
+
+/* Base state: invisible spacer (dashboard) */
+.page-header-breadcrumb {
+    position: relative !important;
+    top: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    overflow: visible !important;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Button area: display flex, align right */
+.page-header-breadcrumb .right-page {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 0.5rem !important;
+    padding: 0 !important;
+    flex-wrap: wrap !important;
+}
+
+/* When JS detects buttons → add .has-action class → proper action bar */
+.page-header-breadcrumb.has-action {
+    background: #ffffff !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
+    padding: 0.55rem 1.25rem !important;
+    min-height: 48px !important;
+}
+
+/* Content area: start immediately, consistent spacing */
+.main-content.app-content {
+    margin-block-start: 0 !important;
+    padding-top: 0 !important;
+}
+.main-content.app-content .container-fluid {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+/* Collapse empty validation component wrapper */
+.main-content .col-12:has(x-validation-component:empty),
+.main-content .col-12.mb-3:first-child:empty {
+    margin-bottom: 0 !important;
+    display: none !important;
+}
+
+/* ── SIDEBAR HEADER HEIGHT FIX (authoritative override) ── */
+html body .app-sidebar .main-sidebar-header,
+.app-sidebar .main-sidebar-header {
+    height: auto !important;
+    min-height: unset !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+}

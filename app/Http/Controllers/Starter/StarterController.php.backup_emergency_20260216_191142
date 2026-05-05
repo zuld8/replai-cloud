@@ -1,0 +1,555 @@
+<?php
+
+namespace App\Http\Controllers\Starter;
+
+use App\Http\Controllers\Controller;
+use App\Models\InternalSetting;
+use App\Models\Package\Package;
+use App\Models\Package\PackageTransaction;
+use App\Models\Package\PackageTransactionPayment;
+use App\Models\Setting;
+use App\Observers\Saas\BankObserver;
+use App\Observers\Saas\DuitkuObserver;
+use App\Observers\Saas\NotificationObserver;
+use App\Observers\Saas\PricingObserver;
+use App\Observers\Saas\TransactionObserver;
+use App\Observers\WhatsappServiceObserver;
+use App\Process\MasterData\UploadImageProcess;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class StarterController extends Controller
+{
+    protected $pricingObserver;
+    protected $transactionObserver;
+    protected $banksObserver;
+    protected $uploadImageProcess;
+    protected $notificationObserver;
+    protected $whatsappServiceObserver;
+    protected $duitkuObserver;
+
+    public function __construct(PricingObserver $pricingObserver, TransactionObserver $transactionObserver, BankObserver $bankObserver, UploadImageProcess $uploadImageProcess, NotificationObserver $notificationObserver, WhatsappServiceObserver $whatsappServiceObserver, DuitkuObserver $duitkuObserver)
+    {
+        $this->pricingObserver      = $pricingObserver;
+        $this->transactionObserver  = $transactionObserver;
+        $this->banksObserver        = $bankObserver;
+        $this->uploadImageProcess   = $uploadImageProcess;
+        $this->notificationObserver = $notificationObserver->getData();
+        $this->whatsappServiceObserver  = $whatsappServiceObserver;
+        $this->duitkuObserver       = $duitkuObserver;
+    }
+
+    public function index(Request $request)
+    {
+        $packages   = $this->pricingObserver->getData($request)->get();
+        return view('starter.packages.index', ['page'  => __('starter.package_plan_price'), 'breadcumb'   => false], compact('packages'));
+    }
+
+    public function package(Request $request, Package $package)
+    {
+        $banks      = $this->banksObserver->getData($request)->get();
+        return view('starter.packages.detail', ['page'   => __('starter.transaction_history'), 'breadcumb'   => false], compact('package', 'banks'));
+    }
+
+    public function packageDetail(Package $package)
+    {
+
+        $setting    = InternalSetting::first(['tax']);
+        $tax        = $package->price > 0 && $setting->tax > 0 ? (float)($setting->tax / 100 * $package->price) : 0;
+        $estimate   = now()->addDays((int)$package->add_days);
+        return [
+            'name'      => $package->name,
+            'estimate'  => $estimate->format('Y-m-d'),
+            'price'     => number_format($package->price),
+            'tax'       => (float)$setting->tax,
+            'tax_total' => number_format($tax),
+            'subtotal'  => number_format($package->price + $tax)
+        ];
+    }
+
+    public function createTransaction(Request $request, Setting $business)
+    {
+
+        $this->validate($request, [
+            'package_id'        => 'required'
+        ]);
+
+        $package    = Package::findOrFail($request->package_id);
+
+        if (my_user()->merchant->transaction_package_pending == false) {
+            return redirect()->back()->with(['gagal' => __('starter.validation_package')]);
+        }
+
+        if (my_user()->merchant->package_transaction->count() > 0 && $package->trial_version == 'yes') {
+            return redirect()->back()->with(['gagal' => __('starter.validation_trial')]);
+        }
+
+
+        $internalSetting    = InternalSetting::first(['app_name']);
+
+        try {
+
+            DB::beginTransaction();
+
+            $transaction = $this->transactionObserver->createData($business, $package);
+
+
+            if ($this->notificationObserver->whatsapp_buy_package == 'yes' && $this->notificationObserver->device) {
+                if ($this->notificationObserver->buy_package_template_whatsapp) {
+                    $message    = $this->notificationObserver->buy_package_template_whatsapp->message;
+                    $file       = $this->notificationObserver->buy_package_template_whatsapp->image;
+                    $type       = $this->notificationObserver->buy_package_template_whatsapp->type_content;
+                    $datas      = json_decode($this->notificationObserver->buy_package_template_whatsapp->button_or_list, true);
+                    $message    = str_replace(
+                        ['{business_name}', '{name}', '{package_name}', '{subtotal}', '{date}', '{app_name}'],
+                        [($transaction->business->name ?? ''), my_user()->name, ($transaction->package->name ?? ''), number_format($transaction->final_total), substr($transaction->created_at, 0, 10), $internalSetting->app_name],
+                        $message
+                    );
+
+                    $messageVariable = array(
+                        'message'           => urldecode($message),
+                        'template_body'     => array(),
+                        'whatsapp_key'      => $this->notificationObserver->device->id,
+                        'whatsapp_session'  => $this->notificationObserver->device->id,
+                        'file'              => $file != null ? asset($file) : '',
+                        'phone'             => $this->notificationObserver->received_notification
+                    );
+
+                    if ($messageVariable['phone'] != null) {
+                        $this->whatsappServiceObserver->sendMessage($messageVariable['phone'], $messageVariable['whatsapp_key'], $messageVariable['message'], $messageVariable['file'], $type, $datas);
+                    }
+                }
+            }
+
+            if ($this->notificationObserver->email_buy_package == 'yes') {
+
+                if ($this->notificationObserver->buy_package_template_email) {
+                    $message    = $this->notificationObserver->buy_package_template_email->html;
+                    $message    = str_replace(
+                        ['{business_name}', '{name}', '{package_name}', '{subtotal}', '{date}', '{app_name}'],
+                        [($transaction->business->name ?? ''), my_user()->name, ($transaction->package->name ?? ''), number_format($transaction->final_total), substr($transaction->created_at, 0, 10), $internalSetting->app_name],
+                        $message
+                    );
+
+                    $this->whatsappServiceObserver->sendEmail($this->notificationObserver->received_email_notification, $message, $this->notificationObserver->buy_package_template_email);
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('starter.transactions.detail', $transaction->id)->with(['flash' => __('starter.transaction_created')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with(['gagal' => $e->getMessage()]);
+        }
+    }
+
+
+    public function transactions(Request $request)
+    {
+        $transactions   = $this->transactionObserver->getData($request)->where('merchant_id', my_user()->merchant_id ?? null)->get(['id', 'created_at', 'package_id', 'merchant_id', 'price', 'tax', 'final_total', 'ref_no', 'status', 'business_id']);
+        return view('starter.transactions.index', ['page' => __('starter.transaction_history'), 'breadcumb'   => false], compact('transactions'));
+    }
+
+    public function detail(Request $request, PackageTransaction $transaction)
+    {
+
+        $setting        = InternalSetting::first(['tax', 'method', 'merchant_code', 'api_key', 'is_production']);
+        $datetime       = date('Y-m-d H:i:s');
+        $payments       = null;
+
+        if ($setting->method == 'duitku') {
+            $paymentMetode  = $this->duitkuObserver->getPaymentMethods([
+                'merchant_code'     => $setting->merchant_code,
+                'amount'            => (float)$transaction->final_total,
+                'date'              => $datetime,
+                'signature'         => hash('sha256', $setting->merchant_code . (float)$transaction->final_total . $datetime . $setting->api_key)
+            ], $setting->is_production);
+
+            $wallets            = json_decode($paymentMetode->body())->paymentFee;
+            $virtualAccount     = [];
+            $eWallet            = [];
+            $qris               = [];
+            $retail             = [];
+
+            foreach ($wallets as $payment) {
+                if (strpos($payment->paymentName, 'VA') !== false) {
+                    $virtualAccount[] = $payment;
+                } elseif (in_array($payment->paymentMethod, ['OV', 'DA', 'LA', 'SA', 'OL','LF','SL'])) {
+                    $eWallet[] = $payment;
+                } elseif (in_array($payment->paymentMethod, ['SP', 'NQ', 'GQ','SQ'])) {
+                    $qris[] = $payment;
+                } elseif (in_array($payment->paymentMethod, ['IR', 'FT'])) {
+                    $retail[] = $payment;
+                }
+            }
+
+            $payments   = [
+                'va'            => $virtualAccount,
+                'wallet'        => $eWallet,
+                'qris'          => $qris,
+                'retail'        => $retail
+            ];
+        }
+
+
+        if ($transaction->merchant->id != my_user()->merchant_id) {
+            return redirect()->back()->with(['gagal'    => 'No Access']);
+        }
+
+        $banks  = $this->banksObserver->getData($request)->get();
+        return view('starter.transactions.detail', ['page'   => __('starter.detail_transaction'), 'breadcumb'   => false], compact('transaction', 'banks', 'payments', 'setting'));
+    }
+
+    public function payTransaction(Request $request, PackageTransaction $transaction)
+    {
+
+        if ($transaction->merchant->id != my_user()->merchant_id) {
+            return redirect()->back()->with(['gagal'    => 'No Access']);
+        }
+
+        $this->validate($request, [
+            'amount'            => 'required|numeric',
+            'to_bank'           => 'required',
+            'bank_name'         => 'required',
+            'bank_number'       => 'required',
+            'image'             => 'mimes:jpg,jpeg,png',
+        ]);
+
+
+        if ($transaction->status == 'process') {
+            return redirect()->back()->with(['gagal'    => __('starter.payment_v_process')]);
+        }
+
+        if ($transaction->status == 'success') {
+            return redirect()->back()->with(['gagal'    => __('starter.payment_v_success')]);
+        }
+
+        $internalSetting    = InternalSetting::first(['app_name']);
+        try {
+
+            DB::beginTransaction();
+
+            $image  = '';
+
+            if ($request->image) {
+                $image =  $this->uploadImage($request, 'image', 'payments');
+            }
+
+            $payment    = $this->transactionObserver->createPayment($request, $transaction, $image);
+
+            $transaction->update([
+                'status'        => 'process'
+            ]);
+
+            if ($this->notificationObserver->whatsapp_package_payment == 'yes' && $this->notificationObserver->device) {
+                if ($this->notificationObserver->package_payment_template_whatsapp) {
+                    $message    = $this->notificationObserver->package_payment_template_whatsapp->message;
+                    $file       = $this->notificationObserver->package_payment_template_whatsapp->image;
+                    $type       = $this->notificationObserver->package_payment_template_whatsapp->type_content;
+                    $datas      = json_decode($this->notificationObserver->package_payment_template_whatsapp->button_or_list, true);
+                    $message    = str_replace(
+                        ['{business_name}', '{name}', '{package_name}', '{payment_amount}', '{date}', '{app_name}', '{from_bank}', '{to_bank}'],
+                        [($transaction->merchant->name ?? ''), my_user()->name, ($transaction->package->name ?? ''), number_format($payment->amount), substr($transaction->created_at, 0, 10), $internalSetting->app_name, $payment->bank_name, ($payment->bank->name ?? '')],
+                        $message
+                    );
+
+                    $messageVariable = array(
+                        'message'           => urldecode($message),
+                        'template_body'     => array(),
+                        'whatsapp_key'      => $this->notificationObserver->device->id,
+                        'whatsapp_session'  => $this->notificationObserver->device->id,
+                        'file'              => $file != null ? asset($file) : '',
+                        'phone'             => $this->notificationObserver->received_notification
+                    );
+
+                    if ($messageVariable['phone'] != null) {
+                        $this->whatsappServiceObserver->sendMessage($messageVariable['phone'], $messageVariable['whatsapp_key'], $messageVariable['message'], $messageVariable['file'], $type, $datas);
+                    }
+                }
+            }
+
+            if ($this->notificationObserver->email_package_payment == 'yes') {
+
+                if ($this->notificationObserver->package_payment_template_email) {
+                    $message    = $this->notificationObserver->package_payment_template_email->html;
+                    $message    = str_replace(
+                        ['{business_name}', '{name}', '{package_name}', '{payment_amount}', '{date}', '{app_name}', '{from_bank}', '{to_bank}'],
+                        [($transaction->merchant->name ?? ''), my_user()->name, ($transaction->package->name ?? ''), number_format($payment->amount), substr($transaction->created_at, 0, 10), $internalSetting->app_name, $payment->bank_name, ($payment->bank->name ?? '')],
+                        $message
+                    );
+
+                    $this->whatsappServiceObserver->sendEmail($this->notificationObserver->received_email_notification, $message, $this->notificationObserver->package_payment_template_email);
+                }
+            }
+
+            if ($this->notificationObserver->whatsapp_package_user == 'yes' && $this->notificationObserver->device) {
+                if ($this->notificationObserver->package_user_template_whatsapp) {
+                    $message    = $this->notificationObserver->package_user_template_whatsapp->message;
+                    $file       = $this->notificationObserver->package_user_template_whatsapp->image;
+                    $type       = $this->notificationObserver->package_user_template_whatsapp->type_content;
+                    $datas      = json_decode($this->notificationObserver->package_user_template_whatsapp->button_or_list, true);
+                    $message    = str_replace(
+                        ['{business_name}', '{name}', '{package_name}', '{payment_amount}', '{date}', '{app_name}', '{from_bank}', '{to_bank}'],
+                        [($transaction->merchant->name ?? ''), my_user()->name, ($transaction->package->name ?? ''), number_format($payment->amount), substr($transaction->created_at, 0, 10), $internalSetting->app_name, $payment->bank_name, ($payment->bank->name ?? '')],
+                        $message
+                    );
+
+                    $messageVariable = array(
+                        'message'           => urldecode($message),
+                        'template_body'     => array(),
+                        'whatsapp_key'      => $this->notificationObserver->device->id,
+                        'whatsapp_session'  => $this->notificationObserver->device->id,
+                        'file'              => $file != null ? asset($file) : '',
+                        'phone'             => $transaction->merchant->owner->phone ?? null
+                    );
+
+                    if ($messageVariable['phone'] != null) {
+                        $this->whatsappServiceObserver->sendMessage($messageVariable['phone'], $messageVariable['whatsapp_key'], $messageVariable['message'], $messageVariable['file'], $type, $datas);
+                    }
+                }
+            }
+
+            if ($this->notificationObserver->email_package_user == 'yes') {
+
+                if ($this->notificationObserver->package_user_template_email) {
+                    $message    = $this->notificationObserver->package_user_template_email->html;
+                    $message    = str_replace(
+                        ['{business_name}', '{name}', '{package_name}', '{payment_amount}', '{date}', '{app_name}', '{from_bank}', '{to_bank}'],
+                        [($transaction->merchant->name ?? ''), my_user()->name, ($transaction->package->name ?? ''), number_format($payment->amount), substr($transaction->created_at, 0, 10), $internalSetting->app_name, $payment->bank_name, ($payment->bank->name ?? '')],
+                        $message
+                    );
+
+                    $this->whatsappServiceObserver->sendEmail($transaction->merchant->owner->email ?? null, $message, $this->notificationObserver->package_user_template_email);
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('starter.transactions')->with(['flash'    => __('general.success_add_data')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with(['gagal' => $e->getMessage()]);
+        }
+    }
+
+    public function createTokenDuitku(Request $request, PackageTransaction $transaction)
+    {
+
+        $settings   = InternalSetting::first(['tax', 'method', 'merchant_code', 'api_key', 'is_production']);
+        $orderId    = $transaction->id;
+        $addCost    = (float)$request->additional_cost;
+        $amount     = (float)($transaction->final_total);
+        $fullName   = $transaction->merchant->owner->name ?? '';
+        $nameParts  = explode(' ', $fullName, 2);
+
+        $firstName  = $nameParts[0] ?? '';
+        $lastName   = $nameParts[1] ?? '';
+
+        $data = [
+            'merchantCode'      => $settings->merchant_code,
+            'paymentAmount'     => $amount,
+            'paymentMethod'     => $request->to_bank,
+            'merchantOrderId'   => $orderId,
+            'productDetails'    => $transaction->package->name ?? '',
+            'customerVaName'    => $transaction->merchant->owner->name ?? '',
+            'email'             => $transaction->merchant->owner->email ?? '',
+            'phoneNumber'       => $transaction->merchant->owner->phone ?? '',
+            'itemDetails'       => [
+                [
+                    'name'          => $transaction->package->name ?? '',
+                    'price'         => $amount,
+                    'quantity'      => 1
+                ]
+            ],
+            'customerDetail'    => [
+                'firstName'         => $firstName,
+                'lastName'          => $lastName,
+                'email'             => $transaction->merchant->owner->email ?? '',
+                'phoneNumber'       => $transaction->merchant->owner->phone ?? '',
+            ],
+            'returnUrl'         => route('starter.transactions.detail', $transaction->id),
+            'callbackUrl'       => env('APP_URL') . '/api-app/payments/callback',
+            'signature'         => hash('md5', $settings->merchant_code . $orderId . $amount . $settings->api_key),
+            'expiryPeriod'      => 1440,
+        ];
+
+        $createToken = $this->duitkuObserver->createTransaction($data, $settings->api_key, $settings->is_production);
+
+        if ($createToken->status() == 200) {
+            $response       = json_decode($createToken->body());
+            return redirect($response->paymentUrl);
+        }
+
+        return redirect()->back()->with(['gagal'    => 'Terjadi kesalahan, silahkan coba kembali']);
+    }
+
+    public function callbackPayment(Request $request)
+    {
+        $settings   = InternalSetting::first(['tax', 'method', 'merchant_code', 'api_key', 'is_production']);
+
+        if (!empty($request->merchantCode) && !empty($request->amount) && !empty($request->merchantOrderId) && !empty($request->signature)) {
+            $params         = $request->merchantCode . $request->merchantOrderId . (float)$request->amount . $settings->api_key;
+            $calcSignature  = md5($params);
+
+
+            // if ($request->signature != $calcSignature) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Bad Signature',
+            //     ], 401);
+            // }
+
+            try {
+
+                $internalSetting    = InternalSetting::first(['app_name']);
+                $transaction        = PackageTransaction::where('id', $request->merchantOrderId)->where(function ($q) {
+                    return $q->where('status', 'pending')->orWhere('status', 'process');
+                })->first();
+
+                if ($transaction) {
+                    DB::beginTransaction();
+
+                    $payment    = PackageTransactionPayment::create([
+                        'package_transaction_id'    => $transaction->id,
+                        'amount'                    => $request->amount,
+                        'method'                    => $request->paymentCode,
+                        'bank_name'                 => $request->paymentCode,
+                        'bank_number'               => $request->reference,
+                    ]);
+
+                    $transaction->update([
+                        'status'        => 'success'
+                    ]);
+
+                    if ($transaction->package) {
+                        if ($this->notificationObserver->whatsapp_package_payment == 'yes' && $this->notificationObserver->device) {
+                            if ($this->notificationObserver->package_payment_template_whatsapp) {
+                                $message    = $this->notificationObserver->package_payment_template_whatsapp->message;
+                                $file       = $this->notificationObserver->package_payment_template_whatsapp->image;
+                                $type       = $this->notificationObserver->package_payment_template_whatsapp->type_content;
+                                $datas      = json_decode($this->notificationObserver->package_payment_template_whatsapp->button_or_list, true);
+                                $message    = str_replace(
+                                    ['{business_name}', '{name}', '{package_name}', '{payment_amount}', '{date}', '{app_name}', '{from_bank}', '{to_bank}'],
+                                    [($transaction->merchant->name ?? ''), ($transaction->merchant->owner->name ?? ''), ($transaction->package->name ?? ''), number_format($payment->amount), substr($transaction->created_at, 0, 10), $internalSetting->app_name, $payment->bank_name, ($payment->bank->name ?? '')],
+                                    $message
+                                );
+
+                                $messageVariable = array(
+                                    'message'           => urldecode($message),
+                                    'template_body'     => array(),
+                                    'whatsapp_key'      => $this->notificationObserver->device->id,
+                                    'whatsapp_session'  => $this->notificationObserver->device->id,
+                                    'file'              => $file != null ? asset($file) : '',
+                                    'phone'             => $this->notificationObserver->received_notification
+                                );
+
+                                if ($messageVariable['phone'] != null) {
+                                    $this->whatsappServiceObserver->sendMessage($messageVariable['phone'], $messageVariable['whatsapp_key'], $messageVariable['message'], $messageVariable['file'], $type, $datas);
+                                }
+                            }
+                        }
+
+                        if ($this->notificationObserver->email_package_payment == 'yes') {
+
+                            if ($this->notificationObserver->package_payment_template_email) {
+                                $message    = $this->notificationObserver->package_payment_template_email->html;
+                                $message    = str_replace(
+                                    ['{business_name}', '{name}', '{package_name}', '{payment_amount}', '{date}', '{app_name}', '{from_bank}', '{to_bank}'],
+                                    [($transaction->merchant->name ?? ''), ($transaction->merchant->owner->name ?? ''), ($transaction->package->name ?? ''), number_format($payment->amount), substr($transaction->created_at, 0, 10), $internalSetting->app_name, $payment->bank_name, ($payment->bank->name ?? '')],
+                                    $message
+                                );
+
+                                $this->whatsappServiceObserver->sendEmail($this->notificationObserver->received_email_notification, $message, $this->notificationObserver->package_payment_template_email);
+                            }
+                        }
+
+                        if ($this->notificationObserver->whatsapp_package_user == 'yes' && $this->notificationObserver->device) {
+                            if ($this->notificationObserver->package_user_template_whatsapp) {
+                                $message    = $this->notificationObserver->package_user_template_whatsapp->message;
+                                $file       = $this->notificationObserver->package_user_template_whatsapp->image;
+                                $packageName = $transaction->package->name ?? '';
+                                $merchantName = $transaction->merchant->name ?? '';
+                                $type       = $this->notificationObserver->package_user_template_whatsapp->type_content;
+                                $datas      = json_decode($this->notificationObserver->package_user_template_whatsapp->button_or_list, true);
+                                $message    = str_replace(
+                                    ['{business_name}', '{name}', '{productname}', '{payment_amount}', '{date}', '{app_name}', '{from_bank}', '{to_bank}', '{email}', '{phone}'],
+                                    [$merchantName, ($transaction->merchant->owner->name ?? ''), $packageName, number_format($payment->amount), substr($transaction->created_at, 0, 10), $internalSetting->app_name, $payment->bank_name, $payment->bank_name, ($transaction->merchant->owner->email ?? ''), ($transaction->merchant->owner->phone ?? '')],
+                                    $message
+                                );
+
+                                $messageVariable = array(
+                                    'message'           => urldecode($message),
+                                    'template_body'     => array(),
+                                    'whatsapp_key'      => $this->notificationObserver->device->id,
+                                    'whatsapp_session'  => $this->notificationObserver->device->id,
+                                    'file'              => $file != null ? asset($file) : '',
+                                    'phone'             => $transaction->merchant->owner->phone ?? null
+                                );
+
+                                if ($messageVariable['phone'] != null) {
+                                    $this->whatsappServiceObserver->sendMessage($messageVariable['phone'], $messageVariable['whatsapp_key'], $messageVariable['message'], $messageVariable['file'], $type, $datas);
+                                }
+                            }
+                        }
+
+                        if ($this->notificationObserver->email_package_user == 'yes') {
+
+                            if ($this->notificationObserver->package_user_template_email) {
+                                $message    = $this->notificationObserver->package_user_template_email->html;
+                                $message    = str_replace(
+                                    ['{business_name}', '{name}', '{package_name}', '{payment_amount}', '{date}', '{app_name}', '{from_bank}', '{to_bank}'],
+                                    [($transaction->merchant->name ?? ''), ($transaction->merchant->owner->name ?? ''), ($transaction->package->name ?? ''), number_format($payment->amount), substr($transaction->created_at, 0, 10), $internalSetting->app_name, $payment->method, ''],
+                                    $message
+                                );
+
+                                $this->whatsappServiceObserver->sendEmail($transaction->merchant->owner->email ?? null, $message, $this->notificationObserver->package_user_template_email);
+                            }
+                        }
+                    }
+
+
+                    DB::commit();
+                }
+
+
+                return response()->json(['message' => 'Callback Received']);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => 'Terjadi kesalahan',
+                    'error'     => $e->getMessage(),
+                    'file'      => $e->getFile(),
+                    'line'      => $e->getLine()
+                ], 419);
+            }
+        }
+
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Bad Parameter',
+        ], 422);
+    }
+
+    public function delete(PackageTransaction $transaction)
+    {
+
+        if ($transaction->merchant->id != my_user()->merchant_id) {
+            return redirect()->back()->with(['gagal'    => 'No Access']);
+        }
+
+        if ($transaction->status == 'process') {
+            return redirect()->back()->with(['gagal'    => __('starter.payment_v_process')]);
+        }
+
+        if ($transaction->status == 'success') {
+            return redirect()->back()->with(['gagal'    => __('starter.cant_delete')]);
+        }
+
+
+        $transaction->delete();
+        return redirect()->back()->with(['flash'    => __('general.success_deleted')]);
+    }
+}

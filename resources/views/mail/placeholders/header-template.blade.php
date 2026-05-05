@@ -1,0 +1,1 @@
+<x-frontent.header-component></x-frontent.header-component>

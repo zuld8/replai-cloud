@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class MarkCompletedBroadcasts extends Command
+{
+    protected $signature = 'broadcast:mark-completed';
+    protected $description = 'Auto-mark broadcasts as success when all recipients are actually sent';
+
+    public function handle()
+    {
+        // FIX: hanya mark success jika semua detail sudah benar-benar terkirim (sending_status='yes')
+        // Bug sebelumnya: menghitung sending_status='no' sebagai "processed"
+        $stuck = DB::select("
+            SELECT bw.id, bw.name, bw.status,
+                   COUNT(bd.id) as total,
+                   SUM(CASE WHEN bd.sending_status = 'yes' THEN 1 ELSE 0 END) as sent,
+                   SUM(CASE WHEN bd.sending_status != 'yes' AND (bd.delivery_status IS NULL OR bd.delivery_status NOT IN ('processing', 'dispatched')) THEN 1 ELSE 0 END) as unsent_idle
+            FROM blash_whatsapps bw
+            INNER JOIN blash_details bd ON bd.blash_whatsapp_id = bw.id
+            WHERE bw.status NOT IN ('success', 'failed', 'pending')
+            AND bw.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            GROUP BY bw.id, bw.name, bw.status
+            HAVING total > 0 AND unsent_idle = 0
+        ");
+
+        if (empty($stuck)) {
+            return;
+        }
+
+        $ids = array_map(fn($r) => $r->id, $stuck);
+
+        DB::table('blash_whatsapps')
+            ->whereIn('id', $ids)
+            ->update(['status' => 'success']);
+
+        foreach ($stuck as $bc) {
+            Log::info("MarkCompleted: {$bc->name} ({$bc->id}) — was '{$bc->status}', sent={$bc->sent}/{$bc->total}, marked success");
+        }
+
+        // Refresh stat cache for newly completed broadcasts
+        foreach ($ids as $broadcastId) {
+            $stats = DB::table('blash_details')
+                ->where('blash_whatsapp_id', $broadcastId)
+                ->selectRaw('
+                    COUNT(*) as total,
+                    SUM(sending_status = "yes") as sent,
+                    SUM(sending_status = "no") as failed,
+                    SUM(delivery_status = "delivered") as delivered,
+                    SUM(delivery_status = "read") as stat_read,
+                    SUM(delivery_status = "failed") as delivery_failed
+                ')
+                ->first();
+
+            DB::table('blash_whatsapps')->where('id', $broadcastId)->update([
+                'stat_total'           => (int) ($stats->total ?? 0),
+                'stat_sent'            => (int) ($stats->sent ?? 0),
+                'stat_failed'          => (int) ($stats->failed ?? 0),
+                'stat_delivered'       => (int) ($stats->delivered ?? 0),
+                'stat_read'            => (int) ($stats->stat_read ?? 0),
+                'stat_delivery_failed' => (int) ($stats->delivery_failed ?? 0),
+                'stat_updated_at'      => now(),
+            ]);
+        }
+
+        $this->info("Marked " . count($stuck) . " broadcasts as success + refreshed stat cache");
+    }
+}

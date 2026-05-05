@@ -1,0 +1,76 @@
+server {
+    listen 80;
+    server_name chat.replai.id;
+    return 301 https://$host$request_uri;
+}
+
+server {
+
+    client_max_body_size 100M;
+    server_name chat.replai.id;
+
+    root /var/www/html/chat.replai.id/public;
+    index index.php index.html;
+
+    error_log /var/log/nginx/chat.replai.id.error.log;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # PHP HANDLER FIXED
+    # JS files - no immutable cache (allow re-validation on reload)
+    location ~* \.js$ {
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800, must-revalidate";
+        access_log off;
+        log_not_found off;
+    }
+
+    # CSS files - short cache
+    location ~* \.css$ {
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800";
+        access_log off;
+        log_not_found off;
+    }
+
+    # Static assets (images, fonts) - long cache OK
+    location ~* \.(jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|webp)$ {
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+        access_log off;
+        log_not_found off;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_read_timeout 600;
+        fastcgi_send_timeout 600;
+        fastcgi_connect_timeout 600;
+        proxy_read_timeout 600;
+        proxy_send_timeout 600;
+    }
+
+    # DENY HIDDEN FILES
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+
+    listen 443 ssl http2; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/chat.replai.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/chat.replai.id/privkey.pem;
+
+	# Security Headers
+	add_header X-Frame-Options "SAMEORIGIN" always;
+	add_header X-Content-Type-Options "nosniff" always;
+	add_header X-XSS-Protection "1; mode=block" always;
+	add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+	add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+	add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+

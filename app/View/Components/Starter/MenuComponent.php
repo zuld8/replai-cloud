@@ -1,0 +1,28 @@
+<?php
+
+namespace App\View\Components\Starter;
+
+use App\Models\InternalSetting;
+use Closure;
+use Illuminate\Contracts\View\View;
+use Illuminate\View\Component;
+
+class MenuComponent extends Component
+{
+    /**
+     * Create a new component instance.
+     */
+    public function __construct()
+    {
+        //
+    }
+
+    /**
+     * Get the view / contents that represent the component.
+     */
+    public function render(): View|Closure|string
+    {
+        $internalSetting    = InternalSetting::first(['white_logo', 'logo', 'app_name', 'icon']);
+        return view('components.starter.menu-component',compact('internalSetting'));
+    }
+}

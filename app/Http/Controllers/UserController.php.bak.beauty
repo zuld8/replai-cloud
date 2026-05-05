@@ -1,0 +1,358 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Resources\Master\TeamListResource;
+use App\Models\User;
+use App\Observers\Saas\BusinessObserver;
+use App\Observers\UserObserver;
+use App\Process\MasterData\UploadImageProcess;
+use App\Services\Master\RoleService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Spatie\Permission\PermissionRegistrar;
+use App\Models\WhatsappDevice;
+use App\Models\WhatsappKeyAccount;
+use App\Models\TelegramKey;
+use App\Models\Meta\InstagramAccount;
+use App\Models\Meta\MessengerAccount;
+use App\Models\LiveChat;
+use Illuminate\Support\Str;
+
+class UserController extends Controller
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Users Controllers
+    |--------------------------------------------------------------------------
+    */
+
+    protected $usersObserver;
+    protected $uploadImageProcess;
+    protected $businessObserver;
+    protected $roleService;
+
+    public function __construct(UserObserver $userObserver, UploadImageProcess $uploadImageProcess, BusinessObserver $businessObserver, RoleService $roleService)
+    {
+        $this->usersObserver        = $userObserver;
+        $this->uploadImageProcess   = $uploadImageProcess;
+        $this->businessObserver     = $businessObserver;
+        $this->roleService          = $roleService;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 1. Users List
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(Request $request)
+    {
+        $users       = $this->usersObserver->getData($request)->get();
+        $businesses  = $this->businessObserver->getData($request)->get(['id', 'name', 'created_at']);
+        $roles       = $this->roleService->getData($request);
+        try {
+            $bizId     = my_business();
+            $platforms = $this->getPlatformChannels($bizId);
+        } catch (\Throwable $e) {
+            \Log::warning('getPlatformChannels failed: ' . $e->getMessage());
+            $platforms = ['devices'=>collect(),'wabas'=>collect(),'telegrams'=>collect(),'instagrams'=>collect(),'messengers'=>collect(),'livechats'=>collect()];
+        }
+        return view('users.index', ['page' => __('page.user.page'), 'breadcumb' => true], compact('users', 'businesses', 'roles', 'platforms'));
+    }
+
+
+    public function components(Request $request)
+    {
+        $users   = $this->usersObserver->getData($request)->get(['id', 'name']);
+        return response()->json([
+            'users'     => TeamListResource::collection($users),
+        ], 200);
+    }
+
+    public function getJson(Request $request, User $user)
+    {
+        $userPlatforms = $this->getUserPlatformIds($user->id);
+        $bizIds        = $user->business_id ? array_map('trim', explode(',', $user->business_id)) : [];
+        return response()->json([
+            'id'            => $user->id,
+            'name'          => $user->name,
+            'email'         => $user->email,
+            'phone'         => $user->phone,
+            'gender'        => $user->gender,
+            'role_id'       => $user->roles->first()?->id ?? '',
+            'photo'         => $user->photo ? asset('storage/' . $user->photo) : null,
+            'businesses'    => $bizIds,
+            'userPlatforms' => $userPlatforms,
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. Create Page
+    |--------------------------------------------------------------------------
+    */
+
+    public function create(Request $request)
+    {
+        $businesses     = $this->businessObserver->getData($request)->get(['id', 'name', 'created_at']);
+        $roles          = $this->roleService->getData($request);
+        return view('users.create', ['page'   => __('page.user.add'), 'breadcumb' => true], compact('businesses', 'roles'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. Update Page
+    |--------------------------------------------------------------------------
+    */
+
+    public function update(Request $request, User $user)
+    {
+        $businesses      = $this->businessObserver->getData($request)->get(['id', 'name', 'created_at']);
+        $roles           = $this->roleService->getData($request);
+        try {
+            $bizId         = my_business();
+            $platforms     = $this->getPlatformChannels($bizId);
+            $userPlatforms = $this->getUserPlatformIds($user->id);
+        } catch (\Throwable $e) {
+            \Log::warning('update getPlatformChannels failed: ' . $e->getMessage());
+            $empty         = ['devices'=>collect(),'wabas'=>collect(),'telegrams'=>collect(),'instagrams'=>collect(),'messengers'=>collect(),'livechats'=>collect()];
+            $platforms     = $empty;
+            $userPlatforms = ['devices'=>[],'wabas'=>[],'telegrams'=>[],'instagrams'=>[],'messengers'=>[],'livechats'=>[]];
+        }
+        return view('users.update', ['page' => __('page.user.edit'), 'breadcumb' => true], compact('user', 'businesses', 'roles', 'platforms', 'userPlatforms'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. Change Password
+    |--------------------------------------------------------------------------
+    */
+
+    public function changePassword(Request $request, User $user)
+    {
+        $this->validate($request, [
+            'password'      => 'required|min:8',
+            'confirm'       => 'required'
+        ]);
+
+        if ($request->password != $request->confirm) {
+            return redirect()->back()->with(['gagal'    => __('validation.password_must_same')]);
+        }
+
+        $this->usersObserver->changePassword($request, $user);
+        return redirect()->route('users')->with(['flash' => __('general.success_update')]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Delete User
+    |--------------------------------------------------------------------------
+    */
+
+    public function delete(User $user)
+    {
+
+        if ($user->merchant && ($user->merchant->owner->id == $user->id)) {
+            return redirect()->back()->with(['gagal'    => 'Pengguna ini merupakan owner bisnis dan tidak dapat di hapus']);
+        }
+
+
+        $this->unlinkFile($user->photo);
+        $this->usersObserver->deleteData($user);
+
+        return redirect()->back()->with(['flash'    => __('general.success_deleted')]);
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 6. Store Data to Database
+    |--------------------------------------------------------------------------
+    */
+
+    public function store(Request $request)
+    {
+        $this->validate($request, [
+            'name'          => 'required',
+            'email'         => 'required|email|unique:users,email,NULL,id',
+            'phone'         => 'required|numeric|unique:users,phone,NULL,id',
+            'password'      => 'required|min:8',
+            'photo'         => 'mimes:jpg,jpeg,png',
+            'gender'        => 'required|in:male,female',
+            'role'          => 'required|uuid'
+        ]);
+
+        $validationCheck = $this->usersObserver->checkLimit();
+
+        if ($validationCheck == false) {
+            return redirect()->back()->with(['gagal'    => __('user.limit')]);
+        }
+
+
+        try {
+            DB::beginTransaction();
+
+            $image  = '';
+
+            if ($request->image) {
+                $image =  $this->uploadImage($request, 'image', 'users');
+            }
+
+            if ($image == '') {
+                $image = $this->uploadImageProcess->createDafaultMedia($request->name, 'uploads/users/');
+            }
+
+            $user = $this->usersObserver->createData($request, $image);
+            $this->syncPlatformAgents($user->id, $request);
+            $user->assignRole($user->role_access); 
+
+            DB::commit();
+            return redirect()->route('users', $user->id)->with(['flash' => __('general.success_add_data')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with([
+                'gagal' => $e->getMessage()
+            ]);
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 7. Update Data to Database
+    |--------------------------------------------------------------------------
+    */
+
+    public function edit(Request $request, User $user)
+    {
+        $this->validate($request, [
+            'name'          => 'required',
+            'email'         => "required|email|unique:users,email,{$user->id}",
+            'phone'         => "required|numeric|unique:users,phone,{$user->id}",
+            'photo'         => 'mimes:jpg,jpeg,png',
+            'gender'        => 'required|in:male,female',
+            'role'          => 'required|uuid'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $image  = '';
+
+            if ($request->image) {
+                $this->unlinkFile($user->photo);
+                $image =  $this->uploadImage($request, 'image', 'users');
+            }
+
+            $this->usersObserver->updateData($request, $user, $image);
+            $this->syncPlatformAgents($user->id, $request);
+            $user->fresh();
+
+            $user->syncRoles([$user->role_access]); 
+
+            DB::commit();
+            return redirect()->route('users')->with(['flash' => __('general.success_update')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with([
+                'gagal' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Platform Agent Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    private function getPlatformChannels($bizId)
+    {
+        // Try session first, fallback to user's business_id column, then merchant's first setting
+        if (!$bizId) {
+            $user = check_user() ? my_user() : null;
+            if ($user) {
+                if ($user->business_id) {
+                    $parts = explode(',', $user->business_id);
+                    $bizId = trim($parts[0]);
+                }
+                if (!$bizId && $user->merchant_id) {
+                    // Get first setting for this merchant from DB
+                    $setting = DB::table('settings')->where('merchant_id', $user->merchant_id)->first(['id']);
+                    $bizId   = $setting ? $setting->id : null;
+                }
+            }
+        }
+        $merchantId = (check_user() && my_user()) ? (my_user()->merchant_id ?? null) : null;
+        // Use DB::table with correct column names per table (avoids model GlobalScope issues)
+        return [
+            'devices'    => $bizId ? DB::table('whatsapp_devices')
+                                ->where('business_id', $bizId)
+                                ->select('id', 'name', 'status')->get() : collect(),
+            'wabas'      => $bizId ? DB::table('whatsapp_key_accounts')
+                                ->where('business_id', $bizId)
+                                ->select('id', 'phone', 'status')->get() : collect(),
+            'telegrams'  => $bizId ? DB::table('telegram_keys')
+                                ->where('business_id', $bizId)
+                                ->select('id', 'name', 'status')->get() : collect(),
+            'instagrams' => $bizId ? DB::table('instagram_accounts')
+                                ->where('business_id', $bizId)
+                                ->select('id', 'name', 'username', 'status')->get() : collect(),
+            'messengers' => $bizId ? DB::table('messenger_accounts')
+                                ->where('business_id', $bizId)
+                                ->select('id', DB::raw('page_name as name'), 'page_username', 'status')->get() : collect(),
+            'livechats'  => $bizId ? DB::table('live_chats')
+                                ->where(function($q) use ($bizId, $merchantId) {
+                                    $q->where('business_id', $bizId);
+                                    if ($merchantId) $q->orWhere('merchant_id', $merchantId);
+                                })
+                                ->select('id', 'name', 'type')->get() : collect(),
+        ];
+    }
+
+    private function getUserPlatformIds($userId)
+    {
+        $tables = [
+            'devices'    => ['table' => 'device_agents',    'fk' => 'device_id'],
+            'wabas'      => ['table' => 'waba_agents',      'fk' => 'waba_id'],
+            'telegrams'  => ['table' => 'telegram_agents',  'fk' => 'telegram_id'],
+            'instagrams' => ['table' => 'instagram_agents', 'fk' => 'instagram_id'],
+            'messengers' => ['table' => 'messenger_agents', 'fk' => 'messenger_id'],
+            'livechats'  => ['table' => 'live_chat_agents', 'fk' => 'livechat_id'],
+        ];
+        $result = [];
+        foreach ($tables as $key => $cfg) {
+            $result[$key] = DB::table($cfg['table'])
+                ->where('user_id', $userId)
+                ->pluck($cfg['fk'])
+                ->toArray();
+        }
+        return $result;
+    }
+
+    private function syncPlatformAgents($userId, $request)
+    {
+        $map = [
+            'devices'    => ['table' => 'device_agents',    'fk' => 'device_id'],
+            'wabas'      => ['table' => 'waba_agents',      'fk' => 'waba_id'],
+            'telegrams'  => ['table' => 'telegram_agents',  'fk' => 'telegram_id'],
+            'instagrams' => ['table' => 'instagram_agents', 'fk' => 'instagram_id'],
+            'messengers' => ['table' => 'messenger_agents', 'fk' => 'messenger_id'],
+            'livechats'  => ['table' => 'live_chat_agents', 'fk' => 'livechat_id'],
+        ];
+        foreach ($map as $field => $cfg) {
+            DB::table($cfg['table'])->where('user_id', $userId)->delete();
+            foreach ((array)$request->get($field, []) as $platformId) {
+                if (!$platformId) continue;
+                DB::table($cfg['table'])->insert([
+                    'id'          => Str::uuid()->toString(),
+                    $cfg['fk']    => $platformId,
+                    'user_id'     => $userId,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+            }
+        }
+    }
+}

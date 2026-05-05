@@ -1,0 +1,150 @@
+<?php
+
+return [
+    // Dashboard
+    'dashboard' => 'Dashboard',
+    
+    // Categories
+    'home' => 'Home',
+    'communication_chat' => 'Communication & Chat',
+    'marketing_promotion' => 'Marketing & Promotion',
+    'automation_ai' => 'Automation & AI',
+    'platform_connection' => 'Platform & Connection',
+    'template_media' => 'Template & Media',
+    'reports_analytics' => 'Reports & Analytics',
+    'account_settings' => 'Account Settings',
+    
+    // Communication & Chat Section
+    'crm_chat_app' => 'CRM Chat App',
+    'live_chat_widget' => 'Live Chat Widget',
+    'human_agent' => 'Human Agent',
+    'ticket_support' => 'Ticket Support',
+    
+    // Marketing & Promotion Section
+    'send_bulk_message' => 'Broadcast Message',
+    'broadcast_whatsapp' => 'WhatsApp Personal',
+    'broadcast_waba' => 'WhatsApp Business API',
+    'broadcast_group' => 'Group Broadcast',
+    'broadcast_email' => 'Email Broadcast',
+    'up_selling' => 'Up Selling',
+    
+    // Contact Scraping
+    'collect_contacts' => 'Scrape Contacts',
+    'from_google_maps' => 'From Google Maps',
+    'from_phone_contacts' => 'From Phone Contacts',
+    'scraping_group' => 'Scraping Group',
+    'from_whatsapp_group' => 'From WhatsApp Group',
+    
+    // Automation & AI Section
+    'auto_reply_chat' => 'Auto Reply Chat',
+    'auto_reply' => 'Auto Reply',
+    'auto_reply_manual' => 'Manual Auto Reply',
+    'smart_ai_chatbot' => 'Ai Agent',
+    
+    // Platform & Connection Section
+    'manage_platform' => 'Manage Platform',
+    'whatsapp_personal' => 'Personal WhatsApp',
+    'whatsapp_business' => 'WhatsApp Business',
+    'telegram' => 'Telegram',
+    'facebook_messenger' => 'Facebook Messenger',
+    'instagram_dm' => 'Instagram DM',
+    
+    // Template & Media Section
+    'message_template' => 'Message Template',
+    'whatsapp_template' => 'WhatsApp Template',
+    'email_template' => 'Email Template',
+    
+    // Master Data
+    'master_data' => 'Master Data',
+    'customer_database' => 'Contact Data',
+    'category' => 'Contact Category',
+    'chat_label' => 'Chat Label',
+    'media_manager' => 'Media Manager',
+    'region_data' => 'Region Data',
+    'state' => 'Province',
+    'city' => 'City/District',
+    'district' => 'Sub-district',
+    'subdistrict' => 'Village',
+    
+    // Reports & Analytics Section
+    'reports_logs' => 'Reports & Logs',
+    'sending_statistics' => 'Sending Statistics',
+    'whatsapp_log' => 'WhatsApp Log',
+    'email_log' => 'Email Log',
+    'scraping_log' => 'Scraping Log',
+    
+    // Account Settings Section
+    'app_settings' => 'App Settings',
+    'topup_ai_credit' => 'TopUp AI Credit',
+    
+    // Quick Actions
+    'settings' => 'Settings',
+    'profile' => 'Profile',
+    'topup_credit' => 'TopUp Credit',
+    'admin_settings' => 'Admin Settings',
+    'admin_profile' => 'Admin Profile',
+    'logout' => 'Logout',
+    'starter_app' => 'Starter App',
+    'admin_panel' => 'Admin Panel',
+    'switch_to_app' => 'Switch to App',
+
+    // Admin Sidebar
+    'main_panel' => 'Main Panel',
+    'admin_dashboard' => 'Admin Dashboard',
+    'user_management' => 'User Management',
+    'manage_users' => 'Manage Users',
+    'user_list' => 'User List',
+    'user_categories' => 'User Categories',
+    'business_list' => 'Business List',
+    'saas_system' => 'SAAS System',
+    'saas_master_data' => 'SAAS Master Data',
+    'subscription_packages' => 'Subscription Packages',
+    'storage_packages' => 'Storage Packages',
+    'bank_master' => 'Bank Master',
+    'courier_master' => 'Courier Master',
+    'manage_transactions' => 'Manage Transactions',
+    'subscription_transactions' => 'Subscription Transactions',
+    'topup_ai_credit_trans' => 'TopUp AI Credit',
+    'topup_storage' => 'TopUp Storage',
+    'manage_website' => 'Manage Website',
+    'website_content' => 'Website Content',
+    'manage_pages' => 'Manage Pages',
+    'manage_links' => 'Manage Links',
+    'manage_blog' => 'Manage Blog',
+    'blog_categories' => 'Blog Categories',
+    'blog_articles' => 'Blog Articles',
+    'system_configuration' => 'System Configuration',
+    'system_settings' => 'System Settings',
+    'general_settings' => 'General Settings',
+    'display_settings' => 'Display Settings',
+    'text_settings' => 'Text Settings',
+    'notification_settings' => 'Notification Settings',
+
+    // Starter Sidebar
+    'create_new_business' => 'Create New Business',
+    'subscription_plan' => 'Subscription Plan',
+    'transaction_history' => 'Transaction History',
+
+    // Common Labels
+    'administrator' => 'Administrator',
+
+    // transaksi
+    'customers' => 'Merchant',
+    'business' => 'Business',
+
+
+    // Lang Section
+    'indonesia' => 'Indonesian',
+    'english' => 'English',
+    'japan' => 'Japanese',
+    'arab' => 'Arabic',
+    'dutch' => 'Dutch',
+    'portugal' => 'Portuguese', 
+    'german' => 'German',
+    'spanish' => 'Spanish',
+    'philippines' => 'Filipino',
+    'india' => 'Hindi',
+    'russian' => 'Russian',
+    'turkish' => 'Turkish',
+    'urdu' => 'Urdu', 
+];

@@ -1,0 +1,779 @@
+<?php
+
+namespace App\Observers\WhatsappOfficial;
+
+use App\Models\Blash\BlashWhatsapp;
+use App\Models\ChatBot\ChatBot;
+use App\Models\Master\MessageTemplate;
+use App\Models\MetaAccount;
+use App\Models\WhatsappKeyAccount;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
+class WhatsappTemplateServiceObserver
+{
+    public function createData(Request $request, MetaAccount $meta)
+    {
+        
+        $url = "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$meta->business_app}/message_templates";
+
+        $requestData = [
+            "name"          => strtolower(preg_replace("/[^0-9a-zA-Z]/", "_", $request->name)),
+            "language"      => $request->lang,
+            "category"      => $request->category,
+        ];
+        // storedData will be built at the end after all components are ready
+
+        if ($request->type == 'text' && $request->header_text != null) {
+            $headerComponent = [];
+            $headerComponent['type']        = "HEADER";
+            $headerComponent['format']      = strtoupper($request->type);
+            $headerComponent['text']        = $request->header_text;
+            $requestData['components'][]    = $headerComponent;
+        }
+
+        if ($request->type != 'text') {
+            if ($request->has('files') && $request->file('files') !== null) {
+                // File uploaded - use resumable upload
+                $fileUploadResponse = $this->initiateResumableUploadSession($request->file('files'), $meta->access_token, $meta->app_id);
+
+                if (!$fileUploadResponse->success) {
+                    return array(
+                        'status'        => false,
+                        'message'       => $fileUploadResponse->data
+                    );
+                }
+
+                $requestData['components'][] = [
+                    "type"      => "HEADER",
+                    "format"    => strtoupper($request->type),
+                    "example"   => [
+                        "header_handle" => [
+                            $fileUploadResponse->data
+                        ]
+                    ]
+                ];
+            } else {
+                // No file uploaded - auto pre-upload sample file to Meta and cache handle
+                $handle = $this->getOrUploadSampleHandle($request->type, $meta);
+                if ($handle) {
+                    $requestData['components'][] = [
+                        "type"      => "HEADER",
+                        "format"    => strtoupper($request->type),
+                        "example"   => [
+                            "header_handle" => [$handle]
+                        ]
+                    ];
+                }
+                // If upload failed, return error instead of silently skipping header
+                if (!$handle) {
+                    return array(
+                        'status'  => false,
+                        'message' => 'Gagal upload sample ' . $request->type . ' ke Meta. Pastikan file sample valid dan app_id sudah diset.'
+                    );
+                }
+            }
+        }
+
+        if ($request->body_message != null) {
+            $bodyComponent = [];
+
+            $bodyComponent['type'] = "BODY";
+            $bodyComponent['text'] = str_replace("\r\n", "\n", $request->body_message);
+
+            if (isset($request->variables)) {
+                if (count($request->variables) > 0) {
+                    $variablesSamples = array_map(function ($variable) {
+                        $decodedVariable = json_decode($variable, true); // Decode JSON ke array
+                        return $decodedVariable['sample'] ?? null; // Ambil 'sample' jika ada
+                    }, $request->variables);
+                    $bodyComponent['example']['body_text'][] = $variablesSamples;
+                }
+            }
+
+
+            $requestData['components'][] = $bodyComponent;
+        }
+
+        if ($request->footer_message != null && $request->footer_message != '') {
+            $requestData['components'][] = [
+                "type" => "FOOTER",
+                "text" => $request->footer_message
+            ];
+        }
+
+        if ($request->has('buttons')) {
+            if (!isset($requestData['components'])) {
+                $requestData['components'] = [];
+            }
+
+            $requestData['components'][] = [
+                'type'      => 'BUTTONS',
+                'buttons'   => []
+            ];
+
+            $quickReplyButtons = [];
+
+            foreach ($request->buttons as $button) {
+                $button     = json_decode($button, true);
+                if ($button['type'] === 'custom') {
+                    $quickReplyButtons[] = [
+                        'type' => 'QUICK_REPLY',
+                        'text' => $button['button_name'],
+                    ];
+                }
+            }
+
+            if (isset($request->buttons)) {
+                foreach ($request->buttons as $button) {
+                    $button     = json_decode($button, true);
+                    if ($button['type'] !== 'custom') {
+                        if ($button['type'] === 'web') {
+                            $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
+                                'type'  => 'URL',
+                                'text'  => $button['button_name'],
+                                'url'   => $button['button_link'],
+                            ];
+                        } elseif ($button['type'] === 'call') {
+                            $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
+                                'type'          => 'PHONE_NUMBER',
+                                'text'          => $button['button_name'],
+                                'phone_number'  => $button['country'] . $button['phone'],
+                            ];
+                        } elseif ($button['type'] === 'copy') {
+                            if ($request->category == 'CATEGORY') {
+                                $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
+                                    'type'      => 'COPY_CODE',
+                                    'example'   => $button['text'],
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Add the quick reply buttons at the start
+            if (!empty($quickReplyButtons)) {
+                $requestData['components'][count($requestData['components']) - 1]['buttons'] = array_merge($quickReplyButtons, $requestData['components'][count($requestData['components']) - 1]['buttons']);
+            }
+        }
+
+        $responseObject = new \stdClass();
+
+        \Log::info('WABA Template Create Request', [
+            'url' => $url,
+            'data' => $requestData,
+        ]);
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $meta->access_token,
+            'Content-Type' => 'application/json',
+        ])->post($url, $requestData);
+
+        \Log::info('WABA Template Create Response', [
+            'status' => $response->status(),
+            'body' => $response->json(),
+        ]);
+
+        if ($response->status() != 200) {
+            $errorJson  = $response->json();
+            $message    = $errorJson['error']['error_user_title']
+                       ?? $errorJson['error']['message']
+                       ?? $errorJson['error']['error_user_msg']
+                       ?? 'Terjadi kesalahan, silahkan ulangi';
+            return array(
+                'status'        => false,
+                'message'       => $message
+            );
+        }
+
+        $responseObject->success    = true;
+        $responseData               = $response->json();
+        $responseObject->data       = (object) $responseData;
+
+        // Build storedData = requestData + HEADER type for local reference
+        // Meta skips HEADER when no file, but we must store it for UI accuracy
+        $storedData = $requestData;
+        if ($request->type != 'text') {
+            $hasHeader = false;
+            foreach ($storedData['components'] ?? [] as $comp) {
+                if (($comp['type'] ?? '') === 'HEADER') { $hasHeader = true; break; }
+            }
+            if (!$hasHeader) {
+                array_unshift($storedData['components'], [
+                    'type'   => 'HEADER',
+                    'format' => strtoupper($request->type),
+                ]);
+            }
+        }
+
+        MessageTemplate::create([
+            'meta_account_id'       => $meta->id,
+            'name'                  => $request->name,
+            'category'              => $request->category,
+            'lang'                  => $request->lang,
+            'type_content'          => 'description',
+            'type'                  => 'whatsapp',
+            'meta_id'               => $responseObject->data->id,
+            'for_waba'              => 'yes',
+            'message'               => json_encode($storedData),
+            'waba_status_template'  => $responseObject->data->status,
+            'created_by'            => my_user()->id,
+        ]);
+
+        return array(
+            'status'        => true,
+            'message'       => 'Berhasil'
+        );
+    }
+
+    public function updateData(Request $request, MetaAccount $meta, MessageTemplate $template)
+    {
+        
+        $url    = "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$template->meta_id}";
+
+        $requestData = [
+            "name"          => strtolower(preg_replace("/[^0-9a-zA-Z]/", "_", $request->name)),
+            "language"      => $request->lang,
+            "category"      => $request->category,
+        ];
+
+        if ($request->type == 'text' && $request->header_text != null) {
+            $headerComponent = [];
+            $headerComponent['type']        = "HEADER";
+            $headerComponent['format']      = strtoupper($request->type);
+            $headerComponent['text']        = $request->header_text;
+            $requestData['components'][]    = $headerComponent;
+        }
+
+        if ($request->type != 'text' && $request->has('files')) {
+            $fileUploadResponse = $this->initiateResumableUploadSession($request->file('files'), $meta->access_token, $meta->app_id);
+
+            if (!$fileUploadResponse->success) {
+                return array(
+                    'status'        => false,
+                    'message'       => $fileUploadResponse->data
+                );
+            }
+
+            $requestData['components'][] = [
+                "type"      => "HEADER",
+                "format"    => $request->type,
+                "example"   => [
+                    "header_handle" => [
+                        $fileUploadResponse->data
+                    ]
+                ]
+            ];
+        }
+
+        if ($request->body_message != null) {
+            $bodyComponent = [];
+
+            $bodyComponent['type'] = "BODY";
+            $bodyComponent['text'] = str_replace("\r\n", "\n", $request->body_message);
+
+            if (isset($request->variables)) {
+                if (count($request->variables) > 0) {
+                    $variablesSamples = array_map(function ($variable) {
+                        $decodedVariable = json_decode($variable, true); // Decode JSON ke array
+                        return $decodedVariable['sample'] ?? null; // Ambil 'sample' jika ada
+                    }, $request->variables);
+                    $bodyComponent['example']['body_text'][] = $variablesSamples;
+                }
+            }
+
+            $requestData['components'][] = $bodyComponent;
+        }
+
+        if ($request->footer_message != null && $request->footer_message != '') {
+            $requestData['components'][] = [
+                "type" => "FOOTER",
+                "text" => $request->footer_message
+            ];
+        }
+
+        if ($request->has('buttons')) {
+            if (!isset($requestData['components'])) {
+                $requestData['components'] = [];
+            }
+
+            $requestData['components'][] = [
+                'type'      => 'BUTTONS',
+                'buttons'   => []
+            ];
+
+            $quickReplyButtons = [];
+
+            foreach ($request->buttons as $button) {
+                $button     = json_decode($button, true);
+                if ($button['type'] === 'custom') {
+                    $quickReplyButtons[] = [
+                        'type' => 'QUICK_REPLY',
+                        'text' => $button['button_name'],
+                    ];
+                }
+            }
+
+            if (isset($request->buttons)) {
+                foreach ($request->buttons as $button) {
+                    $button     = json_decode($button, true);
+                    if ($button['type'] !== 'custom') {
+                        if ($button['type'] === 'web') {
+                            $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
+                                'type'  => 'URL',
+                                'text'  => $button['button_name'],
+                                'url'   => $button['button_link'],
+                            ];
+                        } elseif ($button['type'] === 'call') {
+                            $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
+                                'type'          => 'PHONE_NUMBER',
+                                'text'          => $button['button_name'],
+                                'phone_number'  => $button['country'] . $button['phone'],
+                            ];
+                        } elseif ($button['type'] === 'copy') {
+                            if ($request->category == 'CATEGORY') {
+                                $requestData['components'][count($requestData['components']) - 1]['buttons'][] = [
+                                    'type'      => 'COPY_CODE',
+                                    'example'   => $button['text'],
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Add the quick reply buttons at the start
+            if (!empty($quickReplyButtons)) {
+                $requestData['components'][count($requestData['components']) - 1]['buttons'] = array_merge($quickReplyButtons, $requestData['components'][count($requestData['components']) - 1]['buttons']);
+            }
+        }
+
+        $responseObject = new \stdClass();
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $meta->access_token,
+            'Content-Type' => 'application/json',
+        ])->post($url, $requestData);
+
+
+        if ($response->status() != 200) {
+            $message    = 'Terjadi kesalahan, silahkan ulangi';
+            if (isset($response->json()['error'])) {
+                $message    = $response->json()['error']['error_user_msg'];
+            }
+            return array(
+                'status'        => false,
+                'message'       => $message
+            );
+        }
+
+        $responseObject->success    = true;
+
+        $template->update([
+            'meta_account_id'       => $meta->id,
+            'name'                  => $request->name,
+            'category'              => $request->category,
+            'lang'                  => $request->lang,
+            'type_content'          => 'description',
+            'type'                  => 'whatsapp',
+            'for_waba'              => 'yes',
+            'message'               => json_encode($requestData),
+            'created_by'            => my_user()->id,
+        ]);
+
+        return array(
+            'status'        => true,
+            'message'       => 'Berhasil'
+        );
+    }
+
+    /**
+     * Upload a sample file to Meta Resumable Upload API.
+     * Always does a fresh upload - handles are NOT cached because they expire 
+     * and are tied to the uploading user/token.
+     */
+    private function getOrUploadSampleHandle(string $type, $meta): ?string
+    {
+        // Sample file paths
+        $samplePaths = [
+            'image'    => public_path('assets/samples/sample-header.jpg'),
+            'video'    => public_path('assets/samples/sample-header.mp4'),
+            'document' => public_path('assets/samples/sample-header.pdf'),
+        ];
+        $mimeTypes = [
+            'image'    => 'image/jpeg',
+            'video'    => 'video/mp4',
+            'document' => 'application/pdf',
+        ];
+
+        $filePath = $samplePaths[$type] ?? $samplePaths['image'];
+        $mimeType = $mimeTypes[$type]  ?? $mimeTypes['image'];
+
+        if (!file_exists($filePath)) {
+            \Log::warning("Sample file not found: {$filePath}");
+            return null;
+        }
+
+        try {
+            $fileContent = file_get_contents($filePath);
+            $fileLength  = strlen($fileContent);
+            $apiVersion  = config('custom.api_waba_version');
+
+            \Log::info('Uploading sample media to Meta', [
+                'type' => $type,
+                'app_id' => $meta->app_id,
+                'file_size' => $fileLength,
+            ]);
+
+            // Step 1: Initiate upload session  
+            $sessionResp = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $meta->access_token,
+            ])->post("https://graph.facebook.com/{$apiVersion}/{$meta->app_id}/uploads", [
+                'file_length' => $fileLength,
+                'file_type'   => $mimeType,
+            ]);
+
+            if ($sessionResp->status() !== 200) {
+                \Log::warning('Meta sample upload session failed', [
+                    'resp' => $sessionResp->json(),
+                    'app_id' => $meta->app_id,
+                ]);
+                return null;
+            }
+
+            $uploadId = $sessionResp->json()['id'];
+
+            // Step 2: Upload file bytes
+            $uploadResp = Http::withHeaders([
+                'Authorization' => 'OAuth ' . $meta->access_token,
+                'file_offset'   => '0',
+                'Content-Type'  => $mimeType,
+            ])->withBody($fileContent, $mimeType)
+              ->post("https://graph.facebook.com/{$apiVersion}/{$uploadId}");
+
+            if ($uploadResp->status() !== 200) {
+                \Log::warning('Meta sample file upload failed', ['resp' => $uploadResp->json()]);
+                return null;
+            }
+
+            $handle = $uploadResp->json()['h'] ?? null;
+            if (!$handle) return null;
+
+            \Log::info("Fresh media handle obtained", [
+                'type' => $type, 
+                'handle_prefix' => substr($handle, 0, 30),
+            ]);
+
+            return $handle;
+
+        } catch (\Exception $e) {
+            \Log::error('getOrUploadSampleHandle error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+        function initiateResumableUploadSession($file, $accessToken, $appId)
+    {
+        $sessionResponse = $this->createResumableUploadSession($file, $accessToken, $appId);
+        // DEBUG LOG
+        \Log::info('WABA Upload Debug', [
+            'step' => 'create_session',
+            'success' => $sessionResponse->success,
+            'data' => $sessionResponse->data,
+            'app_id' => $appId,
+        ]);
+
+        if (!$sessionResponse->success) {
+            return $sessionResponse->data;
+        }
+
+        $uploadSessionId    = $sessionResponse->data;
+        $fileName           = $file->getPathname();
+        $url                = "https://graph.facebook.com/{$uploadSessionId}";
+
+        $responseObject = new \stdClass();
+
+        $fileContents = file_get_contents($fileName);
+        $fileMimeType = $file->getMimeType() ?? 'application/octet-stream';
+
+        $response = Http::withHeaders([
+            'Authorization'  => 'OAuth ' . $accessToken,
+            'file_offset'    => '0',
+            'Content-Type'   => $fileMimeType,
+        ])->withBody($fileContents, $fileMimeType)->post($url);
+
+        if ($response->status() == 200) {
+            $responseObject->success    = true;
+            $responseObject->data = $response->json()['h'] ?? null;
+        } else {
+            $responseObject->success    = false;
+            $json = $response->json();
+            $responseObject->data = $json['debug_info']['message'] 
+                ?? $json['error']['message'] 
+                ?? $json['message'] 
+                ?? 'Upload failed with status: ' . $response->status();
+        }
+
+        return $responseObject;
+    }
+
+    function createResumableUploadSession($file, $accessToken, $appId)
+    {
+
+        $fileLength     = $file->getSize();
+        $fileType       = $file->getMimeType();
+        $url            = "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$appId}/uploads";
+
+        $responseObject = new \stdClass();
+
+        $response   = Http::withHeaders([
+            'Authorization' => "OAuth " . $accessToken,
+            'file_offset' => 0,
+        ])->withOptions([
+            'query' => [
+                'file_length'       => $fileLength,
+                'file_type'         => $fileType,
+                'access_token'      => $accessToken,
+            ],
+        ])->post($url);
+
+        if ($response->status() == 200) {
+            $responseObject->success    = true;
+            $responseObject->data = $response->json()['id'] ?? null;
+        } else {
+            $responseObject->success    = false;
+            $json = $response->json();
+            $responseObject->data = $json['error']['message'] 
+                ?? $json['debug_info']['message'] 
+                ?? $json['message'] 
+                ?? 'Session creation failed with status: ' . $response->status();
+        }
+
+
+        return $responseObject;
+    }
+
+    public function deleteTemplate(MessageTemplate $template, MetaAccount $meta)
+    {
+ 
+
+        $url = "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$meta->business_app}/message_templates";
+
+
+
+        $requestData['hsm_id']  = $template->meta_id;
+        $requestData['name']    = strtolower(preg_replace("/[^0-9a-zA-Z]/", "_", $template->name));
+
+        $responseObject = $this->sendHttpRequest('DELETE', $url, $requestData, $meta->access_token);
+
+        if ($responseObject->success) {
+            $template->delete();
+        }
+
+        return $responseObject;
+    }
+
+
+    private function sendHttpRequest($method, $url, $data = [], $accessToken)
+    {
+        $responseObject = new \stdClass();
+
+        // Tentukan metode HTTP yang didukung
+        $httpClient = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $accessToken,
+            'Content-Type' => 'application/json',
+        ]);
+
+        // Cek metode HTTP untuk menambahkan data jika perlu
+        if (isset($data) && in_array($method, ['POST', 'PUT', 'DELETE'])) {
+            $response = $httpClient->$method($url, $data);
+        } else {
+            $response = $httpClient->get($url);
+        }
+
+        if ($response->status() != 200) {
+            $responseObject->success    = false;
+            $responseObject->error      = $response->status();
+            $responseObject->message    = $response->json()['error']['message'];
+        } else {
+            $responseObject->success = true;
+            $responseObject->data = $response->json();
+        }
+
+
+        return $responseObject;
+    }
+
+
+    public function buildTemplate(BlashWhatsapp $campaign)
+    {
+
+        $templateDetails                = json_decode($campaign->metadata, true);
+        $template['name']               = strtolower(preg_replace("/[^0-9a-zA-Z]/", "_", $campaign->template->name ?? '-'));
+        $template['language']['code']   = $campaign->template->lang ?? '';
+        $template['components']         = [];
+
+        if ($templateDetails['header'] && ($templateDetails['header']['parameters'] || $campaign->file != null)) {
+            $headerComponent            = $this->buildHeaderComponent($templateDetails, ($campaign->file != null ? asset($campaign->file) : ''));
+            // $headerComponent            = $this->buildHeaderComponent($templateDetails, ($campaign->file != null ? 'https://mdigitalhub.sirv.com/PasarSafe/vectors/stock-manager.png' : ''));
+            $template['components'][]   = $headerComponent;
+        }
+
+        if ($templateDetails['body'] && isset($templateDetails['body']['parameters'])) {
+            $bodyComponent = $this->buildBodyComponent($templateDetails);
+            $template['components'][] = $bodyComponent;
+        }
+
+        if ($templateDetails['buttons']) {
+            $buttonComponents = $this->buildButtonComponent($templateDetails);
+            foreach ($buttonComponents as $buttonComponent) {
+                $template['components'][] = $buttonComponent;
+            }
+        }
+
+        //dd($template);
+        return $template;
+    }
+
+    public function buildTemplateChatbot(ChatBot $campaign)
+    {
+
+        $templateDetails                = json_decode($campaign->metadata, true);
+        $template['name']               = strtolower(preg_replace("/[^0-9a-zA-Z]/", "_", $campaign->template->name ?? '-'));
+        $template['language']['code']   = $campaign->template->lang ?? '';
+        $template['components']         = [];
+
+        if ($templateDetails['header'] && ($templateDetails['header']['parameters'] || $campaign->file != null)) {
+            $headerComponent            = $this->buildHeaderComponent($templateDetails, ($campaign->file != null ? asset($campaign->file) : '')); 
+            $template['components'][]   = $headerComponent;
+        }
+
+        if ($templateDetails['body'] && isset($templateDetails['body']['parameters'])) {
+            $bodyComponent = $this->buildBodyComponent($templateDetails);
+            $template['components'][] = $bodyComponent;
+        }
+
+        if ($templateDetails['buttons']) {
+            $buttonComponents = $this->buildButtonComponent($templateDetails);
+            foreach ($buttonComponents as $buttonComponent) {
+                $template['components'][] = $buttonComponent;
+            }
+        }
+
+        //dd($template);
+        return $template;
+    }
+
+    function buildHeaderComponent($metadata, $file = '')
+    {
+        $headerComponent = [
+            'type'          => 'header',
+            'parameters'    => [],
+        ];
+
+        $type   = $metadata['header']['format'];
+
+        if ($type == 'TEXT') {
+            if ($metadata['header']['parameters']) {
+                foreach ($metadata['header']['parameters'] as $parameter) {
+                    $param['type'] = strtolower($parameter['type']);
+                    $param['text'] = $parameter['value'];
+                    $headerComponent['parameters'][] = $param;
+                }
+            }
+        } else {
+            $param['type'] = strtolower($type);
+
+            if ($type == 'IMAGE') {
+                $param['image']['link'] = $file;
+            }
+
+            if ($type == 'VIDEO') {
+                $param['video']['link'] = $file;
+            }
+
+            if ($type == 'DOCUMENT') {
+                $param['document']['link'] = $file;
+            }
+
+            $headerComponent['parameters'][] = $param;
+        }
+
+
+        return $headerComponent;
+    }
+
+    function buildBodyComponent($metadata)
+    {
+        $bodyComponent = [
+            'type' => 'body',
+            'parameters' => [],
+        ];
+
+        if ($metadata['body']['parameters']) {
+            foreach ($metadata['body']['parameters'] as $parameter) {
+                $param['type'] = $parameter['type'];
+                $param['text'] = $parameter['value'];
+
+                $bodyComponent['parameters'][] = $param;
+            }
+        }
+
+        return $bodyComponent;
+    }
+
+    function buildButtonComponent($metadata)
+    {
+        //dd($metadata->buttons);
+        $buttons = $metadata['buttons'];
+        $buttonComponent = [];
+        $buttonIndex = 0;
+
+        foreach ($buttons as $key => $button) {
+            if (!empty($button['parameters'])) {
+                $buttonComponent[] = [
+                    'type' => 'button',
+                    'sub_type' => strtolower($button['type']),
+                    'index' => $key,
+                    'parameters' => [],
+                ];
+
+                foreach ($button->parameters as $parameter) {
+                    $param = [];
+
+                    if ($button['type'] === 'COPY_CODE') {
+                        $param['type'] = 'coupon_code';
+                        $param['coupon_code'] = $parameter['value'];
+                    }
+
+                    $buttonComponent[$buttonIndex]['parameters'][] = $param;
+                }
+
+                $buttonIndex++;
+            } else {
+                if ($button['type'] === 'QUICK_REPLY') {
+                    $buttonComponent[] = [
+                        'type' => 'button',
+                        'sub_type' => strtolower($button['type']),
+                        'index' => $key,
+                        'parameters' => [],
+                    ];
+
+                    $param = [];
+
+                    $param['type'] = 'payload';
+                    $param['payload'] = $button['text'];
+                    $param['type'] = 'text';
+                    $param['text'] = $button['text'];
+                    $buttonComponent[$buttonIndex]['parameters'][] = $param;
+
+                    $buttonIndex++;
+                }
+            }
+        }
+
+        //dd($buttonComponent);
+        return $buttonComponent;
+    }
+}

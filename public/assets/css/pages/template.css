@@ -1,0 +1,148 @@
+.whatsapp-chat-body {
+    padding: 20px 20px 20px 10px;
+    background-color: #e6ddd4;
+    position: relative;
+}
+
+.whatsapp-chat-body::before {
+    display: block;
+    position: absolute;
+    content: "";
+    left: 0px;
+    top: 0px;
+    height: 100%;
+    width: 100%;
+    z-index: 0;
+    opacity: 0.08;
+    background-image: url("https://ping.co.id/tutorial-ping/assets/whatsapp.png");
+}
+
+.whatsapp-chat-bubble {
+    display: flex;
+    z-index: 1;
+}
+
+.whatsapp-chat-message-loader {
+    background-color: white;
+    width: 52.5px;
+    height: 32px;
+    border-radius: 16px;
+    display: flex;
+    -moz-box-pack: center;
+    justify-content: center;
+    -moz-box-align: center;
+    align-items: center;
+    margin-left: 10px;
+    opacity: 0;
+    transition: all 0.1s ease 0s;
+    z-index: 1;
+    box-shadow: rgba(0, 0, 0, 0.13) 0px 1px 0.5px;
+}
+
+.whatsapp-chat-message-loader .ixsrax,
+.whatsapp-chat-message-loader .dRvxoz {
+    height: 5px;
+    width: 5px;
+    margin: 0px 2px;
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    animation-duration: 1.2s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    top: 0px;
+}
+
+.whatsapp-chat-message-loader .ixsrax {
+    background-color: #9e9da2;
+    animation-name: ZpjSY;
+}
+
+.whatsapp-chat-message-loader .dRvxoz {
+    animation-name: hPhMsj;
+}
+
+.whatsapp-chat-message {
+    padding: 7px 14px 6px;
+    background-color: white;
+    border-radius: 0px 8px 8px;
+    position: relative;
+    transition: all 0.3s ease 0s;
+    opacity: 0;
+    transform-origin: center top 0px;
+    z-index: 2;
+    box-shadow: rgba(0, 0, 0, 0.13) 0px 1px 0.5px;
+    margin-top: 4px;
+    margin-left: -54px;
+    max-width: 250px;
+    min-width: 250px !important;
+    text-align: left;
+}
+
+.whatsapp-chat-button {
+    padding: 7px 14px 6px;
+    background-color: white;
+    border-radius: 8px 8px 8px;
+    transition: all 0.3s ease 0s;
+    opacity: 0;
+    transform-origin: center top 0px;
+    z-index: 2;
+    box-shadow: rgba(0, 0, 0, 0.13) 0px 1px 0.5px;
+    margin-top: 4px;
+    margin-left: -54px;
+    min-width: 250px;
+    max-width: 250px;
+    text-align: left;
+}
+
+.whatsapp-chat-message .bMIBDo {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 18px;
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.whatsapp-chat-message .iSpIQi {
+    font-size: 14px;
+    line-height: 19px;
+    margin-top: 4px;
+    font-weight: 600;
+    color: #111111;
+}
+
+.whatsapp-chat-message .iSpIQe {
+    font-size: 14px;
+    line-height: 19px;
+    margin-top: 4px;
+    color: #111111;
+}
+
+.whatsapp-chat-message .iSpIQd {
+    font-size: 12px;
+    line-height: 15px;
+    margin-top: 10px;
+    color: #111111;
+}
+
+.whatsapp-chat-message .cqCDVm {
+    text-align: right;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 16px;
+    color: rgba(17, 17, 17, 0.5);
+    margin-right: -8px;
+    margin-bottom: -4px;
+}
+
+.whatsapp-chat-message::before {
+    position: absolute;
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAmCAMAAADp2asXAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAACQUExURUxpccPDw9ra2m9vbwAAAAAAADExMf///wAAABoaGk9PT7q6uqurqwsLCycnJz4+PtDQ0JycnIyMjPf3915eXvz8/E9PT/39/RMTE4CAgAAAAJqamv////////r6+u/v7yUlJeXl5f///5ycnOXl5XNzc/Hx8f///xUVFf///+zs7P///+bm5gAAAM7Ozv///2fVensAAAAvdFJOUwCow1cBCCnqAhNAnY0WIDW2f2/hSeo99g1lBYT87vDXG8/6d8oL4sgM5szrkgl660OiZwAAAHRJREFUKM/ty7cSggAABNFVUQFzwizmjPz/39k4YuFWtm55bw7eHR6ny63+alnswT3/rIDzUSC7CrAziPYCJCsB+gbVkgDtVIDh+DsE9OTBpCtAbSBAZSEQNgWIygJ0RgJMDWYNAdYbAeKtAHODlkHIv997AkLqIVOXVU84AAAAAElFTkSuQmCC");
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    background-size: contain;
+    content: "";
+    top: 0px;
+    left: -12px;
+    width: 12px;
+    height: 19px;
+}

@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Observers\Saas;
+
+use App\Models\Setting;
+use Illuminate\Http\Request;
+use Ramsey\Uuid\Uuid;
+
+class BusinessObserver
+{
+    public function getData(Request $request)
+    {
+        return Setting::where(function ($q) use ($request) {
+            return $request->name ? $q->where('name', 'like', '%' . $request->name . '%') : '';
+        })->where(function ($q) {
+            if (my_user()->role == 'user') {
+                $storeData = explode(",", my_user()->business_id);
+                return $q->whereIn('id', $storeData);
+            }
+        })->orderBy('name', 'asc');
+    }
+
+    public function getForAdmin(Request $request)
+    {
+        return Setting::withoutGlobalScopes()->where(function ($q) use ($request) {
+            return $request->name ? $q->where('name', 'like', '%' . $request->name . '%') : '';
+        })->where(function ($q) {
+            if (my_user()->role == 'user') {
+                $storeData = explode(",", my_user()->business_id);
+                return $q->whereIn('id', $storeData);
+            } else {
+                return $q->where("merchant_id", "!=", null);
+            }
+        })->orderBy('name', 'asc');
+    }
+
+    public function createData(Request $request)
+    {
+        return Setting::create([
+            'name'                      => $request->name,
+            'whatsapp_sender_notif'     => $request->whatsapp_sender_notif,
+            'timezone'                  => $request->timezone,
+            'scrapp_phone'              => $request->scrapp_phone,
+            'scrapp_phone_whatsapp'     => $request->scrapp_phone_whatsapp,
+            'phone_country_code'        => $request->phone_country_code,
+            'default_lang'              => $request->default_lang,
+            'local_api_key'             => Uuid::uuid4()->toString(),
+            'api_device_use'            => $request->api_device_use, 
+            'history_ai_chat'           => $request->history_ai_chat ?? 0
+        ]);
+    }
+}

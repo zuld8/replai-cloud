@@ -1,0 +1,1 @@
+  <script src="{{asset('assets/frontend/template2/js/front.js')}}"></script>

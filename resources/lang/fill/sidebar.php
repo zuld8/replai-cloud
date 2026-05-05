@@ -1,0 +1,103 @@
+<?php
+
+return [
+    // Dashboard
+    'dashboard' => 'Dashboard',
+
+    // Categories
+    'home' => 'Home',
+    'communication_chat' => 'Komunikasyon at Chat',
+    'marketing_promotion' => 'Marketing at Promosyon',
+    'automation_ai' => 'Automation at AI',
+    'platform_connection' => 'Platform at Koneksyon',
+    'template_media' => 'Template at Media',
+    'reports_analytics' => 'Mga Ulat at Analytics',
+    'account_settings' => 'Mga Setting ng Account',
+
+    // Communication & Chat Section
+    'crm_chat_app' => 'CRM Chat App',
+    'live_chat_widget' => 'Live Chat Widget',
+    'human_agent' => 'Human Agent',
+
+    // Marketing & Promotion Section
+    'send_bulk_message' => 'Magpadala ng Bulk Message',
+    'broadcast_whatsapp' => 'WhatsApp Broadcast',
+    'broadcast_waba' => 'WhatsApp Business API',
+    'broadcast_group' => 'Group Broadcast',
+    'broadcast_email' => 'Email Broadcast',
+    'up_selling' => 'Up Selling',
+
+    // Contact Scraping
+    'collect_contacts' => 'Kolektahin ang mga Contact',
+    'from_google_maps' => 'Mula sa Google Maps',
+    'from_phone_contacts' => 'Mula sa Phone Contacts',
+    'scraping_group' => 'Scraping Group',
+    'from_whatsapp_group' => 'Mula sa WhatsApp Group',
+
+    // Automation & AI Section
+    'auto_reply_chat' => 'Auto Reply Chat',
+    'auto_reply' => 'Auto Reply',
+    'auto_reply_manual' => 'Manual Auto Reply',
+    'smart_ai_chatbot' => 'Matalinong AI Chatbot',
+
+    // Platform & Connection Section
+    'manage_platform' => 'Pamahalaan ang Platform',
+    'whatsapp_personal' => 'WhatsApp Personal',
+    'whatsapp_business' => 'WhatsApp Business API',
+    'telegram' => 'Telegram',
+    'facebook_messenger' => 'Facebook Messenger',
+    'instagram_dm' => 'Instagram DM',
+
+    // Template & Media Section
+    'message_template' => 'Message Template',
+    'whatsapp_template' => 'WhatsApp Template',
+    'email_template' => 'Email Template',
+
+    // Master Data
+    'master_data' => 'Master Data',
+    'customer_database' => 'Customer Database',
+    'chat_category' => 'Chat Category',
+    'chat_label' => 'Chat Label',
+    'media_manager' => 'Media Manager',
+    'region_data' => 'Data ng Rehiyon',
+    'province' => 'Probinsya',
+    'city_regency' => 'Lungsod/Munisipalidad',
+    'district' => 'Distrito',
+    'subdistrict' => 'Barangay',
+
+    // Reports & Analytics Section
+    'reports_logs' => 'Mga Ulat at Logs',
+    'sending_statistics' => 'Statistics ng Pagpapadala',
+    'whatsapp_log' => 'WhatsApp Log',
+    'email_log' => 'Email Log',
+    'scraping_log' => 'Scraping Log',
+
+    // Account Settings Section
+    'app_settings' => 'Mga Setting ng App',
+    'topup_ai_credit' => 'TopUp AI Credit',
+
+    // Quick Actions
+    'settings' => 'Mga Setting',
+    'profile' => 'Profile',
+    'topup_credit' => 'TopUp Credit',
+    'admin_settings' => 'Admin Settings',
+    'admin_profile' => 'Admin Profile',
+    'logout' => 'Logout',
+    'starter_app' => 'Starter App',
+    'admin_panel' => 'Admin Panel',
+
+    // Lang Section
+    'indonesia' => 'Indonesian',
+    'english' => 'English',
+    'japan' => 'Japanese',
+    'arab' => 'Arabic',
+    'dutch' => 'Dutch',
+    'portugal' => 'Portuguese',
+    'german' => 'German',
+    'spanish' => 'Spanish',
+    'philippines' => 'Filipino',
+    'india' => 'Hindi',
+    'russian' => 'Russian',
+    'turkish' => 'Turkish',
+    'urdu' => 'Urdu',
+];

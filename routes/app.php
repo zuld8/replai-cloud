@@ -1,0 +1,853 @@
+<?php
+
+use App\Http\Controllers\Auth\GoogleAuthenticationController;
+use App\Http\Controllers\LogController;
+use App\Http\Controllers\Master\CategoryController;
+use App\Http\Controllers\Master\ComponentController;
+use App\Http\Controllers\Master\DirectoryController;
+use App\Http\Controllers\Master\TemplateController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\Store\StoreController;
+use App\Http\Controllers\Store\StoreScrappingController;
+use App\Http\Controllers\WhatsappController;
+use App\Http\Controllers\Auth\ProfileController;
+use App\Http\Controllers\Blash\BlashEmailController;
+use App\Http\Controllers\Blash\BlashWhatsappController;
+use App\Http\Controllers\Blash\BlashWhatsappGroupController;
+use App\Http\Controllers\Blash\BroadcastFollowUpWhatsappController;
+use App\Http\Controllers\ChatBot\ChatBotController;
+use App\Http\Controllers\ChatBot\FineTunnelController;
+use App\Http\Controllers\ComponentController as ControllersComponentController;
+use App\Http\Controllers\Crm\CrmController;
+use App\Http\Controllers\Crm\QuickReplyController;
+use App\Http\Controllers\Facebook\FacebookController;
+use App\Http\Controllers\Facebook\InstagramController;
+use App\Http\Controllers\Facebook\MessangerController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LiveChatController;
+use App\Http\Controllers\Master\LabelController;
+use App\Http\Controllers\Master\TemplateEmailController;
+use App\Http\Controllers\Media\FolderManagerController;
+use App\Http\Controllers\Platform\TelegramController;
+use App\Http\Controllers\Starter\BillingController;
+use App\Http\Controllers\Starter\BusinessController;
+use App\Http\Controllers\Starter\StarterController;
+use App\Http\Controllers\Starter\StorageBillingController;
+use App\Http\Controllers\Store\GroupScrappingController;
+use App\Http\Controllers\Kanban\KanbanController;
+use App\Http\Controllers\Kanban\LabelController as KanbanLabelController;
+use App\Http\Controllers\Kanban\PipelineController;
+use App\Http\Controllers\Master\RoleController;
+use App\Http\Controllers\Store\WhatsappContactScrappingController;
+use App\Http\Controllers\Store\WhatsappGroupScrappingController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\Whatsapp\SendMessageController;
+use App\Http\Controllers\Whatsapp\Waba\ChatBotWabaController;
+use App\Http\Controllers\Whatsapp\Waba\WhatsappBroadcastController;
+use App\Http\Controllers\Whatsapp\Waba\WhatsappTemplateController;
+use App\Http\Controllers\Whatsapp\Waba\WhatsappWabaController;
+use App\Http\Controllers\Whatsapp\WhatsappDeviceController;
+use App\Http\Controllers\Whatsapp\WhatsappMiscController;
+use App\Http\Controllers\Master\TicketLabelController;
+use App\Http\Controllers\Reports\ConversationReportController;
+use App\Http\Controllers\Reports\LeadPipelineController;
+use App\Http\Controllers\Reports\ReportController;
+use App\Http\Controllers\Starter\MuaBillingController;
+use App\Http\Controllers\Ticket\TicketController;
+use App\Http\Controllers\Ticket\TicketCategoryController;
+use App\Http\Controllers\Ticket\TicketNoteController;
+
+
+// ============================================
+// STARTER ROUTES (No Permission Required)
+// Untuk user yang belum memilih business
+// ============================================
+Route::prefix('starter')->middleware('starter_app')->group(function () {
+    Route::prefix('packages')->group(function () {
+        Route::get('/', [StarterController::class, 'index'])->name('starter.packages');
+        Route::get('detail/{package}', [StarterController::class, 'packageDetail'])->name('starter.packages.detail');
+    });
+
+    // Business Management
+    Route::prefix('business')->group(function () {
+        Route::get('list', [BusinessController::class, 'index'])->name('starter.business.index');
+        Route::get('detail/{business}', [BusinessController::class, 'detail'])->name('starter.business.detail');
+        Route::get('create', [BusinessController::class, 'create'])->name('starter.business.create');
+        Route::post('store', [BusinessController::class, 'store'])->name('starter.business.store');
+        Route::get('delete/{business}', [BusinessController::class, 'deleteBusiness'])->name('starter.business.delete');
+        Route::get('chooses/{business}', [BusinessController::class, 'choosedBusiness'])->name('starter.business.choose');
+    });
+
+    // Transaction Management
+    
+    // Affiliate Routes
+    Route::get('affiliate', [\App\Http\Controllers\Starter\AffiliateController::class, 'index'])->name('starter.affiliate');
+    Route::post('affiliate/withdraw', [\App\Http\Controllers\Starter\AffiliateController::class, 'withdraw'])->name('starter.affiliate.withdraw');
+    Route::prefix('transactions')->group(function () {
+        Route::get('/', [StarterController::class, 'transactions'])->name('starter.transactions');
+        Route::get('detail/{transaction}', [StarterController::class, 'detail'])->name('starter.transactions.detail');
+        Route::post('create/{business}', [StarterController::class, 'createTransaction'])->name('starter.transactions.create');
+        Route::post('pay/{transaction}', [StarterController::class, 'payTransaction'])->name('starter.transactions.pay');
+        Route::post('create-token/{transaction}', [StarterController::class, 'createTokenDuitku'])->name('starter.create.token');
+        Route::get("delete/{transaction}", [StarterController::class, 'delete'])->name('starter.transactions.delete');
+    });
+});
+
+
+// ============================================
+// MAIN APPLICATION ROUTES
+// ============================================
+Route::middleware('package_active')->group(function () {
+
+    // Dashboard
+    Route::get('set-online', [SettingsController::class, 'updateOnlineOffline'])->name('setonline');
+    Route::get('/', [HomeController::class, 'home'])->name('index');
+
+    Route::prefix('components')->group(function () {
+        Route::get('system', [ControllersComponentController::class, 'system']);
+    });
+
+    Route::prefix('dashboard')->group(function () {
+        Route::get('interaction', [HomeController::class, 'interactionAnalysis']);
+        Route::get('analisis', [HomeController::class, 'analiss']);
+        Route::get('label-leads', [HomeController::class, 'leadByLabel']);
+        Route::get('pesan-masuk', [HomeController::class, 'pesanMasuk']);
+        Route::get('broadcast-summary', [HomeController::class, 'broadcastSummary']);
+        Route::get('broadcast-status', [HomeController::class, 'broadcastStatus']);
+        Route::get('logs', [HomeController::class, 'logs']);
+        Route::get('unreplied', [HomeController::class, 'unrepliedChats']);
+    });
+
+    // Google Auth
+    Route::prefix('google')->group(function () {
+        Route::get('login', [GoogleAuthenticationController::class, 'redirect'])->name('google.login');
+        Route::get('callback', [GoogleAuthenticationController::class, 'callback'])->name('google.callback');
+    });
+
+    // ============================================
+    // MASTER DATA
+    // ============================================
+    Route::prefix('master')->group(function () {
+
+        // Components
+        Route::prefix('components')->group(function () {
+            Route::get('provinces', [ComponentController::class, 'provinces']);
+            Route::get('cities', [ComponentController::class, 'cities']);
+            Route::get('districts', [ComponentController::class, 'districts']);
+            Route::get('subdistricts', [ComponentController::class, 'subdistricts']);
+            Route::get('categories', [ComponentController::class, 'categories']);
+            Route::get('categories/count', [ComponentController::class, 'categoryCount']);
+            Route::get('devices', [ComponentController::class, 'devices']);
+            Route::get('templates', [ComponentController::class, 'templates']);
+            Route::get('devices', [ControllersComponentController::class, 'getDevice']);
+        });
+
+        // Directory
+        Route::prefix('directory')->group(function () {
+            Route::get('provinces', [DirectoryController::class, 'provinces'])->name('directory.provinces');
+            Route::get('cities', [DirectoryController::class, 'cities'])->name('directory.cities');
+            Route::get('districts', [DirectoryController::class, 'districts'])->name('directory.districts');
+            Route::get('subdistricts', [DirectoryController::class, 'subDistricts'])->name('directory.subdistricts');
+        });
+
+        // Categories
+        Route::prefix('categories')->group(function () {
+            Route::get('/', [CategoryController::class, 'index'])->name('categories');
+            Route::get('update/{category}', [CategoryController::class, 'update'])->name('categories.update');
+            Route::get('create', [CategoryController::class, 'create'])->name('categories.create');
+            Route::post('store', [CategoryController::class, 'store'])->name('categories.store');
+            Route::post('edit/{category}', [CategoryController::class, 'edit'])->name('categories.edit');
+            Route::get('delete/{category}', [CategoryController::class, 'delete'])->name('categories.delete');
+        });
+
+        // Roles
+        Route::prefix('roles')->group(function () {
+            Route::get('/', [RoleController::class, 'index'])->name('roles.index');
+            Route::post('/', [RoleController::class, 'store'])->name('roles.store');
+            Route::get('/{role}', [RoleController::class, 'show'])->name('roles.show');
+            Route::get('/{role}/permissions', [RoleController::class, 'getPermissions'])->name('roles.permissions.get');
+            Route::put('/{role}', [RoleController::class, 'update'])->name('roles.update');
+            Route::post('/{role}/permissions', [RoleController::class, 'assignPermissions'])->name('roles.permissions.assign');
+            Route::post('/{role}/permissions/add', [RoleController::class, 'addPermission'])->name('roles.permissions.add');
+            Route::post('/{role}/permissions/remove', [RoleController::class, 'removePermission'])->name('roles.permissions.remove');
+            Route::delete('/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+        });
+
+        // Labels
+        Route::prefix('labels')->group(function () {
+            Route::get('/', [LabelController::class, 'index'])->name('labels');
+            Route::get('update/{label}', [LabelController::class, 'update'])->name('label.update');
+            Route::get('create', [LabelController::class, 'create'])->name('label.create');
+            Route::post('store', [LabelController::class, 'store'])->name('label.store');
+            Route::post('edit/{label}', [LabelController::class, 'edit'])->name('label.edit');
+            Route::get('delete/{label}', [LabelController::class, 'delete'])->name('label.delete');
+            Route::get('download/{label}', [LabelController::class, 'downloadContacts'])->name('label.download');
+            Route::get('contacts/{label}', [LabelController::class, 'contacts'])->name('label.contacts');
+        });
+
+        // Ticket Labels
+        Route::prefix('ticket-labels')->group(function () {
+            Route::get('/', [TicketLabelController::class, 'index'])->name('ticket.labels');
+            Route::get('create', [TicketLabelController::class, 'create'])->name('ticket.label.create');
+            Route::get('update/{label}', [TicketLabelController::class, 'update'])->name('ticket.label.update');
+            Route::post('store', [TicketLabelController::class, 'store'])->name('ticket.label.store');
+            Route::post('edit/{label}', [TicketLabelController::class, 'edit'])->name('ticket.label.edit');
+            Route::get('delete/{label}', [TicketLabelController::class, 'delete'])->name('ticket.label.delete');
+        });
+
+        // Templates
+        Route::prefix('templates')->group(function () {
+            Route::get('/', [TemplateController::class, 'index'])->name('templates');
+            Route::get('details/{template}', [TemplateController::class, 'details']);
+            Route::get('update/{template}', [TemplateController::class, 'update'])->name('templates.update');
+            Route::get('create', [TemplateController::class, 'create'])->name('templates.create');
+            Route::post('store', [TemplateController::class, 'store'])->name('templates.store');
+            Route::post('edit/{template}', [TemplateController::class, 'edit'])->name('templates.edit');
+            Route::delete('delete/{template}', [TemplateController::class, 'delete']);
+            Route::post('delete-multiple', [TemplateController::class, 'deleteMultiple']);
+        });
+
+        // Email Template
+        Route::prefix('email-template')->group(function () {
+            Route::get('/', [TemplateEmailController::class, 'index'])->name('templatemail');
+            Route::get('create', [TemplateEmailController::class, 'create'])->name('templatemail.create');
+            Route::get('update/{template}', [TemplateEmailController::class, 'update'])->name('templatemail.update');
+            Route::post('store', [TemplateEmailController::class, 'store'])->name('templatemail.store');
+            Route::post('edit/{template}', [TemplateEmailController::class, 'edit'])->name('templatemail.edit');
+            Route::get('delete/{template}', [TemplateEmailController::class, 'delete'])->name('templatemail.delete');
+
+            Route::prefix('components')->group(function () {
+                Route::post('upload-assets', [TemplateEmailController::class, 'uploadAsset'])->name('templatemail.upload_asset');
+                Route::get('templates/{template}', [TemplateEmailController::class, 'getComponentTemplate'])->name('templatemail.components');
+            });
+        });
+
+        // Media Manager
+        Route::prefix('media-manager')->group(function () {
+            Route::post('/create', [FolderManagerController::class, 'insertFolder'])->name('folders.create');
+            Route::post('/upload', [FolderManagerController::class, 'insertMedia'])->name('folders.upload');
+            Route::delete('/delete-media', [FolderManagerController::class, 'deleteMedia'])->name('folders.delete-media');
+            Route::delete('/delete-folder', [FolderManagerController::class, 'deleteFolder'])->name('folders.delete-folder');
+            Route::get('/{path?}', [FolderManagerController::class, 'index'])
+                ->where('path', '.*')
+                ->name('folders');
+        });
+    });
+
+    // ============================================
+    // AUTO REPLY
+    // ============================================
+    Route::prefix('auto-reply')->group(function () {
+
+        // Chatbot
+        Route::prefix('chatbot')->group(function () {
+            Route::get('/', [ChatBotController::class, 'index'])->name('chatbot');
+            Route::get('update/{bot}', [ChatBotController::class, 'update'])->name('chatbot.update');
+            Route::get('create', [ChatBotController::class, 'create'])->name('chatbot.create');
+            Route::post('store', [ChatBotController::class, 'store'])->name('chatbot.store');
+            Route::post("import", [ChatBotController::class, 'import'])->name('chatbot.import');
+            Route::post('edit/{bot}', [ChatBotController::class, 'edit'])->name('chatbot.edit');
+            Route::delete('delete/{bot}', [ChatBotController::class, 'delete']);
+            Route::post('delete-multiple', [ChatBotController::class, 'deleteMultiple']);
+        });
+
+        // AI Agent (Fine Tunnel)
+        Route::prefix('finetunnel')->group(function () {
+            Route::get('/', [FineTunnelController::class, 'index'])->name('finetunnel');
+            Route::post('test-ai', [FineTunnelController::class, 'testAiChat']);
+            Route::get('components', [FineTunnelController::class, 'components']);
+            Route::get('search-address', [FineTunnelController::class, 'searchAddress']);
+            Route::get('update/{fineTunnel}', [FineTunnelController::class, 'update'])->name('finetunnel.update');
+            Route::get('upload-tunnel/{fineTunnel}', [FineTunnelController::class, 'uploadDataSet'])->name('finetunnel.upload');
+            Route::get('/{fineTunnel}/documents', [FineTunnelController::class, 'getRagDocuments'])->name('finetunnel.documents.index');
+            Route::post('store', [FineTunnelController::class, 'store'])->name('finetunnel.store');
+            Route::post('/{fineTunnel}/documents/upload', [FineTunnelController::class, 'uploadRagDocument'])->name('finetunnel.documents.upload');
+            Route::post('edit/{fineTunnel}', [FineTunnelController::class, 'edit'])->name('finetunnel.edit');
+            Route::get('delete/{fineTunnel}', [FineTunnelController::class, 'delete'])->name('finetunnel.delete');
+            Route::delete('/documents/{document}', [FineTunnelController::class, 'deleteRagDocument'])->name('finetunnel.documents.delete');
+
+            Route::prefix('gsheet')->group(function () {
+                Route::post('validate', [FineTunnelController::class, 'validateSpreadsheet']);
+                Route::post('preview', [FineTunnelController::class, 'previewSpreadsheet']);
+            });
+        });
+    });
+
+    // ============================================
+    // CONTACT MANAGEMENT
+    // ============================================
+
+    // Stores (Contacts)
+    Route::prefix('stores')->group(function () {
+        Route::get('/', [StoreController::class, 'index'])->name('stores');
+        Route::get('update/{store}', [StoreController::class, 'update'])->name('stores.update');
+        Route::get('export', [StoreController::class, 'export'])->name('stores.export');
+        Route::get('create', [StoreController::class, 'create'])->name('stores.create');
+        Route::post('store', [StoreController::class, 'store'])->name('stores.store');
+        Route::post('import', [StoreController::class, 'import'])->name('stores.import');
+        Route::post('edit/{store}', [StoreController::class, 'edit'])->name('stores.edit');
+        Route::get('delete/{store}', [StoreController::class, 'delete'])->name('stores.delete');
+        Route::post('delete-multiple', [StoreController::class, 'deleteMultiple'])->name('stores.deleteMultiple');
+    });
+
+    // ============================================
+    // KANBAN MANAGEMENT
+    // ============================================
+    Route::prefix('kanban')->group(function () {
+        Route::get('/', [KanbanController::class, 'index'])->name('store.kanban');
+        Route::get('/data', [KanbanController::class, 'getData']);
+        Route::get('/load-more/{labelId}', [KanbanController::class, 'loadMoreStores']);
+        Route::post('/update-label', [KanbanController::class, 'updateStoreLabel']);
+        Route::post('/update-position', [KanbanController::class, 'updateOrder']);
+
+        // Pipelines
+        Route::prefix('pipelines')->group(function () {
+            Route::get('/', [PipelineController::class, 'index']);
+            Route::post('/', [PipelineController::class, 'store']);
+            Route::post('/{pipeline}', [PipelineController::class, 'update']);
+            Route::delete('/{pipeline}', [PipelineController::class, 'destroy']);
+        });
+
+        // Labels
+        Route::prefix('labels')->group(function () {
+            Route::get('/', [KanbanLabelController::class, 'index']);
+            Route::post('/', [KanbanLabelController::class, 'store']);
+            Route::post('/reorder', [KanbanLabelController::class, 'reorder']);
+            Route::post('/{label}', [KanbanLabelController::class, 'update']);
+            Route::delete('/{label}', [KanbanLabelController::class, 'destroy']);
+        });
+
+        // Stores
+        Route::prefix('stores')->group(function () {
+            Route::post('create-contact', [KanbanController::class, 'createContact']);
+            Route::post('/', [KanbanController::class, 'store']);
+            Route::post('/{label}', [KanbanController::class, 'update']);
+            Route::delete('/{label}', [KanbanController::class, 'destroy']);
+        });
+    });
+
+    // ============================================
+    // TICKET SYSTEM
+    // ============================================
+    Route::prefix('tickets')->group(function () {
+        Route::get('/', [TicketController::class, 'index'])->name('tickets');
+        Route::get('/data', [TicketController::class, 'getData'])->name('tickets.data');
+        Route::get('/dummy', [TicketController::class, 'dummyIndex'])->name('tickets.dummy');
+        Route::get('/list', [TicketController::class, 'list'])->name('tickets.list');
+        Route::get('/load-more', [TicketController::class, 'loadMore']);
+        Route::get('/search', [TicketController::class, 'search'])->name('tickets.search');
+        Route::get('/agents', [TicketController::class, 'getAgents'])->name('tickets.agents');
+        Route::get('/contacts', [TicketController::class, 'getContacts'])->name('tickets.contacts');
+        Route::get('/{id}', [TicketController::class, 'show'])->name('tickets.show');
+        Route::post('/update-status', [TicketController::class, 'updateStatus'])->name('tickets.update-status');
+        Route::post('/move', [TicketController::class, 'moveTicket'])->name('tickets.move');
+        Route::post('/store', [TicketController::class, 'store'])->name('tickets.store');
+        Route::post('/edit/{ticket}', [TicketController::class, 'edit'])->name('tickets.edit');
+        Route::get('/delete/{id}', [TicketController::class, 'delete'])->name('tickets.delete');
+        Route::post('/bulk-delete', [TicketController::class, 'bulkDelete'])->name('tickets.bulk-delete');
+
+        // Ticket Notes
+        Route::get('/{id}/notes', [TicketNoteController::class, 'index'])->name('tickets.notes.index');
+        Route::post('/{id}/notes', [TicketNoteController::class, 'store'])->name('tickets.notes.store');
+
+        // Ticket Categories
+        Route::prefix('categories')->group(function () {
+            Route::get('/', [TicketCategoryController::class, 'index'])->name('tickets.categories');
+            Route::get('/options', [TicketCategoryController::class, 'getOptions'])->name('tickets.categories.options');
+            Route::get('/search', [TicketCategoryController::class, 'search'])->name('tickets.categories.search');
+            Route::get('/{id}', [TicketCategoryController::class, 'show'])->name('tickets.categories.show');
+            Route::post('/store', [TicketCategoryController::class, 'store'])->name('tickets.categories.store');
+            Route::post('/edit/{id}', [TicketCategoryController::class, 'edit'])->name('tickets.categories.edit');
+            Route::get('/delete/{id}', [TicketCategoryController::class, 'delete'])->name('tickets.categories.delete');
+            Route::post('/bulk-delete', [TicketCategoryController::class, 'bulkDelete'])->name('tickets.categories.bulk-delete');
+        });
+    });
+
+    // ============================================
+    // SCRAPING
+    // ============================================
+
+    // Google Maps Scraping
+    Route::prefix('scrapping')->group(function () {
+        Route::get('/', [StoreScrappingController::class, 'index'])->name('scrappings');
+        Route::get('detail/{scrapping}', [StoreScrappingController::class, 'detail'])->name('scrappings.detail');
+        Route::get('update/{scrapping}', [StoreScrappingController::class, 'update'])->name('scrappings.update');
+        Route::post('status/{scrapping}', [StoreScrappingController::class, 'changeStatus']);
+        Route::get('export/{scrapping}', [StoreScrappingController::class, 'export'])->name('scrappings.export');
+        Route::get('create', [StoreScrappingController::class, 'create'])->name('scrappings.create');
+        Route::post('store', [StoreScrappingController::class, 'store'])->name('scrappings.store');
+        Route::post('edit/{scrapping}', [StoreScrappingController::class, 'edit'])->name('scrappings.edit');
+        Route::get('delete/{scrapping}', [StoreScrappingController::class, 'delete'])->name('scrappings.delete');
+    });
+
+    // Contact Scraping
+    Route::prefix('contact-scrapping')->group(function () {
+        Route::get('/', [WhatsappContactScrappingController::class, 'index'])->name('scrapping_contact');
+        Route::get('detail/{scrapping}', [WhatsappContactScrappingController::class, 'detail'])->name('scrapping_contact.detail');
+        Route::get('update/{scrapping}', [WhatsappContactScrappingController::class, 'update'])->name('scrapping_contact.update');
+        Route::post('status/{scrapping}', [WhatsappContactScrappingController::class, 'changeStatus']);
+        Route::get('export/{scrapping}', [WhatsappContactScrappingController::class, 'export'])->name('scrapping_contact.export');
+        Route::get('create', [WhatsappContactScrappingController::class, 'create'])->name('scrapping_contact.create');
+        Route::post('store', [WhatsappContactScrappingController::class, 'store'])->name('scrapping_contact.store');
+        Route::post('edit/{scrapping}', [WhatsappContactScrappingController::class, 'edit'])->name('scrapping_contact.edit');
+        Route::get('delete/{scrapping}', [WhatsappContactScrappingController::class, 'delete'])->name('scrapping_contact.delete');
+    });
+
+    // Group Scraping
+    Route::prefix('group-scrapping')->group(function () {
+        Route::get('/', [GroupScrappingController::class, 'index'])->name('scrapping_group');
+        Route::get('detail/{scrapping}', [GroupScrappingController::class, 'detail'])->name('scrapping_group.detail');
+        Route::get('update/{scrapping}', [GroupScrappingController::class, 'update'])->name('scrapping_group.update');
+        Route::post('status/{scrapping}', [GroupScrappingController::class, 'changeStatus']);
+        Route::get('export/{scrapping}', [GroupScrappingController::class, 'export'])->name('scrapping_group.export');
+        Route::get('create', [GroupScrappingController::class, 'create'])->name('scrapping_group.create');
+        Route::post('store', [GroupScrappingController::class, 'store'])->name('scrapping_group.store');
+        Route::post('edit/{scrapping}', [GroupScrappingController::class, 'edit'])->name('scrapping_group.edit');
+        Route::get('delete/{scrapping}', [GroupScrappingController::class, 'delete'])->name('scrapping_group.delete');
+    });
+
+    // WhatsApp Group List
+    Route::prefix('whatsapp-group')->group(function () {
+        Route::get('/', [WhatsappGroupScrappingController::class, 'index'])->name('groups');
+        Route::post('components', [WhatsappGroupScrappingController::class, 'components']);
+        Route::get('detail/{group}', [WhatsappGroupScrappingController::class, 'detail'])->name('group.detail');
+        Route::post('status/{group}', [WhatsappGroupScrappingController::class, 'changeStatus']);
+        Route::get('delete/{group}', [WhatsappGroupScrappingController::class, 'delete'])->name('group.delete');
+    });
+
+    // ============================================
+    // BROADCAST & BLAST
+    // ============================================
+
+    // Blash WhatsApp
+    Route::prefix('blash')->group(function () {
+        Route::get('/', [BlashWhatsappController::class, 'index'])->name('blash');
+        Route::get('detail/{blash}', [BlashWhatsappController::class, 'detail'])->name('blash.detail');
+        Route::get('update/{blash}', [BlashWhatsappController::class, 'update'])->name('blash.update');
+        Route::post('status/{blash}', [BlashWhatsappController::class, 'changeStatus']);
+        Route::post('status-detail/{detail}', [BlashWhatsappController::class, 'changeStatusDetail']);
+        Route::get('export/{blash}', [BlashWhatsappController::class, 'export'])->name('blash.export');
+        Route::get('create', [BlashWhatsappController::class, 'create'])->name('blash.create');
+        Route::post('store', [BlashWhatsappController::class, 'store'])->name('blash.store');
+        Route::post('edit/{blash}', [BlashWhatsappController::class, 'edit'])->name('blash.edit');
+        Route::get('delete/{blash}', [BlashWhatsappController::class, 'delete'])->name('blash.delete');
+    });
+
+    // Blash Group
+    Route::prefix('blash-group')->group(function () {
+        Route::get('/', [BlashWhatsappGroupController::class, 'index'])->name('blash.group');
+        Route::get('detail/{blash}', [BlashWhatsappGroupController::class, 'detail'])->name('blash.group.detail');
+        Route::get('update/{blash}', [BlashWhatsappGroupController::class, 'update'])->name('blash.group.update');
+        Route::get('export/{blash}', [BlashWhatsappGroupController::class, 'export'])->name('blash.group.export');
+        Route::get('create', [BlashWhatsappGroupController::class, 'create'])->name('blash.group.create');
+        Route::post('store', [BlashWhatsappGroupController::class, 'store'])->name('blash.group.store');
+        Route::post('edit/{blash}', [BlashWhatsappGroupController::class, 'edit'])->name('blash.group.edit');
+        Route::get('delete/{blash}', [BlashWhatsappGroupController::class, 'delete'])->name('blash.group.delete');
+    });
+
+    // Broadcast Follow Ups
+
+        // Template WABA Picker - account selector for WABA templates (sidebar entry)
+        Route::prefix('template-waba')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Broadcast\TemplateWabaController::class, 'index'])->name('template.waba');
+            Route::get('list-data', [\App\Http\Controllers\Broadcast\TemplateWabaController::class, 'listData'])->name('template.waba.list');
+        });
+
+        // WABA Broadcast - accessible from main menu
+        Route::prefix('broadcast/waba')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Broadcast\BroadcastWabaController::class, 'index'])->name('broadcast.waba');
+            Route::get('list-data', [\App\Http\Controllers\Broadcast\BroadcastWabaController::class, 'listData'])->name('broadcast.waba.list');
+        });
+
+    Route::prefix('broadcast-followups')->group(function () {
+        Route::get('/', [BroadcastFollowUpWhatsappController::class, 'index'])->name('broadcast');
+        Route::get('detail/{broadcast}', [BroadcastFollowUpWhatsappController::class, 'detail'])->name('broadcast.detail');
+        Route::get('update/{broadcast}', [BroadcastFollowUpWhatsappController::class, 'update'])->name('broadcast.update');
+        Route::get('create', [BroadcastFollowUpWhatsappController::class, 'create'])->name('broadcast.create');
+        Route::post('store', [BroadcastFollowUpWhatsappController::class, 'store'])->name('broadcast.store');
+        Route::post('edit/{broadcast}', [BroadcastFollowUpWhatsappController::class, 'edit'])->name('broadcast.edit');
+        Route::delete('delete/{broadcast}', [BroadcastFollowUpWhatsappController::class, 'delete'])->name('broadcast.delete');
+    });
+
+    // Blash Email
+    Route::prefix('blash-email')->group(function () {
+        Route::get('/', [BlashEmailController::class, 'index'])->name('blash_email');
+        Route::get('detail/{blash}', [BlashEmailController::class, 'detail'])->name('blash_email.detail');
+        Route::get('create', [BlashEmailController::class, 'create'])->name('blash_email.create');
+        Route::get('update/{blash}', [BlashEmailController::class, 'update'])->name('blash_email.update');
+        Route::post('store', [BlashEmailController::class, 'store'])->name('blash_email.store');
+        Route::post('edit/{blash}', [BlashEmailController::class, 'edit'])->name('blash_email.edit');
+    });
+
+    // ============================================
+    // PROFILE & SETTINGS
+    // ============================================
+
+    // Profile
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [ProfileController::class, 'index'])->name('profile');
+        Route::get('access', [ProfileController::class, 'myPermissions']);
+        Route::post('change', [ProfileController::class, 'profile'])->name('profile.change');
+        Route::post('password', [ProfileController::class, 'password'])->name('profile.password');
+    });
+
+    // Settings
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [SettingsController::class, 'index'])->name('setting');
+        Route::post('generate-api-local', [SettingsController::class, 'generateApiKey']);
+        Route::post('change', [SettingsController::class, 'updateConfiguration'])->name('setting.change');
+    });
+
+    // ============================================
+    // USER MANAGEMENT
+    // ============================================
+
+    // Users
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('users');
+        Route::get('components', [UserController::class, 'components']);
+        Route::get('update/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::get('json/{user}', [UserController::class, 'getJson'])->name('users.json');
+        Route::get('create', [UserController::class, 'create'])->name('users.create');
+        Route::post('store', [UserController::class, 'store'])->name('users.store');
+        Route::post('edit/{user}', [UserController::class, 'edit'])->name('users.edit');
+        Route::post('change-password/{user}', [UserController::class, 'changePassword'])->name('users.password');
+        Route::get('delete/{user}', [UserController::class, 'delete'])->name('users.delete');
+    });
+
+    // ============================================
+    // LIVE CHAT
+    // ============================================
+
+    // Live Chats
+    Route::prefix('livechats')->group(function () {
+        Route::get('/', [LiveChatController::class, 'index'])->name('livechats');
+        Route::get('update/{chat}', [LiveChatController::class, 'update'])->name('livechat.update');
+        Route::get('create', [LiveChatController::class, 'create'])->name('livechat.create');
+        Route::post('store', [LiveChatController::class, 'store'])->name('livechat.store');
+        Route::post('edit/{chat}', [LiveChatController::class, 'edit'])->name('livechat.edit');
+        Route::get('delete/{chat}', [LiveChatController::class, 'delete'])->name('livechat.delete');
+    });
+
+    // ============================================
+    // CRM
+    // ============================================
+    Route::prefix('crm')->group(function () {
+
+        // Quick Replies
+        Route::prefix('quick-replies')->group(function () {
+            Route::get('/', [QuickReplyController::class, 'show']);
+            Route::post('create', [QuickReplyController::class, 'store']);
+            Route::post('update/{quickly}', [QuickReplyController::class, 'update']);
+            Route::delete('remove/{quickly}', [QuickReplyController::class, 'remove']);
+        });
+
+        // Labels
+        Route::prefix('labels')->group(function () {
+            Route::get('/', [CrmController::class, 'labels']);
+            Route::post('pipeline/{history}', [CrmController::class, 'updatePipeLineAndLabel']);
+            Route::post('change/{history}', [CrmController::class, 'changeForLabels']);
+        });
+
+        // Categories
+        Route::prefix('categories')->group(function () {
+            Route::get('/', [CrmController::class, 'categories']);
+            Route::post('change/{history}', [CrmController::class, 'changeForCategory']);
+        });
+
+        // Devices
+        Route::prefix('devices')->group(function () {
+            Route::get('/', [CrmController::class, 'getDevices']);
+            Route::post('change/{history}', [CrmController::class, 'changeDevices']);
+        });
+
+        // Users
+        Route::prefix('users')->group(function () {
+            Route::post('user-change/{history}', [CrmController::class, 'changeForHandled']);
+            Route::post('collabolator/{history}', [CrmController::class, 'changeCalobolator']);
+        });
+
+        // Actions
+        Route::prefix('action')->group(function () {
+            Route::post('change-additional/{history}', [CrmController::class, 'changeAddional']);
+            Route::post('block/{history}', [CrmController::class, 'blockAndUnblock']);
+            Route::post('resolved/{history}', [CrmController::class, 'resolvedChange']);
+            Route::delete('delete/{detail}', [CrmController::class, 'deleteMessage']);
+        });
+
+        Route::delete('remove/{history}', [CrmController::class, 'deleteChats']);
+        Route::get('contacts', [CrmController::class, 'getContacts']);
+        Route::get('stores', [CrmController::class, 'getStores']);
+        Route::post('contacts', [CrmController::class, 'newChats']);
+        Route::get('messages/{history}', [CrmController::class, 'getMessages']);
+        Route::get('information-detail/{history}', [CrmController::class, 'contactInformation']);
+        Route::post("takeover-message/{history}", [CrmController::class, 'takeOfferChat']);
+        Route::post('send-message/{history}', [CrmController::class, 'sendMessage']);
+        Route::get('templates/{history}', [CrmController::class, 'getTemplates']);
+        Route::post('send-template/{history}', [CrmController::class, 'sendTemplate']);
+        Route::post("mark-read/{history}", [CrmController::class, 'updateHistoryChatRead']);
+        Route::get('/{vue?}', [CrmController::class, 'index'])->where('vue', '^(?!setup|update|password).*$')->name('crm');
+    });
+
+    // ============================================
+    // WHATSAPP ACCOUNTS
+    // ============================================
+
+    // WhatsApp Account
+    Route::prefix('whatsapp-account')->group(function () {
+        Route::get('/', [WhatsappController::class, 'index'])->name('whatsapp');
+        Route::get('create', [WhatsappController::class, 'create'])->name('whatsapp.create');
+        Route::get('update/{whatsapp}', [WhatsappController::class, 'update'])->name('whatsapp.update');
+        Route::post('store', [WhatsappController::class, 'store'])->name('whatsapp.store');
+        Route::post('edit/{whatsapp}', [WhatsappController::class, 'edit'])->name('whatsapp.edit');
+        Route::post('status/{whatsapp}', [WhatsappController::class, 'changeStatus']);
+        Route::get('delete/{whatsapp}', [WhatsappController::class, 'delete'])->name('whatsapp.delete');
+    });
+
+    // ============================================
+    // WHATSAPP UNOFFICIAL (DEVICE)
+    // ============================================
+    Route::prefix('device')->group(function () {
+        Route::get('/', [WhatsappDeviceController::class, 'index'])->name('device');
+        Route::get('update/{device}', [WhatsappDeviceController::class, 'update'])->name('device.update');
+        Route::get('scan/{device}', [WhatsappDeviceController::class, 'scan'])->name('device.scan');
+        Route::post('status/{device}', [WhatsappDeviceController::class, 'changeStatus']);
+        Route::get('doc-api/{device}', [WhatsappDeviceController::class, 'apiPage'])->name('device.doc');
+        Route::post('chat-details/{device}/{chatId}', [WhatsappDeviceController::class, 'getChatDetails']);
+        Route::post('send-message/{device}', [WhatsappDeviceController::class, 'sendMessage']);
+        Route::get('setting/{device}', [WhatsappDeviceController::class, 'autoReply'])->name('device.setting');
+        Route::post('update-setting/{device}', [WhatsappDeviceController::class, 'updateAutoReply'])->name('device.setting.update');
+        Route::get('create', [WhatsappDeviceController::class, 'create'])->name('device.create');
+        Route::post('store', [WhatsappDeviceController::class, 'store'])->name('device.store');
+        Route::post('edit/{device}', [WhatsappDeviceController::class, 'edit'])->name('device.edit');
+        Route::get('delete/{device}', [WhatsappDeviceController::class, 'delete'])->name('device.delete');
+
+        // Chats
+        Route::prefix('chats')->group(function () {
+            Route::get('contacts/{device}', [SendMessageController::class, 'getContactList']);
+            Route::get('/{device}', [SendMessageController::class, 'getChatList']);
+            Route::get('detail/{device}/{chatId}', [SendMessageController::class, 'getChatDetails']);
+            Route::post('send/{device}', [SendMessageController::class, 'sendMessage']);
+        });
+
+        // Misc
+        Route::prefix('misc')->group(function () {
+            Route::post("read-messages/{id}", [WhatsappMiscController::class, 'readMessage']);
+            Route::post("delete-message/{id}", [WhatsappMiscController::class, 'deleteForMe']);
+            Route::post("delete-everyone/{id}", [WhatsappMiscController::class, 'deleteEveryOne']);
+            Route::post("download-media/{id}", [WhatsappMiscController::class, 'downloadMedia']);
+            Route::post("get-profile/{id}", [WhatsappMiscController::class, 'getPhotoProfile']);
+            Route::post("mark-message/{id}", [WhatsappMiscController::class, 'markMessage']);
+            Route::post("delete-chat/{id}", [WhatsappMiscController::class, 'deleteChats']);
+        });
+
+        // Sessions
+        Route::prefix('sessions')->group(function () {
+            Route::post('check/{device}', [WhatsappDeviceController::class, 'checkSession']);
+            Route::post('create/{device}', [WhatsappDeviceController::class, 'createSession']);
+            Route::post('logout/{device}', [WhatsappDeviceController::class, 'logoutSession']);
+        });
+
+        // Message Test
+        Route::prefix('message')->group(function () {
+            Route::get('/', [WhatsappDeviceController::class, 'testSend'])->name('device.message');
+            Route::post('store', [WhatsappDeviceController::class, 'singleSend'])->name('device.message.store');
+        });
+
+        // Chat App
+        Route::prefix('chat-app')->group(function () {
+            Route::get('/{vue?}', function () {
+                return view('chatapp');
+            })->where('vue', '^(?!setup|update|password).*$')->name('device.chat');
+        });
+    });
+
+    // ============================================
+    // TELEGRAM
+    // ============================================
+    Route::prefix('telegram')->group(function () {
+        Route::get('/', [TelegramController::class, 'index'])->name('telegrams');
+        Route::get('update/{telegram}', [TelegramController::class, 'update'])->name('telegram.update');
+        Route::post('send-message/{telegram}', [TelegramController::class, 'sendMessage']);
+        Route::get('create', [TelegramController::class, 'create'])->name('telegram.create');
+        Route::post('store', [TelegramController::class, 'store'])->name('telegram.store');
+        Route::post('edit/{telegram}', [TelegramController::class, 'edit'])->name('telegram.edit');
+        Route::get('delete/{telegram}', [TelegramController::class, 'delete'])->name('telegram.delete');
+
+        Route::prefix('message')->group(function () {
+            Route::get('/', [TelegramController::class, 'testSend'])->name('telegram.message');
+            Route::post('store', [TelegramController::class, 'singleSend'])->name('telegram.message.store');
+        });
+    });
+
+    // ============================================
+    // WHATSAPP OFFICIAL (WABA)
+    // ============================================
+    Route::prefix('waba')->group(function () {
+        Route::get('/', [WhatsappWabaController::class, 'index'])->name('waba');
+        Route::get('devices/{meta}', [WhatsappWabaController::class, 'deviceResponse']);
+        Route::get('activation/{device}', [WhatsappWabaController::class, 'activatePhone'])->name('waba.activation');
+        Route::get('create', [WhatsappWabaController::class, 'create'])->name('waba.create');
+        Route::post('store', [WhatsappWabaController::class, 'store'])->name('waba.store');
+        Route::get('delete/{meta}', [WhatsappWabaController::class, 'deleteIntegration'])->name('waba.delete');
+
+        // Update
+        Route::prefix('update')->group(function () {
+            Route::get('/{meta}', [WhatsappWabaController::class, 'update'])->name('waba.update');
+            Route::get('/{meta}/quality', [WhatsappWabaController::class, 'fetchQuality'])->name('waba.quality');
+            Route::post('change-credencial/{meta}', [WhatsappWabaController::class, 'saveUpdateCredencial'])->name('waba.general.update');
+            Route::get('token/{meta}', [WhatsappWabaController::class, 'token'])->name('waba.token');
+            Route::get('refresh/{meta}', [WhatsappWabaController::class, 'refresh'])->name('waba.refresh');
+            Route::post('token-store/{meta}', [WhatsappWabaController::class, 'saveToken'])->name('waba.token.update');
+
+            Route::prefix('devices')->group(function () {
+                Route::get('/{meta}', [WhatsappWabaController::class, 'devices'])->name('waba.devices');
+                Route::get('autoreply/{device}', [WhatsappWabaController::class, 'autoreply'])->name('waba.autoreply');
+                Route::post('autoreply-saving/{device}', [WhatsappWabaController::class, 'saveAutoReply'])->name('waba.autoreply.update');
+                Route::get('greeting/{device}', [WhatsappWabaController::class, 'greeting'])->name('waba.greeting');
+                Route::post('greeting-store/{device}', [WhatsappWabaController::class, 'saveGreeting'])->name('waba.greeting.update');
+            });
+        });
+
+        // Templates
+        Route::prefix('templates')->group(function () {
+            Route::get('/{meta}', [WhatsappTemplateController::class, 'index'])->name('waba.templates');
+            Route::get('sync/{meta}', [WhatsappTemplateController::class, 'syncData'])->name('waba.sync_template');
+            Route::get("details/{meta}/{template}", [WhatsappTemplateController::class, 'details']);
+            Route::get('update/{meta}/{template}', [WhatsappTemplateController::class, 'update'])->name('waba.template.update');
+            Route::get('create/{meta}', [WhatsappTemplateController::class, 'create'])->name('waba.template.create');
+            Route::post('store/{meta}', [WhatsappTemplateController::class, 'store'])->name('waba.template.store');
+            Route::post('edit/{meta}/{template}', [WhatsappTemplateController::class, 'edit']);
+            Route::get('delete/{meta}/{template}', [WhatsappTemplateController::class, 'delete'])->name('waba.template.delete');
+        });
+
+        // Broadcast
+        Route::prefix('broadcast')->group(function () {
+            Route::get('/{meta}', [WhatsappBroadcastController::class, 'index'])->name('waba.broadcast');
+            Route::get('list-data/{meta}', [WhatsappBroadcastController::class, 'listData'])->name('waba.broadcast.list');
+            Route::get('detail/{meta}/{blash}', [WhatsappBroadcastController::class, 'detail'])->name('waba.broadcast.detail');
+            Route::get('detail-data/{meta}/{blash}', [WhatsappBroadcastController::class, 'detailData'])->name('waba.broadcast.detail.data');
+            Route::get('details/{meta}/{blash}', [WhatsappBroadcastController::class, 'details']);
+            Route::get('update/{meta}/{blash}', [WhatsappBroadcastController::class, 'update'])->name('waba.broadcast.update');
+            Route::get('create/{meta}', [WhatsappBroadcastController::class, 'create'])->name('waba.broadcast.create');
+            Route::post('store/{meta}', [WhatsappBroadcastController::class, 'store']);
+            Route::post("edit/{meta}/{blash}", [WhatsappBroadcastController::class, 'edit']);
+        });
+
+        // Chatbot
+        Route::prefix('chatbot')->group(function () {
+            Route::get('/{meta}', [ChatBotWabaController::class, 'index'])->name('waba.chatbot');
+            Route::get('/details/{meta}/{bot}', [ChatBotWabaController::class, 'details']);
+            Route::get('update/{meta}/{bot}', [ChatBotWabaController::class, 'update'])->name('waba.chatbot.update');
+            Route::get('create/{meta}', [ChatBotWabaController::class, 'create'])->name('waba.chatbot.create');
+            Route::post('store/{meta}', [ChatBotWabaController::class, 'store'])->name('waba.chatbot.store');
+            Route::post('edit/{meta}/{bot}', [ChatBotWabaController::class, 'edit'])->name('waba.chatbot.edit');
+        });
+
+        // Embed
+        Route::prefix('embed')->group(function () {
+            Route::post('syncron', [WhatsappWabaController::class, 'syncronAccount']);
+        });
+    });
+
+    // ============================================
+    // LOGS & REPORTS
+    // ============================================
+
+    // Logs
+    Route::prefix('logs')->group(function () {
+        Route::get('whatsapp', [LogController::class, 'whatsapp'])->name('logs.whatsapp');
+        Route::get('statistic', [ReportController::class, 'index'])->name('reports.statistic');
+        Route::get('email', [LogController::class, 'email'])->name('logs.email');
+        Route::get('scrapping', [LogController::class, 'scrapping'])->name('logs.scrapping');
+        Route::get('delete', [LogController::class, 'delete'])->name('logs.delete');
+        Route::get('export', [LogController::class, 'export'])->name('logs.export');
+    });
+
+    // Reports
+    Route::prefix('reports')->group(function () {
+        Route::prefix('conversation')->group(function () {
+            Route::get('/', [ConversationReportController::class, 'index'])->name('reports.conversation');
+            Route::get('/agent/{user}', [ConversationReportController::class, 'agentDetail'])->name('reports.conversation.agent');
+            Route::get('/export', [ConversationReportController::class, 'index'])->name('reports.conversation.export');
+        });
+
+        Route::prefix('leads')->group(function () {
+            Route::get('/', [LeadPipelineController::class, 'dashboard'])->name('reports.leads');
+        });
+    });
+
+    // ============================================
+    // BILLING & TRANSACTIONS
+    // ============================================
+
+    // Billing
+    Route::prefix('billing')->group(function () {
+        Route::get('/', [BillingController::class, 'index'])->name('billing.index');
+        Route::get('detail/{transaction}', [BillingController::class, 'detail'])->name('billing.detail');
+        Route::post('store', [BillingController::class, 'createTopUpTransaction'])->name('billing.create');
+        Route::post('pay-store/{transaction}', [BillingController::class, 'payTransaction'])->name('billing.store');
+        Route::post('create-token/{transaction}', [BillingController::class, 'createTokenDuitku'])->name('billing.create.token');
+        Route::get('delete-transaction/{transaction}', [BillingController::class, 'delete'])->name('billing.delete');
+    });
+
+    // MUA Billing
+    Route::prefix('mua')->group(function () {
+        Route::get('/', [MuaBillingController::class, 'index'])->name('mua.index');
+        Route::get('detail/{transaction}', [MuaBillingController::class, 'detail'])->name('mua.detail');
+        Route::post('store', [MuaBillingController::class, 'createMuaTransaction'])->name('mua.create');
+        Route::post('pay-store/{transaction}', [MuaBillingController::class, 'payTransaction'])->name('mua.store');
+        Route::post('create-token/{transaction}', [MuaBillingController::class, 'createTokenDuitku'])->name('mua.create.token');
+        Route::get('delete-transaction/{transaction}', [MuaBillingController::class, 'delete'])->name('mua.delete');
+    });
+
+    // Storage Billing
+    Route::prefix('storage')->group(function () {
+        Route::get('/', [StorageBillingController::class, 'index'])->name('storage.index');
+        Route::get('detail/{transaction}', [StorageBillingController::class, 'detail'])->name('storage.detail');
+        Route::get('store/{package}', [StorageBillingController::class, 'createTransaction'])->name('storage.create');
+        Route::post('pay-store/{transaction}', [StorageBillingController::class, 'payTransaction'])->name('storage.store');
+        Route::post('create-token/{transaction}', [StorageBillingController::class, 'createTokenDuitku'])->name('storage.create.token');
+        Route::get('delete-transaction/{transaction}', [StorageBillingController::class, 'delete'])->name('storage.delete');
+    });
+
+    // ============================================
+    // SOCIAL MEDIA INTEGRATIONS
+    // ============================================
+
+    // Facebook
+    Route::prefix('facebook')->group(function () {
+        Route::get('/', [FacebookController::class, 'index'])->name('facebook');
+        Route::get('redirect', [FacebookController::class, 'redirect'])->name('facebook.redirect');
+    });
+
+    // Instagram
+    Route::prefix('instagram')->group(function () {
+        Route::get('/', [InstagramController::class, 'index'])->name('instagram');
+        Route::get('/auth', [InstagramController::class, 'redirectToInstagram'])->name('instagram.auth');
+        Route::match(['get', 'post'], 'redirect', [InstagramController::class, 'handleCallback'])->name('instagram.redirect');
+        Route::post('/sync', [InstagramController::class, 'syncAccount'])->name('instagram.sync');
+
+        Route::prefix('update')->group(function () {
+            Route::get('/{instagram}', [InstagramController::class, 'update'])->name('instagram.update');
+            Route::post('/{instagram}', [InstagramController::class, 'edit'])->name('instagram.edit');
+        });
+
+        Route::post('/{instagram}', [InstagramController::class, 'destroy']);
+    });
+
+    // Messenger
+    Route::prefix('messenger')->group(function () {
+        Route::get('/', [MessangerController::class, 'index'])->name('messenger');
+        Route::match(['get', 'post'], 'redirect', [MessangerController::class, 'handleCallback'])->name('messenger.redirect');
+        Route::post('/sync', [MessangerController::class, 'syncAccount'])->name('messenger.sync');
+
+        Route::prefix('update')->group(function () {
+            Route::get('/{messenger}', [MessangerController::class, 'update'])->name('messenger.update');
+            Route::post('/{messenger}', [MessangerController::class, 'edit'])->name('messenger.edit');
+        });
+
+        Route::delete('/{messenger}', [MessangerController::class, 'destroy']);
+    });
+});

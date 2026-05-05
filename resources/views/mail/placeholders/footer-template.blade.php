@@ -1,0 +1,1 @@
+<x-frontent.footer-component></x-frontent.footer-component>

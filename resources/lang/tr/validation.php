@@ -1,0 +1,43 @@
+<?php
+
+return [
+    'password_must_same'            => 'Şifre ve şifre doğrulaması eşleşmelidir.',
+    'numeric'                       => ':attribute alanı bir sayı olmalıdır.',
+    'password' => [
+        'letters'   => ':attribute alanı en az bir harf içermelidir.',
+        'mixed'     => ':attribute alanı en az bir büyük harf ve bir küçük harf içermelidir.',
+        'numbers'   => ':attribute alanı en az bir rakam içermelidir.',
+        'symbols'   => ':attribute alanı en az bir sembol içermelidir.',
+        'uncompromised' => 'Verilen :attribute bir veri ihlalinde yer almış. Lütfen farklı bir :attribute seçin.',
+    ],
+    'present'                       => ':attribute alanı mevcut olmalıdır.',
+    'prohibited'                    => ':attribute alanı yasaktır.',
+    'prohibited_if'                 => ':attribute alanı, :other :value olduğunda yasaktır.',
+    'prohibited_unless'             => ':attribute alanı, :other :values içinde olmadıkça yasaktır.',
+    'prohibits'                     => ':attribute alanı :other\'ın mevcut olmasına engel olur.',
+    'regex'                         => ':attribute formatı geçersiz.',
+    'required'                      => ':attribute alanı gereklidir.',
+    'required_array_keys'           => ':attribute alanı şunları içermelidir: :values.',
+    'required_if'                   => ':attribute alanı, :other :value olduğunda gereklidir.',
+    'required_if_accepted'          => ':attribute alanı, :other kabul edildiğinde gereklidir.',
+    'required_unless'               => ':attribute alanı, :other :values içinde olmadığı sürece gereklidir.',
+    'required_with'                 => ':attribute alanı, :values mevcut olduğunda gereklidir.',
+    'required_with_all'             => ':attribute alanı, tüm :values mevcut olduğunda gereklidir.',
+    'required_without'              => ':attribute alanı, :values mevcut olmadığında gereklidir.',
+    'required_without_all'          => ':attribute alanı, :values\'in hiçbirisi mevcut olmadığında gereklidir.',
+    'same'                          => ':attribute ve :other eşleşmelidir.',
+    'size' => [
+        'array'   => ':attribute alanı :size öğe içermelidir.',
+        'file'    => ':attribute dosyasının boyutu :size kilobayt olmalıdır.',
+        'numeric' => ':attribute alanı :size olmalıdır.',
+        'string'  => ':attribute alanı :size karakter olmalıdır.',
+    ],
+    'starts_with'                  => ':attribute alanı şunlardan biriyle başlamalıdır: :values.',
+    'string'                       => ':attribute alanı bir metin olmalıdır.',
+    'timezone'                     => ':attribute alanı geçerli bir zaman dilimi olmalıdır.',
+    'device_limit'          => 'Üzgünüz, oluşturulabilecek cihaz limitine ulaştınız, lütfen servis sağlayıcıyla iletişime geçin.',
+    'chatbot_limit'         => 'Üzgünüz, oluşturulabilecek chatbot limitine ulaştınız, lütfen servis sağlayıcıyla iletişime geçin.',
+    'finetunnel_read_doc'   => 'Bir hata oluştu, belge okunamadı.',
+    'template_limit'        => 'Üzgünüz, oluşturulabilecek şablon limitine ulaştınız, lütfen servis sağlayıcıyla iletişime geçin.',
+
+];

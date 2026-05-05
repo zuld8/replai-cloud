@@ -1,0 +1,1113 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Models\Blash\BlashDetail;
+use App\Models\ChatBot\HistoryChat;
+use App\Models\Log;
+use App\Models\Setting;
+use App\Models\WhatsappDevice;
+use App\Models\WhatsappKeyAccount;
+use App\Observers\WhatsappOfficial\WhatsappOfficialServiceObserver;
+use App\Observers\WhatsappOfficial\WhatsappTemplateServiceObserver;
+use App\Observers\WhatsappServiceObserver;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log as FacadesLog;
+use Exception;
+use App\Supports\MimeTypes;
+
+class SendPromotionWhatsappBatchJob implements ShouldQueue
+{
+    use Queueable;
+
+    /**
+     * Job timeout in seconds (extended for batch processing)
+     */
+    public $timeout = 1800; // 30 minutes for 100 messages
+
+    /**
+     * Maximum number of attempts
+     */
+    public $tries = 2;
+
+    /**
+     * Array of blast IDs to process
+     */
+    protected $blastIds;
+
+    /**
+     * Delay between messages (seconds)
+     * Renamed to avoid conflict with Queueable trait
+     */
+    protected $messageDelay;
+
+    /**
+     * Stop sending after X messages
+     */
+    protected $stopSending;
+
+    /**
+     * Rest time after stop_sending (seconds)
+     */
+    protected $restSending;
+
+    /**
+     * Constructor
+     *
+     * @param array $blastIds Array of BlashDetail IDs
+     * @param int $messageDelay Delay between messages
+     * @param int $stopSending Stop after X messages
+     * @param int $restSending Rest time in seconds
+     */
+    public function __construct(array $blastIds, int $messageDelay = 5, int $stopSending = 20, int $restSending = 90)
+    {
+        $this->blastIds = $blastIds;
+        $this->messageDelay = $messageDelay;
+        $this->stopSending = $stopSending;
+        $this->restSending = $restSending;
+    }
+
+    /**
+     * Execute the job - Process BATCH of messages
+     * Optimized: WABA uses fast path (no delay), WA biasa keeps original delay
+     */
+    public function handle(): void
+    {
+        $startTime = microtime(true);
+        $totalMessages = count($this->blastIds);
+        FacadesLog::info("Processing batch of {$totalMessages} messages");
+
+        // Detect if this is WABA by checking first blast
+        $isWaba = $this->detectIsWaba();
+
+        // Pre-cache shared data for the batch (avoid repeated queries)
+        $cachedSettings = null;
+        $cachedTemplate = null;
+        $cachedAccount = null;
+        $cachedParent = null;
+
+        if ($isWaba) {
+            FacadesLog::info("WABA FAST MODE: Skipping delays for official API");
+            $firstBlast = BlashDetail::with(['store', 'parent.template'])->find($this->blastIds[0] ?? null);
+            if ($firstBlast) {
+                $cachedParent = $firstBlast->parent;
+                $cachedSettings = Setting::where("id", ($firstBlast->store->business_id ?? null))
+                    ->first(['whatsapp_sender', 'whatsapp_sender_notif', 'id']);
+                $cachedAccount = $cachedSettings ? $this->getDevice($firstBlast, 'yes', $cachedSettings) : null;
+                if ($cachedParent) {
+                    try {
+                        $cachedTemplate = (new WhatsappTemplateServiceObserver())->buildTemplate($cachedParent);
+                    } catch (\Throwable $e) {
+                        $cachedTemplate = null;
+                        FacadesLog::error('buildTemplate failed: ' . $e->getMessage());
+                    }
+                    if (empty($cachedTemplate['name']) || $cachedTemplate['name'] === '_') {
+                        FacadesLog::error('WABA batch aborted: template not found or invalid for broadcast ' . ($cachedParent->id ?? 'unknown'));
+                        $cachedTemplate = null;
+                    }
+                }
+            }
+        }
+
+        $messageCount = 0;
+        $successCount = 0;
+        $errorCount = 0;
+
+        $cachedMetaAccount = null; // OPT#1: init before pre-fetch
+        // OPT#1: Pre-fetch MetaAccount once per batch (was queried per message)
+        if ($cachedAccount && !$cachedMetaAccount) {
+            $cachedMetaAccount = \App\Models\MetaAccount::withoutGlobalScopes()
+                ->withoutTrashed()
+                ->where('id', $cachedAccount->meta_account_id)
+                ->first();
+            FacadesLog::info('OPT#1: MetaAccount pre-fetched for batch', [
+                'meta_account_id' => $cachedAccount->meta_account_id ?? null,
+                'found'           => !is_null($cachedMetaAccount),
+            ]);
+        }
+
+        // OPT#2: Counters for bulk increment (instead of per-message DB query)
+        $senderIncrement  = 0;
+        $dailySendIncrement = 0;
+
+        // ── WABA: concurrent HTTP pool (10 parallel requests per chunk) ──────
+        if ($isWaba) {
+            $this->processBatchConcurrentWaba(
+                $this->blastIds, $cachedSettings, $cachedAccount, $cachedTemplate,
+                $cachedParent, $cachedMetaAccount, $successCount, $errorCount,
+                $messageCount, $senderIncrement, $dailySendIncrement
+            );
+        } else {
+            // ── WA Biasa: keep original sequential loop with delays ──────────
+            foreach ($this->blastIds as $blastId) {
+                try {
+                    $blast = BlashDetail::with(['store.category', 'store.merchant', 'parent.template'])->find($blastId);
+                    if (!$blast) { FacadesLog::warning("BlashDetail not found: {$blastId}"); continue; }
+                    if ($blast->sending_status === 'yes') continue;
+
+                    $updated = \DB::table('blash_details')
+                        ->where('id', $blastId)->where('sending_status', '!=', 'yes')
+                        ->update(['delivery_status' => 'processing']);
+                    if ($updated === 0) continue;
+
+                    $this->processWhatsappMessage($blast);
+                    $messageCount++;
+                    $successCount++;
+
+                    if ($messageCount < $totalMessages) {
+                        if ($this->stopSending > 0 && $messageCount % $this->stopSending == 0) {
+                            FacadesLog::info("Rest period: {$this->restSending}s after {$messageCount} messages");
+                            sleep($this->restSending);
+                        } else {
+                            sleep($this->messageDelay);
+                        }
+                    }
+                } catch (Exception $e) {
+                    $errorCount++;
+                    FacadesLog::error("Error processing BlashDetail {$blastId}: " . $e->getMessage());
+                }
+            }
+        }
+
+        // OPT#2: Flush batched DB increments (was done per-message)
+        if ($isWaba && $senderIncrement > 0 && $cachedSettings) {
+            $cachedSettings->increment('whatsapp_sender', $senderIncrement);
+        }
+        if ($isWaba && $dailySendIncrement > 0 && $cachedAccount) {
+            $cachedAccount->increment('daily_send', $dailySendIncrement);
+        }
+
+        // FIX 4: Safety net — ensure no blastIds remain stuck at delivery_status='processing'
+        if ($isWaba && !empty($this->blastIds)) {
+            $cleanedUp = \Illuminate\Support\Facades\DB::table('blash_details')
+                ->whereIn('id', $this->blastIds)
+                ->where('delivery_status', 'processing')
+                ->where('sending_status', '!=', 'yes')
+                ->update([
+                    'delivery_status' => 'failed',
+                    'reports' => json_encode(['code' => 'BATCH_INCOMPLETE', 'message' => 'Sending incomplete — please retry']),
+                ]);
+            if ($cleanedUp > 0) {
+                FacadesLog::warning("Safety net: cleaned up {$cleanedUp} stuck 'processing' records after batch job");
+            }
+        }
+
+        $elapsed = round(microtime(true) - $startTime, 1);
+        $mode = $isWaba ? 'WABA-FAST' : 'WA-NORMAL';
+        FacadesLog::info("Batch completed [{$mode}]: {$successCount} success, {$errorCount} errors, {$elapsed}s elapsed, sender+={$senderIncrement}, daily+={$dailySendIncrement}");
+
+        // === AUTO-UPDATE PARENT STATUS ===
+        // After batch completes, check if ALL details of the parent broadcast are sent
+        try {
+            $firstBlast = BlashDetail::with('parent')->find($this->blastIds[0] ?? null);
+            if ($firstBlast && $firstBlast->parent) {
+                $parent = $firstBlast->parent;
+                $totalDetails = BlashDetail::where('blash_whatsapp_id', $parent->id)->count();
+                $sentDetails = BlashDetail::where('blash_whatsapp_id', $parent->id)
+                    ->where('sending_status', 'yes')->count();
+                $failedDetails = BlashDetail::where('blash_whatsapp_id', $parent->id)
+                    ->where('sending_status', 'no')->count();
+                
+                // Mark based on success rate: >=80%=success, >0%=partial_success, 0%=failed
+                if ($totalDetails > 0 && ($sentDetails + $failedDetails) >= $totalDetails) {
+                    $successRate = $totalDetails > 0 ? round($sentDetails / $totalDetails * 100, 1) : 0;
+                    // Stat columns are updated by RefreshBroadcastStats command
+                    if ($successRate >= 80) {
+                        if ($parent->status !== 'success') {
+                            $parent->update(['status' => 'success']);
+                            FacadesLog::info("Broadcast {$parent->name}: {$sentDetails}/{$totalDetails} ({$successRate}%) — SUCCESS");
+                        }
+                    } elseif ($sentDetails > 0) {
+                        if (!in_array($parent->status, ['success', 'partial_success'])) {
+                            $parent->update(['status' => 'partial_success']);
+                            FacadesLog::warning("Broadcast {$parent->name}: {$sentDetails}/{$totalDetails} ({$successRate}%) — PARTIAL_SUCCESS");
+                        }
+                    } else {
+                        if (!in_array($parent->status, ['success', 'partial_success', 'failed'])) {
+                            $parent->update(['status' => 'failed']);
+                            FacadesLog::error("Broadcast {$parent->name}: 0/{$totalDetails} sent — FAILED");
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            FacadesLog::warning("Failed to update parent status: " . $e->getMessage());
+        }
+
+    }
+
+    /**
+     * Detect if this batch is WABA (official API)
+     */
+    private function detectIsWaba(): bool
+    {
+        $firstBlast = BlashDetail::with('parent')->find($this->blastIds[0] ?? null);
+        return $firstBlast && ($firstBlast->parent->waba ?? 'no') === 'yes';
+    }
+
+
+    /**
+     * CONCURRENT HTTP WABA broadcast — fires up to 10 requests in parallel
+     * 3-pass approach:
+     *   PASS 1: Sequential pre-processing (load, validate, lock, build payload)
+     *   PASS 2: Http::pool() — concurrent HTTP (10 per chunk)
+     *   PASS 3: Sequential result handling (DB writes, handleResult)
+     */
+    private function processBatchConcurrentWaba(
+        array $blastIds,
+        ?Setting $cachedSettings,
+        $cachedAccount,
+        $cachedTemplate,
+        $cachedParent,
+        $cachedMetaAccount,
+        int &$successCount,
+        int &$errorCount,
+        int &$messageCount,
+        int &$senderIncrement,
+        int &$dailySendIncrement
+    ): void {
+        $CONCURRENT_CHUNK = 10; // Max concurrent HTTP requests per pool
+        $pending          = [];
+        $apiVersion       = config('custom.api_waba_version', 'v22.0');
+        $observer         = new WhatsappOfficialServiceObserver();
+
+        // ── PASS 1: Sequential pre-processing ─────────────────────────────
+        FacadesLog::info('CONCURRENT WABA PASS 1: pre-processing ' . count($blastIds) . ' blastIds');
+        foreach ($blastIds as $blastId) {
+            try {
+                $blast = BlashDetail::with(['store.category', 'store.merchant', 'parent.template'])->find($blastId);
+                if (!$blast) { FacadesLog::warning("Concurrent PASS1: BlashDetail {$blastId} not found"); continue; }
+                if ($blast->sending_status === 'yes') continue;
+
+                // Auto-blocked (Meta 131026: number not on WhatsApp)
+                if (!empty($blast->store_id) && ($blast->store->waba_blocked ?? 0)) {
+                    \DB::table('blash_details')->where('id', $blastId)->update([
+                        'sending_status'  => 'yes',
+                        'delivery_status' => 'failed',
+                        'reports'         => json_encode(['message' => 'Number not on WhatsApp (auto-blocked)', 'code' => 131026]),
+                    ]);
+                    $successCount++;
+                    FacadesLog::info("Concurrent auto-blocked (131026): {$blast->phone}");
+                    continue;
+                }
+
+                // Atomic lock: prevents double-send from concurrent workers
+                // FIX 5: Also exclude already-processing/sent records to prevent race with redispatch-stuck
+                $updated = \DB::table('blash_details')
+                    ->where('id', $blastId)
+                    ->where('sending_status', '!=', 'yes')
+                    ->whereNotIn('delivery_status', ['processing', 'sent', 'delivered', 'read'])
+                    ->update(['delivery_status' => 'processing']);
+                if ($updated === 0) {
+                    FacadesLog::warning('WABA PASS1 SKIP: blastId=' . $blastId . ' delivery_status=' . (\DB::table('blash_details')->where('id', $blastId)->value('delivery_status') ?? 'null') . ' — already locked');
+                    continue; // Another worker grabbed this or already done
+                }
+
+                // Resolve device account
+                $effectiveAccount = $cachedAccount;
+                if (!$effectiveAccount || (string)$effectiveAccount->id !== (string)$blast->device_id) {
+                    $effectiveAccount = \App\Models\WhatsappKeyAccount::withoutGlobalScopes()
+                        ->where('id', $blast->device_id)->where('status', 'active')->first();
+                    if (!$effectiveAccount && $cachedSettings) {
+                        $effectiveAccount = \App\Models\WhatsappKeyAccount::where('status', 'active')
+                            ->where('business_id', $cachedSettings->id)->first();
+                    }
+                }
+
+                // Create audit log
+                $log = Log::create([
+                    'description' => __('blash.blash_description', [
+                        'name'     => $blast->store->name ?? '',
+                        'schedule' => $cachedParent->name ?? ''
+                    ]),
+                    'merchant_id' => $blast->store->merchant_id ?? null,
+                    'business_id' => $blast->store->business_id ?? null,
+                    'type'        => 'whatsapp',
+                    'device_id'   => $blast->device_id,
+                ]);
+
+                if (!$cachedSettings || !$effectiveAccount) {
+                    $this->logError($log, 'Device atau settings WABA tidak tersedia');
+                    $blast->update(['status' => 'yes', 'sending_status' => 'no', 'delivery_status' => 'failed',
+                        'reports' => json_encode(['code' => 'DEVICE_UNAVAILABLE', 'message' => 'Device WABA tidak tersedia'])]);
+                    $errorCount++; continue;
+                }
+
+                if (!$this->validateBusinessLimits($blast, $cachedSettings, $log)) { $errorCount++; continue; }
+
+                if (!$this->validateCredit($blast)) {
+                    $this->handleNoCredit($blast, ['message' => 'Credit Token Anda tidak mencukupi'], $log);
+                    $errorCount++; continue;
+                }
+
+                $phone = $blast->phone ?? '';
+                if (empty($phone)) { $this->handleNoPhone($blast, ['message' => ''], $log); $errorCount++; continue; }
+
+                // Guard: skip if template is missing/invalid
+                if (empty($cachedTemplate) || empty($cachedTemplate['name']) || $cachedTemplate['name'] === '_') {
+                    \DB::table('blash_details')->where('id', $blastId)->update([
+                        'sending_status'  => 'yes',
+                        'delivery_status' => 'failed',
+                        'reports'         => json_encode(['code' => 'TEMPLATE_NOT_FOUND', 'message' => 'Template WABA tidak ditemukan atau tidak valid']),
+                    ]);
+                    $errorCount++; continue;
+                }
+
+                // Build HTTP payload (NO HTTP call yet)
+                $config      = json_decode($effectiveAccount->meta_data, true) ?? [];
+                $metaAccount = $cachedMetaAccount ?? \App\Models\MetaAccount::withoutGlobalScopes()
+                    ->withoutTrashed()->where('id', $effectiveAccount->meta_account_id)->first();
+                $phoneId     = $config['whatsapp']['phone_number_id'] ?? null;
+                $accessToken = $metaAccount->access_token ?? null;
+
+                if (!$phoneId || !$accessToken) {
+                    $this->logError($log, 'MetaAccount config tidak lengkap (phoneId atau accessToken kosong)');
+                    $blast->update(['sending_status' => 'no', 'delivery_status' => 'failed']);
+                    $log->update(['status' => 'error']);
+                    $errorCount++; continue;
+                }
+
+                $senderIncrement++;
+                $pending[] = [
+                    'blastId'  => $blastId,
+                    'blast'    => $blast,
+                    'log'      => $log,
+                    'account'  => $effectiveAccount,
+                    'url'      => "https://graph.facebook.com/{$apiVersion}/{$phoneId}/messages",
+                    'headers'  => $observer->setHeaders($accessToken),
+                    'payload'  => [
+                        'messaging_product' => 'whatsapp',
+                        'recipient_type'    => 'individual',
+                        'to'                => $blast->store->phone,
+                        'type'              => 'template',
+                        'template'          => $cachedTemplate,
+                    ],
+                ];
+            } catch (\Throwable $e) {
+                FacadesLog::error("Concurrent PASS1 error {$blastId}: " . $e->getMessage());
+                // FIX: ensure record doesn't stay stuck at 'processing'
+                \DB::table('blash_details')->where('id', $blastId)
+                    ->where('delivery_status', 'processing')
+                    ->update(['delivery_status' => 'failed', 'reports' => 'PASS1 exception: ' . substr($e->getMessage(), 0, 200)]);
+                $errorCount++;
+            }
+        }
+
+        // DIAGNOSTIC: Log pending count and skip reason at WARNING level (visible in prod)
+        FacadesLog::warning('WABA PASS1 done: ' . count($pending) . '/' . count($blastIds) . ' queued for HTTP, errorCount=' . $errorCount);
+
+        if (empty($pending)) {
+            FacadesLog::warning('Concurrent WABA: 0 pending after PASS 1 — all skipped/blocked — errorCount=' . $errorCount);
+            return;
+        }
+
+        FacadesLog::warning('CONCURRENT WABA PASS 2+3: ' . count($pending) . ' requests, chunk=' . $CONCURRENT_CHUNK);
+
+        // ── PASS 2+3: Chunk → Pool → Results ──────────────────────────────
+        foreach (array_chunk($pending, $CONCURRENT_CHUNK) as $chunkIdx => $chunk) {
+            // PASS 2: Fire concurrent HTTP
+            try {
+                $responses = \Illuminate\Support\Facades\Http::pool(function ($pool) use ($chunk) {
+                    foreach ($chunk as $req) {
+                        yield $pool->withHeaders($req['headers'])->post($req['url'], $req['payload']);
+                    }
+                });
+            } catch (\Throwable $poolEx) {
+                FacadesLog::error("Http pool exception chunk {$chunkIdx}: " . $poolEx->getMessage());
+                foreach ($chunk as $req) {
+                    $req['blast']->update(['sending_status' => 'no', 'delivery_status' => 'failed',
+                        'reports' => 'Pool error: ' . $poolEx->getMessage()]);
+                    $req['log']->update(['status' => 'error', 'error' => 'Pool ' . $poolEx->getMessage()]);
+                    $errorCount++; $messageCount++;
+                }
+                continue;
+            }
+
+            // PASS 3: Process results sequentially (safe — no concurrent DB writes)
+            foreach ($responses as $idx => $response) {
+                $req     = $chunk[$idx];
+                $blast   = $req['blast'];
+                $log     = $req['log'];
+                $account = $req['account'];
+
+                try {
+                    // Guzzle/Http exception (connection refused, timeout, etc.)
+                    if (method_exists($response, 'getMessage')) {
+                        $result = ['status' => 500, 'message' => 'HTTP Exception: ' . $response->getMessage(), 'messageid' => null];
+                    } else {
+                        $status = $response->status();
+
+                        // PRE-FIX #3: 429 retry (1x after 1s)
+                        if ($status === 429) {
+                            FacadesLog::warning('Concurrent 429 — retry', ['blastId' => $req['blastId']]);
+                            sleep(1);
+                            $retryResp = \Illuminate\Support\Facades\Http
+                                ::withHeaders($req['headers'])->post($req['url'], $req['payload']);
+                            $status   = $retryResp->status();
+                            $response = $retryResp;
+                        }
+
+                        if ($status === 200) {
+                            $msgId  = $response->json()['messages'][0]['id'] ?? null;
+                            $result = ['status' => 200, 'message' => 'success', 'messageid' => $msgId];
+                        } else {
+                            $errBody = $response->json();
+                            $result  = [
+                                'status'    => $status,
+                                'message'   => $errBody['error']['message'] ?? ('HTTP ' . $status),
+                                'messageid' => null,
+                            ];
+                        }
+                    }
+
+                    $this->handleResult($blast, 'yes', $result, $account, $log);
+
+                    if (($result['status'] ?? 500) === 200) {
+                        $successCount++;
+                        $dailySendIncrement++;
+                    } else {
+                        $errorCount++;
+                    }
+                    $messageCount++;
+
+                } catch (\Throwable $e) {
+                    FacadesLog::error("Concurrent PASS3 error {$req['blastId']}: " . $e->getMessage());
+                    // FIX: guarantee record is NOT left at 'processing'
+                    \DB::table('blash_details')->where('id', $req['blastId'])
+                        ->where('delivery_status', 'processing')
+                        ->update(['delivery_status' => 'failed', 'reports' => 'PASS3 exception: ' . substr($e->getMessage(), 0, 200)]);
+                    $errorCount++; $messageCount++;
+                }
+            }
+        }
+
+        FacadesLog::info("Concurrent WABA DONE: {$successCount} success, {$errorCount} errors, {$messageCount} total");
+    }
+
+    /**
+     * WABA Fast Path: Process message with cached data, no unnecessary queries
+     */
+    private function processWabaMessageFast(BlashDetail $blast, ?Setting $settings, $account, $templateContent, $parent, $cachedMetaAccount = null, int &$senderIncrement = 0, int &$dailySendIncrement = 0): bool
+    {
+        // Create log entry
+        $log = Log::create([
+            'description' => __('blash.blash_description', [
+                'name' => $blast->store->name ?? '',
+                'schedule' => $parent->name ?? ''
+            ]),
+            'merchant_id' => $blast->store->merchant_id ?? null,
+            'business_id' => $blast->store->business_id ?? null,
+            'type' => 'whatsapp',
+            'device_id' => $blast->device_id
+        ]);
+
+        if (!$settings || !$account) {
+            $this->logError($log, 'Device atau settings WABA tidak tersedia');
+            $blast->update([
+                'status'          => 'yes',
+                'sending_status'  => 'no',
+                'delivery_status' => 'failed',
+                'reports'         => json_encode(['code' => 'DEVICE_UNAVAILABLE', 'message' => 'Device WABA tidak tersedia atau tidak aktif'])
+            ]);
+            \Illuminate\Support\Facades\Log::error("WABA broadcast gagal untuk blast {$blast->id}: Device/settings tidak tersedia");
+            return false;
+        }
+
+        // Validate business limits (cached merchant)
+        if (!$this->validateBusinessLimits($blast, $settings, $log)) {
+            return false;
+        }
+
+        // OPT#2: Accumulate for bulk flush (was per-message increment)
+        $senderIncrement++;
+
+        // Validate credit
+        if (!$this->validateCredit($blast)) {
+            $this->handleNoCredit($blast, ['message' => 'Credit Token Anda tidak mencukupi'], $log);
+            return false;
+        }
+
+        $phone = $blast->phone ?? '';
+        if (empty($phone)) {
+            $this->handleNoPhone($blast, ['message' => ''], $log);
+            return false;
+        }
+
+        // Prepare WABA variables — OPT#1: use cachedMetaAccount (no per-message DB query)
+        $config = $account->meta_data;
+        $config = $config ? json_decode($config, true) : [];
+        $metaAccount = $cachedMetaAccount ?? \App\Models\MetaAccount::withoutGlobalScopes()
+            ->withoutTrashed()->where('id', $account->meta_account_id)->first();
+        $messageVariable = [
+            'appid'        => $metaAccount->app_id ?? null,
+            'phoneid'      => $config['whatsapp']['phone_number_id'] ?? null,
+            'wabaid'       => $metaAccount->business_app ?? null,
+            'access_token' => $metaAccount->access_token ?? null,
+        ];
+
+        try {
+            // Send via WABA API (template already built, reuse it)
+            $whatsappNotificationObserver = new WhatsappOfficialServiceObserver();
+            $result = $whatsappNotificationObserver->sendTemplateMessage($blast->store, $templateContent, $messageVariable);
+            // PRE-FIX #3: auto-retry on Meta 429 (rate limit)
+            if (($result['status'] ?? 0) == 429) {
+                FacadesLog::warning('Meta 429 rate limit — retrying in 1s', ['blast_id' => $blast->id]);
+                sleep(1);
+                $result = $whatsappNotificationObserver->sendTemplateMessage($blast->store, $templateContent, $messageVariable);
+            }
+            $this->handleResult($blast, 'yes', $result, $account, $log);
+            $dailySendIncrement++; // OPT#2: bulk flush after loop
+            return ($result['status'] ?? 500) === 200;
+        } catch (Exception $e) {
+            $this->handleResult($blast, 'yes', [
+                'status' => 500,
+                'message' => 'Error: ' . $e->getMessage()
+            ], $account, $log);
+            return false;
+        }
+    }
+
+    /**
+     * Process single WhatsApp message
+     */
+    private function processWhatsappMessage(BlashDetail $blast): void
+    {
+        // Get business settings
+        $settings = Setting::where("id", ($blast->store->business_id ?? null))
+            ->first(['whatsapp_sender', 'whatsapp_sender_notif', 'id']);
+
+        // Create log entry
+        $log = Log::create([
+            'description' => __('blash.blash_description', [
+                'name' => $blast->store->name ?? '',
+                'schedule' => $blast->parent->name ?? ''
+            ]),
+            'merchant_id' => $blast->store->merchant_id ?? null,
+            'business_id' => $blast->store->business_id ?? null,
+            'type' => 'whatsapp',
+            'device_id' => $blast->device_id
+        ]);
+
+        if (!$settings) {
+            $this->logError($log, 'Tidak dapat mendeteksi pengaturan');
+            $blast->update(['status' => 'yes', 'reports' => 'Tidak dapat mendeteksi pengaturan']);
+            return;
+        }
+
+        // Validate business limits
+        if (!$this->validateBusinessLimits($blast, $settings, $log)) {
+            return;
+        }
+
+        // Increment WhatsApp sender counter
+        $settings->increment('whatsapp_sender');
+
+        // Send the message
+        $this->sendWhatsappMessage($blast, $settings, $log);
+    }
+
+    /**
+     * Validate business limits
+     */
+    private function validateBusinessLimits(BlashDetail $blast, ?Setting $settings, Log $log): bool
+    {
+        if (!$blast->store->business_id) {
+            return true;
+        }
+
+        $merchant = $blast->store->merchant ?? null;
+        if (!$settings || !$merchant) {
+            return true;
+        }
+
+        $transaction = $merchant->package_active;
+        if (!$transaction) {
+            $blast->update([
+                'status'          => 'yes',
+                'sending_status'  => 'yes',
+                'delivery_status' => 'failed',
+                'reports'         => json_encode(['code' => 'PACKAGE_EXPIRED', 'message' => 'Paket Langganan telah Berakhir'])
+            ]);
+            $this->logError($log, 'Paket Langganan telah Berakhir');
+            return false;
+        }
+
+        if ($transaction->limit_whatsapp_option == 'yes') {
+            if ($settings->whatsapp_sender >= $transaction->whatsapp_limit) {
+                $blast->update([
+                    'status'          => 'yes',
+                    'sending_status'  => 'yes',
+                    'delivery_status' => 'failed',
+                    'reports'         => json_encode(['code' => 'DAILY_LIMIT_EXCEEDED', 'message' => 'Limit Pengiriman Harian Telah Habis'])
+                ]);
+                $this->logError($log, 'Limit Pengiriman harian telah habis');
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Send WhatsApp message
+     */
+    private function sendWhatsappMessage(BlashDetail $blast, ?Setting $settings, Log $log): void
+    {
+        // Initialize observers
+        $whatsappNotificationObserver = new WhatsappOfficialServiceObserver();
+        $whatsappServiceObserver = new WhatsappServiceObserver();
+        $whatsappTemplateObserver = new WhatsappTemplateServiceObserver();
+
+        // Prepare message variables
+        $storeName = $blast->store->name ?? '';
+        $categoryName = $blast->store->category->name ?? '';
+        $phone = $blast->phone ?? '';
+        $email = $blast->email ?? '';
+        $address = $blast->store->address ?? '';
+        $message = $blast->parent->template->message ?? null;
+        $wabaOfficial = $blast->parent->waba ?? 'no';
+
+        if (!$message) {
+            $this->logError($log, 'Template message tidak ditemukan');
+            $blast->update(['status' => 'yes', 'reports' => 'Template message tidak ditemukan']);
+            return;
+        }
+
+        // Replace template variables
+        $message = str_replace(
+            ['{name}', '{category}', '{phone}', '{email}', '{address}'],
+            [$storeName, $categoryName, $phone, $email, $address],
+            $message
+        );
+
+        // Get device (use assigned device from blast)
+        $account = $settings ? $this->getDevice($blast, $wabaOfficial, $settings) : null;
+
+        if (!$account) {
+            $this->logError($log, 'Device tidak tersedia');
+            $blast->update(['status' => 'yes', 'reports' => 'Device tidak tersedia']);
+            return;
+        }
+
+        // Prepare message variables
+        $messageVariable = $this->prepareMessageVariable($blast, $message, $account, $wabaOfficial);
+
+        if (!$messageVariable) {
+            $this->logError($log, 'Gagal menyiapkan variabel pesan');
+            $blast->update(['status' => 'yes', 'reports' => 'Gagal menyiapkan variabel pesan']);
+            return;
+        }
+
+        // Validate credit
+        if (!$this->validateCredit($blast)) {
+            $messageVariable['message'] = 'Credit Token Anda tidak mencukupi';
+            $this->handleNoCredit($blast, $messageVariable, $log);
+            return;
+        }
+
+        // Send message or handle no phone
+        if (!empty($phone)) {
+            $this->executeMessageSending(
+                $blast,
+                $wabaOfficial,
+                $account,
+                $messageVariable,
+                $whatsappNotificationObserver,
+                $whatsappServiceObserver,
+                $whatsappTemplateObserver,
+                $log
+            );
+        } else {
+            $this->handleNoPhone($blast, $messageVariable, $log);
+        }
+    }
+
+    /**
+     * Get device for sending message
+     */
+    private function getDevice(BlashDetail $blast, string $wabaOfficial, ?Setting $settings)
+    {
+        // Use device_id yang sudah di-assign dari scheduling
+        if ($blast->device_id) {
+            if ($wabaOfficial == 'yes') {
+                return WhatsappKeyAccount::withoutGlobalScopes()->where('id', $blast->device_id)
+                    ->where("status", "active")
+                    ->first();
+            } else {
+                return WhatsappDevice::where('id', $blast->device_id)
+                    ->where("business_id", $settings->id)
+                    ->where("status", "active")
+                    ->first();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Prepare message variables for different WhatsApp types
+     */
+    private function prepareMessageVariable(BlashDetail $blast, string $message, $account, string $wabaOfficial): ?array
+    {
+        if ($wabaOfficial == 'yes') {
+            $config = $account->meta_data;
+            $config = $config ? json_decode($config, true) : [];
+
+            return [
+                'appid' => $account->meta->app_id ?? null,
+                'phoneid' => $config['whatsapp']['phone_number_id'] ?? null,
+                'wabaid' => $account->meta->business_app ?? null,
+                'access_token' => $account->meta->access_token ?? null,
+            ];
+        } else {
+            return [
+                'message' => urldecode($message),
+                'template_body' => array(),
+                'whatsapp_key' => $account->id,
+                'whatsapp_session' => $account->id,
+                'file' => $blast->parent->template->image != null ?
+                    asset($blast->parent->template->image) : '',
+                'phone' => $blast->store->phone ?? null,
+                'type' => $blast->parent->template->type_content ?? 'description',
+                'datas' => json_decode($blast->parent->template->button_or_list ?? '[]', true)
+            ];
+        }
+    }
+
+    /**
+     * Validate credit availability
+     */
+    private function validateCredit(BlashDetail $blast): bool
+    {
+        $business = $blast->parent->business;
+        if (!$business || !$business->merchant) {
+            return true;
+        }
+
+        // PRE-FIX #1: transaction + pessimistic lock prevents race condition
+        // when concurrent requests all read stale credit simultaneously
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($business) {
+            // Fresh read from DB with row-level lock (SELECT ... FOR UPDATE)
+            $packageActive = null;
+            $packageTopup  = null;
+
+            try {
+                // FIX: use correct snake_case method names (package_active, not packageActive)
+                $packageActive = $business->package_active()->lockForUpdate()->first();
+                $packageTopup  = $business->package_active_topup()->lockForUpdate()->first();
+            } catch (\Throwable $e) {
+                // Fallback: use loaded relations (less safe but won't break)
+                $packageActive = $business->package_active;
+                $packageTopup  = $business->package_active_topup;
+            }
+
+            $topupLimit    = $packageTopup  ? ($packageTopup->sisa_credit  ?? 0) : 0;
+            $packageCredit = $packageActive ? ($packageActive->sisa_credit ?? 0) : 0;
+            $totalLimit    = $topupLimit + $packageCredit;
+            $usageCredit   = 1;
+
+            if ($totalLimit < $usageCredit) {
+                return false;
+            }
+
+            // Deduct credit (atomic UPDATE — safe)
+            if ($packageCredit > 0 && $packageActive) {
+                $packageActive->increment('using_credit_limit', $usageCredit);
+            } elseif ($packageTopup) {
+                $packageTopup->increment('using_credit_limit', $usageCredit);
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Execute message sending
+     */
+    private function executeMessageSending(
+        BlashDetail $blast,
+        string $wabaOfficial,
+        $account,
+        array $messageVariable,
+        WhatsappOfficialServiceObserver $whatsappNotificationObserver,
+        WhatsappServiceObserver $whatsappServiceObserver,
+        WhatsappTemplateServiceObserver $whatsappTemplateObserver,
+        Log $log
+    ): void {
+        try {
+            if ($wabaOfficial == 'yes') {
+                // PRE-FIX #2: firstOrCreate — safe under concurrent conditions
+                $history = HistoryChat::firstOrCreate(
+                    ['whatsapp_waba_id' => $blast->device_id, 'from_number' => $blast->phone],
+                    [
+                        'name'        => $blast->store->name ?? '-',
+                        'merchant_id' => $blast->parent->merchant_id ?? null,
+                        'type'        => 'personal',
+                        'business_id' => $blast->parent->business_id ?? null,
+                        'from'        => 'waba',
+                        'takeover'    => 'no',
+                        'status'      => 'open',
+                        'label'       => null,
+                    ]
+                );
+            } else {
+                // PRE-FIX #2: firstOrCreate — non-WABA path
+                $history = HistoryChat::firstOrCreate(
+                    ['whatsapp_waba_id' => $blast->device_id, 'from' => $blast->phone],
+                    [
+                        'device_id'   => $blast->device_id,
+                        'name'        => $blast->store->name ?? '-',
+                        'merchant_id' => $blast->parent->merchant_id ?? null,
+                        'type'        => 'personal',
+                        'from_number' => $blast->phone,
+                        'business_id' => $blast->parent->business_id ?? null,
+                        'from'        => 'whatsapp',
+                        'takeover'    => 'no',
+                        'status'      => 'open',
+                        'label'       => null,
+                    ]
+                );
+            }
+
+            // Update device daily send counter
+            $account->increment('daily_send');
+        } catch (Exception $e) {
+            $this->handleResult($blast, $wabaOfficial, [
+                'status' => 500,
+                'message' => 'Error sending message: ' . $e->getMessage()
+            ], $account, $log);
+        }
+    }
+
+    /**
+     * Handle sending result
+     */
+    private function handleResult(BlashDetail $blast, string $wabaOfficial, array $result, $account, Log $log, ?string $message = null): void
+    {
+        $isSuccess = ($result['status'] ?? 500) == 200;
+
+        $updateData = [
+            'status' => 'yes',
+            'sending' => now()->format('Y-m-d H:i:s'),
+            'phone' => $blast->store->phone ?? '',
+            'device_id' => $account->id,
+        ];
+
+        $logData = [
+            'status' => $isSuccess ? 'success' : 'error',
+            'store_id' => $blast->store_id,
+            'sending' => now()->format('Y-m-d H:i:s'),
+            'device_id' => $account->id,
+        ];
+
+        if ($message) {
+            $updateData['text'] = $message;
+            $logData['text'] = $message;
+        }
+
+        if ($isSuccess) {
+            $updateData['reports'] = null;
+            $updateData['wamid'] = $result['messageid'] ?? null;
+            $updateData['delivery_status'] = 'sent';
+            $updateData['sending_status'] = 'yes';
+
+            if ($wabaOfficial == 'yes') {
+                // PRE-FIX #2: firstOrCreate — prevents duplicate HistoryChat (concurrent safe)
+                $history = HistoryChat::firstOrCreate(
+                    ['whatsapp_waba_id' => $blast->device_id, 'from_number' => $blast->phone],
+                    [
+                        'name'        => $blast->store->name ?? '-',
+                        'merchant_id' => $blast->parent->merchant_id ?? null,
+                        'type'        => 'personal',
+                        'business_id' => $blast->parent->business_id ?? null,
+                        'from'        => 'waba',
+                        'takeover'    => 'no',
+                        'status'      => 'open',
+                        'label'       => null,
+                    ]
+                );
+            } else {
+                // PRE-FIX #2: firstOrCreate — non-WABA path
+                $history = HistoryChat::firstOrCreate(
+                    ['whatsapp_waba_id' => $blast->device_id, 'from' => $blast->phone],
+                    [
+                        'device_id'   => $blast->device_id,
+                        'name'        => $blast->store->name ?? '-',
+                        'merchant_id' => $blast->parent->merchant_id ?? null,
+                        'type'        => 'personal',
+                        'from_number' => $blast->phone,
+                        'business_id' => $blast->parent->business_id ?? null,
+                        'from'        => 'whatsapp',
+                        'takeover'    => 'no',
+                        'status'      => 'open',
+                        'label'       => null,
+                    ]
+                );
+            }
+
+            $template = $blast->parent->template ?? null;
+
+            if ($history && $template) {
+                $text = '';
+                $image = [
+                    'path' => null,
+                    'type' => null,
+                    'size' => null,
+                    'status' => false,
+                    'message_type' => 'text'
+                ];
+
+                if ($wabaOfficial != 'yes') {
+                    $text = $template->message ?? '-';
+                    $image = $template->image != null ? $this->analyzeImage($template->image) : $image;
+                } else {
+                    $templateDetails = json_decode($blast->parent->metadata, true);
+
+                    if ($templateDetails['body'] && isset($templateDetails['body']['text'])) {
+                        $text = $templateDetails['body']['text'];
+                    }
+
+                    $image = $blast->parent->file != null ? $this->analyzeImage($blast->parent->file) : $image;
+                }
+
+                $history->details()->create([
+                    'file_path' => $image['path'],
+                    'file_type' => $image['type'],
+                    'file_size' => $image['size'],
+                    'type' => $image['message_type'],
+                    'history_chat_id' => $history->id,
+                    'is_read' => 'yes',
+                    'from' => 'device',
+                    'message' => $text,
+                ]);
+            }
+        } else {
+            $updateData['sending_status'] = 'no';
+            $updateData['delivery_status'] = 'failed'; // FIX: prevent stuck at 'processing'
+            $updateData['reports'] = $result['message'] ?? 'Unknown error';
+            $logData['error'] = $result['message'] ?? 'Unknown error';
+        }
+
+        $blast->update($updateData);
+        $log->update($logData);
+    }
+
+    private function analyzeImage($image): array
+    {
+        $file_data = [
+            'path' => null,
+            'type' => null,
+            'size' => null,
+            'status' => false,
+            'message_type' => 'text'
+        ];
+
+        $file_path = public_path($image);
+
+        if (!file_exists($file_path)) {
+            return $file_data;
+        }
+
+        $file_type = mime_content_type($file_path);
+        $file_size = filesize($file_path);
+        $message_type = 'text';
+
+        if ($file_type) {
+            foreach (MimeTypes::TYPE_MAP as $key => $mime_types) {
+                if (in_array($file_type, $mime_types)) {
+                    $message_type = $key;
+                    break;
+                }
+            }
+        }
+
+        return [
+            'type' => $file_type,
+            'size' => $file_size,
+            'path' => $image,
+            'status' => true,
+            'message_type' => $message_type
+        ];
+    }
+
+    /**
+     * Handle case when no phone number available
+     */
+    private function handleNoPhone(BlashDetail $blast, array $messageVariable, Log $log): void
+    {
+        $blast->update([
+            'status' => 'yes',
+            'sending' => now()->format('Y-m-d H:i:s'),
+            'phone' => $blast->store->phone ?? '',
+            'text' => $messageVariable['message'] ?? '',
+            'sending_status' => 'no',
+            'device_id' => $messageVariable['whatsapp_session'] ?? null,
+            'reports' => __('blash.phone_nothing')
+        ]);
+
+        $log->update([
+            'status' => 'error',
+            'store_id' => $blast->store_id,
+            'sending' => now()->format('Y-m-d H:i:s'),
+            'text' => $messageVariable['message'] ?? '',
+            'device_id' => $messageVariable['whatsapp_session'] ?? null,
+            'error' => __('blash.wa_not_registered')
+        ]);
+    }
+
+    /**
+     * Handle case when credit is insufficient
+     */
+    private function handleNoCredit(BlashDetail $blast, array $messageVariable, Log $log): void
+    {
+        $blast->update([
+            'status' => 'yes',
+            'sending' => now()->format('Y-m-d H:i:s'),
+            'phone' => $blast->store->phone ?? '',
+            'text' => $messageVariable['message'] ?? '',
+            'sending_status' => 'no',
+            'device_id' => $messageVariable['whatsapp_session'] ?? null,
+            'delivery_status' => 'failed',
+            'reports' => json_encode(['code' => 'CREDIT_EXHAUSTED', 'message' => 'Credit Token Anda tidak mencukupi'])
+        ]);
+
+        $log->update([
+            'status' => 'error',
+            'store_id' => $blast->store_id,
+            'sending' => now()->format('Y-m-d H:i:s'),
+            'text' => $messageVariable['message'] ?? '',
+            'device_id' => $messageVariable['whatsapp_session'] ?? null,
+            'error' => 'Credit Token Anda tidak mencukupi'
+        ]);
+    }
+
+    /**
+     * Helper method to log errors
+     */
+    private function logError(Log $log, string $error): void
+    {
+        $log->update([
+            'status' => 'error',
+            'error' => $error
+        ]);
+    }
+
+    /**
+     * Handle failed job
+     */
+    public function failed(Exception $exception): void
+    {
+        FacadesLog::error("WhatsApp batch job failed: {$exception->getMessage()} - Processing " . count($this->blastIds) . " messages");
+
+        // N+1 FIX: bulk update sekaligus (1 query) vs find() per ID
+        BlashDetail::whereIn('id', $this->blastIds)
+            ->where('status', '!=', 'yes')
+            ->update([
+                'status'          => 'yes',
+                'sending_status'  => 'no',
+                'delivery_status' => 'failed',
+                'reports'         => json_encode(['code' => 'JOB_CRASH', 'message' => 'Batch job failed: ' . $exception->getMessage()])
+            ]);
+    }
+}

@@ -1,0 +1,219 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Resources\Master\TeamListResource;
+use App\Models\User;
+use App\Observers\Saas\BusinessObserver;
+use App\Observers\UserObserver;
+use App\Process\MasterData\UploadImageProcess;
+use App\Services\Master\RoleService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Spatie\Permission\PermissionRegistrar;
+
+class UserController extends Controller
+{
+    /*
+    |--------------------------------------------------------------------------
+    | Users Controllers
+    |--------------------------------------------------------------------------
+    */
+
+    protected $usersObserver;
+    protected $uploadImageProcess;
+    protected $businessObserver;
+    protected $roleService;
+
+    public function __construct(UserObserver $userObserver, UploadImageProcess $uploadImageProcess, BusinessObserver $businessObserver, RoleService $roleService)
+    {
+        $this->usersObserver        = $userObserver;
+        $this->uploadImageProcess   = $uploadImageProcess;
+        $this->businessObserver     = $businessObserver;
+        $this->roleService          = $roleService;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 1. Users List
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(Request $request)
+    {
+        $users   = $this->usersObserver->getData($request)->get();
+        return view('users.index', ['page'    => __('page.user.page'), 'breadcumb' => true], compact('users'));
+    }
+
+
+    public function components(Request $request)
+    {
+        $users   = $this->usersObserver->getData($request)->get(['id', 'name']);
+        return response()->json([
+            'users'     => TeamListResource::collection($users),
+        ], 200);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. Create Page
+    |--------------------------------------------------------------------------
+    */
+
+    public function create(Request $request)
+    {
+        $businesses     = $this->businessObserver->getData($request)->get(['id', 'name', 'created_at']);
+        $roles          = $this->roleService->getData($request);
+        return view('users.create', ['page'   => __('page.user.add'), 'breadcumb' => true], compact('businesses', 'roles'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. Update Page
+    |--------------------------------------------------------------------------
+    */
+
+    public function update(Request $request, User $user)
+    {
+        $businesses     = $this->businessObserver->getData($request)->get(['id', 'name', 'created_at']);
+        $roles          = $this->roleService->getData($request);
+        return view('users.update', ['page'   => __('page.user.edit'), 'breadcumb' => true], compact('user', 'businesses', 'roles'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. Change Password
+    |--------------------------------------------------------------------------
+    */
+
+    public function changePassword(Request $request, User $user)
+    {
+        $this->validate($request, [
+            'password'      => 'required|min:8',
+            'confirm'       => 'required'
+        ]);
+
+        if ($request->password != $request->confirm) {
+            return redirect()->back()->with(['gagal'    => __('validation.password_must_same')]);
+        }
+
+        $this->usersObserver->changePassword($request, $user);
+        return redirect()->route('users')->with(['flash' => __('general.success_update')]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Delete User
+    |--------------------------------------------------------------------------
+    */
+
+    public function delete(User $user)
+    {
+
+        if ($user->merchant && ($user->merchant->owner->id == $user->id)) {
+            return redirect()->back()->with(['gagal'    => 'Pengguna ini merupakan owner bisnis dan tidak dapat di hapus']);
+        }
+
+
+        $this->unlinkFile($user->photo);
+        $this->usersObserver->deleteData($user);
+
+        return redirect()->back()->with(['flash'    => __('general.success_deleted')]);
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 6. Store Data to Database
+    |--------------------------------------------------------------------------
+    */
+
+    public function store(Request $request)
+    {
+        $this->validate($request, [
+            'name'          => 'required',
+            'email'         => 'required|email|unique:users,email,NULL,id',
+            'phone'         => 'required|numeric|unique:users,phone,NULL,id',
+            'password'      => 'required|min:8',
+            'photo'         => 'mimes:jpg,jpeg,png',
+            'gender'        => 'required|in:male,female',
+            'role'          => 'required|uuid'
+        ]);
+
+        $validationCheck = $this->usersObserver->checkLimit();
+
+        if ($validationCheck == false) {
+            return redirect()->back()->with(['gagal'    => __('user.limit')]);
+        }
+
+
+        try {
+            DB::beginTransaction();
+
+            $image  = '';
+
+            if ($request->image) {
+                $image =  $this->uploadImage($request, 'image', 'users');
+            }
+
+            if ($image == '') {
+                $image = $this->uploadImageProcess->createDafaultMedia($request->name, 'uploads/users/');
+            }
+
+            $user = $this->usersObserver->createData($request, $image);
+
+            $user->assignRole($user->role_access); 
+
+            DB::commit();
+            return redirect()->route('users', $user->id)->with(['flash' => __('general.success_add_data')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with([
+                'gagal' => $e->getMessage()
+            ]);
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | 7. Update Data to Database
+    |--------------------------------------------------------------------------
+    */
+
+    public function edit(Request $request, User $user)
+    {
+        $this->validate($request, [
+            'name'          => 'required',
+            'email'         => "required|email|unique:users,email,{$user->id}",
+            'phone'         => "required|numeric|unique:users,phone,{$user->id}",
+            'photo'         => 'mimes:jpg,jpeg,png',
+            'gender'        => 'required|in:male,female',
+            'role'          => 'required|uuid'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $image  = '';
+
+            if ($request->image) {
+                $this->unlinkFile($user->photo);
+                $image =  $this->uploadImage($request, 'image', 'users');
+            }
+
+            $this->usersObserver->updateData($request, $user, $image);
+            $user->fresh();
+ 
+            $user->syncRoles([$user->role_access]); 
+
+            DB::commit();
+            return redirect()->route('users')->with(['flash' => __('general.success_update')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with([
+                'gagal' => $e->getMessage()
+            ]);
+        }
+    }
+}

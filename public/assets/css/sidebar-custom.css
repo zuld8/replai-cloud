@@ -1,0 +1,608 @@
+/* Sidebar Enhancement - Replai CRM (Sky Blue Theme) */
+
+.app-sidebar {
+    background: linear-gradient(180deg, #ffffff 0%, #F8FAFC 40%, #F0F9FF 100%) !important;
+    border-right: 1px solid #E2E8F0 !important;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.04) !important;
+}
+
+.app-sidebar .main-sidebar-header {
+    background: linear-gradient(135deg, #F0F9FF 0%, #EFF6FF 50%, #F5F3FF 100%) !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
+.app-sidebar .category-name,
+.app-sidebar .side-menu__category {
+    font-size: 0.65rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    color: #64748B !important;
+    text-transform: uppercase !important;
+    padding: 16px 20px 6px !important;
+}
+
+.app-sidebar .side-menu__item {
+    border-radius: 10px !important;
+    margin: 2px 12px !important;
+    padding: 9px 14px !important;
+    transition: all 0.2s ease !important;
+    color: #1E293B !important;
+    font-weight: 500 !important;
+    font-size: 0.84rem !important;
+}
+
+.app-sidebar .side-menu__item:hover {
+    background: rgba(14, 165, 233, 0.06) !important;
+    color: #0284C7 !important;
+    transform: translateX(2px);
+}
+.app-sidebar .side-menu__item:hover .side-menu__label {
+    color: #0284C7 !important;
+}
+.app-sidebar .side-menu__item:hover .side-menu__icon {
+    color: #0EA5E9 !important;
+}
+
+.app-sidebar .side-menu__item.active {
+    background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35) !important;
+}
+.app-sidebar .side-menu__item.active .side-menu__icon,
+.app-sidebar .side-menu__item.active .side-menu__label {
+    color: #fff !important;
+}
+.app-sidebar .side-menu__item.active:hover {
+    color: #fff !important;
+}
+.app-sidebar .side-menu__item.active:hover .side-menu__label,
+.app-sidebar .side-menu__item.active:hover .side-menu__icon {
+    color: #fff !important;
+}
+
+.app-sidebar .side-menu__icon {
+    font-size: 1.15rem !important;
+    width: 28px !important;
+    height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #64748B !important;
+    transition: color 0.2s ease !important;
+}
+
+.app-sidebar .badge.bg-danger {
+    background: linear-gradient(135deg, #F43F5E 0%, #FB7185 100%) !important;
+    border-radius: 10px !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    padding: 3px 8px !important;
+    box-shadow: 0 2px 6px rgba(244, 63, 94, 0.3) !important;
+}
+
+.app-sidebar .side-menu__angle {
+    color: #CBD5E1 !important;
+    transition: transform 0.2s ease, color 0.2s ease !important;
+}
+.app-sidebar .side-menu__item:hover .side-menu__angle {
+    color: #0EA5E9 !important;
+}
+
+.app-sidebar .btn-icon.btn-outline-light,
+.app-sidebar .btn-icon.btn-outline-danger {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    border: 1px solid #E2E8F0 !important;
+    background: #fff !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+.app-sidebar .btn-icon.btn-outline-light:hover {
+    background: #F0F9FF !important;
+    border-color: #BAE6FD !important;
+    transform: translateY(-1px);
+}
+.app-sidebar .btn-icon.btn-outline-danger:hover {
+    background: #FFF1F2 !important;
+    border-color: #FECDD3 !important;
+    transform: translateY(-1px);
+}
+
+.app-sidebar .badge.bg-primary-transparent {
+    background: linear-gradient(135deg, #DBEAFE 0%, #E0F2FE 100%) !important;
+    color: #0284C7 !important;
+    font-weight: 600 !important;
+    font-size: 0.68rem !important;
+    padding: 3px 12px !important;
+    border-radius: 12px !important;
+}
+
+.app-sidebar .fw-semibold {
+    color: #1E293B !important;
+    font-weight: 700 !important;
+}
+.app-sidebar span.op-7 {
+    color: #64748B !important;
+    font-size: 0.75rem !important;
+}
+
+.app-sidebar .simplebar-scrollbar::before {
+    background: rgba(14, 165, 233, 0.25) !important;
+    border-radius: 4px !important;
+}
+
+.app-sidebar .slide-menu {
+    background: rgba(240, 249, 255, 0.8) !important;
+    border-radius: 8px !important;
+    margin: 2px 12px !important;
+    padding: 4px !important;
+}
+.app-sidebar .slide-menu .side-menu__item {
+    font-size: 0.8rem !important;
+    padding: 7px 12px !important;
+    margin: 1px 0 !important;
+    border-radius: 8px !important;
+}
+
+.app-sidebar #slide-left,
+.app-sidebar #slide-right {
+    display: none !important;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   SIDEBAR SECTION HEADERS — Enhanced Readability
+   Added: 20260312_160222
+═══════════════════════════════════════════════════ */
+
+/* Section header container */
+.slide__category {
+    margin-top: 8px !important;
+    padding: 0 12px !important;
+}
+
+/* The category label text */
+.slide__category .category-name {
+    /* Gradient text — premium look */
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    letter-spacing: 1.2px !important;
+    text-transform: uppercase !important;
+
+    /* Colored with subtle gradient instead of plain gray */
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+
+    /* Layout */
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 0 4px !important;
+}
+
+/* Decorative line after category text */
+.slide__category .category-name::after {
+    content: '' !important;
+    flex: 1 !important;
+    height: 1px !important;
+    background: linear-gradient(90deg, rgba(99,102,241,0.3), transparent) !important;
+    margin-left: 6px !important;
+    border-radius: 1px !important;
+}
+
+/* Tiny dot accent before text */
+.slide__category .category-name::before {
+    content: '' !important;
+    width: 5px !important;
+    height: 5px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+    box-shadow: 0 0 6px rgba(99,102,241,0.5) !important;
+}
+
+/* Dark mode adaptation */
+[data-theme-mode="dark"] .slide__category .category-name {
+    background: linear-gradient(90deg, #60a5fa, #a78bfa) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* Main Chatwoot sidebar logo */
+.main-sidebar-header img,
+.main-sidebar-header .logo-image,
+.sidebar-logo img,
+.account-logo img,
+.logo-normal img,
+.logo img,
+.sidebar-header img {
+    height: 44px !important;
+    max-height: 44px !important;
+    width: auto !important;
+    max-width: 180px !important;
+    object-fit: contain !important;
+}
+
+/* Pages sidebar (SidebarComponent.vue) */
+.sidebar-menu .logo img,
+.sidebar-menu .logo-normal img {
+    height: 40px !important;
+    max-height: 40px !important;
+    width: auto !important;
+    max-width: 160px !important;
+    object-fit: contain !important;
+}
+
+/* Auth page logo (login/register) */
+.auth-logo img {
+    max-width: 200px !important;
+    height: auto !important;
+}
+
+/* ==========================================
+   LOGO SIZE — EXACT SELECTOR FIX (v2)
+   img.desktop-logo = main sidebar logo
+   ========================================== */
+
+/* Primary: Chatwoot sidebar desktop logo */
+.header-logo img.desktop-logo,
+img.desktop-logo,
+.desktop-logo {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 46px !important;
+    width: auto !important;
+    max-width: none !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+/* Parent container: give vertical space */
+.header-logo,
+.header-logo a {
+    display: flex !important;
+    align-items: center !important;
+    padding: 8px 16px !important;
+    height: auto !important;
+    min-height: 84px !important;
+}
+
+/* Horizontal logo wrapper */
+.horizontal-logo {
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Sidebar header: framework default height (4rem/64px) used — no override */
+
+
+
+/* ═══════════════════════════════════════════════════
+   FIX: Dark menu-style override → Light sidebar text
+   data-menu-styles="dark" sets text to white/grey
+   but sidebar bg is now white — force dark text
+   ═══════════════════════════════════════════════════ */
+
+/* All menu text → dark on light bg */
+[data-menu-styles="dark"] .app-sidebar .side-menu__label,
+[data-menu-styles] .app-sidebar .side-menu__label {
+    color: #1E293B !important;
+    font-size: 0.84rem !important;
+    font-weight: 500 !important;
+}
+
+/* Category headers */
+[data-menu-styles="dark"] .app-sidebar .category-name,
+[data-menu-styles] .app-sidebar .category-name,
+[data-menu-styles="dark"] .app-sidebar .side-menu__category,
+[data-menu-styles] .app-sidebar .side-menu__category {
+    color: #64748B !important;
+    font-weight: 700 !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+}
+
+/* Icons */
+[data-menu-styles="dark"] .app-sidebar .side-menu__icon,
+[data-menu-styles] .app-sidebar .side-menu__icon {
+    color: #64748B !important;
+}
+
+/* Item container */
+[data-menu-styles="dark"] .app-sidebar .side-menu__item,
+[data-menu-styles] .app-sidebar .side-menu__item {
+    color: #1E293B !important;
+}
+
+/* Hover state */
+[data-menu-styles="dark"] .app-sidebar .side-menu__item:hover .side-menu__label,
+[data-menu-styles] .app-sidebar .side-menu__item:hover .side-menu__label {
+    color: #0284C7 !important;
+}
+[data-menu-styles="dark"] .app-sidebar .side-menu__item:hover .side-menu__icon,
+[data-menu-styles] .app-sidebar .side-menu__item:hover .side-menu__icon {
+    color: #0EA5E9 !important;
+}
+
+/* Active state stays blue with white text */
+[data-menu-styles="dark"] .app-sidebar .side-menu__item.active .side-menu__label,
+[data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__label,
+[data-menu-styles="dark"] .app-sidebar .side-menu__item.active .side-menu__icon,
+[data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__icon {
+    color: #ffffff !important;
+}
+
+/* Chevron arrows */
+[data-menu-styles="dark"] .app-sidebar .side-menu__angle,
+[data-menu-styles] .app-sidebar .side-menu__angle {
+    color: #CBD5E1 !important;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   ICON-OVERLAY SIDEBAR  — Replai custom
+   COLLAPSED  (data-toggled=icon-overlay-close): icon pills
+   HOVER/OPEN (data-icon-overlay=open): full labeled sidebar
+   ══════════════════════════════════════════════════════ */
+
+/* ─ COLLAPSED: icon-only pills ─────────────────────── */
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .side-menu__label,
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .side-menu__angle {
+    display: none !important;
+}
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .slide__category,
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .category-name {
+    display: none !important;
+}
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .main-sidebar-loggedin {
+    display: none !important;
+}
+
+/* Icon pill centered */
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .side-menu__item {
+    border-radius: 50px !important;
+    justify-content: center !important;
+    margin: 3px 10px !important;
+    padding: 9px !important;
+    width: calc(100% - 20px) !important;
+}
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .side-menu__item.active {
+    background: linear-gradient(135deg, #0EA5E9, #38BDF8) !important;
+    box-shadow: 0 4px 12px rgba(14,165,233,.35) !important;
+}
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .side-menu__item.active .side-menu__icon {
+    color: #fff !important;
+}
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .side-menu__item:hover:not(.active) {
+    background: rgba(14,165,233,.1) !important;
+}
+
+/* ─ HOVER/OPEN: full labeled sidebar ─────────────────── */
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .side-menu__label {
+    display: inline-block !important;
+    color: #1E293B !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+}
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .side-menu__angle {
+    display: inline-block !important;
+}
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .slide__category,
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .category-name {
+    display: block !important;
+    color: #94a3b8 !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .06em !important;
+    text-transform: uppercase !important;
+}
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .main-sidebar-loggedin {
+    display: block !important;
+}
+/* Expanded menu item: normal flex row */
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .side-menu__item {
+    justify-content: flex-start !important;
+    border-radius: 6px !important;
+    margin: 2px 8px !important;
+    padding: 10px 1rem !important;
+    width: calc(100% - 16px) !important;
+}
+/* Logo in expanded hover */
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .toggle-logo { display: none !important; }
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .desktop-logo {
+    display: block !important;
+    max-height: 46px !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   NUCLEAR LOGO FIX — Replai Sidebar & Header
+   ═══════════════════════════════════════════════════════════ */
+
+/* 1. HEADER BAR: completely hide .horizontal-logo in ALL states
+      — highest specificity to beat template [data-*] rules     */
+html body .app-header .horizontal-logo,
+html[data-toggled] body .app-header .horizontal-logo,
+html[data-icon-overlay] body .app-header .horizontal-logo,
+html[data-toggled][data-icon-overlay] body .app-header .horizontal-logo {
+    display: none !important;
+    visibility: hidden !important;
+    overflow: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    pointer-events: none !important;
+}
+
+/* 2. HEADER BAR: hard cap on all images */
+html body .app-header img {
+    max-height: 40px !important;
+    max-width: 200px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+}
+
+/* 3. SIDEBAR HEADER: clamp all images — prevents large uploaded files */
+.app-sidebar .main-sidebar-header {
+    overflow: hidden !important;
+}
+.app-sidebar .main-sidebar-header img,
+.app-sidebar .main-sidebar-header .header-logo img {
+    max-height: 50px !important;
+    max-width: 160px !important;
+    height: auto !important;
+    width: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+/* 4. COLLAPSED: show toggle-logo only (circle icon) */
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .main-sidebar-header .header-logo .desktop-logo,
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .main-sidebar-header .header-logo .desktop-dark,
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .main-sidebar-header .header-logo .toggle-dark {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+html[data-toggled="icon-overlay-close"]:not([data-icon-overlay="open"])
+  .app-sidebar .main-sidebar-header .header-logo .toggle-logo {
+    display: block !important;
+    max-height: 42px !important;
+    width: auto !important;
+    max-width: 56px !important;
+}
+
+/* 5. HOVER-OPEN: show desktop-logo only */
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .main-sidebar-header .header-logo .toggle-logo,
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .main-sidebar-header .header-logo .desktop-dark,
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .main-sidebar-header .header-logo .toggle-dark {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+html[data-toggled="icon-overlay-close"][data-icon-overlay="open"]
+  .app-sidebar .main-sidebar-header .header-logo .desktop-logo {
+    display: block !important;
+    max-height: 46px !important;
+    width: auto !important;
+    max-width: 160px !important;
+}
+
+/* 6. NORMAL (non-collapsed): show desktop-logo only */
+html:not([data-toggled])
+  .app-sidebar .main-sidebar-header .header-logo .toggle-logo,
+html:not([data-toggled])
+  .app-sidebar .main-sidebar-header .header-logo .desktop-dark,
+html:not([data-toggled])
+  .app-sidebar .main-sidebar-header .header-logo .toggle-dark {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+html:not([data-toggled])
+  .app-sidebar .main-sidebar-header .header-logo .desktop-logo {
+    display: block !important;
+    max-height: 46px !important;
+}
+
+/* ── Sidebar overflow fix (prevent user-card content bleed) ── */
+.app-sidebar,
+.main-sidebar-loggedin,
+.app-sidebar__user {
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+.app-sidebar__user .user-pro-body,
+.app-sidebar__user > div {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+
+/* ── Profile card compact spacing — HIGH SPECIFICITY ── */
+/* Override: .main-sidebar-loggedin { padding: 20px 20px 0 20px } @992px */
+@media (min-width: 992px) {
+    .app-sidebar .main-sidebar-loggedin {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
+.app-sidebar .main-sidebar-loggedin {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.app-sidebar .app-sidebar__user {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: unset !important;
+}
+/* Override: .app-sidebar .sidebar-navs { padding: 0 10px 10px 10px } */
+.app-sidebar .sidebar-navs {
+    padding: 4px 10px 6px !important;
+    margin: 0 !important;
+}
+.app-sidebar .sidebar-navs .btn {
+    margin: 2px !important;
+}
+
+/* ── FINAL FIX: .main-sidebar-loggedin fixed compact height ─────────────── */
+.main-sidebar-loggedin,
+.app-sidebar .main-sidebar-loggedin {
+    height: 105px !important;
+    min-height: 0 !important;
+    max-height: 105px !important;
+    overflow: hidden !important;
+}
+@media (min-width: 992px) {
+    .main-sidebar-loggedin,
+    .app-sidebar .main-sidebar-loggedin {
+        height: 105px !important;
+        min-height: 0 !important;
+        max-height: 105px !important;
+        flex-shrink: 0 !important;
+        overflow: hidden !important;
+    }
+}
+
+/* ── CENTER action buttons ────────────────────────────────────────────── */
+.app-sidebar .sidebar-navs {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    text-align: center !important;
+    padding: 4px 6px 6px !important;
+    margin: 0 !important;
+}

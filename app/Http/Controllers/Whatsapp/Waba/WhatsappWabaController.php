@@ -1,0 +1,1083 @@
+<?php
+
+namespace App\Http\Controllers\Whatsapp\Waba;
+
+use App\Http\Controllers\Controller;
+use App\Models\MetaAccount;
+use App\Models\Setting;
+use App\Models\WhatsappKeyAccount;
+use App\Observers\ChatBot\FineTunnelObserver;
+use App\Observers\Master\TemplateObserver;
+use App\Observers\UserObserver;
+use App\Observers\WhatsappDeviceObserver;
+use App\Observers\WhatsappOfficial\WhatsappOfficialObserver;
+use App\Observers\WhatsappOfficial\WhatsappOfficialServiceObserver;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Arr;
+
+class WhatsappWabaController extends Controller
+{
+    protected $whatsappOfficialObserver;
+    protected $whatsappServiceObserver;
+    protected $fineTunnelObserver;
+    protected $templateObserver;
+    protected $usersObserver;
+    protected $whatsappDeviceObserver;
+
+    public function __construct(WhatsappOfficialObserver $whatsappOfficialObserver, WhatsappOfficialServiceObserver $whatsappServiceObserver, FineTunnelObserver $fineTunnelObserver, TemplateObserver $templateObserver, UserObserver $usersObserver, WhatsappDeviceObserver $whatsappDeviceObserver)
+    {
+        $this->whatsappOfficialObserver     = $whatsappOfficialObserver;
+        $this->whatsappServiceObserver      = $whatsappServiceObserver;
+        $this->fineTunnelObserver           = $fineTunnelObserver;
+        $this->templateObserver             = $templateObserver;
+        $this->usersObserver                = $usersObserver;
+        $this->whatsappDeviceObserver       = $whatsappDeviceObserver;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 1. Whatsapp Device List
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(Request $request)
+    {
+        $accounts     = $this->whatsappOfficialObserver->getMetaAccount($request)->get();
+        return view('waba.index', ['page'    => 'Wa Business Device', 'breadcumb' => true], compact('accounts'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. Create Page
+    |--------------------------------------------------------------------------
+    */
+
+    public function create(Request $request)
+    {
+        $tokenUid       = Setting::first(['id'])->id;
+        $users          = $this->usersObserver->getData($request)->get(['id', 'name']);
+        return view('waba.create', ['page'   => __('page.waba.add'), 'breadcumb' => true], compact('tokenUid', 'users'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. Update Auto Reply
+    |--------------------------------------------------------------------------
+    */
+
+    public function autoreply(Request $request, WhatsappKeyAccount $device)
+    {
+        $fineTunnels    = $this->fineTunnelObserver->getData($request)->get(['name', 'id']);
+        $templates      = $this->templateObserver->getData($request)->where('waba_device_id', $device->id)->get(['id', 'name', 'waba_status_template']);
+        $users          = $this->usersObserver->getData($request)->get(['id', 'name']);
+        $meta           = $device->meta;
+        return view('waba.update.autoreply', ['page'   => __('page.waba.autoreply'), 'breadcumb' => true], compact('device', 'fineTunnels', 'templates', 'users', 'meta'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. Update Webhook and Limit
+    |--------------------------------------------------------------------------
+    */
+
+    public function update(Request $request, MetaAccount $meta)
+    {
+        $detail     = json_decode($meta->details, true) ?? [];
+        $waba_phone = optional($meta->devices()->first())->phone;
+
+        return view('waba.update.index', [
+            'page'      => __('page.waba.general'),
+            'breadcumb' => true,
+        ], compact('meta', 'detail', 'waba_phone'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fetch WABA Quality & Tier (called via AJAX after page load)
+    |--------------------------------------------------------------------------
+    */
+    public function fetchQuality(Request $request, MetaAccount $meta)
+    {
+        $detail   = json_decode($meta->details, true) ?? [];
+        $cacheAge = isset($detail['waba_quality_updated_at'])
+            ? now()->diffInMinutes($detail['waba_quality_updated_at'])
+            : 999;
+
+        // Use cache if less than 6 hours old
+        if ($cacheAge < 360 && !empty($detail['waba_quality_cache'])) {
+            return response()->json([
+                'cached' => true,
+                'data'   => $detail['waba_quality_cache'],
+                'updated_at' => $detail['waba_quality_updated_at'],
+            ]);
+        }
+
+        if (!$meta->business_app || !$meta->access_token) {
+            return response()->json(['error' => 'No credentials'], 400);
+        }
+
+        try {
+            $apiVersion = config('custom.api_waba_version', 'v22.0');
+            $resp = \Illuminate\Support\Facades\Http::timeout(8)->withHeaders([
+                'Authorization' => 'Bearer ' . $meta->access_token,
+            ])->get("https://graph.facebook.com/{$apiVersion}/{$meta->business_app}/phone_numbers", [
+                'fields' => 'display_phone_number,quality_rating,messaging_limit_tier,verified_name,status',
+            ]);
+
+            if ($resp->successful() && !empty($resp->json()['data'])) {
+                $phoneData = $resp->json()['data'][0];
+                $detail['waba_quality_cache']      = $phoneData;
+                $detail['waba_quality_updated_at'] = now()->toDateTimeString();
+                $meta->details = json_encode($detail);
+                $meta->saveQuietly();
+
+                return response()->json([
+                    'cached' => false,
+                    'data'   => $phoneData,
+                    'updated_at' => $detail['waba_quality_updated_at'],
+                ]);
+            }
+            return response()->json(['error' => 'No data from Meta'], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Update Greeting Message
+    |--------------------------------------------------------------------------
+    */
+
+    public function greeting(Request $request, WhatsappKeyAccount $device)
+    {
+        $templates      = $this->templateObserver->getData($request)->where("waba_device_id", $device->id)->get(['id', 'name']);
+        $meta           = $device->meta;
+        return view('waba.update.response', ['page'   => __('page.waba.greeting'), 'breadcumb' => true], compact('device', 'templates', 'meta'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 6. Update Webhook and Limit
+    |--------------------------------------------------------------------------
+    */
+
+    public function token(Request $request, WhatsappKeyAccount $device)
+    {
+        $data           = json_decode($device->meta_data, true);
+        $data           = $data['whatsapp'];
+        $tokenUid       = Setting::first(['id'])->id;
+
+        return view('waba.update.token', ['page'   => __('waba.access_token'), 'breadcumb' => true], compact('device', 'data', 'tokenUid'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 7. Delete Integrasi
+    |--------------------------------------------------------------------------
+    */
+
+    public function deleteIntegration(MetaAccount $meta)
+    {
+
+        try {
+
+            DB::beginTransaction();
+
+            $response =   $this->whatsappServiceObserver->unSubscribeToWaba($meta->business_app, $meta->access_token);
+
+            if ($response->success != true) {
+                // return redirect()->back()->with(['gagal'    => $response->message]);
+            }
+
+            $meta->templates()->delete();
+            $meta->devices()->delete();
+            $meta->broadcasts()->delete();
+            $meta->chatbots()->delete();
+            $meta->delete();
+
+
+            DB::commit();
+
+            return redirect()->route('waba')->with(['flash' => __('general.success_deleted')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with(['gagal'    => $e->getMessage()]);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 8. Store Data
+    |--------------------------------------------------------------------------
+    */
+
+    public function store(Request $request)
+    {
+        $this->validate($request, [
+            'access_token'      => 'required',
+            'businessid'        => 'required',
+            'app_secret'        => 'required',
+            'appid'             => 'required',
+            'agent'             => 'required|array'
+        ]);
+
+        if (!$this->whatsappDeviceObserver->checkLimit()) {
+            return redirect()->back()->with([
+                'gagal' => __('validation.device_limit')
+            ]);
+        }
+
+        $tokenUid           = Setting::first(['id'])->id;
+        $debugValidation    = $this->whatsappServiceObserver->debugToken($request->appid, $request->app_secret, $request->access_token);
+
+        if (!$debugValidation->success) {
+            return redirect()->back()->with([
+                'gagal' => 'Token validation failed: ' . $debugValidation->data->error->message
+            ]);
+        }
+
+        $getForPhones = $this->whatsappServiceObserver->getPhones($request->businessid, $request->access_token);
+
+        if (!$getForPhones->success) {
+            return redirect()->back()->with([
+                'gagal' => 'Failed to get phones: ' . $getForPhones->data->error->message
+            ]);
+        }
+
+        foreach ($getForPhones->data as $phoneData) {
+            if (true) { // Always register phone (FB Login + Embedded Signup)
+
+                $registration = $this->whatsappServiceObserver->registerPhoneNumber($request->access_token, $phoneData['id']);
+
+                if ($registration->status() !== 200) {
+                    return redirect()->back()->with([
+                        'gagal' => "Failed to register phone: {$phoneData['display_phone_number']}"
+                    ]);
+                }
+            }
+        }
+
+        $getForPhones   = $this->whatsappServiceObserver->getPhones($request->businessid, $request->access_token);
+        $phones         = (array)$getForPhones->data;
+        $defaultPhone   = reset($phones);
+
+        if (!$defaultPhone) {
+            return redirect()->back()->with([
+                'gagal' => 'No registered WhatsApp number found'
+            ]);
+        }
+
+        $getProfileBusiness = $this->whatsappServiceObserver->getBusinessProfile($request->access_token, $defaultPhone['id']);
+
+        if (!$getProfileBusiness->success) {
+            return redirect()->back()->with([
+                'gagal' => 'Failed to get business profile: ' . $getProfileBusiness->data->error->message
+            ]);
+        }
+
+        $getProfileName = $this->whatsappServiceObserver->getHealthStatus($request->access_token, $request->businessid);
+
+        if (!$getProfileName->success) {
+            return redirect()->back()->with([
+                'gagal' => 'Failed to get business name: ' . $getProfileName->data->error->message
+            ]);
+        }
+
+        $detailInformation = [
+            'business_detail' => $getProfileBusiness->data,
+            'healt_status'    => $getProfileName
+        ];
+
+        try {
+            DB::beginTransaction();
+
+            $metaAccount = $this->whatsappOfficialObserver->createMetaAccount(
+                $request,
+                $getProfileName->data->name,
+                json_encode($detailInformation)
+            );
+
+            foreach ($getForPhones->data as $data) {
+                $cleanedPhone   = preg_replace('/[^0-9]/', '', $data['display_phone_number']);
+                $checkDevice    = WhatsappKeyAccount::where('phone', $cleanedPhone)->first();
+
+                if (!$checkDevice) {
+                    $metadataArray['whatsapp']['is_embedded_signup']    = 0;
+                    $metadataArray['whatsapp']['access_token']          = $request->access_token;
+                    $metadataArray['whatsapp']['app_id']                = $request->appid;
+                    $metadataArray['whatsapp']['waba_id']               = $request->businessid;
+                    $metadataArray['whatsapp']['phone_number_id']       = $data['id'];
+                    $metadataArray['whatsapp']['display_phone_number']  = $data['display_phone_number'];
+                    $metadataArray['whatsapp']['verified_name']         = $data['verified_name'];
+                    $metadataArray['whatsapp']['quality_rating']        = $data['quality_rating'];
+                    $metadataArray['whatsapp']['name_status']           = $data['name_status'];
+                    $metadataArray['whatsapp']['messaging_limit_tier']  = $data['messaging_limit_tier'] ?? null;
+                    $metadataArray['whatsapp']['account_mode']           = $data['account_mode'] ?? 'PRODUCTION';
+
+                    $metadataArray['whatsapp']['webhook_subscribed']        = true;
+                    $metadataArray['whatsapp']['webhook_fields']            = 'messages,message_template_quality_update,message_template_status_update,account_update';
+
+                    $phoneStatus = $this->whatsappServiceObserver->getPhoneNumberStatus($request->access_token, $data['id']);
+
+                    $status     = ($phoneStatus->success && in_array($phoneStatus->data->status ?? '', ['CONNECTED','MIGRATED','PENDING','FLAGGED','RESTRICTED']))  ? 'active' : 'active';
+
+                    $this->whatsappOfficialObserver->createData(
+                        $cleanedPhone,
+                        json_encode($metadataArray),
+                        $request->agent,
+                        $request->businessid,
+                        $metaAccount,
+                        $status
+                    );
+                }
+            }
+
+            $this->whatsappServiceObserver->syncTemplates(
+                $request->access_token,
+                $request->businessid,
+                $metaAccount
+            );
+
+
+
+            $appWebhook = $this->whatsappServiceObserver->connectToBaseWebhook(
+                $request->appid,
+                $request->app_secret,
+                $tokenUid
+            );
+
+            if (!$appWebhook->success) {
+                throw new \Exception(
+                    'Failed to setup app webhook: ' .
+                        $appWebhook->data->error->message
+                );
+            }
+
+            $removeExisting = $this->whatsappServiceObserver->removeExistingAdnReplce(
+                $request->businessid,
+                $request->access_token
+            );
+
+            if (!$removeExisting->success) {
+                throw new \Exception(
+                    'Failed to remove existing webhook: ' .
+                        $removeExisting->data->error->message
+                );
+            }
+
+
+            $webhookUrl = config('app.url') . '/api-app/waba/callback-url/' . $tokenUid;
+
+            $subscribeResult = $this->whatsappServiceObserver->setSubcribeAppsEnhanced(
+                $webhookUrl,
+                $tokenUid,
+                $request->access_token,
+                $request->businessid
+            );
+
+            if (!$subscribeResult->success) {
+                throw new \Exception(
+                    'Failed to subscribe webhook: ' .  $subscribeResult->data->error->message
+                );
+            }
+
+            foreach ($metaAccount->devices as $device) {
+                $metadata = json_decode($device->meta_data, true);
+                $phoneId = $metadata['whatsapp']['phone_number_id'];
+
+                $this->whatsappServiceObserver->subscribePhoneToWebhook(
+                    $phoneId,
+                    $request->access_token
+                );
+            }
+
+
+            DB::commit();
+
+            return redirect()->route('waba')->with([
+                'flash' => __('general.success_add_data')
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with([
+                'gagal' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 8. Store Data
+    |--------------------------------------------------------------------------
+    */
+
+    public function saveUpdateCredencial(Request $request, MetaAccount $meta)
+    {
+        $this->validate($request, [
+            'app_secret'            => 'required',
+            'access_token'          => 'required',
+        ]);
+
+        // Connect For Base Webhook
+        $tokenUid       = Setting::first(['id'])->id;
+        $connectToBase  = $this->whatsappServiceObserver->connectToBaseWebhook($meta->app_id, $request->app_secret, $tokenUid);
+
+        if (!$connectToBase->success) {
+            return redirect()->back()->with(['gagal'    => 'Gagal Konek Ke Webhook, Pesan :' . $connectToBase->data->error->message]);
+        }
+
+        // Validation For Debug
+        $debugValidation  = $this->whatsappServiceObserver->debugToken($meta->app_id, $request->app_secret, $request->access_token);
+
+        if (!$debugValidation->success) {
+            return redirect()->back()->with(['gagal'    => 'Token Akses Salah, Pesan :' . $debugValidation->data->error->message]);
+        }
+
+        $meta->update([
+            'app_secret'        => $request->app_secret,
+            'access_token'      => $request->access_token
+        ]);
+
+        return redirect()->back()->with(['flash'    => __('general.success_update')]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 9. Saving Auto Reply
+    |--------------------------------------------------------------------------
+    */
+
+    public function saveAutoReply(Request $request, WhatsappKeyAccount $device)
+    {
+        $this->validate($request, [
+            'certain_day'           => 'required|in:yes,no',
+            'days'                  => 'required_if:certain_day,yes',
+            'certain_time'          => 'required|in:yes,no',
+            'start_time'            => 'required_if:certain_time,yes',
+            'end_time'              => 'required_if:certain_time,yes',
+            'method'                => 'required|in:ai,chatbot,all',
+            'tunnel'                => 'required_if:method,ai,all',
+            'auto_read_chatbot'     => 'required|in:yes,no',
+            'agent'                 => 'required|array'
+        ]);
+
+        $this->whatsappOfficialObserver->updateData($request, $device);
+        return redirect()->back()->with(['flash'    => __('general.success_update')]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 10. Saving Greeting
+    |--------------------------------------------------------------------------
+    */
+
+    public function saveGreeting(Request $request, WhatsappKeyAccount $device)
+    {
+        $this->validate($request, [
+            'reply_chat'        => 'required|in:yes,no',
+            'reply_method'      => 'required|in:template,text',
+            'reply_template'    => 'required_if:reply_method,template',
+            'reply_text'        => 'required_if:reply_method,text',
+        ]);
+
+        $this->whatsappOfficialObserver->setAutoReply($device, $request);
+        return redirect()->back()->with(['flash'    => __('general.success_update')]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 11. Saving Token
+    |--------------------------------------------------------------------------
+    */
+
+    public function saveToken(Request $request, WhatsappKeyAccount $device)
+    {
+
+        $this->validate($request, [
+            'token'             => 'required',
+        ]);
+
+        $config = $device->meta_data;
+        $config = $config ? json_decode($config, true) : [];
+
+        $metadataArray = $this->saveWhatsappSettings(
+            $request->token,
+            $config['whatsapp']['app_id'] ?? null,
+            $config['whatsapp']['waba_id'] ?? null
+        );
+
+        if ($metadataArray['status'] == false) {
+            return redirect()->back()->with(['gagal'    => $metadataArray['message']]);
+        }
+
+        $device->update([
+            'meta_data'         => $metadataArray['data']
+        ]);
+
+        return redirect()->back()->with(['flash'    => __('general.success_update')]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 12. Refresh Whatsapp
+    |--------------------------------------------------------------------------
+    */
+
+    public function refresh(MetaAccount $meta)
+    {
+
+        // Connect For Base Webhook
+        $tokenUid       = Setting::first(['id'])->id;
+
+        if ($meta->app_id != null && $meta->app_secret != null) {
+            $connectToBase  = $this->whatsappServiceObserver->connectToBaseWebhook($meta->app_id, $meta->app_secret, $tokenUid);
+
+            if (!$connectToBase->success) {
+                return redirect()->back()->with(['gagal'    => 'Gagal Konek Ke Webhook, Pesan :' . $connectToBase->data->error->message]);
+            }
+
+            // Validation For Debug
+            $debugValidation  = $this->whatsappServiceObserver->debugToken($meta->app_id, $meta->app_secret, $meta->access_token);
+
+            if (!$debugValidation->success) {
+                return redirect()->back()->with(['gagal'    => 'Token Akses Salah, Pesan :' . $debugValidation->data->error->message]);
+            }
+        } else {
+            // Remove Existing Webhook
+            $removeExistingWebhook  = $this->whatsappServiceObserver->removeExistingAdnReplce($meta->business_app, $meta->access_token);
+
+            if (!$removeExistingWebhook->success) {
+                return redirect()->back()->with(['gagal'    => 'Gagal Saat hapus webhook yang ada, Pesan :' . $removeExistingWebhook->data->error->message]);
+            }
+
+            $webhookUrl = config('app.url') . '/api-app/waba/callback-url/' . $tokenUid;
+            $this->whatsappServiceObserver->setSubcribeApps($webhookUrl, $tokenUid, $meta->access_token, $meta->business_app);
+        }
+
+
+
+
+        $getForPhones  = $this->whatsappServiceObserver->getPhones($meta->business_app, $meta->access_token);
+
+        if (!$getForPhones->success) {
+            return redirect()->back()->with(['gagal'    => 'Gagal Mengambil Nomor Ponsel, Pesan :' . $getForPhones->data->error->message]);
+        }
+
+        $phones         = (array)$getForPhones->data;
+        $defaultPhone   = reset($phones);
+
+        if (!$defaultPhone) {
+            return redirect()->back()->with(['gagal'    => 'Tidak ada nomor whatsapp yang terdaftar']);
+        }
+
+
+        // Get Business Profile
+        $getProfileBusiness  = $this->whatsappServiceObserver->getBusinessProfile($meta->access_token, $defaultPhone['id']);
+
+        if (!$getProfileBusiness->success) {
+            return redirect()->back()->with(['gagal'    => 'Gagal Mengambil Nomor Ponsel, Pesan :' . $getProfileBusiness->data->error->message]);
+        }
+
+        // Get Business Name
+        $getProfileName  = $this->whatsappServiceObserver->getHealthStatus($meta->access_token, $meta->business_app);
+
+        if (!$getProfileName->success) {
+            return redirect()->back()->with(['gagal'    => 'Gagal Mengambil Nama Bisnis, Pesan :' . $getProfileName->data->error->message]);
+        }
+
+        $detailInformation   = array(
+            'business_detail'   => $getProfileBusiness->data,
+            'healt_status'      => $getProfileName
+        );
+
+        $meta->update([
+            'name'              => $getProfileName->data->name,
+            'details'           => json_encode($detailInformation)
+        ]);
+
+
+        try {
+
+            DB::beginTransaction();
+
+            foreach ($getForPhones->data as $data) {
+                $cleanedPhone = preg_replace('/[^0-9]/', '', $data['display_phone_number']);
+
+                // Build metadata array with fresh WABA credentials
+                $metadataArray['whatsapp']['is_embedded_signup']    = 1;
+                $metadataArray['whatsapp']['access_token']          = $meta->access_token;
+                $metadataArray['whatsapp']['app_id']                = $meta->app_id;
+                $metadataArray['whatsapp']['waba_id']               = $meta->business_app;
+                $metadataArray['whatsapp']['phone_number_id']       = $data['id'];
+                $metadataArray['whatsapp']['display_phone_number']  = $data['display_phone_number'];
+                $metadataArray['whatsapp']['verified_name']         = $data['verified_name'];
+                $metadataArray['whatsapp']['quality_rating']        = $data['quality_rating'];
+                $metadataArray['whatsapp']['name_status']           = $data['name_status'];
+                $metadataArray['whatsapp']['messaging_limit_tier']  = $data['messaging_limit_tier'] ?? NULL;
+                $metadataArray['whatsapp']['status']                = $data['code_verification_status'] ?? 'CONNECTED';
+                $metadataArray['whatsapp']['account_mode']          = $data['account_mode'] ?? 'PRODUCTION';
+                $metadataArray['whatsapp']['webhook_subscribed']    = true;
+
+                $phoneStatus    = $this->whatsappServiceObserver->getPhoneNumberStatus($meta->access_token, $data['id']);
+                // For embedded signup (Cloud API + Business App), treat any successful registration as active
+                $connectedStatuses = ['CONNECTED', 'MIGRATED', 'PENDING', 'FLAGGED', 'RESTRICTED'];
+                $status         = ($phoneStatus->success && in_array($phoneStatus->data->status ?? '', $connectedStatuses)) ? 'active' : 'active'; // Always active from embed signup
+
+                // FIX: Use updateOrCreate so existing devices ALSO get updated credentials
+                // Previously: if(!$checkDevice) skipped updating metadata for existing devices
+                $device = WhatsappKeyAccount::updateOrCreate(
+                    ['phone' => $cleanedPhone],
+                    [
+                        'meta_data'             => json_encode($metadataArray),
+                        'callback_token'        => $meta->business_app,
+                        'agent'                 => Auth::user()->id,
+                        'status'                => $status,
+                        'meta_account_id'       => $meta->id
+                    ]
+                );
+
+                $device->agents()->sync([Auth::user()->id]);
+            }
+
+            $this->whatsappServiceObserver->syncTemplates($meta->access_token, $meta->business_app, $meta);
+
+            // Always register WABA-level webhook override (works for embedded signup & traditional)
+            try {
+                $webhookUrl = config('app.url') . '/api-app/waba/callback-url/' . $tokenUid;
+                \Illuminate\Support\Facades\Http::withToken($meta->access_token)
+                    ->post(
+                        "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$meta->business_app}/subscribed_apps",
+                        [
+                            'override_callback_uri' => $webhookUrl,
+                            'verify_token'          => $tokenUid
+                        ]
+                    );
+                \Illuminate\Support\Facades\Log::info("WABA webhook override registered: {$webhookUrl}");
+            } catch (\Exception $webhookEx) {
+                \Illuminate\Support\Facades\Log::warning("Failed to set WABA webhook override: " . $webhookEx->getMessage());
+            }
+
+            if ($meta->app_id != null && $meta->app_secret != null) {
+                $this->whatsappServiceObserver->connectToBaseWebhook($meta->app_id, $meta->app_secret, $tokenUid);
+            }
+
+
+            DB::commit();
+
+            return redirect()->route('waba')->with(['flash' => __('general.success_add_data')]);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+            return redirect()->back()->with(['gagal'    => $e->getMessage()]);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 13. Get Meta Data
+    |--------------------------------------------------------------------------
+    */
+
+    public function saveWhatsappSettings($accessToken, $appId, $wabaID)
+    {
+
+        //Get Account Review Status
+        $accountReviewStatusResponse = $this->whatsappServiceObserver->getAccountReviewStatus($accessToken, $wabaID);
+        if (!$accountReviewStatusResponse->success) {
+            return array(
+                'status'    => false,
+                'message'   => $accountReviewStatusResponse->data->error->message
+            );
+        }
+
+        $phoneNumberResponse    = $this->whatsappServiceObserver->getPhoneNumberId($accessToken, $wabaID);
+
+        if (!$phoneNumberResponse->success) {
+            return array(
+                'status'    => false,
+                'message'   => $phoneNumberResponse->data->error->message
+            );
+        }
+
+        $phoneNumberData        = [];
+
+        foreach ($phoneNumberResponse->data as $phoneNumber) {
+
+
+            //Get Phone Number Status
+            $phoneNumberStatusResponse = $this->whatsappServiceObserver->getPhoneNumberStatus($accessToken, $phoneNumber['id']);
+            if (!$phoneNumberStatusResponse->success) {
+                return array(
+                    'status'    => false,
+                    'message'   => $phoneNumberStatusResponse->data->error->message
+                );
+            }
+
+
+
+            //Get business profile
+            $businessProfileResponse = $this->whatsappServiceObserver->getBusinessProfile($accessToken, $phoneNumber['id']);
+            if (!$businessProfileResponse->success) {
+                return array(
+                    'status'    => false,
+                    'message'   => $businessProfileResponse->data->error->message
+                );
+            }
+
+
+            $metadataArray['whatsapp']['is_embedded_signup']    = 0;
+            $metadataArray['whatsapp']['access_token']          = $accessToken;
+            $metadataArray['whatsapp']['app_id']                = $appId;
+            $metadataArray['whatsapp']['waba_id']               = $wabaID;
+            $metadataArray['whatsapp']['phone_number_id']       = $phoneNumber['id'];
+            $metadataArray['whatsapp']['display_phone_number']  = $phoneNumber['display_phone_number'];
+            $metadataArray['whatsapp']['verified_name']         = $phoneNumber['verified_name'];
+            $metadataArray['whatsapp']['quality_rating']        = $phoneNumber['quality_rating'];
+            $metadataArray['whatsapp']['name_status']           = $phoneNumber['name_status'];
+            $metadataArray['whatsapp']['messaging_limit_tier']  = $phoneNumber['messaging_limit_tier'] ?? NULL;
+            $metadataArray['whatsapp']['max_daily_conversation_per_phone'] = NULL;
+            $metadataArray['whatsapp']['max_phone_numbers_per_business'] = NULL;
+            $metadataArray['whatsapp']['number_status']         = $phoneNumberStatusResponse->data->status;
+            $metadataArray['whatsapp']['business_verification'] = '';
+            $metadataArray['whatsapp']['account_review_status'] = $accountReviewStatusResponse->data->account_review_status;
+            $metadataArray['whatsapp']['business_profile']['about']         = $businessProfileResponse->data->about ?? NULL;
+            $metadataArray['whatsapp']['business_profile']['address']       = $businessProfileResponse->data->address ?? NULL;
+            $metadataArray['whatsapp']['business_profile']['description']   = $businessProfileResponse->data->description ?? NULL;
+            $metadataArray['whatsapp']['business_profile']['industry']      = $businessProfileResponse->data->vertical ?? NULL;
+            $metadataArray['whatsapp']['business_profile']['email']         = $businessProfileResponse->data->email ?? NULL;
+
+            $item['metadata']           = json_encode($metadataArray);
+            $item['phone']              = $phoneNumber['display_phone_number'];
+            $phoneNumberData[]          = $item;
+        }
+
+
+        if (count($phoneNumberData) == 0) {
+            return array(
+                'status'    => false,
+                'message'   => 'Data nomor ponsel tidak di temukan'
+            );
+        }
+
+        return array(
+            'status'    => true,
+            'data'      => $phoneNumberData
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 14. Whatsapp Devices List
+    |--------------------------------------------------------------------------
+    */
+
+    public function devices(Request $request, MetaAccount $meta)
+    {
+        $devices    = $this->whatsappOfficialObserver->getData($request)->where('meta_account_id', $meta->id)->get();
+        return view('waba.update.device', ['page'   => __('page.waba.autoreply'), 'breadcumb' => true], compact('devices', 'meta'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 15. Whatsapp Devices List For Api
+    |--------------------------------------------------------------------------
+    */
+
+    public function deviceResponse(Request $request, MetaAccount $meta)
+    {
+        $devices    = $this->whatsappOfficialObserver->getData($request)->where('meta_account_id', $meta->id)->get(['id', 'phone']);
+
+        return array(
+            'status'    => true,
+            'data'      => $devices
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 16.Syncron Using Embed
+    |--------------------------------------------------------------------------
+    */
+
+    public function syncronAccount(Request $request)
+    {
+        $accessToken   = null;
+        $phoneNumberId = $request->phone_number_id;
+        $wabaId        = $request->waba_id;
+        $appId         = null;
+
+        $validationCheck = $this->whatsappDeviceObserver->checkLimit();
+
+        if ($validationCheck == false) {
+            return response()->json([
+                'status'  => false,
+                'message' => __('validation.device_limit')
+            ], 422);
+        }
+
+        // Exchange auth code for access token
+        $tokenData = $this->whatsappServiceObserver->syncTokenFromFbLogin($request);
+
+        if (!$tokenData->success) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Failed to get token: ' . ($tokenData->data->error->message ?? 'Unknown error')
+            ], 422);
+        }
+
+        $accessToken = $tokenData->data ?? null;
+
+        // Auto-discover WABA ID if not provided by frontend (postMessage FINISH not received)
+        if (empty($wabaId)) {
+            \Log::info('WABA syncron: waba_id not from postMessage, auto-discovering...', [
+                'request_code' => substr($request->request_code ?? '', 0, 20) . '...'
+            ]);
+
+            $wabaDiscovery = $this->whatsappServiceObserver->getWabaFromToken($accessToken);
+
+            if ($wabaDiscovery->success && !empty($wabaDiscovery->waba_ids)) {
+                $wabaId = $wabaDiscovery->waba_ids[0]; // use first discovered WABA
+                \Log::info('WABA auto-discovered: ' . $wabaId);
+            } else {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'WABA tidak ditemukan.',
+                    'debug'   => [
+                        'r1' => property_exists($wabaDiscovery, 'debug_r1') ? $wabaDiscovery->debug_r1 : null,
+                        'r2' => property_exists($wabaDiscovery, 'debug_r2') ? $wabaDiscovery->debug_r2 : null,
+                    ]
+                ], 422);
+            }
+        }
+
+        $subscribedApps = $this->whatsappServiceObserver->getSubscribedApps($wabaId, $accessToken);
+
+        if ($subscribedApps->success && !empty($subscribedApps->data)) {
+            if (isset($subscribedApps->data[0]['whatsapp_business_api_data']['id'])) {
+                $appId = $subscribedApps->data[0]['whatsapp_business_api_data']['id'];
+            }
+        }
+
+
+        if (!$phoneNumberId) {
+            $phoneNumberId = $request->phone_number_id;
+            $phoneNumbers = $this->whatsappServiceObserver->getPhones($wabaId, $accessToken);
+
+            if (!$phoneNumbers->success) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Failed to get phone numbers: ' . $phoneNumbers->data->error->message
+                ], 422);
+            }
+
+            $phoneNumberRecord = Arr::first(($phoneNumbers->data ?? []), function ($value, $key) use (&$phoneNumberId) {
+                return $value['id'] == $phoneNumberId;
+            });
+
+            if (isset($phoneNumberRecord['platform_type']) && $phoneNumberRecord['platform_type'] != 'CLOUD_API') {
+                $phoneRegistration = $this->whatsappServiceObserver->registerPhoneNumber($accessToken, $phoneNumberId);
+
+                if ($phoneRegistration->status() != 200) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Failed to register phone number'
+                    ], 422);
+                }
+
+                $phoneNumbers = $this->whatsappServiceObserver->getPhones($wabaId, $accessToken);
+
+                if (!$phoneNumbers->success) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Failed to get phone numbers: ' . $phoneNumbers->data->error->message
+                    ], 422);
+                }
+
+                $phoneNumberRecord = Arr::first(($phoneNumbers->data ?? []), function ($value, $key) use (&$phoneNumberId) {
+                    return $value['id'] == $phoneNumberId;
+                });
+            }
+        }
+
+        $removeExistingWebhook = $this->whatsappServiceObserver->removeExistingAdnReplce($wabaId, $accessToken);
+
+        if (!$removeExistingWebhook->success) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to remove existing webhook: ' . $removeExistingWebhook->data->error->message
+            ], 422);
+        }
+
+        // FIX: use authenticated user setting ID, not Setting::first()
+        $vendorUid = auth()->user()->setting_id ?? Setting::withoutGlobalScopes()->first(['id'])->id;
+        $webhookUrl = config('app.url') . '/api-app/waba/callback-url/' . $vendorUid;
+
+        $subscribeResult = $this->whatsappServiceObserver->setSubcribeAppsEnhanced(
+            $webhookUrl,
+            $vendorUid,
+            $accessToken,
+            $wabaId
+        );
+
+
+        $getForPhones = $this->whatsappServiceObserver->getPhones($wabaId, $accessToken);
+
+        if (!$getForPhones->success) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to get phone numbers: ' . $getForPhones->data->error->message
+            ], 422);
+        }
+
+        $phones = (array)$getForPhones->data;
+        $defaultPhone = reset($phones);
+
+        if (!$defaultPhone) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No registered WhatsApp number found'
+            ], 422);
+        }
+
+        $getProfileBusiness = $this->whatsappServiceObserver->getBusinessProfile($accessToken, $defaultPhone['id']);
+
+        // #133010: "Account not registered" can occur during WhatsApp Business App migration
+        // This is non-fatal - the account is being migrated and profile can be fetched later
+        if (!$getProfileBusiness->success) {
+            $errorCode = $getProfileBusiness->data->error->code ?? 0;
+            $errorMsg  = $getProfileBusiness->data->error->message ?? '';
+            Log::warning('Business profile fetch failed (non-fatal)', [
+                'phone_id' => $defaultPhone['id'],
+                'error'    => $errorMsg,
+                'code'     => $errorCode,
+            ]);
+            // Create a stub object so downstream code can still run
+            $getProfileBusiness = (object)[
+                'success' => true,
+                'data'    => (object)[
+                    'about'              => '',
+                    'description'        => '',
+                    'vertical'           => '',
+                    'profile_picture_url'=> '',
+                    'email'              => '',
+                    'address'            => '',
+                    'websites'           => [],
+                ],
+            ];
+        }
+
+        $getProfileName = $this->whatsappServiceObserver->getHealthStatus($accessToken, $wabaId);
+
+        // Health status may not be available for newly paired accounts - make non-fatal
+        if (!$getProfileName->success) {
+            Log::warning('Health status fetch failed (non-fatal)', [
+                'waba_id' => $wabaId,
+                'error'   => $getProfileName->data->error->message ?? 'unknown',
+            ]);
+            $getProfileName = (object)[
+                'success' => true,
+                'data'    => (object)[
+                    'health_status' => (object)['status' => 'AVAILABLE'],
+                    'id'            => $wabaId,
+                    'name'          => $defaultPhone['display_phone_number'] ?? $defaultPhone['id'] ?? 'WhatsApp Business',
+                ],
+            ];
+        }
+
+        $detailInformation = [
+            'business_detail' => $getProfileBusiness->data,
+            'healt_status' => $getProfileName,
+            'embedded_signup' => [
+                'app_id_found' => !empty($appId),
+                'app_id' => $appId,
+                'subscribed_at' => now()->toISOString()
+            ]
+        ];
+
+        try {
+            DB::beginTransaction();
+
+            $metaAccount = $this->whatsappOfficialObserver->createFromFbLogin(
+                $accessToken,
+                $wabaId,
+                $getProfileName->data->name,
+                json_encode($detailInformation),
+                $appId
+            );
+
+            foreach ($getForPhones->data as $data) {
+                $cleanedPhone = preg_replace('/[^0-9]/', '', $data['display_phone_number']);
+
+                $checkDevice = WhatsappKeyAccount::where('phone', $cleanedPhone)->first();
+
+                if (!$checkDevice) {
+                    $metadataArray['whatsapp']['is_embedded_signup']    = 1;
+                    $metadataArray['whatsapp']['access_token']          = $accessToken;
+                    $metadataArray['whatsapp']['app_id']                = $appId ?? "";
+                    $metadataArray['whatsapp']['has_app_id']            = !empty($appId);
+                    $metadataArray['whatsapp']['waba_id']               = $wabaId;
+                    $metadataArray['whatsapp']['phone_number_id']       = $data['id'];
+                    $metadataArray['whatsapp']['display_phone_number']  = $data['display_phone_number'];
+                    $metadataArray['whatsapp']['verified_name']         = $data['verified_name'];
+                    $metadataArray['whatsapp']['quality_rating']        = $data['quality_rating'];
+                    $metadataArray['whatsapp']['name_status']           = $data['name_status'];
+                    $metadataArray['whatsapp']['messaging_limit_tier']  = $data['messaging_limit_tier'] ?? null;
+                    $metadataArray['whatsapp']['webhook_subscribed']    = true;
+                    $metadataArray['whatsapp']['webhook_fields']        = 'messages,message_template_quality_update,message_template_status_update,account_update';
+
+                    $phoneSubscribe = $this->whatsappServiceObserver->subscribePhoneToWebhook($data['id'], $accessToken);
+
+                    if ($phoneSubscribe->success) {
+                        $metadataArray['whatsapp']['phone_webhook_subscribed'] = true;
+                    } else {
+                        $metadataArray['whatsapp']['phone_webhook_subscribed'] = false;
+                    }
+
+                    // Get phone status
+                    $phoneStatus = $this->whatsappServiceObserver->getPhoneNumberStatus($accessToken, $data['id']);
+                    $status = ($phoneStatus->success && $phoneStatus->data->status === 'CONNECTED') ? 'active' : 'no_active';
+
+                    $this->whatsappOfficialObserver->createData(
+                        $cleanedPhone,
+                        json_encode($metadataArray),
+                        [my_user()->id],
+                        $wabaId,
+                        $metaAccount,
+                        $status
+                    );
+                }
+            }
+
+            // Sync templates
+            $this->whatsappServiceObserver->syncTemplates($accessToken, $wabaId, $metaAccount);
+
+            DB::commit();
+
+            return response()->json([
+                'status'    => true,
+                'message'   => __('general.success_add_data')
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine()
+            ], 500);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 17. Activate Phone Number
+    |--------------------------------------------------------------------------
+    */
+
+    public function activatePhone(Request $request, WhatsappKeyAccount $device) {}
+}

@@ -1,0 +1,11 @@
+{
+    "/js/app.js": "/js/app.js",
+    "/js/app-crm.js": "/js/app-crm.js",
+    "/js/app-template.js": "/js/app-template.js",
+    "/js/app-broadcast.js": "/js/app-broadcast.js",
+    "/js/app-chatbot.js": "/js/app-chatbot.js",
+    "/js/whatsapp-template.js": "/js/whatsapp-template.js",
+    "/js/kanban-template.js": "/js/kanban-template.js",
+    "/js/ticket-template.js": "/js/ticket-template.js",
+    "/js/dummy-ticket-template.js": "/js/dummy-ticket-template.js"
+}

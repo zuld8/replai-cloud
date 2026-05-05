@@ -1,0 +1,585 @@
+<!-- Start::app-sidebar -->
+<aside class="app-sidebar sticky" id="sidebar">
+
+    <!-- Start::main-sidebar-header -->
+    <div class="main-sidebar-header">
+        <a href="{{route('index')}}" class="header-logo">
+            <img src="{{asset($internalSetting->logo)}}" alt="logo" class="desktop-logo">
+            <img src="{{asset($internalSetting->icon)}}" alt="logo" class="toggle-logo">
+            <img src="{{asset($internalSetting->white_logo)}}" alt="logo" class="desktop-dark">
+            <img src="{{asset($internalSetting->icon)}}" alt="logo" class="toggle-dark">
+        </a>
+    </div>
+    <!-- End::main-sidebar-header -->
+
+    <!-- Start::main-sidebar -->
+    <div class="main-sidebar" id="sidebar-scroll">
+
+        <!-- Start::nav -->
+        <nav class="main-menu-container nav nav-pills flex-column sub-open">
+
+            <!-- User Profile Section - Horizontal Compact -->
+            <div class="main-sidebar-loggedin">
+                <div class="app-sidebar__user">
+                    @php
+                        $__uName    = auth()->user()->name ?? 'U';
+                        $__parts    = explode(' ', trim($__uName));
+                        $__initials = strtoupper(substr($__parts[0],0,1) . (count($__parts)>1 ? substr($__parts[1],0,1) : ''));
+                        $__palette  = ['#3b82f6','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899','#6366f1','#14b8a6','#f97316'];
+                        $__avatarBg = $__palette[abs(crc32($__uName)) % count($__palette)];
+                        $__photo    = auth()->user()->photo ?? '';
+                        $__hasPhoto = $__photo && $__photo !== 'images/user.png';
+                    @endphp
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px 6px;overflow:hidden;width:100%;box-sizing:border-box;">
+
+                        {{-- Avatar (left) --}}
+                        <div style="position:relative;flex-shrink:0;">
+                            <div style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:50%;padding:2px;display:inline-flex;box-shadow:0 3px 10px rgba(59,130,246,0.28);">
+                                @if($__hasPhoto)
+                                    <img src="{{asset(auth()->user()->image_data)}}" alt="user-img"
+                                        style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid white;">
+                                @else
+                                    <div style="width:46px;height:46px;border-radius:50%;background:{{$__avatarBg}};border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;letter-spacing:0.5px;">{{$__initials}}</div>
+                                @endif
+                            </div>
+                            <span style="position:absolute;bottom:1px;right:1px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid white;"></span>
+                        </div>
+
+                        {{-- Info (right) --}}
+                        <div style="flex:1;min-width:0;overflow:hidden;width:0;">
+                            <div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;margin-bottom:2px;">
+                                <span style="font-weight:700;font-size:14px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;">{{auth()->user()->name}}</span>
+                                <span style="flex-shrink:0;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;font-size:9.5px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;">{{ucfirst(auth()->user()->role)}}</span>
+                            </div>
+                            <div style="font-size:12px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px;width:100%;display:block;" title="{{auth()->user()->email}}">{{auth()->user()->email}}</div>
+
+                            @if(auth()->user()->role == 'user')
+                            @php
+                                try {
+                                    $__spkg = \Illuminate\Support\Facades\DB::connection('mysql')
+                                        ->table('package_transactions')
+                                        ->where('business_id', my_business())
+                                        ->where('type', 'package')
+                                        ->where('status', 'success')
+                                        ->where(function($q){ $q->where('expire_date','>=',now())->orWhere('days_option','unlimited'); })
+                                        ->orderBy('created_at','desc')
+                                        ->first(['expire_date','days_option','created_at']);
+                                    if ($__spkg) {
+                                        $__isUnlimited = $__spkg->days_option == 'unlimited';
+                                        $__expDate     = $__isUnlimited ? null : \Carbon\Carbon::parse($__spkg->expire_date);
+                                        $__daysLeft    = $__isUnlimited ? 999 : (int) now()->diffInDays($__expDate, false);
+                                        $__hasPkg      = true;
+                                    } else {
+                                        $__hasPkg = false; $__isUnlimited = false; $__daysLeft = 0; $__expDate = null;
+                                    }
+                                } catch(\Exception $e) {
+                                    $__hasPkg = false; $__isUnlimited = false; $__daysLeft = 0; $__expDate = null;
+                                }
+                                if (!isset($__isUnlimited) || $__isUnlimited) {
+                                    $__uc='#10b981';$__ub='rgba(16,185,129,0.12)';$__ubr='rgba(16,185,129,0.3)';
+                                } elseif ($__daysLeft<=0)  { $__uc='#dc2626';$__ub='rgba(220,38,38,0.15)';$__ubr='rgba(220,38,38,0.4)';
+                                } elseif ($__daysLeft<=3)  { $__uc='#ef4444';$__ub='rgba(239,68,68,0.13)';$__ubr='rgba(239,68,68,0.35)';
+                                } elseif ($__daysLeft<=7)  { $__uc='#f97316';$__ub='rgba(249,115,22,0.12)';$__ubr='rgba(249,115,22,0.3)';
+                                } elseif ($__daysLeft<=15) { $__uc='#f59e0b';$__ub='rgba(245,158,11,0.12)';$__ubr='rgba(245,158,11,0.3)';
+                                } elseif ($__daysLeft<=30) { $__uc='#3b82f6';$__ub='rgba(59,130,246,0.12)';$__ubr='rgba(59,130,246,0.3)';
+                                } else                     { $__uc='#10b981';$__ub='rgba(16,185,129,0.12)';$__ubr='rgba(16,185,129,0.3)'; }
+                                // Progress bar %
+                                $__totalDays = ($__hasPkg && !$__isUnlimited && isset($__spkg->created_at) && $__expDate)
+                                    ? max(1, \Carbon\Carbon::parse($__spkg->created_at)->diffInDays($__expDate))
+                                    : 30;
+                                $__pct = ($__hasPkg && !$__isUnlimited)
+                                    ? max(3, min(100, (int)round($__daysLeft / $__totalDays * 100)))
+                                    : 100;
+                            @endphp
+                            @if($__hasPkg)
+                            {{-- Badge + date: stacked column --}}
+                            <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;">
+                                @if($__isUnlimited)
+                                    <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,0.12);color:#10b981;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid rgba(16,185,129,0.25);">
+                                        <i class="bx bx-infinite"></i> Lifetime
+                                    </span>
+                                @else
+                                    <span style="display:inline-flex;align-items:center;gap:3px;background:{{$__ub}};color:{{$__uc}};font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid {{$__ubr}};">
+                                        <i class="bx bx-time-five"></i>
+                                        {{ $__daysLeft<=0 ? 'Habis!' : $__daysLeft.' hari lagi' }}
+                                    </span>
+                                    @if($__expDate)
+                                        <span style="font-size:11px;color:#94a3b8;padding-left:2px;">s/d {{ $__expDate->format('d M Y') }}</span>
+                                    @endif
+                                @endif
+                            </div>
+                            {{-- Progress bar --}}
+                            @if(!$__isUnlimited)
+                            <div style="margin-top:5px;height:4px;background:rgba(0,0,0,0.06);border-radius:10px;overflow:hidden;width:100%;">
+                                <div style="height:100%;width:{{$__pct}}%;background:{{$__uc}};border-radius:10px;transition:width 0.4s ease;"></div>
+                            </div>
+                            @endif
+                            @endif
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="sidebar-navs mx-auto my-1">
+                <a href="{{route('setting')}}" class="btn btn-icon btn-outline-light rounded-pill btn-wave m-1" title="{{__('sidebar.settings')}}">
+                    <i class="fe fe-settings"></i>
+                </a>
+                <a href="{{ route('profile') }}" class="btn btn-icon btn-outline-light rounded-pill btn-wave m-1" title="{{__('sidebar.profile')}}">
+                    <i class="fe fe-user"></i>
+                </a>
+                @if (auth()->user()->role == 'user')
+                <a href="{{ route('billing.index') }}" class="btn btn-icon btn-outline-light rounded-pill btn-wave m-1" title="{{__('sidebar.topup_credit')}}">
+                    <i class="bx bx-wallet"></i>
+                </a>
+                @endif
+
+                <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-sidebar').submit();"
+                    class="btn btn-icon btn-outline-danger rounded-pill btn-wave m-1" title="{{__('sidebar.logout')}}">
+                    <i class="fe fe-power"></i>
+                </a>
+                <form id="logout-sidebar" action="{{ route('logout') }}" method="POST" class="d-none">
+                    @csrf
+                </form>
+            </div>
+
+            <!-- Sidebar Toggle -->
+            <div class="slide-left" id="slide-left">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24">
+                    <path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z"></path>
+                </svg>
+            </div>
+
+            <ul class="main-menu">
+
+                <!-- DASHBOARD SECTION -->
+
+<li class="slide {{ request()->is('app') ? 'active' : '' }}">
+                    <a href="{{ route('index') }}" class="side-menu__item {{ request()->is('app') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-home'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.dashboard')}}</span>
+                    </a>
+                </li>
+
+                <!-- CHAT & INBOX SECTION -->
+                <li class="slide__category"><span class="category-name">CHAT & INBOX</span></li>
+
+<!-- CRM Chat -->
+                <li class="slide {{ request()->is('app/crm*') ? 'active' : '' }}">
+                    <a href="{{ route('crm') }}" class="side-menu__item {{ request()->is('app/crm*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-chat'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.crm_chat_app')}}
+                            @if($chatsNotRead > 0)
+                            <span class="badge bg-danger ms-2">{{number_format($chatsNotRead)}}</span>
+                            @endif
+                        </span>
+                    </a>
+                </li>
+
+<!-- OTOMASI SECTION -->
+                <li class="slide has-sub {{ request()->is('app/auto-reply/chatbot*') || request()->is('app/auto-reply/finetunnel*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/auto-reply/chatbot*') || request()->is('app/auto-reply/finetunnel*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-bot'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.auto_reply_chat')}}</span>
+                        <i class="fe fe-chevron-right side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide side-menu__label1">
+                            <a href="javascript:void(0)">{{__('sidebar.auto_reply')}}</a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('chatbot') }}" class="side-menu__item {{ request()->is('app/auto-reply/chatbot*') ? 'active' : '' }}">
+                                <i class='bx bx-message-square-edit me-2'></i>{{__('sidebar.auto_reply_manual')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('finetunnel') }}" class="side-menu__item {{ request()->is('app/auto-reply/finetunnel*') ? 'active' : '' }}">
+                                <i class='bx bx-brain me-2'></i>{{__('sidebar.smart_ai_chatbot')}}
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+<!-- Human Agent -->
+                <li class="slide {{ request()->is('app/users*') ? 'active' : '' }}">
+                    <a href="{{ route('users') }}" class="side-menu__item {{ request()->is('app/users*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-user-circle'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.human_agent')}}</span>
+                    </a>
+                </li>
+
+<!-- Ticket -->
+                <li class="slide {{ request()->is('app/tickets*') ? 'active' : '' }}">
+                    <a href="{{ route('tickets') }}" class="side-menu__item {{ request()->is('app/tickets*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-support'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.ticket_support')}}</span>
+                    </a>
+                </li>
+
+                <!-- MARKETING SECTION -->
+                <li class="slide__category"><span class="category-name">{{__('sidebar.marketing_promotion')}}</span></li>
+
+<!-- Broadcast -->
+                <li class="slide has-sub {{ request()->is('app/blash*') || request()->is('app/blash-group*') || request()->is('app/blash-email*') || request()->is('app/broadcast-followups*') || request()->is('app/broadcast/waba*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/blash*') || request()->is('app/blash-group*') || request()->is('app/blash-email*') || request()->is('app/broadcast-followups*') || request()->is('app/broadcast/waba*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-broadcast'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.send_bulk_message')}}</span>
+                        <i class="fe fe-chevron-right side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide side-menu__label1">
+                            <a href="javascript:void(0)">{{__('sidebar.send_bulk_message')}}</a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('blash') }}" class="side-menu__item {{ request()->is('app/blash') && !request()->is('app/blash-*') ? 'active' : '' }}">
+                                <i class='bx bxl-whatsapp me-2 text-success'></i>{{__('sidebar.broadcast_whatsapp')}}
+                            </a>
+                            <a href="{{ route('broadcast.waba') }}" class="side-menu__item {{ request()->is('app/broadcast/waba*') ? 'active' : '' }}">
+                                <i class='bx bx-badge-check me-2 text-success'></i>{{__('sidebar.broadcast_waba')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('blash_email') }}" class="side-menu__item {{ request()->is('app/blash-email*') ? 'active' : '' }}">
+                                <i class='bx bx-mail-send me-2'></i>{{__('sidebar.broadcast_email')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('broadcast') }}" class="side-menu__item {{ request()->is('app/broadcast-followups*') ? 'active' : '' }}">
+                                <i class='bx bx-up-arrow me-2'></i>{{__('sidebar.up_selling')}}
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+<!-- Master Template -->
+                <li class="slide has-sub {{ request()->is('app/master/templates*') || request()->is('app/master/email-template*') || request()->is('app/template-waba*') || request()->is('app/waba/templates*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/master/templates*') || request()->is('app/master/email-template*') || request()->is('app/template-waba*') || request()->is('app/waba/templates*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-layout'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.message_template')}}</span>
+                        <i class="fe fe-chevron-right side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide side-menu__label1">
+                            <a href="javascript:void(0)">{{__('sidebar.message_template')}}</a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('templates') }}" class="side-menu__item {{ request()->is('app/master/templates*') ? 'active' : '' }}">
+                                <i class='bx bxl-whatsapp me-2'></i>{{__('sidebar.whatsapp_template')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('templatemail') }}" class="side-menu__item {{ request()->is('app/master/email-template*') ? 'active' : '' }}">
+                                <i class='bx bx-mail-send me-2'></i>{{__('sidebar.email_template')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('template.waba') }}" class="side-menu__item {{ request()->is('app/template-waba*') || request()->is('app/waba/templates*') ? 'active' : '' }}">
+                                <i class='bx bx-badge-check me-2 text-success'></i>{{__('sidebar.waba_template')}}
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+<!-- Contact Scraping -->
+                <li class="slide has-sub {{ request()->is('app/scrapping*') || request()->is('app/group-scrapping*') || request()->is('app/contact-scrapping*') || request()->is('app/groups*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/scrapping*') || request()->is('app/group-scrapping*') || request()->is('app/contact-scrapping*') || request()->is('app/groups*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-search-alt'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.collect_contacts')}}</span>
+                        <i class="fe fe-chevron-right side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide side-menu__label1">
+                            <a href="javascript:void(0)">{{__('sidebar.collect_contacts')}}</a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('scrappings') }}" class="side-menu__item {{ request()->is('app/scrapping') && !request()->is('app/*-scrapping*') ? 'active' : '' }}">
+                                <i class='bx bx-map me-2'></i>{{__('sidebar.from_google_maps')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('scrapping_contact') }}" class="side-menu__item {{ request()->is('app/contact-scrapping*') ? 'active' : '' }}">
+                                <i class='bx bx-user-plus me-2'></i>{{__('sidebar.from_phone_contacts')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('scrapping_group') }}" class="side-menu__item {{ request()->is('app/group-scrapping*') ? 'active' : '' }}">
+                                <i class='bx bx-group me-2'></i>{{__('sidebar.scraping_group')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('groups') }}" class="side-menu__item {{ request()->is('app/groups*') ? 'active' : '' }}">
+                                <i class='bx bxl-whatsapp me-2'></i>{{__('sidebar.from_whatsapp_group')}}
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- PLATFORM & KONEKSI SECTION -->
+                <li class="slide__category"><span class="category-name">{{__('sidebar.platform_connection')}}</span></li>
+
+<!-- Platform Connections -->
+                <li class="slide has-sub {{ request()->is('app/device*') || request()->is('app/telegram*') || request()->is('app/facebook*') || request()->is('app/instagram*') || request()->is('app/telegrams*') || request()->is('app/waba*') || request()->is('app/messenger*') || request()->is('app/livechats*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/device*') || request()->is('app/telegram*') || request()->is('app/facebook*') || request()->is('app/instagram*') || request()->is('app/telegrams*') || request()->is('app/waba*') || request()->is('app/messenger*') || request()->is('app/livechats*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-devices'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.manage_platform')}}</span>
+                        <i class="fe fe-chevron-right side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide side-menu__label1">
+                            <a href="javascript:void(0)">{{__('sidebar.manage_platform')}}</a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('device') }}" class="side-menu__item {{ request()->is('app/device*') ? 'active' : '' }}">
+                                <i class='bx bxl-whatsapp me-2 text-success'></i>{{__('sidebar.whatsapp_personal')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('waba') }}" class="side-menu__item {{ request()->is('app/waba*') ? 'active' : '' }}">
+                                <i class='bx bxl-whatsapp me-2 text-success'></i>{{__('sidebar.whatsapp_business')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('telegrams') }}" class="side-menu__item {{ request()->is('app/telegram*') ? 'active' : '' }}">
+                                <i class='bx bxl-telegram me-2 text-info'></i>{{__('sidebar.telegram')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('messenger') }}" class="side-menu__item {{ request()->is('app/messenger*') ? 'active' : '' }}">
+                                <i class='bx bxl-messenger me-2 text-primary'></i>{{__('sidebar.facebook_messenger')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('instagram') }}" class="side-menu__item {{ request()->is('app/instagram*') ? 'active' : '' }}">
+                                <i class='bx bxl-instagram me-2 text-danger'></i>{{__('sidebar.instagram_dm')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('livechats') }}" class="side-menu__item {{ request()->is('app/livechats*') ? 'active' : '' }}">
+                                <i class='bx bx-message-dots me-2'></i>{{__('sidebar.live_chat_widget')}}
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- MASTER DATA SECTION -->
+                <li class="slide__category"><span class="category-name">MASTER DATA</span></li>
+
+<!-- 1. Contact Database -->
+                <li class="slide has-sub {{ request()->is('app/stores*') || request()->is('app/master/categories*') || request()->is('app/master/labels*') || request()->is('app/kanban*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/stores*') || request()->is('app/master/categories*') || request()->is('app/master/labels*') || request()->is('app/kanban*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-data'></i>
+                        </span>
+                        <span class="side-menu__label">Contact Database</span>
+                        <i class="fe fe-chevron-right side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide side-menu__label1">
+                            <a href="javascript:void(0)">Contact Database</a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('stores') }}" class="side-menu__item {{ request()->is('app/stores*') ? 'active' : '' }}">
+                                <i class='bx bx-user me-2'></i>{{__('sidebar.customer_database')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('categories') }}" class="side-menu__item {{ request()->is('app/master/categories*') ? 'active' : '' }}">
+                                <i class='bx bx-category me-2'></i>{{__('sidebar.category')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('labels') }}" class="side-menu__item {{ request()->is('app/master/labels*') ? 'active' : '' }}">
+                                <i class='bx bx-label me-2'></i>{{__('sidebar.chat_label')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('store.kanban') }}" class="side-menu__item {{ request()->is('app/kanban*') ? 'active' : '' }}">
+                                <i class='bx bx-id-card me-2'></i>Leads
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Media Manager -->
+                <li class="slide {{ request()->is('app/master/media-manager*') ? 'active' : '' }}">
+                    <a href="{{ route('folders') }}" class="side-menu__item {{ request()->is('app/master/media-manager*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-folder'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.media_manager')}}</span>
+                    </a>
+                </li>
+
+{{-- HIDDEN: Region Data (sidebar disabled) --}}
+{{--
+                <!-- 3. Wilayah -->
+                <li class="slide has-sub {{ request()->is('app/master/directory/provinces*') || request()->is('app/master/directory/cities*') || request()->is('app/master/directory/districts*') || request()->is('app/master/directory/subdistricts*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/master/directory/provinces*') || request()->is('app/master/directory/cities*') || request()->is('app/master/directory/districts*') || request()->is('app/master/directory/subdistricts*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-map-alt'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.region_data')}}</span>
+                        <i class="fe fe-chevron-right side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide side-menu__label1">
+                            <a href="javascript:void(0)">{{__('sidebar.region_data')}}</a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('directory.provinces') }}" class="side-menu__item {{ request()->is('app/master/directory/provinces*') ? 'active' : '' }}">
+                                <i class='bx bx-map me-2'></i>{{__('sidebar.state')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('directory.cities') }}" class="side-menu__item {{ request()->is('app/master/directory/cities*') ? 'active' : '' }}">
+                                <i class='bx bx-buildings me-2'></i>{{__('sidebar.city')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('directory.districts') }}" class="side-menu__item {{ request()->is('app/master/directory/districts*') ? 'active' : '' }}">
+                                <i class='bx bx-map-pin me-2'></i>{{__('sidebar.district')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('directory.subdistricts') }}" class="side-menu__item {{ request()->is('app/master/directory/subdistricts*') ? 'active' : '' }}">
+                                <i class='bx bx-current-location me-2'></i>{{__('sidebar.subdistrict')}}
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+--}}
+
+<!-- LAPORAN SECTION -->
+                <li class="slide__category"><span class="category-name">{{__('sidebar.reports_analytics')}}</span></li>
+<!-- Logs & Reports -->
+                <li class="slide has-sub {{ request()->is('app/logs*') || request()->is('app/reports*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/logs*') || request()->is('app/reports*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-bar-chart-alt-2'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.reports_logs')}}</span>
+                        <i class="fe fe-chevron-right side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide side-menu__label1">
+                            <a href="javascript:void(0)">{{__('sidebar.reports_logs')}}</a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('reports.conversation') }}" class="side-menu__item {{ request()->is('app/reports/conversation*') ? 'active' : '' }}">
+                                <i class='bx bx-pie-chart-alt me-2'></i>Conversation Rate
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('reports.leads') }}" class="side-menu__item {{ request()->is('app/reports/leads') ? 'active' : '' }}">
+                                <i class='bx bx-bar-chart me-2'></i>Lead Conversation
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('reports.statistic') }}" class="side-menu__item {{ request()->is('app/logs/statistic') ? 'active' : '' }}">
+                                <i class='bx bx-trending-up me-2'></i>{{__('sidebar.sending_statistics')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('logs.whatsapp') }}" class="side-menu__item {{ request()->is('app/logs/whatsapp') ? 'active' : '' }}">
+                                <i class='bx bxl-whatsapp me-2'></i>{{__('sidebar.whatsapp_log')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('logs.email') }}" class="side-menu__item {{ request()->is('app/logs/email') ? 'active' : '' }}">
+                                <i class='bx bx-mail-send me-2'></i>{{__('sidebar.email_log')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('logs.scrapping') }}" class="side-menu__item {{ request()->is('app/logs/scraping') ? 'active' : '' }}">
+                                <i class='bx bx-search me-2'></i>{{__('sidebar.scraping_log')}}
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                @if (auth()->user()->role == 'user')
+                <!-- PENGATURAN AKUN SECTION -->
+                <li class="slide__category"><span class="category-name">{{__('sidebar.account_settings')}}</span></li>
+
+                <!-- Role Permission -->
+                <li class="slide {{ request()->is('app/master/roles*') ? 'active' : '' }}">
+                    <a href="{{ route('roles.index') }}" class="side-menu__item {{ request()->is('app/master/roles*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-lock'></i>
+                        </span>
+                        <span class="side-menu__label">Role Permission</span>
+                    </a>
+                </li>
+
+                <li class="slide {{ request()->is('app/settings*') ? 'active' : '' }}">
+                    <a href="{{ route('setting') }}" class="side-menu__item {{ request()->is('app/settings*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-cog'></i>
+                        </span>
+                        <span class="side-menu__label">{{__('sidebar.app_settings')}}</span>
+                    </a>
+                </li>
+
+                <li class="slide has-sub {{ request()->is('app/billing*') || request()->is('app/mua*') || request()->is('app/storage*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/billing*') || request()->is('app/mua*') || request()->is('app/storage*') ? 'active' : '' }}">
+                        <span class="side-menu__icon">
+                            <i class='bx bx-wallet'></i>
+                        </span>
+                        <span class="side-menu__label">Billing Management</span>
+                        <i class="fe fe-chevron-right side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide side-menu__label1">
+                            <a href="javascript:void(0)">Billing Management</a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('billing.index') }}" class="side-menu__item {{ request()->is('app/billing*') ? 'active' : '' }}">
+                                <i class='bx bx-credit-card me-2'></i>{{__('sidebar.topup_ai_credit')}}
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('mua.index') }}" class="side-menu__item {{ request()->is('app/mua*') ? 'active' : '' }}">
+                                <i class='bx bx-user-check me-2'></i>MUA
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a href="{{ route('storage.index') }}" class="side-menu__item {{ request()->is('app/storage*') ? 'active' : '' }}">
+                                <i class='bx bx-hdd me-2'></i>Informasi Storage
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                @endif
+            </ul>
+            <div class="slide-right" id="slide-right">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24">
+                    <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path>
+                </svg>
+            </div>
+        </nav>
+        <!-- End::nav -->
+
+    </div>
+    <!-- End::main-sidebar -->
+
+</aside>
+<!-- End::app-sidebar -->

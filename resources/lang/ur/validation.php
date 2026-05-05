@@ -1,0 +1,43 @@
+<?php
+
+return [
+    'password_must_same'            => 'پاس ورڈ اور پاس ورڈ کی تصدیق میل کھانی چاہیے۔',
+    'numeric'                       => ':attribute کا میدان ایک نمبر ہونا چاہیے۔',
+    'password' => [
+        'letters'   => ':attribute کا میدان کم از کم ایک حرف پر مشتمل ہونا چاہیے۔',
+        'mixed'     => ':attribute کا میدان کم از کم ایک بڑی اور ایک چھوٹی حرف پر مشتمل ہونا چاہیے۔',
+        'numbers'   => ':attribute کا میدان کم از کم ایک نمبر پر مشتمل ہونا چاہیے۔',
+        'symbols'   => ':attribute کا میدان کم از کم ایک علامت پر مشتمل ہونا چاہیے۔',
+        'uncompromised' => 'دیا گیا :attribute ایک ڈیٹا کی خلاف ورزی میں شامل ہوا ہے۔ براہ کرم مختلف :attribute منتخب کریں۔',
+    ],
+    'present'                       => ':attribute کا میدان موجود ہونا چاہیے۔',
+    'prohibited'                    => ':attribute کا میدان ممنوع ہے۔',
+    'prohibited_if'                 => ':attribute کا میدان اس وقت ممنوع ہے جب :other :value ہو۔',
+    'prohibited_unless'             => ':attribute کا میدان اس وقت ممنوع ہے جب تک کہ :other :values میں نہ ہو۔',
+    'prohibits'                     => ':attribute کا میدان :other کو موجود ہونے سے روکتا ہے۔',
+    'regex'                         => ':attribute کا فارمیٹ غلط ہے۔',
+    'required'                      => ':attribute کا میدان ضروری ہے۔',
+    'required_array_keys'           => ':attribute کا میدان میں :values کے لیے اندراجات ہونے چاہئیں۔',
+    'required_if'                   => ':attribute کا میدان اس وقت ضروری ہے جب :other :value ہو۔',
+    'required_if_accepted'          => ':attribute کا میدان اس وقت ضروری ہے جب :other کو قبول کیا جائے۔',
+    'required_unless'               => ':attribute کا میدان اس وقت ضروری ہے جب تک کہ :other :values میں نہ ہو۔',
+    'required_with'                 => ':attribute کا میدان اس وقت ضروری ہے جب :values موجود ہوں۔',
+    'required_with_all'             => ':attribute کا میدان اس وقت ضروری ہے جب تمام :values موجود ہوں۔',
+    'required_without'              => ':attribute کا میدان اس وقت ضروری ہے جب :values موجود نہ ہوں۔',
+    'required_without_all'          => ':attribute کا میدان اس وقت ضروری ہے جب :values میں سے کوئی بھی موجود نہ ہو۔',
+    'same'                          => ':attribute اور :other کو میل کھانا چاہیے۔',
+    'size' => [
+        'array'   => ':attribute کا میدان میں :size آئٹمز ہونے چاہئیں۔',
+        'file'    => ':attribute فائل کا سائز :size کلو بائٹس ہونا چاہیے۔',
+        'numeric' => ':attribute کا میدان :size ہونا چاہیے۔',
+        'string'  => ':attribute کا میدان :size حروف پر مشتمل ہونا چاہیے۔',
+    ],
+    'starts_with'                  => ':attribute کا میدان درج ذیل میں سے کسی ایک سے شروع ہونا چاہیے: :values.',
+    'string'                       => ':attribute کا میدان ایک سٹرنگ ہونا چاہیے۔',
+    'timezone'                     => ':attribute کا میدان ایک درست ٹائم زون ہونا چاہیے۔',
+    'device_limit'          => 'معذرت، آپ نے جو ڈیوائسز بنا سکتے ہیں ان کی حد تک پہنچ چکے ہیں، براہ کرم سروس فراہم کرنے والے سے رابطہ کریں۔',
+    'chatbot_limit'         => 'معذرت، آپ نے جو چیٹ بوٹس بنا سکتے ہیں ان کی حد تک پہنچ چکے ہیں، براہ کرم سروس فراہم کرنے والے سے رابطہ کریں۔',
+    'finetunnel_read_doc'   => 'ایک خرابی پیش آئی، دستاویز نہیں پڑھی جا سکی۔',
+    'template_limit'        => 'معذرت، آپ نے جو ٹیمپلیٹس بنا سکتے ہیں ان کی حد تک پہنچ چکے ہیں، براہ کرم سروس فراہم کرنے والے سے رابطہ کریں۔',
+
+];

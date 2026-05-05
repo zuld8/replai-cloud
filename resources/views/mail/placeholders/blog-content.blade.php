@@ -1,0 +1,1 @@
+<x-frontent.blog-content-component></x-frontent.blog-content-component>
