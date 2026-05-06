@@ -182,8 +182,8 @@
                 </li>
 
 <!-- OTOMASI SECTION -->
-                <li class="slide has-sub {{ request()->is('app/auto-reply/chatbot*') || request()->is('app/auto-reply/finetunnel*') ? 'active open' : '' }}">
-                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/auto-reply/chatbot*') || request()->is('app/auto-reply/finetunnel*') ? 'active' : '' }}">
+                <li class="slide has-sub {{ request()->is('app/auto-reply/chatbot*') || request()->is('app/auto-reply/finetunnel*') || request()->is('app/auto-reply/flow*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/auto-reply/chatbot*') || request()->is('app/auto-reply/finetunnel*') || request()->is('app/auto-reply/flow*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-bot'></i>
                         </span>
@@ -202,6 +202,12 @@
                         <li class="slide">
                             <a href="{{ route('finetunnel') }}" class="side-menu__item {{ request()->is('app/auto-reply/finetunnel*') ? 'active' : '' }}">
                                 <i class='bx bx-brain me-2'></i>{{__('sidebar.smart_ai_chatbot')}}
+                            </a>
+                        </li>
+                        <li class="slide {{ request()->is('app/auto-reply/flow*') ? 'active' : '' }}">
+                            <a href="{{ route('flow') }}" class="side-menu__item {{ request()->is('app/auto-reply/flow*') ? 'active' : '' }}">
+                                <i class="bx bx-transfer-alt side-menu__icon"></i>
+                                <span class="side-menu__label">Flow</span>
                             </a>
                         </li>
                     </ul>

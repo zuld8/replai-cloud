@@ -17,6 +17,7 @@ use App\Http\Controllers\Blash\BlashWhatsappGroupController;
 use App\Http\Controllers\Blash\BroadcastFollowUpWhatsappController;
 use App\Http\Controllers\ChatBot\ChatBotController;
 use App\Http\Controllers\ChatBot\FineTunnelController;
+use App\Http\Controllers\Flow\FlowController;
 use App\Http\Controllers\ComponentController as ControllersComponentController;
 use App\Http\Controllers\Crm\CrmController;
 use App\Http\Controllers\Crm\QuickReplyController;
@@ -251,6 +252,17 @@ Route::middleware('package_active')->group(function () {
             Route::delete('delete/{bot}', [ChatBotController::class, 'delete']);
             Route::post('delete-multiple', [ChatBotController::class, 'deleteMultiple']);
         });
+        // Flow
+        Route::prefix('flow')->group(function () {
+            Route::get('/', [FlowController::class, 'index'])->name('flow');
+            Route::get('create', [FlowController::class, 'create'])->name('flow.create');
+            Route::post('store', [FlowController::class, 'store'])->name('flow.store');
+            Route::get('update/{flow}', [FlowController::class, 'update'])->name('flow.update');
+            Route::post('edit/{flow}', [FlowController::class, 'edit'])->name('flow.edit');
+            Route::delete('delete/{flow}', [FlowController::class, 'delete'])->name('flow.delete');
+            Route::post('toggle/{flow}', [FlowController::class, 'toggleStatus'])->name('flow.toggle');
+        });
+
 
         // AI Agent (Fine Tunnel)
         Route::prefix('finetunnel')->group(function () {
