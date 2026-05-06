@@ -547,6 +547,41 @@ class WabaCallbackController extends Controller
                 $mimeType = $rawMessage['sticker']['mime_type'] ?? 'image/webp';
                 $message = '';
                 break;
+
+            case 'interactive':
+                // Handle customer button/list reply & WhatsApp Flow responses
+                $interactiveType = $rawMessage['interactive']['type'] ?? '';
+                if ($interactiveType === 'button_reply') {
+                    $message = $rawMessage['interactive']['button_reply']['title'] ?? '[Tombol]';
+                } elseif ($interactiveType === 'list_reply') {
+                    $message = $rawMessage['interactive']['list_reply']['title'] ?? '[Pilihan]';
+                } elseif ($interactiveType === 'nfm_reply') {
+                    // WhatsApp Flow form response
+                    $nfmBody = $rawMessage['interactive']['nfm_reply']['response_json'] ?? '{}';
+                    $message = '[Flow Response] ' . $nfmBody;
+                } else {
+                    $message = '[Interactive: ' . $interactiveType . ']';
+                }
+                break;
+
+            case 'reaction':
+                // Emoji reaction to a message
+                $message = $rawMessage['reaction']['emoji'] ?? '[Reaksi]';
+                break;
+
+            case 'contacts':
+                // Customer shared a contact
+                $contactName = $rawMessage['contacts'][0]['name']['formatted_name'] ?? 'Kontak';
+                $message = '[Kontak: ' . $contactName . ']';
+                break;
+
+            case 'location':
+                // Customer shared location
+                $lat  = $rawMessage['location']['latitude'] ?? '';
+                $long = $rawMessage['location']['longitude'] ?? '';
+                $name = $rawMessage['location']['name'] ?? 'Lokasi';
+                $message = '[Lokasi: ' . $name . ' (' . $lat . ',' . $long . ')]';
+                break;
         }
 
         return [
@@ -2061,12 +2096,12 @@ class WabaCallbackController extends Controller
         if ($setting->merchant) {
             $totalSize  = 0;
             $path       = "uploads/folders/{$setting->id}";
+            $fullPath   = public_path($path);
 
-            if (Storage::disk('local')->exists($path)) {
-                $files = Storage::disk('local')->allFiles($path);
-                foreach ($files as $file) {
-                    $totalSize += Storage::disk('local')->size($file);
-                }
+            // Use 'du' shell command for fast disk usage — avoids slow PHP file scan loop
+            if (is_dir($fullPath)) {
+                $duOutput  = shell_exec('du -sb ' . escapeshellarg($fullPath) . ' 2>/dev/null');
+                $totalSize = $duOutput ? (int) explode("\t", trim($duOutput))[0] : 0;
             }
 
             // Convert to MB
