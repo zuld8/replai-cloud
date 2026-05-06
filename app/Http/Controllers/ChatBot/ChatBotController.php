@@ -106,7 +106,7 @@ class ChatBotController extends Controller
         $instagrams     = $this->instagramService->getData($request)->get(['id', 'name']);
         $messengers     = $this->messengerService->getData($request)->get(['id', 'page_name']);
         $wabaDevices    = \App\Models\WhatsappKeyAccount::where('status', 'active')->get(['id', 'phone', 'meta_data']);
-        return view('chatbot.create', ['page' => __('page.chatbot.add'), 'breadcumb' => true], compact('templates', 'devices', 'livechats', 'telegrams', 'instagrams', 'messengers'));
+        return view('chatbot.create', ['page' => __('page.chatbot.add'), 'breadcumb' => true], compact('templates', 'devices', 'livechats', 'telegrams', 'instagrams', 'messengers', 'wabaDevices'));
     }
 
     /*
@@ -124,7 +124,7 @@ class ChatBotController extends Controller
         $instagrams     = $this->instagramService->getData($request)->get(['id', 'name']);
         $messengers     = $this->messengerService->getData($request)->get(['id', 'page_name']);
         $wabaDevices    = \App\Models\WhatsappKeyAccount::where('status', 'active')->get(['id', 'phone', 'meta_data']);
-        return view('chatbot.update', ['page' => __("page.chatbot.edit"), 'breadcumb' => true], compact('bot', 'templates', 'devices', 'livechats', 'telegrams', 'instagrams', 'messengers'));
+        return view('chatbot.update', ['page' => __("page.chatbot.edit"), 'breadcumb' => true], compact('bot', 'templates', 'devices', 'livechats', 'telegrams', 'instagrams', 'messengers', 'wabaDevices'));
     }
 
     /*
