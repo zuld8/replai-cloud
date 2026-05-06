@@ -1814,16 +1814,8 @@ class WabaCallbackController extends Controller
 
     public function autoReplyMessage(WhatsappKeyAccount $device, $message, $name = '', $from, $type = 'personal')
     {
-        // Check WABA chatbot: first try select_waba (general chatbot), then legacy select_device+meta_account_id (WABA-specific chatbot)
-        $chatBot = ChatBot::whereRaw("find_in_set('" . $device->id . "', select_waba)")
-            ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])
-            ->with('template')
-            ->first();
-
-        if (!$chatBot) {
-            $chatBot = ChatBot::whereRaw("find_in_set('" .  $device->id . "',select_device)")->where('meta_account_id', '!=', null)->with('template')
-                ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])->first();
-        }
+        $chatBot = ChatBot::whereRaw("find_in_set('" .  $device->id . "',select_device)")->where('meta_account_id', '!=', null)->with('template')
+            ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])->first();
 
         if (!$chatBot) {
             return array(

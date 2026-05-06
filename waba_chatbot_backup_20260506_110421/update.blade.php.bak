@@ -135,33 +135,7 @@
                         </small>
                     </div>
 
-                      
-                    <!-- WhatsApp Business API (WABA) -->
-                    <div class="col-lg-6 mb-4">
-                        <label class="form-label fw-semibold">
-                            <i class="bx bxl-whatsapp me-1" style="color:#25d366;"></i>
-                            Pilih WhatsApp Business API (WABA)
-                            <span class="badge bg-label-secondary ms-1">{{__('chatbot.optional')}}</span>
-                        </label>
-                        <select class="form-control wabas" name="wabas[]" multiple="multiple">
-                            @foreach ($wabaDevices ?? [] as $wdev)
-                            @php
-                                $wMeta = json_decode($wdev->meta_data, true);
-                                $wName = $wMeta['whatsapp']['verified_name'] ?? $wdev->phone;
-                            @endphp
-                            <option value="{{ $wdev->id }}"
-                                {{ $bot->select_waba && in_array($wdev->id, explode(',', $bot->select_waba)) ? 'selected' : '' }}>
-                                {{ $wName }} — {{ $wdev->phone }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <small class="text-muted">
-                            <i class="bx bx-info-circle"></i>
-                            Pilih akun WABA untuk auto-reply pesan WhatsApp Business API
-                        </small>
-                    </div>
-
-<div class="col-lg-6 mb-4">
+                      <div class="col-lg-6 mb-4">
                         <label class="form-label fw-semibold">
                             <i class="bx bxl-telegram text-primary me-1"></i>
                             {{__('chatbot.choose_messenger')}}
@@ -392,11 +366,6 @@
 
          $('.messengers').select2({
             placeholder: '{{__('chatbot.choose_messenger_select')}}',
-            allowClear: true
-        });
-
-        $('.wabas').select2({
-            placeholder: 'Pilih akun WABA...',
             allowClear: true
         });
 

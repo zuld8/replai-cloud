@@ -17,15 +17,15 @@
 <div class="row">
     <div class="col-xl-12">
         <x-validation-component></x-validation-component>
-        <form action="<?= route('chatbot.edit', $bot->id); ?>" method="POST" class="card custom-card">
+        <form action="<?= route('chatbot.store'); ?>" method="POST" class="card custom-card">
             @csrf
             <div class="card-header">
                 <div class="card-title">
-                    <i class="bx bx-edit me-2"></i>
-                    {{__('page.chatbot.edit')}}
+                    <i class="bx bx-bot me-2"></i>
+                    {{__("page.chatbot.add")}}
                 </div>
             </div>
-            
+
             <div class="card-body">
                 <div class="row">
                     <!-- Keyword -->
@@ -39,12 +39,12 @@
                             <span class="input-group-text">
                                 <i class="bx bx-hash"></i>
                             </span>
-                            <input type="text" 
-                                   class="form-control" 
-                                   name="keyword" 
-                                   required 
-                                   value="<?= old('keyword', $bot->keyword); ?>"
-                                   placeholder="{{__('chatbot.image_caption_example')}}">
+                            <input type="text"
+                                class="form-control"
+                                name="keyword"
+                                required
+                                value="<?= old('keyword'); ?>"
+                                placeholder="{{__('chatbot.image_caption_example')}}">
                         </div>
                         <small class="text-muted">
                             <i class="bx bx-info-circle"></i>
@@ -61,15 +61,12 @@
                         </label>
                         <select class="form-control devices" name="device[]" multiple="multiple" >
                             @foreach ($devices as $device)
-                            <option value="<?= $device->id; ?>"
-                                {{ in_array($device->id, explode(',',$bot->select_device)) ? 'selected' : '' }}>
-                                <?= $device->phone; ?>
-                            </option>
+                            <option value="<?= $device->id; ?>"><?= $device->phone; ?></option>
                             @endforeach
                         </select>
                         <small class="text-muted">
                             <i class="bx bx-info-circle"></i>
-                                {{__('chatbot.choose_whatsapp_device')}}
+                            {{__('chatbot.choose_whatsapp_device')}}
                         </small>
                     </div>
 
@@ -81,13 +78,10 @@
                             <span class="badge bg-label-secondary ms-1">{{__('chatbot.optional')}}</span>
                         </label>
                         <select class="form-control livechats" name="livechats[]" multiple="multiple">
-                            @foreach ($livechats as $livechat)
-                            <option value="<?= $livechat->id; ?>"
-                                {{ in_array($livechat->id, explode(',',$bot->select_livechat)) ? 'selected' : '' }}>
-                                <?= $livechat->name; ?>
-                            </option>
-                            @endforeach
-                        </select>
+                                @foreach ($livechats as $livechat)
+                                <option value="<?= $livechat->id; ?>"><?= $livechat->name; ?></option>
+                                @endforeach
+                            </select>
                         <small class="text-muted">
                             <i class="bx bx-info-circle"></i>
                             {{__('chatbot.integrate_livechat')}}
@@ -101,21 +95,18 @@
                             {{__('chatbot.choose_telegram')}}
                             <span class="badge bg-label-secondary ms-1">{{__('chatbot.optional')}}</span>
                         </label>
-                        <select class="form-control telegrams" name="telegrams[]" multiple="multiple">
-                            @foreach ($telegrams as $telegram)
-                            <option value="<?= $telegram->id; ?>"
-                                {{ in_array($telegram->id, explode(',',$bot->select_telegram)) ? 'selected' : '' }}>
-                                <?= $telegram->name; ?>
-                            </option>
-                            @endforeach
-                        </select>
+                         <select class="form-control telegrams" name="telegrams[]" multiple="multiple">
+                                @foreach ($telegrams as $telegram)
+                                <option value="<?= $telegram->id; ?>"><?= $telegram->name; ?></option>
+                                @endforeach
+                            </select>
                         <small class="text-muted">
                             <i class="bx bx-info-circle"></i>
                             {{__('chatbot.choose_bot_telegram')}}
                         </small>
                     </div>
 
-                     <div class="col-lg-6 mb-4">
+                      <div class="col-lg-6 mb-4">
                         <label class="form-label fw-semibold">
                             <i class="bx bxl-telegram text-primary me-1"></i>
                             {{__('chatbot.choose_instagram')}}
@@ -123,10 +114,7 @@
                         </label>
                          <select class="form-control instagrams" name="instagrams[]" multiple="multiple">
                                 @foreach ($instagrams as $instagram)
-                              <option value="<?= $instagram->id; ?>"
-                                {{ in_array($instagram->id, explode(',',$bot->select_instagram)) ? 'selected' : '' }}>
-                                <?= $instagram->name; ?>
-                            </option>
+                                <option value="<?= $instagram->id; ?>"><?= $instagram->name; ?></option>
                                 @endforeach
                             </select>
                         <small class="text-muted">
@@ -135,33 +123,7 @@
                         </small>
                     </div>
 
-                      
-                    <!-- WhatsApp Business API (WABA) -->
-                    <div class="col-lg-6 mb-4">
-                        <label class="form-label fw-semibold">
-                            <i class="bx bxl-whatsapp me-1" style="color:#25d366;"></i>
-                            Pilih WhatsApp Business API (WABA)
-                            <span class="badge bg-label-secondary ms-1">{{__('chatbot.optional')}}</span>
-                        </label>
-                        <select class="form-control wabas" name="wabas[]" multiple="multiple">
-                            @foreach ($wabaDevices ?? [] as $wdev)
-                            @php
-                                $wMeta = json_decode($wdev->meta_data, true);
-                                $wName = $wMeta['whatsapp']['verified_name'] ?? $wdev->phone;
-                            @endphp
-                            <option value="{{ $wdev->id }}"
-                                {{ $bot->select_waba && in_array($wdev->id, explode(',', $bot->select_waba)) ? 'selected' : '' }}>
-                                {{ $wName }} — {{ $wdev->phone }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <small class="text-muted">
-                            <i class="bx bx-info-circle"></i>
-                            Pilih akun WABA untuk auto-reply pesan WhatsApp Business API
-                        </small>
-                    </div>
-
-<div class="col-lg-6 mb-4">
+                      <div class="col-lg-6 mb-4">
                         <label class="form-label fw-semibold">
                             <i class="bx bxl-telegram text-primary me-1"></i>
                             {{__('chatbot.choose_messenger')}}
@@ -169,10 +131,7 @@
                         </label>
                          <select class="form-control messengers" name="messengers[]" multiple="multiple">
                                 @foreach ($messengers as $messenger)
-                                <option value="<?= $messenger->id; ?>"
-                                {{ in_array($messenger->id, explode(',',$bot->select_messanger)) ? 'selected' : '' }}>
-                                <?= $messenger->page_name; ?>
-                            </option>
+                                <option value="<?= $messenger->id; ?>"><?= $messenger->page_name; ?></option>
                                 @endforeach
                             </select>
                         <small class="text-muted">
@@ -185,20 +144,25 @@
                     <div class="col-lg-6 mb-4">
                         <label class="form-label fw-semibold">
                             <i class="bx bx-message-square-detail text-warning me-1"></i>
-                            {{__('chatbot.method_reply')}}
+                            {{__("chatbot.method_reply")}}
                             <span class="text-danger">*</span>
                         </label>
-                        <select class="form-control methodreply" name="method" required>
-                            <option value="template" @if($bot->reply_method == 'template') selected @endif>
-                                {{__('general.template')}}
-                            </option>
-                            <option value="text" @if($bot->reply_method == 'text') selected @endif>
-                                {{__('general.text')}}
-                            </option>
-                            <option value="image" @if($bot->reply_method == 'image') selected @endif>
-                                {{__('chatbot.image')}}
-                            </option>
-                        </select>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bx bx-shuffle"></i>
+                            </span>
+                            <select class="form-control methodreply" name="method" required>
+                                <option value="template">
+                                    <i class="bx bx-file"></i> {{__('general.template')}}
+                                </option>
+                                <option value="text">
+                                    <i class="bx bx-text"></i> {{__('general.text')}}
+                                </option>
+                                <option value="image">
+                                    <i class="bx bx-image"></i> {{__('chatbot.image')}}
+                                </option>
+                            </select>
+                        </div>
                         <small class="text-muted">
                             <i class="bx bx-info-circle"></i>
                             {{__('chatbot.response_format')}}
@@ -206,20 +170,23 @@
                     </div>
 
                     <!-- Template Form -->
-                    <div class="col-lg-12 mb-4 templateform @if($bot->reply_method != 'template') d-none @endif">
+                    <div class="col-lg-12 mb-4 templateform">
                         <label class="form-label fw-semibold">
                             <i class="bx bx-file-blank text-info me-1"></i>
                             {{__('sidebar.message_template')}}
                             <span class="text-danger">*</span>
                         </label>
-                        <select class="form-control templates" name="template">
-                            <option value="">{{__('blash.choose_template')}}</option>
-                            @foreach ($templates as $template)
-                            <option value="<?= $template->id; ?>" @if($template->id == $bot->template_id) selected @endif>
-                                <?= $template->name; ?>
-                            </option>
-                            @endforeach
-                        </select>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bx bx-folder"></i>
+                            </span>
+                            <select class="form-control templates" name="template">
+                                <option value="">{{__('blash.choose_template')}}</option>
+                                @foreach ($templates as $template)
+                                <option value="<?= $template->id; ?>"><?= $template->name; ?></option>
+                                @endforeach
+                            </select>
+                        </div>
                         <small class="text-muted">
                             <i class="bx bx-info-circle"></i>
                             {{__('chatbot.choose_message_template')}}
@@ -227,7 +194,7 @@
                     </div>
 
                     <!-- Message Form -->
-                    <div class="col-12 mb-4 messageform @if($bot->reply_method != 'text') d-none @endif">
+                    <div class="col-12 mb-4 messageform d-none">
                         <label class="form-label fw-semibold">
                             <i class="bx bx-message-alt-detail text-success me-1"></i>
                             {{__('master.device.whatsapp_messanger')}}
@@ -237,19 +204,19 @@
                             <span class="input-group-text align-items-start pt-2">
                                 <i class="bx bx-edit"></i>
                             </span>
-                            <textarea class="form-control" 
-                                      style="min-height: 200px;" 
-                                      name="message"
-                                      placeholder="{{__('chatbot.write_your_message_here')}}">{{old('message', $bot->message)}}</textarea>
+                            <textarea class="form-control"
+                                style="min-height: 200px;"
+                                name="message"
+                                placeholder="{{__('chatbot.write_your_message_here')}}">{{old('message')}}</textarea>
                         </div>
                         <small class="text-muted">
                             <i class="bx bx-info-circle"></i>
-                            {{__('chatbot.write_your_message_here')}}
+                            {{__('chatbot.write_your_reply_message')}}
                         </small>
                     </div>
 
                     <!-- Image List -->
-                    <div class="col-12 listImage @if($bot->reply_method != 'image') d-none @endif">
+                    <div class="col-12 listImage d-none">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <label class="form-label fw-semibold mb-0">
                                 <i class="bx bx-images text-danger me-1"></i>
@@ -260,7 +227,7 @@
                                 <span class="d-none d-md-inline ms-1">{{__('chatbot.add_image')}}</span>
                             </button>
                         </div>
-                        
+
                         <div class="table-responsive">
                             <table class="table table-hover table-bordered">
                                 <thead class="table-light">
@@ -280,69 +247,34 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if($bot->details->count() > 0)
-                                        @foreach ($bot->details as $detail)
-                                        <tr>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">
-                                                        <i class="bx bx-link-external"></i>
-                                                    </span>
-                                                    <input class="form-control" 
-                                                           name="url[]" 
-                                                           value="{{$detail->url}}"
-                                                           placeholder="https://example.com/image.jpg"
-                                                           >
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">
-                                                        <i class="bx bx-message-square"></i>
-                                                    </span>
-                                                    <input class="form-control" 
-                                                           name="name[]"
-                                                           value="{{$detail->name}}"
-                                                           placeholder="Caption untuk gambar">
-                                                </div>
-                                            </td>
-                                            <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-danger deleteItem" type="button">
-                                                    <i class="bx bx-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    @else
-                                        <tr id="imageItem">
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">
-                                                        <i class="bx bx-link-external"></i>
-                                                    </span>
-                                                    <input class="form-control" 
-                                                           name="url[]" 
-                                                           placeholder="https://example.com/image.jpg"
-                                                           >
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">
-                                                        <i class="bx bx-message-square"></i>
-                                                    </span>
-                                                    <input class="form-control" 
-                                                           name="name[]"
-                                                           placeholder="{{__('chatbot.image_caption')}}">
-                                                </div>
-                                            </td>
-                                            <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-danger deleteItem" type="button">
-                                                    <i class="bx bx-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @endif
+                                    <tr id="imageItem">
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">
+                                                    <i class="bx bx-link-external"></i>
+                                                </span>
+                                                <input class="form-control"
+                                                    name="url[]"
+                                                    placeholder="https://example.com/image.jpg"
+                                                    >
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">
+                                                    <i class="bx bx-message-square"></i>
+                                                </span>
+                                                <input class="form-control"
+                                                    name="name[]"
+                                                    placeholder="{{__('chatbot.image_caption')}}">
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-outline-danger deleteItem" type="button">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -354,7 +286,7 @@
 
                 </div>
             </div>
-            
+
             <div class="card-footer bg-light d-flex justify-content-between align-items-center">
                 <small class="text-muted">
                     <i class="bx bx-info-circle"></i>
@@ -362,7 +294,7 @@
                 </small>
                 <button type="submit" class="btn btn-primary">
                     <i class="bx bx-save me-1"></i>
-                    {{__('general.save_change')}}
+                    {{__('general.add_data')}}
                 </button>
             </div>
         </form>
@@ -376,27 +308,22 @@
     $(document).ready(function() {
         // Initialize Select2
         $('.devices').select2({
-            placeholder: '{{__('chatbot.choose_device')}}',
+            placeholder: '{{__('chatbot.choose_device_select')}}',
             allowClear: true
         });
-        
-        $('.livechats').select2({
-            placeholder: '{{__('chatbot.choose_livechat')}}',
-            allowClear: true
-        });
-        
+
         $('.telegrams').select2({
-            placeholder: '{{__('chatbot.choose_telegram')}}',
+            placeholder: '{{__('chatbot.choose_telegram_select')}}',
+            allowClear: true
+        });
+
+        $('.livechats').select2({
+            placeholder: '{{__('chatbot.choose_livechat_select')}}',
             allowClear: true
         });
 
          $('.messengers').select2({
             placeholder: '{{__('chatbot.choose_messenger_select')}}',
-            allowClear: true
-        });
-
-        $('.wabas').select2({
-            placeholder: 'Pilih akun WABA...',
             allowClear: true
         });
 
@@ -454,7 +381,7 @@
                             </td>
                         </tr>`;
 
-        $("tbody").append(newItem);
+        $("#imageItem").after(newItem);
     });
 
     // Delete Image Row

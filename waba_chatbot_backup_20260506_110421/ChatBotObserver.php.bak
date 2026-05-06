@@ -39,7 +39,6 @@ class ChatBotObserver
             'select_instagram'   => !empty($request->instagrams) ? implode(",", $request->instagrams) : null,
             'select_messanger'   => !empty($request->messengers) ? implode(",", $request->messengers) : null,
             'select_telegram'   => !empty($request->telegrams) ? implode(",", $request->telegrams) : null,
-            'select_waba'       => !empty($request->wabas) ? implode(",", $request->wabas) : null,
             'reply_method'      => $request->method,
             'template_id'       => $request->method == 'template' ? $request->template : null,
             'message'           => $request->method == 'text' ? $request->message : null
@@ -98,7 +97,6 @@ class ChatBotObserver
             'select_instagram'   => !empty($request->instagrams) ? implode(",", $request->instagrams) : null,
             'select_messanger'   => !empty($request->messengers) ? implode(",", $request->messengers) : null,
             'select_telegram'   => !empty($request->telegrams) ? implode(",", $request->telegrams) : null,
-            'select_waba'       => !empty($request->wabas) ? implode(",", $request->wabas) : null,
             'reply_method'      => $request->method,
             'template_id'       => $request->method == 'template' ? $request->template : null,
             'message'           => $request->method == 'text' ? $request->message : null
