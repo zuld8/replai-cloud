@@ -41,6 +41,34 @@
                 </div>
             </div>
 
+
+            {{-- WABA Device --}}
+            <div class="card custom-card mb-4">
+                <div class="card-header">
+                    <div class="card-title"><i class="bx bxl-whatsapp me-2 text-success"></i>Nomor WhatsApp</div>
+                </div>
+                <div class="card-body">
+                    @if(isset($wabaDevices) && $wabaDevices->count() > 0)
+                    <div class="row g-2">
+                        @foreach($wabaDevices as $device)
+                        @php $selected = $flow->select_waba && str_contains($flow->select_waba, $device->id); @endphp
+                        <div class="col-md-4">
+                            <div class="form-check border rounded p-2 {{ $selected ? 'border-success bg-success bg-opacity-10' : '' }}">
+                                <input class="form-check-input" type="checkbox"
+                                    name="select_waba[]" value="{{ $device->id }}"
+                                    id="dev_{{ $device->id }}" {{ $selected ? 'checked' : '' }}>
+                                <label class="form-check-label" for="dev_{{ $device->id }}">
+                                    <i class="bx bxl-whatsapp text-success me-1"></i>
+                                    {{ $device->phone }}
+                                </label>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
+            </div>
+
             {{-- Payment Config --}}
             <div class="card custom-card mb-4">
                 <div class="card-header">

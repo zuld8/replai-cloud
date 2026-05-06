@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LiveChat\HistoryChatResources;
 use App\Models\ChatBot\ChatBot;
+use App\Models\Flow\Flow;
 use App\Models\ChatBot\HistoryChat;
 use App\Models\Courier\CourierFineTunnel;
 use App\Models\InternalSetting;
@@ -1036,6 +1037,12 @@ class WabaCallbackController extends Controller
     private function processAutoReplies(WhatsappKeyAccount $device, Setting $settings, $histories, array $messageContent): mixed
     {
         $message = $messageContent['message'];
+
+        // Flow auto-reply — runs BEFORE chatbot, takes priority
+        $matchingFlow = $this->findMatchingFlow((string) $device->id, $message);
+        if ($matchingFlow) {
+            return $this->processFlowReply($device, $histories, $matchingFlow);
+        }
 
         // Chatbot auto-reply
         if ($this->shouldUseChatbot($device, $histories)) {
@@ -2307,4 +2314,108 @@ class WabaCallbackController extends Controller
             \Log::error('Reaction handler error: ' . $e->getMessage());
         }
     }
+    /**
+     * Find a matching Flow for the given device + keyword
+     */
+    private function findMatchingFlow(string $deviceId, string $message): ?Flow
+    {
+        if (empty(trim($message))) {
+            return null;
+        }
+
+        return Flow::where('status', 'active')
+            ->whereRaw("find_in_set(?, select_waba)", [$deviceId])
+            ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])
+            ->first();
+    }
+
+    /**
+     * Process Flow auto-reply: send QRIS, bank accounts, and messages
+     */
+    private function processFlowReply(WhatsappKeyAccount $device, $histories, Flow $flow): mixed
+    {
+        $lastReplyMessage = null;
+
+        // 1. Send opening message
+        if (!empty($flow->message_open)) {
+            $replyMessage = $histories->details()->create([
+                'history_chat_id' => $histories->id,
+                'from'            => 'device',
+                'message'         => $flow->message_open,
+                'type'            => 'text',
+            ]);
+            $this->sendTextMessageToUser($device, $histories, $flow->message_open, $replyMessage);
+            $lastReplyMessage = $replyMessage;
+        }
+
+        // 2. Send QRIS image if exists
+        if (!empty($flow->qris_image)) {
+            $qrisFullPath = public_path($flow->qris_image);
+            if (file_exists($qrisFullPath)) {
+                $replyMessage = $histories->details()->create([
+                    'history_chat_id' => $histories->id,
+                    'from'            => 'device',
+                    'message'         => 'QRIS',
+                    'file_path'       => $flow->qris_image,
+                    'type'            => 'image',
+                ]);
+                try {
+                    $this->sendMediaMessageToUser($device, $histories, $replyMessage, 'image');
+                } catch (\Exception $e) {
+                    \Log::warning('Flow: QRIS image send failed: ' . $e->getMessage());
+                }
+                $lastReplyMessage = $replyMessage;
+            }
+        }
+
+        // 3. Send bank account details
+        $accounts = $flow->payment_accounts;
+        if (!empty($accounts)) {
+            if (is_string($accounts)) {
+                $accounts = json_decode($accounts, true);
+            }
+            if (is_array($accounts) && count($accounts) > 0) {
+                $bankText = "💳 *Info Transfer:*
+
+";
+                foreach ($accounts as $acc) {
+                    $bankText .= "*{$acc['bank']}*
+";
+                    $bankText .= "No. Rek: `{$acc['number']}`
+";
+                    if (!empty($acc['owner'])) {
+                        $bankText .= "a.n. {$acc['owner']}
+";
+                    }
+                    $bankText .= "
+";
+                }
+                $bankText = trim($bankText);
+                $replyMessage = $histories->details()->create([
+                    'history_chat_id' => $histories->id,
+                    'from'            => 'device',
+                    'message'         => $bankText,
+                    'type'            => 'text',
+                ]);
+                $this->sendTextMessageToUser($device, $histories, $bankText, $replyMessage);
+                $lastReplyMessage = $replyMessage;
+            }
+        }
+
+        // 4. Send closing message
+        if (!empty($flow->message_close)) {
+            $replyMessage = $histories->details()->create([
+                'history_chat_id' => $histories->id,
+                'from'            => 'device',
+                'message'         => $flow->message_close,
+                'type'            => 'text',
+            ]);
+            $this->sendTextMessageToUser($device, $histories, $flow->message_close, $replyMessage);
+            $lastReplyMessage = $replyMessage;
+        }
+
+        return $lastReplyMessage;
+    }
+
+
 }

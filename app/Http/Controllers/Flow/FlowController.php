@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Flow;
 
 use App\Http\Controllers\Controller;
+use App\Models\WhatsappKeyAccount;
 use App\Models\Flow\Flow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -27,7 +28,11 @@ class FlowController extends Controller
      */
     public function create()
     {
-        return view('flow.create');
+        $business_id  = my_business()->id ?? null;
+        $wabaDevices  = WhatsappKeyAccount::where('business_id', $business_id)
+                            ->where('status', 'active')
+                            ->get(['id', 'phone']);
+        return view('flow.create', compact('wabaDevices'));
     }
 
     /**
@@ -95,7 +100,11 @@ class FlowController extends Controller
      */
     public function update(Flow $flow)
     {
-        return view('flow.update', compact('flow'));
+        $business_id  = my_business()->id ?? null;
+        $wabaDevices  = WhatsappKeyAccount::where('business_id', $business_id)
+                            ->where('status', 'active')
+                            ->get(['id', 'phone']);
+        return view('flow.update', compact('flow', 'wabaDevices'));
     }
 
     /**

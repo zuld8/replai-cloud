@@ -63,6 +63,40 @@
                 </div>
             </div>
 
+
+            {{-- WABA Device Selector --}}
+            <div class="card custom-card mb-4">
+                <div class="card-header">
+                    <div class="card-title"><i class="bx bxl-whatsapp me-2 text-success"></i>Pilih Nomor WhatsApp</div>
+                </div>
+                <div class="card-body">
+                    <label class="form-label fw-semibold">Aktifkan Flow untuk nomor WA mana?</label>
+                    @if(isset($wabaDevices) && $wabaDevices->count() > 0)
+                    <div class="row g-2">
+                        @foreach($wabaDevices as $device)
+                        <div class="col-md-4">
+                            <div class="form-check border rounded p-2">
+                                <input class="form-check-input" type="checkbox"
+                                    name="select_waba[]" value="{{ $device->id }}"
+                                    id="dev_{{ $device->id }}">
+                                <label class="form-check-label" for="dev_{{ $device->id }}">
+                                    <i class="bx bxl-whatsapp text-success me-1"></i>
+                                    {{ $device->phone }}
+                                </label>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    <small class="text-muted mt-1 d-block">Centang nomor yang akan merespons keyword ini</small>
+                    @else
+                    <div class="alert alert-warning mb-0">
+                        <i class="bx bx-info-circle me-1"></i>
+                        Belum ada device WABA aktif. Tambahkan device di <a href="#">Pengaturan WABA</a>.
+                    </div>
+                    @endif
+                </div>
+            </div>
+
             {{-- SECTION 3: Konfigurasi Payment (default shown) --}}
             <div class="card custom-card mb-4" id="paymentConfig">
                 <div class="card-header">
