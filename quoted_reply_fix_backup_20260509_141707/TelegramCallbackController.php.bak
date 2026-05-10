@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\LiveChat\HistoryChatResources;
 use App\Models\ChatBot\ChatBot;
 use App\Models\ChatBot\HistoryChat;
-use App\Models\ChatBot\HistoryChatDetail;
 use App\Models\Setting;
 use App\Models\TelegramKey;
 use App\Models\User;
@@ -237,35 +236,16 @@ class TelegramCallbackController extends Controller
                 'follow_up_id' => null
             ]);
 
-        // Extract quoted reply from Telegram (reply_to_message)
-        $tgReplyTo   = null;
-        $tgReplyText = null;
-        $tgReplyMsgId = request()->input('message.reply_to_message.message_id');
-        if ($tgReplyMsgId) {
-            $originalMsg = HistoryChatDetail::where('messageid', (string) $tgReplyMsgId)->first();
-            if ($originalMsg) {
-                $tgReplyTo   = $originalMsg->id;      // UUID for repliedMessage relationship
-                $tgReplyText = $originalMsg->message;
-            } else {
-                // Fallback: use raw text from Telegram payload
-                $tgReplyText = request()->input('message.reply_to_message.text')
-                            ?? request()->input('message.reply_to_message.caption')
-                            ?? null;
-            }
-        }
-
         return $histories->details()->create([
-            'file_path'       => $processor->getFilePath(),
-            'file_type'       => $processor->getFileType(),
-            'file_size'       => $processor->getFileSize(),
-            'type'            => $processor->getMessageType(),
+            'file_path' => $processor->getFilePath(),
+            'file_type' => $processor->getFileType(),
+            'file_size' => $processor->getFileSize(),
+            'type' => $processor->getMessageType(),
             'history_chat_id' => $histories->id,
-            'from'            => 'user',
-            'message'         => $processor->getMessage(),
-            'remotejid'       => request()->from,
-            'messageid'       => $processor->getMessageId(),
-            'reply_to'        => $tgReplyTo,
-            'reply_text'      => $tgReplyText,
+            'from' => 'user',
+            'message' => $processor->getMessage(),
+            'remotejid' => request()->from,
+            'messageid' => $processor->getMessageId()
         ]);
     }
 
