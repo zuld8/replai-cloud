@@ -824,17 +824,31 @@ class WabaCallbackController extends Controller
             $histories->update(['store_id'    => $stores->id]);
         }
 
+        // Extract quoted reply context (when customer replies to a specific message in WA)
+        $quotedReplyTo   = null;
+        $quotedReplyText = null;
+        $wabaContext = $messageData['rawMessage']['context'] ?? null;
+        if ($wabaContext && !empty($wabaContext['id'])) {
+            $originalMsg = HistoryChatDetail::where('messageid', $wabaContext['id'])->first();
+            if ($originalMsg) {
+                $quotedReplyTo   = $originalMsg->id;      // UUID → used by repliedMessage relationship
+                $quotedReplyText = $originalMsg->message; // original message text
+            }
+        }
+
         // Create message record
         $userMessage = $histories->details()->create([
-            'file_path' => $mediaInfo['path'],
-            'file_type' => $mediaInfo['type'],
-            'file_size' => $mediaInfo['size'],
-            'type' => $messageContent['messageType'],
+            'file_path'       => $mediaInfo['path'],
+            'file_type'       => $mediaInfo['type'],
+            'file_size'       => $mediaInfo['size'],
+            'type'            => $messageContent['messageType'],
             'history_chat_id' => $histories->id,
-            'from' => 'user',
-            'message' => $messageContent['message'],
-            'remotejid' => $messageData['from'],
-            'messageid' => $messageData['messageId']
+            'from'            => 'user',
+            'message'         => $messageContent['message'],
+            'remotejid'       => $messageData['from'],
+            'messageid'       => $messageData['messageId'],
+            'reply_to'        => $quotedReplyTo,
+            'reply_text'      => $quotedReplyText,
         ]);
 
         // Mark follow-ups
