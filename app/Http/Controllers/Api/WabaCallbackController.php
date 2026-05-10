@@ -829,7 +829,7 @@ class WabaCallbackController extends Controller
         $quotedReplyText = null;
         $wabaContext = $messageData['rawMessage']['context'] ?? null;
         if ($wabaContext && !empty($wabaContext['id'])) {
-            $originalMsg = HistoryChatDetail::where('messageid', $wabaContext['id'])->first();
+            $originalMsg = \App\Models\ChatBot\HistoryChatDetail::where('messageid', $wabaContext['id'])->first();
             if ($originalMsg) {
                 $quotedReplyTo   = $originalMsg->id;      // UUID → used by repliedMessage relationship
                 $quotedReplyText = $originalMsg->message; // original message text
