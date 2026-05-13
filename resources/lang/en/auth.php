@@ -300,4 +300,9 @@ return [
     'add_package_data'              => 'Add Package',
     'update_package_data'           => 'Save Changes',
     'back_to_package'               => 'Back to Package List',
+
+    // Delete Confirmation
+    'confirm_delete'                => 'Delete User?',
+    'confirm_delete_text'           => 'Are you sure you want to delete this user? This action cannot be undone.',
+    'yes_delete'                    => 'Yes, Delete!',
 ];

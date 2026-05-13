@@ -299,4 +299,9 @@ return [
     'add_package_data'              => 'Tambahkan Paket',
     'update_package_data'           => 'Simpan Perubahan',
     'back_to_package'               => 'Kembali ke Daftar Paket',
+
+    // Delete Confirmation
+    'confirm_delete'                => 'Hapus Pengguna?',
+    'confirm_delete_text'           => 'Apakah Anda yakin ingin menghapus pengguna ini? Tindakan ini tidak dapat dibatalkan.',
+    'yes_delete'                    => 'Ya, Hapus!',
 ];
