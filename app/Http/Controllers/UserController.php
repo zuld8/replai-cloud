@@ -154,16 +154,32 @@ class UserController extends Controller
 
     public function delete(User $user)
     {
-
         if ($user->merchant && ($user->merchant->owner->id == $user->id)) {
-            return redirect()->back()->with(['gagal'    => 'Pengguna ini merupakan owner bisnis dan tidak dapat di hapus']);
+            return redirect()->back()->with(['gagal' => 'Pengguna ini merupakan owner bisnis dan tidak dapat di hapus']);
         }
 
+        try {
+            DB::beginTransaction();
 
-        $this->unlinkFile($user->photo);
-        $this->usersObserver->deleteData($user);
+            // Delete related agent records first (FK constraints)
+            DB::table('device_agents')->where('user_id', $user->id)->delete();
+            DB::table('waba_agents')->where('user_id', $user->id)->delete();
+            DB::table('telegram_agents')->where('user_id', $user->id)->delete();
+            DB::table('instagram_agents')->where('user_id', $user->id)->delete();
+            DB::table('messenger_agents')->where('user_id', $user->id)->delete();
+            DB::table('live_chat_agents')->where('user_id', $user->id)->delete();
+            DB::table('ticket_agents')->where('agent_id', $user->id)->delete();
+            DB::table('ticket_notes')->where('user_id', $user->id)->delete();
 
-        return redirect()->back()->with(['flash'    => __('general.success_deleted')]);
+            $this->unlinkFile($user->photo);
+            $this->usersObserver->deleteData($user);
+
+            DB::commit();
+            return redirect()->back()->with(['flash' => __('general.success_deleted')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with(['gagal' => 'Gagal menghapus pengguna: ' . $e->getMessage()]);
+        }
     }
 
 

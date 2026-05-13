@@ -1331,4 +1331,25 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+
+<script>
+// ── Flash Message Display ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    @if(session('flash'))
+    if (typeof toastr !== 'undefined') {
+        toastr.success("{{ session('flash') }}", '', {timeOut: 4000, positionClass: 'toast-top-right'});
+    } else {
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: "{{ session('flash') }}", timer: 2500, showConfirmButton: false });
+    }
+    @endif
+
+    @if(session('gagal'))
+    if (typeof toastr !== 'undefined') {
+        toastr.error("{{ session('gagal') }}", 'Error', {timeOut: 5000, positionClass: 'toast-top-right'});
+    } else {
+        Swal.fire({ icon: 'error', title: 'Gagal', text: "{{ session('gagal') }}" });
+    }
+    @endif
+});
+</script>
 @endsection
