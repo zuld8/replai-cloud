@@ -830,56 +830,17 @@ small.text-muted {
             }
         });
 
-        // Delete Confirmation — fetch() with conflict prevention
-        // Remove ALL existing deletebutton handlers (incl. main.js) then bind ours
+        // Delete — SIMPLE native confirm + window.location (diagnostic)
+        $(document).off('click.deleteuser');
         $('.deletebutton').off('click').on('click', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            var url   = $(this).attr('href');
-            var $btn  = $(this);
-            var $card = $(this).closest('.user-item');
-
-            Swal.fire({
-                title: '{{__("auth.confirm_delete")}}',
-                text: '{{__("auth.confirm_delete_text")}}',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '{{__("auth.yes_delete")}}',
-                cancelButtonText: '{{__("auth.cancel")}}',
-                returnFocus: false,
-                focusConfirm: false
-            }).then(function(result) {
-                if (!result.isConfirmed) return;
-                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
-                fetch(url, {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-                })
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.success(data.message || 'Pengguna berhasil dihapus', '', {timeOut: 3000, positionClass: 'toast-top-right'});
-                        }
-                        $card.fadeOut(400, function() { $(this).remove(); });
-                    } else {
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error(data.message || 'Gagal menghapus pengguna', 'Error', {timeOut: 5000, positionClass: 'toast-top-right'});
-                        } else {
-                            alert(data.message || 'Gagal menghapus pengguna');
-                        }
-                        $btn.prop('disabled', false).html('<i class="bx bx-trash"></i>');
-                    }
-                })
-                .catch(function(err) {
-                    console.error('Delete error:', err);
-                    alert('Terjadi kesalahan. Coba lagi.');
-                    $btn.prop('disabled', false).html('<i class="bx bx-trash"></i>');
-                });
-            });
+            var url = $(this).attr('href');
+            console.log('[DELETE] url:', url, 'btn:', this);
+            if (!url) { alert('ERROR: URL kosong!'); return; }
+            if (window.confirm('Hapus pengguna ini? Tindakan tidak dapat dibatalkan.')) {
+                window.location.assign(url);
+            }
         });
     });
 </script>
