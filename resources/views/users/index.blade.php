@@ -276,7 +276,7 @@ small.text-muted {
 
     <!-- User Cards Grid -->
     @forelse ($users as $user)
-    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4 user-item" data-name="{{strtolower($user->name)}}" data-email="{{strtolower($user->email)}}">
+    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4 user-item" data-name="{{strtolower($user->name)}}" data-email="{{strtolower($user->email)}}" data-user-id="{{ $user->id }}">
         <div class="card custom-card user-card h-100">
             <div class="card-body text-center p-4">
                 <!-- Avatar with Status — colored initials when no custom photo -->
@@ -830,11 +830,13 @@ small.text-muted {
             }
         });
 
-        // Delete Confirmation
-        $('.deletebutton').on('click', function(e) {
+        // Delete Confirmation — AJAX approach
+        $(document).on('click', '.deletebutton', function(e) {
             e.preventDefault();
-            var url = $(this).attr('href');
-            
+            var url  = $(this).attr('href');
+            var $btn = $(this);
+            var $card = $(this).closest('.user-item');
+
             Swal.fire({
                 title: '{{__("auth.confirm_delete")}}',
                 text: '{{__("auth.confirm_delete_text")}}',
@@ -844,9 +846,32 @@ small.text-muted {
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: '{{__("auth.yes_delete")}}',
                 cancelButtonText: '{{__("auth.cancel")}}'
-            }).then((result) => {
+            }).then(function(result) {
                 if (result.isConfirmed) {
-                    window.location.href = url;
+                    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                        success: function(response) {
+                            if (response.success) {
+                                toastr.success(response.message || 'Pengguna berhasil dihapus', '', {timeOut: 3000, positionClass: 'toast-top-right'});
+                                $card.fadeOut(400, function() { $(this).remove(); });
+                            } else {
+                                toastr.error(response.message || 'Gagal menghapus pengguna', 'Error', {timeOut: 5000, positionClass: 'toast-top-right'});
+                                $btn.prop('disabled', false).html('<i class="bx bx-trash"></i>');
+                            }
+                        },
+                        error: function(xhr) {
+                            var msg = 'Terjadi kesalahan server';
+                            try {
+                                var resp = JSON.parse(xhr.responseText);
+                                msg = resp.message || resp.error || msg;
+                            } catch(ex) {}
+                            toastr.error(msg, 'Error', {timeOut: 5000, positionClass: 'toast-top-right'});
+                            $btn.prop('disabled', false).html('<i class="bx bx-trash"></i>');
+                        }
+                    });
                 }
             });
         });

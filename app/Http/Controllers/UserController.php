@@ -154,8 +154,13 @@ class UserController extends Controller
 
     public function delete(User $user)
     {
+        $isAjax = request()->ajax();
+
         if ($user->merchant && ($user->merchant->owner->id == $user->id)) {
-            return redirect()->back()->with(['gagal' => 'Pengguna ini merupakan owner bisnis dan tidak dapat di hapus']);
+            $msg = 'Pengguna ini merupakan owner bisnis dan tidak dapat di hapus';
+            return $isAjax
+                ? response()->json(['success' => false, 'message' => $msg])
+                : redirect()->back()->with(['gagal' => $msg]);
         }
 
         try {
@@ -175,10 +180,16 @@ class UserController extends Controller
             $this->usersObserver->deleteData($user);
 
             DB::commit();
-            return redirect()->back()->with(['flash' => __('general.success_deleted')]);
+            $msg = __('general.success_deleted');
+            return $isAjax
+                ? response()->json(['success' => true, 'message' => $msg])
+                : redirect()->back()->with(['flash' => $msg]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with(['gagal' => 'Gagal menghapus pengguna: ' . $e->getMessage()]);
+            $msg = 'Gagal menghapus pengguna: ' . $e->getMessage();
+            return $isAjax
+                ? response()->json(['success' => false, 'message' => $msg])
+                : redirect()->back()->with(['gagal' => $msg]);
         }
     }
 
