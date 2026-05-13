@@ -83,23 +83,8 @@ function datatable_pasarsafe_callback(data) {
     return data;
 }
 
-$(".deletebutton").on("click", function (e) {
-    e.preventDefault();
-    const href = $(this).attr("href");
-    Swal.fire({
-        title: confirmation,
-        text: warning,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: yes_sure,
-    }).then((result) => {
-        if (result.value) {
-            document.location.href = href;
-        }
-    });
-});
+// deletebutton handled per-page (e.g. users/index.blade.php) — removed global handler
+// $(".deletebutton").on("click", ...);
 
 /* page loader */
 // function hideLoader() {

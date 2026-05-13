@@ -830,11 +830,13 @@ small.text-muted {
             }
         });
 
-        // Delete Confirmation — AJAX approach
-        $(document).on('click', '.deletebutton', function(e) {
+        // Delete Confirmation — fetch() with conflict prevention
+        // Remove ALL existing deletebutton handlers (incl. main.js) then bind ours
+        $('.deletebutton').off('click').on('click', function(e) {
             e.preventDefault();
-            var url  = $(this).attr('href');
-            var $btn = $(this);
+            e.stopImmediatePropagation();
+            var url   = $(this).attr('href');
+            var $btn  = $(this);
             var $card = $(this).closest('.user-item');
 
             Swal.fire({
@@ -845,34 +847,38 @@ small.text-muted {
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: '{{__("auth.yes_delete")}}',
-                cancelButtonText: '{{__("auth.cancel")}}'
+                cancelButtonText: '{{__("auth.cancel")}}',
+                returnFocus: false,
+                focusConfirm: false
             }).then(function(result) {
-                if (result.isConfirmed) {
-                    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
-                    $.ajax({
-                        url: url,
-                        type: 'GET',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                        success: function(response) {
-                            if (response.success) {
-                                toastr.success(response.message || 'Pengguna berhasil dihapus', '', {timeOut: 3000, positionClass: 'toast-top-right'});
-                                $card.fadeOut(400, function() { $(this).remove(); });
-                            } else {
-                                toastr.error(response.message || 'Gagal menghapus pengguna', 'Error', {timeOut: 5000, positionClass: 'toast-top-right'});
-                                $btn.prop('disabled', false).html('<i class="bx bx-trash"></i>');
-                            }
-                        },
-                        error: function(xhr) {
-                            var msg = 'Terjadi kesalahan server';
-                            try {
-                                var resp = JSON.parse(xhr.responseText);
-                                msg = resp.message || resp.error || msg;
-                            } catch(ex) {}
-                            toastr.error(msg, 'Error', {timeOut: 5000, positionClass: 'toast-top-right'});
-                            $btn.prop('disabled', false).html('<i class="bx bx-trash"></i>');
+                if (!result.isConfirmed) return;
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                fetch(url, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(data.message || 'Pengguna berhasil dihapus', '', {timeOut: 3000, positionClass: 'toast-top-right'});
                         }
-                    });
-                }
+                        $card.fadeOut(400, function() { $(this).remove(); });
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(data.message || 'Gagal menghapus pengguna', 'Error', {timeOut: 5000, positionClass: 'toast-top-right'});
+                        } else {
+                            alert(data.message || 'Gagal menghapus pengguna');
+                        }
+                        $btn.prop('disabled', false).html('<i class="bx bx-trash"></i>');
+                    }
+                })
+                .catch(function(err) {
+                    console.error('Delete error:', err);
+                    alert('Terjadi kesalahan. Coba lagi.');
+                    $btn.prop('disabled', false).html('<i class="bx bx-trash"></i>');
+                });
             });
         });
     });
