@@ -142,12 +142,16 @@
     <input type="hidden" id="fbConfig" value="{{platform_currency()->fb_config_id}}">
 
     @php
-        $bizId      = my_business();
-        $pkg        = $bizId ? \App\Models\Setting::find($bizId)?->package_active : null;
+        $bizId       = my_business();
+        $pkg         = $bizId ? \App\Models\Setting::find($bizId)?->package_active : null;
         $wabaLimited = $pkg && $pkg->limit_waba === 'yes';
-        $wabaMax    = $wabaLimited ? (int)($pkg->waba_limit ?? 0) : 0; // 0 = unlimited
-        $wabaCount  = $accounts->count();
-        $wabaFull   = $wabaLimited && $wabaCount >= $wabaMax;
+        $wabaMax     = $wabaLimited ? (int)($pkg->waba_limit ?? 0) : 0;
+        $wabaCount   = $accounts->count();
+        // Block if: no package OR limit reached
+        $wabaFull    = !$pkg || ($wabaLimited && $wabaCount >= $wabaMax);
+        $lockTip     = !$pkg
+            ? 'Tidak ada paket aktif. Subscribe untuk menggunakan WA Business API.'
+            : 'Limit WA Business API tercapai (' . $wabaCount . '/' . $wabaMax . ' akun). Upgrade paket untuk menambah.';
     @endphp
 
     @if(!$wabaFull)
@@ -192,12 +196,71 @@
             </span>
         </a>
     @else
-        {{-- Limit reached: show disabled badge --}}
-        <span class="badge bg-danger-transparent text-danger px-3 py-2 rounded-pill d-none d-sm-inline-flex align-items-center">
-            <i class="bx bx-lock me-1"></i> Limit WA Business API tercapai ({{ $wabaCount }}/{{ $wabaMax }})
+        {{-- Limit / No-package: disabled buttons same style as active, with padlock --}}
+
+        {{-- Desktop: Manual Add (disabled) --}}
+        <span
+            class="d-none d-sm-inline-flex me-2"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            data-bs-title="{{ $lockTip }}"
+            style="opacity:0.5;cursor:not-allowed;filter:grayscale(0.4);">
+            <a tabindex="-1" style="pointer-events:none" onclick="return false;" class="btn-manual-add">
+                <span class="bma-icon-wrap">
+                    <i class="bx bx-lock" style="font-size:18px;line-height:1;"></i>
+                </span>
+                <span class="bma-text">
+                    <span class="bma-main">Tambah Akun Manual</span>
+                </span>
+            </a>
         </span>
-        <span class="badge bg-danger-transparent text-danger px-2 py-2 rounded-pill d-sm-none">
-            <i class="bx bx-lock"></i>
+
+        {{-- Desktop: Facebook WABA (disabled) --}}
+        <span
+            class="d-none d-sm-inline-flex"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            data-bs-title="{{ $lockTip }}"
+            style="opacity:0.5;cursor:not-allowed;filter:grayscale(0.4);">
+            <a tabindex="-1" style="pointer-events:none" onclick="return false;" class="btn-fb-waba">
+                <span class="fw-icon-wrap">
+                    <i class="bx bx-lock" style="font-size:18px;color:#fff;line-height:1;"></i>
+                </span>
+                <span class="fw-text">
+                    <span class="fw-main">Tambah WhatsApp Business API</span>
+                    @if($pkg)
+                        <span class="fw-sub">Limit tercapai ({{ $wabaCount }}/{{ $wabaMax }})</span>
+                    @else
+                        <span class="fw-sub">Paket tidak aktif</span>
+                    @endif
+                </span>
+            </a>
+        </span>
+
+        {{-- Mobile: icon-only disabled --}}
+        <span
+            class="d-sm-none me-2"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            data-bs-title="{{ $lockTip }}"
+            style="opacity:0.5;cursor:not-allowed;filter:grayscale(0.4);">
+            <a tabindex="-1" style="pointer-events:none" onclick="return false;" class="btn-manual-add">
+                <span class="bma-icon-wrap">
+                    <i class="bx bx-lock" style="font-size:18px;line-height:1;"></i>
+                </span>
+            </a>
+        </span>
+        <span
+            class="d-sm-none"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            data-bs-title="{{ $lockTip }}"
+            style="opacity:0.5;cursor:not-allowed;filter:grayscale(0.4);">
+            <a tabindex="-1" style="pointer-events:none" onclick="return false;" class="btn-fb-waba">
+                <span class="fw-icon-wrap">
+                    <i class="bx bx-lock" style="font-size:18px;color:#fff;line-height:1;"></i>
+                </span>
+            </a>
         </span>
     @endif
 </div>
