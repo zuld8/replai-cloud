@@ -76,13 +76,18 @@ class UserController extends Controller
     {
         $userPlatforms = $this->getUserPlatformIds($user->id);
         $bizIds        = $user->business_id ? array_map('trim', explode(',', $user->business_id)) : [];
+        $activeRole  = $user->roles->first();
+        $isPrimary   = $user->merchant && optional($user->merchant->owner)->id === $user->id;
+
         return response()->json([
             'id'            => $user->id,
             'name'          => $user->name,
             'email'         => $user->email,
             'phone'         => $user->phone,
             'gender'        => $user->gender,
-            'role_id'       => $user->roles->first()?->id ?? '',
+            'role_id'       => $activeRole?->id ?? '',
+            'role_name'     => $activeRole?->name ?? 'Administrator',
+            'is_primary'    => $isPrimary,
             'photo'         => $user->photo ? asset('storage/' . $user->photo) : null,
             'businesses'    => $bizIds,
             'userPlatforms' => $userPlatforms,

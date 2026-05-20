@@ -1075,7 +1075,8 @@ small.text-muted {
                     <div class="row mb-3">
                         <label class="col-sm-3 col-form-label fw-semibold"><i class="bx bx-lock me-1"></i>Role <span class="text-danger">*</span></label>
                         <div class="col-sm-9">
-                            <div class="input-group">
+                            {{-- Normal role select (non-primary users) --}}
+                            <div class="input-group" id="editRoleSelectWrap">
                                 <span class="input-group-text"><i class="bx bx-lock"></i></span>
                                 <select class="form-control" name="role" id="editRole" required>
                                     <option value="">{{__('general.choose')}}</option>
@@ -1083,6 +1084,26 @@ small.text-muted {
                                     <option value="{{$role->id}}">{{$role->name}}</option>
                                     @endforeach
                                 </select>
+                            </div>
+                            {{-- Locked role display (primary/owner user) --}}
+                            <div id="editRoleLockedWrap" class="d-none">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-warning-subtle">
+                                        <i class="bx bx-lock-alt text-warning"></i>
+                                    </span>
+                                    <div class="form-control d-flex align-items-center justify-content-between"
+                                         style="background:#fffbf0;cursor:not-allowed;min-height:38px;">
+                                        <span id="editRoleLockedName" class="fw-semibold"></span>
+                                        <span class="badge bg-warning text-dark ms-2" style="font-size:0.7rem;">
+                                            <i class="bx bx-lock-alt me-1"></i>Terkunci
+                                        </span>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="role" id="editRoleHidden">
+                                <small class="text-muted d-block mt-1">
+                                    <i class="bx bx-shield-alt me-1 text-warning"></i>
+                                    Role akun utama tidak dapat diubah untuk keamanan sistem.
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -1236,9 +1257,24 @@ function openEditModal(userId) {
         const gSel = document.getElementById('editGender');
         for (let o of gSel.options) o.selected = (o.value === data.gender);
 
-        // Role
-        const rSel = document.getElementById('editRole');
-        for (let o of rSel.options) o.selected = (o.value == data.role_id);
+        // Role — lock for primary/owner user
+        const rSel     = document.getElementById('editRole');
+        const lockWrap = document.getElementById('editRoleLockedWrap');
+        const selWrap  = document.getElementById('editRoleSelectWrap');
+        if (data.is_primary) {
+            // Show locked display, hide select
+            selWrap.classList.add('d-none');
+            lockWrap.classList.remove('d-none');
+            rSel.removeAttribute('required');
+            document.getElementById('editRoleLockedName').textContent = data.role_name || 'Administrator';
+            document.getElementById('editRoleHidden').value = data.role_id;
+        } else {
+            // Show normal select
+            selWrap.classList.remove('d-none');
+            lockWrap.classList.add('d-none');
+            rSel.setAttribute('required', '');
+            for (let o of rSel.options) o.selected = (o.value == data.role_id);
+        }
 
         // Business (Select2 multi)
         if (data.businesses && data.businesses.length) {
