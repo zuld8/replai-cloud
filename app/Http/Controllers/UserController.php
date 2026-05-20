@@ -277,6 +277,11 @@ class UserController extends Controller
                 $image = $this->uploadImage($request, 'photo', 'users');
             }
 
+            // 🔒 Guard: primary/owner user — role cannot be changed
+            if ($user->merchant && optional($user->merchant->owner)->id === $user->id) {
+                $request->merge(['role' => $user->role_id]);
+            }
+
             $this->usersObserver->updateData($request, $user, $image);
             $this->syncPlatformAgents($user->id, $request);
             $user->fresh();

@@ -153,23 +153,47 @@
                 </div>
 
                 <!-- Role Permission -->
+                @php
+                    $isPrimaryUser = $user->merchant && (optional($user->merchant->owner)->id === $user->id);
+                @endphp
                 <div class="row mb-3">
                     <label class="col-sm-3 col-form-label fw-semibold">
                         <i class="bx bx-lock me-1"></i>Role
                         <span class="text-danger">*</span>
                     </label>
                     <div class="col-sm-9">
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bx bx-lock"></i>
-                            </span>
-                            <select class="form-control" name="role" required>
-                                <option value="">{{__('general.choose')}}</option>
-                                @foreach($roles as $role)
-                                <option value="{{$role->id}}" @if($role->id == $user->role_id) selected @endif >{{$role->name}}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        @if($isPrimaryUser)
+                            {{-- 🔒 Primary/owner: role locked to Administrator --}}
+                            <div class="input-group">
+                                <span class="input-group-text bg-warning-subtle">
+                                    <i class="bx bx-lock-alt text-warning"></i>
+                                </span>
+                                <div class="form-control d-flex align-items-center justify-content-between"
+                                     style="background:#fffbf0;cursor:not-allowed;min-height:38px;">
+                                    <span class="fw-semibold">{{ $user->role_access?->name ?? 'Administrator' }}</span>
+                                    <span class="badge bg-warning text-dark ms-2" style="font-size:0.7rem;">
+                                        <i class="bx bx-lock-alt me-1"></i>Terkunci
+                                    </span>
+                                </div>
+                            </div>
+                            <input type="hidden" name="role" value="{{ $user->role_id }}">
+                            <small class="text-muted d-block mt-1">
+                                <i class="bx bx-shield-alt me-1 text-warning"></i>
+                                Role akun utama tidak dapat diubah untuk keamanan sistem.
+                            </small>
+                        @else
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bx bx-lock"></i>
+                                </span>
+                                <select class="form-control" name="role" required>
+                                    <option value="">{{__('general.choose')}}</option>
+                                    @foreach($roles as $role)
+                                    <option value="{{$role->id}}" @if($role->id == $user->role_id) selected @endif >{{$role->name}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
