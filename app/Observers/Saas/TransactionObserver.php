@@ -102,18 +102,10 @@ class TransactionObserver
             'telegram'                  => $package->telegram ?? 0,
             'google_sheet'              => $package->google_sheet,
             'cek_ongkir'                => $package->cek_ongkir,
-            'limit_instagram'           => $package->limit_instagram,
-            'instagram'                 => $package->instagram,
-            'limit_messanger'           => $package->limit_messanger,
-            'messanger'                 => $package->messanger,
-            'limit_telegram'            => $package->limit_telegram,
-            'telegram'                  => $package->telegram,
             'mua_limit'                 => $package->mua_limit,
             'mua_limit_optin'           => $package->mua_limit_optin,
             'max_per_upload'            => $package->max_per_upload,
             'max_total_rag'             => $package->max_total_rag,
-            'limit_waba'                => $package->limit_waba,
-            'waba_limit'                => $package->waba_limit
         ]);
     }
 

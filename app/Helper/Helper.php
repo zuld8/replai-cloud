@@ -1170,9 +1170,10 @@ if (!function_exists('instagram_limitation')) {
                     return false;
                 }
             }
+            return true;
         }
 
-        return true;
+        return false;
     }
 }
 
@@ -1189,9 +1190,10 @@ if (!function_exists('telegram_limitation')) {
                     return false;
                 }
             }
+            return true;
         }
 
-        return true;
+        return false;
     }
 }
 
@@ -1208,9 +1210,10 @@ if (!function_exists('messenger_limitation')) {
                     return false;
                 }
             }
+            return true;
         }
 
-        return true;
+        return false;
     }
 }
 
@@ -1227,9 +1230,10 @@ if (!function_exists('waba_limitation')) {
                     return false;
                 }
             }
+            return true;
         }
 
-        return true;
+        return false;
     }
 }
 
