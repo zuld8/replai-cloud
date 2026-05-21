@@ -25,3 +25,12 @@ Thumbs.db
 /.vscode/
 *.swp
 *.swo
+
+# ── Backup files: use git branches, not file copies ──────────────────────
+*.bak
+*.bak.*
+*.backup
+*.backup_*
+*_backup_*/
+*_fix_backup_*/
+*.bak_*
