@@ -441,7 +441,7 @@ class WhatsappBroadcastController extends Controller
                         131053 => ['Media Error', 'Gagal mengirim media, file terlalu besar atau format salah'],
                         130472 => ['Template Paused', 'Template di-pause oleh Meta karena kualitas rendah'],
                         132000 => ['Template Error', 'Template tidak ditemukan atau parameter tidak sesuai'],
-                        131042 => ['Business Policy', 'Pesan melanggar kebijakan bisnis WhatsApp'],
+                        131042 => ['Payment Eligibility', 'Akun belum memiliki payment method aktif di Meta Business Manager. Tambahkan kartu kredit/debit di business.facebook.com → Billing'],
                         368 => ['Temporarily Blocked', 'Akun sementara diblokir karena melanggar kebijakan'],
                     ];
                     
