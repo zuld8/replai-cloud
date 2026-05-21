@@ -186,6 +186,13 @@ class AutoRegisterWabaPhones extends Command
 
                 // Only act if phone is still PENDING
                 if ($currentStatus !== 'PENDING') continue;
+                
+                // Skip if currently rate-limited
+                $rateLimitUntil = $keyAccount->rate_limit_until ?? null;
+                if ($rateLimitUntil && now()->lessThan($rateLimitUntil)) {
+                    $this->info("  Skipping {$displayPhone} — rate limited until {$rateLimitUntil}");
+                    continue;
+                }
 
                 $pendingCount++;
                 $displayPhone = $wa['display_phone_number'] ?? $device->phone;
@@ -200,7 +207,18 @@ class AutoRegisterWabaPhones extends Command
 
                 if (!$regResp->successful() && !str_contains($regResp->body(), 'already registered')) {
                     $this->warn("  Re-register failed: " . $regResp->body());
+                    $regBody = json_decode($regResp->body(), true);
+                    $errCode = $regBody['error']['code'] ?? 0;
                     Log::warning("WABA PENDING re-register failed for {$displayPhone}: " . $regResp->body());
+                    
+                    // If rate limited (#133016), mark phone to skip for 6 hours
+                    if ($errCode == 133016) {
+                        Log::warning("WABA rate limited for {$displayPhone} — skipping for 6 hours");
+                        \App\Models\WhatsappKeyAccount::where('phone', preg_replace('/[^0-9]/', '', $displayPhone))
+                            ->whereNotNull('meta_data')
+                            ->update(['rate_limit_until' => now()->addHours(6)]);
+                        continue;
+                    }
                     continue;
                 }
 

@@ -195,6 +195,12 @@ class WabaCallbackController extends Controller
                 $this->processStatusUpdate($data, $settings);
             }
 
+            // ── Handle template status updates (APPROVED/REJECTED/PENDING) ──
+            if ($this->hasTemplateStatusUpdate($data)) {
+                $this->processTemplateStatusUpdate($data);
+                return response()->json(['status' => 'ok']);
+            }
+
             // ── Handle incoming messages ──
             if (!$this->validateCallbackStructure($data)) {
                 return response()->json(['status' => 'ok']);
@@ -2260,6 +2266,93 @@ class WabaCallbackController extends Controller
             }
         } catch (\Throwable $e) {
             Log::error('Error processing WABA status update: ' . $e->getMessage());
+        }
+    }
+
+
+    /**
+     * Check if webhook payload contains template status updates
+     * Meta sends this when a template is APPROVED, REJECTED, FLAGGED, etc.
+     */
+    private function hasTemplateStatusUpdate(array $data): bool
+    {
+        $field = $data['entry'][0]['changes'][0]['field'] ?? null;
+        return in_array($field, ['message_template_status_update', 'message_template_quality_update']);
+    }
+
+    /**
+     * Process template status update from Meta webhook
+     * Updates waba_status_template in message_templates table
+     *
+     * Meta payload format:
+     * {
+     *   "entry": [{ "id": "<WABA_ID>", "changes": [{
+     *     "value": {
+     *       "event": "APPROVED",
+     *       "message_template_id": 12345,
+     *       "message_template_name": "template_name",
+     *       "message_template_language": "id",
+     *       "reason": null
+     *     },
+     *     "field": "message_template_status_update"
+     *   }]}]
+     * }
+     */
+    private function processTemplateStatusUpdate(array $data): void
+    {
+        try {
+            $change = $data['entry'][0]['changes'][0] ?? [];
+            $field  = $change['field'] ?? '';
+            $value  = $change['value'] ?? [];
+
+            $metaTemplateId = $value['message_template_id'] ?? null;
+            $event          = $value['event'] ?? null;
+            $reason         = $value['reason'] ?? null;
+
+            if (!$metaTemplateId || !$event) {
+                Log::warning('Template status update: missing template_id or event', $data);
+                return;
+            }
+
+            // Map Meta event to our status value
+            $statusMap = [
+                'APPROVED'          => 'APPROVED',
+                'REJECTED'          => 'REJECTED',
+                'PENDING'           => 'PENDING',
+                'FLAGGED'           => 'FLAGGED',
+                'DISABLED'          => 'DISABLED',
+                'IN_APPEAL'         => 'IN_APPEAL',
+                'REINSTATED'        => 'APPROVED',
+                'PAUSED'            => 'PAUSED',
+                'LIMIT_EXCEEDED'    => 'PAUSED',
+            ];
+
+            $newStatus = $statusMap[$event] ?? $event;
+
+            $updated = \App\Models\Master\MessageTemplate::where('meta_id', (string) $metaTemplateId)
+                ->update([
+                    'waba_status_template' => $newStatus,
+                    'updated_at'           => now(),
+                ]);
+
+            Log::info('Template status updated via webhook', [
+                'meta_template_id' => $metaTemplateId,
+                'event'            => $event,
+                'new_status'       => $newStatus,
+                'reason'           => $reason,
+                'rows_updated'     => $updated,
+            ]);
+
+            if ($updated === 0) {
+                Log::warning('Template status webhook: no matching template found in DB', [
+                    'meta_template_id' => $metaTemplateId,
+                    'event'            => $event,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Error processing template status update: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 

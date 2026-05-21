@@ -15,7 +15,7 @@ class HistoryChatObserver
 
         $query = HistoryChat::query()->with(['device:id,agent,name', 'livechat:id,agent,name', 'waba:id,agent,phone', 'telegram:id,agent,name', 'instagram:id,agent,name','messenger:id,agent,page_name', 'last_message:id,history_chat_id,message,type,created_at'])->when($request->name, function ($q) use ($request) {
             $q->where(function ($subQ) use ($request) {
-                $subQ->whereRaw("MATCH(name, from_number) AGAINST(? IN BOOLEAN MODE)", ['*' . $request->name . '*']);
+                $subQ->whereRaw("MATCH(name, from_number) AGAINST(? IN BOOLEAN MODE)", ['*' . preg_replace('/[^\w\s\d+]/', '', $request->name) . '*']);
             });
         })->when($request->status, fn($q) => $q->where('status', $request->status))
 ->where(function ($query) use ($userId) {
