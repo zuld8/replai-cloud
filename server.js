@@ -22,7 +22,7 @@ const server = http.createServer();
 // Buat Socket.IO server dan kaitkan dengan HTTP server
 const io = new Server(server, {
     cors: {
-        origin: "*", // Izinkan akses dari semua domain
+        origin: process.env.SOCKET_ALLOWED_ORIGINS ? process.env.SOCKET_ALLOWED_ORIGINS.split(",") : ["https://chat.replai.id"],
     },
     pingInterval: 5000, // Kirim ping setiap 5 detik
     pingTimeout: 10000, // Timeout jika tidak ada respons setelah 10 detik
