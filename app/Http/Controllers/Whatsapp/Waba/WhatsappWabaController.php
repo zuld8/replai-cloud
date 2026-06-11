@@ -56,7 +56,7 @@ class WhatsappWabaController extends Controller
 
     public function create(Request $request)
     {
-        $tokenUid       = Setting::first(['id'])->id;
+        $tokenUid       = auth()->user()->business_id; // fixed: use logged-in merchant's business_id;
         $users          = $this->usersObserver->getData($request)->get(['id', 'name']);
         return view('waba.create', ['page'   => __('page.waba.add'), 'breadcumb' => true], compact('tokenUid', 'users'));
     }
@@ -168,7 +168,7 @@ class WhatsappWabaController extends Controller
     {
         $data           = json_decode($device->meta_data, true);
         $data           = $data['whatsapp'];
-        $tokenUid       = Setting::first(['id'])->id;
+        $tokenUid       = auth()->user()->business_id; // fixed: use logged-in merchant's business_id;
 
         return view('waba.update.token', ['page'   => __('waba.access_token'), 'breadcumb' => true], compact('device', 'data', 'tokenUid'));
     }
@@ -230,7 +230,7 @@ class WhatsappWabaController extends Controller
             ]);
         }
 
-        $tokenUid           = Setting::first(['id'])->id;
+        $tokenUid           = auth()->user()->business_id; // fixed: use logged-in merchant's business_id;
         $debugValidation    = $this->whatsappServiceObserver->debugToken($request->appid, $request->app_secret, $request->access_token);
 
         if (!$debugValidation->success) {
@@ -422,7 +422,7 @@ class WhatsappWabaController extends Controller
         ]);
 
         // Connect For Base Webhook
-        $tokenUid       = Setting::first(['id'])->id;
+        $tokenUid       = $meta->business_id; // fixed: use merchant's own business_id;
         $connectToBase  = $this->whatsappServiceObserver->connectToBaseWebhook($meta->app_id, $request->app_secret, $tokenUid);
 
         if (!$connectToBase->success) {
@@ -530,7 +530,7 @@ class WhatsappWabaController extends Controller
     {
 
         // Connect For Base Webhook
-        $tokenUid       = Setting::first(['id'])->id;
+        $tokenUid       = $meta->business_id; // fixed: use merchant's own business_id;
 
         if ($meta->app_id != null && $meta->app_secret != null) {
             $connectToBase  = $this->whatsappServiceObserver->connectToBaseWebhook($meta->app_id, $meta->app_secret, $tokenUid);
