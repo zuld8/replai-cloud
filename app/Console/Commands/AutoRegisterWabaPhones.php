@@ -129,7 +129,7 @@ class AutoRegisterWabaPhones extends Command
                         );
 
                         // Register webhook override
-                        $tokenUid = DB::table('settings')->value('id');
+                        $tokenUid = $meta->business_id; // fixed: use merchant's own business_id, not first settings row
                         $webhookUrl = config('app.url') . '/api-app/waba/callback-url/' . $tokenUid;
 
                         Http::withToken($meta->access_token)
@@ -237,7 +237,7 @@ class AutoRegisterWabaPhones extends Command
 
                 // Re-subscribe webhook
                 if ($wabaId) {
-                    $tokenUid = DB::table('settings')->value('id');
+                    $tokenUid = $meta->business_id; // fixed: use merchant's own business_id, not first settings row
                     $webhookUrl = config('app.url') . '/api-app/waba/callback-url/' . $tokenUid;
                     Http::withToken($accessToken)
                         ->post("https://graph.facebook.com/{$apiVersion}/{$wabaId}/subscribed_apps", [
