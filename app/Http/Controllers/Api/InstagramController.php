@@ -14,6 +14,7 @@ use App\Models\Setting;
 use App\Observers\ChatBot\BiteshipServiceObserver;
 use App\Observers\ChatBot\GeminiAiServiceObserver;
 use App\Observers\ChatBot\HistoryChatObserver;
+use App\Models\ChatBot\HistoryChat;
 use App\Observers\ChatBot\OpenAiServiceObserver;
 use App\Observers\ChatBot\RajaOngkirServiceObserver;
 use App\Observers\Store\StoreObserver;
