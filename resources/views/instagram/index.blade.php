@@ -392,7 +392,6 @@
             const redirectUri = '{{ route("instagram.redirect") }}';
 
             const igAppId = document.getElementById('igAppId')?.value || appId;
-            const redirectUri = '{{ route("instagram.redirect") }}';
 
             if (igAppId && igAppId !== appId) {
                 // Instagram Business Login (dedicated Instagram app)
