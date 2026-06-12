@@ -442,19 +442,33 @@ class WabaMessageController extends Controller
      */
     private function normalizePhoneNumber($phone)
     {
-        // Remove all non-numeric characters
+        // Strip all non-numeric characters (removes +, spaces, dashes)
         $phone = preg_replace('/[^0-9]/', '', $phone);
 
-        // Handle Indonesian phone numbers
+        // Already has Indonesian country code → leave as-is
+        if (substr($phone, 0, 2) === '62') {
+            return $phone;
+        }
+
+        // Indonesian local format (starts with 0) → strip leading 0, add 62
+        // e.g. 08123456789 → 628123456789
         if (substr($phone, 0, 1) === '0') {
-            $phone = '62' . substr($phone, 1);
+            return '62' . substr($phone, 1);
         }
 
-        // Add 62 prefix if not exists and not starting with +
-        if (substr($phone, 0, 2) !== '62' && substr($phone, 0, 1) !== '+') {
-            $phone = '62' . $phone;
+        // Indonesian mobile without leading 0 (starts with 8, ≤12 digits)
+        // Indonesian prefixes 811–899 (Telkomsel, Indosat, XL, Axis, Tri, Smartfren)
+        // Max Indonesian mobile digits without leading 0: 12 (e.g. 081x-xxxx-xxxx → 12 raw)
+        // Numbers >12 digits starting with 8 definitely carry a country code
+        // Note: 852=HK, 853=Macau, 855=Cambodia share prefix with ID operators
+        //       → Ambiguous, but Indonesian market is primary use case here
+        if (substr($phone, 0, 1) === '8' && strlen($phone) <= 12) {
+            return '62' . $phone;
         }
 
+        // International number — already has country code, return as-is
+        // e.g. 966532657896 (Saudi), 16465894168 (USA), 6593678183 (Singapore),
+        //      601169671219 (Malaysia), 61404215641 (Australia)
         return $phone;
     }
 
