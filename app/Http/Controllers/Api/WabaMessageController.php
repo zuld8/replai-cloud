@@ -632,7 +632,7 @@ class WabaMessageController extends Controller
             try {
                 $expressUrl = config('services.express.url') . '/trigger-whatsapp';
                 $outboundDetail->load(['repliedMessage']);
-                Http::timeout(5)->post($expressUrl, HistoryChatResources::make($outboundDetail)->toArray(request()));
+                Http::withHeaders(['x-api-key' => config('services.express.api_key')])->timeout(5)->post($expressUrl, HistoryChatResources::make($outboundDetail)->toArray(request()));
             } catch (\Exception $emitEx) {
                 Log::warning('WABA outbound emit failed: ' . $emitEx->getMessage());
             }

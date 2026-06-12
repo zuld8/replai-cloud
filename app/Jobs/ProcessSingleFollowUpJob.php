@@ -544,7 +544,8 @@ class ProcessSingleFollowUpJob implements ShouldQueue
     private function sendToExpressServer($messageData): void
     {
         try {
-            $response = Http::timeout(10)
+            $response = Http::withHeaders(['x-api-key' => config('services.express.api_key')])
+                ->timeout(10)
                 ->retry(2, 1000)
                 ->post(
                     config('services.express.url') . '/trigger-whatsapp',
