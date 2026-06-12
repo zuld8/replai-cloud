@@ -1813,7 +1813,7 @@ class WabaCallbackController extends Controller
         if ($device->auto_reply_certain_day == 'yes') {
             if ($device->days != null) {
                 $day        = date("D");
-                $getVoucher = WhatsappKeyAccount::where("id", $device->id)->whereRaw("find_in_set('" .  $day . "',days)")->count(); // Check Day in This Auto Reply
+                $getVoucher = WhatsappKeyAccount::where("id", $device->id)->whereRaw("find_in_set(?,days)", [$day])->count(); // Check Day in This Auto Reply
 
                 // If Auto Reply Not Active for this day
                 if ($getVoucher == 0) {
@@ -1877,13 +1877,13 @@ class WabaCallbackController extends Controller
     public function autoReplyMessage(WhatsappKeyAccount $device, $message, $name = '', $from, $type = 'personal')
     {
         // Check WABA chatbot: first try select_waba (general chatbot), then legacy select_device+meta_account_id (WABA-specific chatbot)
-        $chatBot = ChatBot::whereRaw("find_in_set('" . $device->id . "', select_waba)")
+        $chatBot = ChatBot::whereRaw("find_in_set(?, select_waba)", [$device->id])
             ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])
             ->with('template')
             ->first();
 
         if (!$chatBot) {
-            $chatBot = ChatBot::whereRaw("find_in_set('" .  $device->id . "',select_device)")->where('meta_account_id', '!=', null)->with('template')
+            $chatBot = ChatBot::whereRaw("find_in_set(?,select_device)", [$device->id])->where('meta_account_id', '!=', null)->with('template')
                 ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])->first();
         }
 

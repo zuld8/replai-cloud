@@ -1484,7 +1484,7 @@ class WhatsappCallbackController extends Controller
         if ($device->auto_reply_certain_day == 'yes') {
             if ($device->days != null) {
                 $day        = date("D");
-                $getVoucher = WhatsappDevice::where("id", $device->id)->whereRaw("find_in_set('" .  $day . "',days)")->count(); // Check Day in This Auto Reply
+                $getVoucher = WhatsappDevice::where("id", $device->id)->whereRaw("find_in_set(?,days)", [$day])->count(); // Check Day in This Auto Reply
 
                 // If Auto Reply Not Active for this day
                 if ($getVoucher == 0) {
@@ -1523,7 +1523,7 @@ class WhatsappCallbackController extends Controller
 
     public function autoReplyMessage(WhatsappDevice $device, $message, $name = '', $from, $type = 'personal')
     {
-        $chatBot = ChatBot::whereRaw("find_in_set('" .  $device->id . "',select_device)")->with('template')
+        $chatBot = ChatBot::whereRaw("find_in_set(?,select_device)", [$device->id])->with('template')
             ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])->first();
 
         if (!$chatBot) {

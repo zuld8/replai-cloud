@@ -925,7 +925,7 @@ class LiveChatController extends Controller
 
     public function autoReplyMessage(LiveChat $chat, $message, $name = '')
     {
-        $chatBot = ChatBot::whereRaw("find_in_set('" .  $chat->id . "',select_livechat)")->with('template')
+        $chatBot = ChatBot::whereRaw("find_in_set(?,select_livechat)", [$chat->id])->with('template')
             ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])->first();
 
         if (!$chatBot) {
