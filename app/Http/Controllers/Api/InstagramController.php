@@ -136,7 +136,8 @@ class InstagramController extends Controller
             Log::error('Instagram Callback Error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['status' => 'error'], 500);
+            // Always return 200 — Meta requires acknowledgment even on error.
+            return response()->json(['status' => 'ok']);
         }
     }
 
@@ -229,7 +230,8 @@ class InstagramController extends Controller
             Log::error('Error processing Instagram message: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            throw $e;
+            // Don't re-throw — let outer handler return 200 to Meta
+            return false;
         }
     }
 
@@ -276,7 +278,7 @@ class InstagramController extends Controller
         );
 
         if (!$histories) {
-            // Get sender info from Instagram API
+            // New chat — fetch sender info from Instagram API
             $senderInfo = $this->getSenderInfo($instagramAccount, $messageData['from']);
 
             $histories = $this->historyChatObserver->createData(
@@ -294,9 +296,48 @@ class InstagramController extends Controller
                 null,
                 $instagramAccount->id
             );
+        } else {
+            // Existing chat — refresh avatar if null or expired Meta CDN URL
+            $needsAvatarRefresh = empty($histories->avatar_url)
+                || str_contains((string) $histories->avatar_url, 'fbsbx.com')
+                || str_contains((string) $histories->avatar_url, 'lookaside.facebook.com');
+
+            if ($needsAvatarRefresh) {
+                $senderInfo = $this->getSenderInfo($instagramAccount, $messageData['from']);
+                if (!empty($senderInfo['profile_pic'])) {
+                    $histories->update(['avatar_url' => $senderInfo['profile_pic']]);
+                }
+                if ($histories->name === 'Instagram User' && ($senderInfo['name'] ?? 'Instagram User') !== 'Instagram User') {
+                    $histories->update(['name' => $senderInfo['name']]);
+                }
+            }
         }
 
         return $histories;
+    }
+
+    /**
+     * Download avatar from Meta CDN and cache locally (Meta avatar URLs expire).
+     */
+    private function downloadAndCacheAvatar(string $url, string $senderId): ?string
+    {
+        try {
+            $dir = public_path('uploads/instagram/avatars');
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+            $localName = md5($senderId) . '.jpg';
+            $localPath = $dir . '/' . $localName;
+            if (file_exists($localPath) && (time() - filemtime($localPath)) < 86400) {
+                return 'uploads/instagram/avatars/' . $localName;
+            }
+            $response = Http::timeout(10)->get($url);
+            if ($response->successful() && strlen($response->body()) > 1000) {
+                file_put_contents($localPath, $response->body());
+                return 'uploads/instagram/avatars/' . $localName;
+            }
+        } catch (\Exception $e) {
+            Log::warning('Instagram avatar download failed: ' . $e->getMessage());
+        }
+        return null;
     }
 
     /**
@@ -314,10 +355,12 @@ class InstagramController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
+                $profilePicUrl = $data['profile_pic'] ?? null;
+                $localAvatar   = $profilePicUrl ? $this->downloadAndCacheAvatar($profilePicUrl, $senderId) : null;
 
                 return [
-                    'name' => $data['name'] ?? ($data['username'] ?? 'Instagram User'),
-                    'profile_pic' => $data['profile_pic'] ?? null
+                    'name'        => $data['name'] ?? ($data['username'] ?? 'Instagram User'),
+                    'profile_pic' => $localAvatar ?? $profilePicUrl
                 ];
             }
  

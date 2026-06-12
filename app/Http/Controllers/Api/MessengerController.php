@@ -146,7 +146,9 @@ class MessengerController extends Controller
             Log::error('Messenger Callback Error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['status' => 'error'], 500);
+            // Always return 200 — Meta requires acknowledgment even on error.
+            // Returning 500 causes Meta to retry & eventually stop delivering events.
+            return response()->json(['status' => 'ok']);
         }
     }
 
@@ -161,7 +163,8 @@ class MessengerController extends Controller
                 ->where('status', 'active')
                 ->first();
 
-            if (!$messengerAccount) { 
+            if (!$messengerAccount) {
+                Log::warning("Messenger: no active account found for page_id={$pageId}. Check messenger_accounts table.");
                 return false;
             }
 
@@ -231,7 +234,8 @@ class MessengerController extends Controller
             Log::error('Error processing Messenger message: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            throw $e;
+            // Don't re-throw — let outer handler always return 200 to Meta
+            return false;
         }
     }
 
@@ -279,7 +283,7 @@ class MessengerController extends Controller
         );
 
         if (!$histories) {
-            // Get sender info from Messenger API
+            // New chat — fetch sender info from Messenger API
             $senderInfo = $this->getSenderInfo($messengerAccount, $messageData['from']);
 
             $histories = $this->historyChatObserver->createData(
@@ -298,9 +302,55 @@ class MessengerController extends Controller
                 null,
                 $messengerAccount->id
             );
+        } else {
+            // Existing chat — refresh avatar if null or expired Meta CDN URL
+            $needsAvatarRefresh = empty($histories->avatar_url)
+                || str_contains((string) $histories->avatar_url, 'fbsbx.com')
+                || str_contains((string) $histories->avatar_url, 'lookaside.facebook.com');
+
+            if ($needsAvatarRefresh) {
+                $senderInfo = $this->getSenderInfo($messengerAccount, $messageData['from']);
+                if (!empty($senderInfo['profile_pic'])) {
+                    $histories->update(['avatar_url' => $senderInfo['profile_pic']]);
+                }
+                // Also update name if it's still the default fallback
+                if ($histories->name === 'Messenger User' && ($senderInfo['name'] ?? 'Messenger User') !== 'Messenger User') {
+                    $histories->update(['name' => $senderInfo['name']]);
+                }
+            }
         }
 
         return $histories;
+    }
+
+    /**
+     * Download avatar from Meta CDN and cache it locally.
+     * Meta profile_pic URLs are signed & expire in hours — store locally instead.
+     */
+    private function downloadAndCacheAvatar(string $url, string $senderId): ?string
+    {
+        try {
+            $dir = public_path('uploads/messenger/avatars');
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+            $localName = md5($senderId) . '.jpg';
+            $localPath = $dir . '/' . $localName;
+
+            // Skip re-download if already cached and fresh (<24h old)
+            if (file_exists($localPath) && (time() - filemtime($localPath)) < 86400) {
+                return 'uploads/messenger/avatars/' . $localName;
+            }
+
+            $response = Http::timeout(10)->get($url);
+            if ($response->successful() && strlen($response->body()) > 1000) {
+                file_put_contents($localPath, $response->body());
+                return 'uploads/messenger/avatars/' . $localName;
+            }
+        } catch (\Exception $e) {
+            Log::warning('Messenger avatar download failed: ' . $e->getMessage());
+        }
+        return null;
     }
 
     /**
@@ -316,10 +366,17 @@ class MessengerController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
+                $profilePicUrl = $data['profile_pic'] ?? null;
+
+                // Download profile pic locally — Meta CDN URLs expire
+                $localAvatar = null;
+                if ($profilePicUrl) {
+                    $localAvatar = $this->downloadAndCacheAvatar($profilePicUrl, $senderId);
+                }
 
                 return [
-                    'name' => $data['name'] ?? ($data['first_name'] ?? 'Messenger User'),
-                    'profile_pic' => $data['profile_pic'] ?? null
+                    'name'        => $data['name'] ?? ($data['first_name'] ?? 'Messenger User'),
+                    'profile_pic' => $localAvatar ?? $profilePicUrl
                 ];
             }
         } catch (\Exception $e) {
