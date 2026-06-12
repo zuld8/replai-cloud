@@ -16,14 +16,13 @@
     },
     "author": "mdh-product",
     "engines": {
-        "node": ">=14.5.0"
+        "node": ">=18.0.0"
     },
     "dependencies": {
         "@whiskeysockets/baileys": "^6.7.21",
         "axios": "^1.2.2",
         "bootstrap": "^5.3.3",
         "cors": "^2.8.5",
-        "crypto": "^1.0.1",
         "crypto-js": "^4.2.0",
         "dotenv": "^16.0.0",
         "emoji-mart-vue-fast": "^15.0.4",

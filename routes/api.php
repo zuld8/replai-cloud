@@ -20,9 +20,9 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 
 
-header('Access-Control-Allow-Origin:  *');
-header('Access-Control-Allow-Methods:  POST, GET, OPTIONS, PUT, DELETE');
-header('Access-Control-Allow-Headers:  Content-Type, X-Auth-Token, Origin, Authorization');
+// REMOVED: header('Access-Control-Allow-Origin: *'); // Security: use Laravel CORS middleware
+// REMOVED: header('Access-Control-Allow-Methods: ...'); // Security: use Laravel CORS middleware
+// REMOVED: header('Access-Control-Allow-Headers: ...'); // Security: use Laravel CORS middleware
 
 // Public API Routes (No Authentication Required)
 Route::prefix('public')->group(function () {
