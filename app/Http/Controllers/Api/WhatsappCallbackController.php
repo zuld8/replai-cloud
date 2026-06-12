@@ -1450,20 +1450,20 @@ class WhatsappCallbackController extends Controller
         $expressUrl = config('services.express.url') . '/trigger-whatsapp';
 
         if ($welcomeForEmit) {
-            Http::post($expressUrl, MessagestResource::make($welcomeForEmit));
+            Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, MessagestResource::make($welcomeForEmit));
         }
 
         if ($userForEmit) {
             // Kirim request pertama
-            $response = Http::post($expressUrl, MessagestResource::make($userForEmit));
+            $response = Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, MessagestResource::make($userForEmit));
 
             // Jika request pertama berhasil, baru kirim request kedua
             if ($response->successful() && $replyForEmit) {
-                Http::post($expressUrl, MessagestResource::make($replyForEmit));
+                Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, MessagestResource::make($replyForEmit));
             }
         } elseif ($replyForEmit) {
             // Jika $userForEmit tidak ada, langsung kirim request kedua
-            Http::post($expressUrl, MessagestResource::make($replyForEmit));
+            Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, MessagestResource::make($replyForEmit));
         }
     }
 

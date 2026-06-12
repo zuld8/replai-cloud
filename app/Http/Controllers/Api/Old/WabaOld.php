@@ -1576,20 +1576,20 @@ class WabaCallbackController extends Controller
         $expressUrl = config('services.express.url') . '/trigger-whatsapp';
 
         if ($welcomeForEmit) {
-            Http::post($expressUrl, HistoryChatResources::make($welcomeForEmit));
+            Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, HistoryChatResources::make($welcomeForEmit));
         }
 
         if ($userForEmit) {
             // Kirim request pertama
-            $response = Http::post($expressUrl, HistoryChatResources::make($userForEmit));
+            $response = Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, HistoryChatResources::make($userForEmit));
 
             // Jika request pertama berhasil, baru kirim request kedua
             if ($response->successful() && $replyForEmit) {
-                Http::post($expressUrl, HistoryChatResources::make($replyForEmit));
+                Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, HistoryChatResources::make($replyForEmit));
             }
         } elseif ($replyForEmit) {
             // Jika $userForEmit tidak ada, langsung kirim request kedua
-            Http::post($expressUrl, HistoryChatResources::make($replyForEmit));
+            Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, HistoryChatResources::make($replyForEmit));
         }
     }
 

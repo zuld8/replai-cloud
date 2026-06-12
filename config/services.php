@@ -43,7 +43,8 @@ return [
 
 
     'express' => [
-        'url' => env('EXPRESS_URL', 'http://147.93.159.3:3001'),
+        'url'     => env('EXPRESS_URL', 'http://127.0.0.1:3002'),
+        'api_key' => env('TRIGGER_API_KEY'),
     ],
 
 ];

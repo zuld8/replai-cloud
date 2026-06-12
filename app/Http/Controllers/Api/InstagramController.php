@@ -1484,17 +1484,17 @@ class InstagramController extends Controller
         $expressUrl = config('services.express.url') . '/trigger-whatsapp';
 
         if ($welcomeMessage) {
-            Http::post($expressUrl, MessagestResource::make($welcomeMessage));
+            Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, MessagestResource::make($welcomeMessage));
         }
 
         if ($userMessage) {
-            $response = Http::post($expressUrl, MessagestResource::make($userMessage));
+            $response = Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, MessagestResource::make($userMessage));
 
             if ($response->successful() && $replyMessage) {
-                Http::post($expressUrl, MessagestResource::make($replyMessage));
+                Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, MessagestResource::make($replyMessage));
             }
         } elseif ($replyMessage) {
-            Http::post($expressUrl, MessagestResource::make($replyMessage));
+            Http::withHeaders(['x-api-key' => config('services.express.api_key')])->post($expressUrl, MessagestResource::make($replyMessage));
         }
     }
 
