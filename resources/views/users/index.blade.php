@@ -1078,7 +1078,7 @@ small.text-muted {
                             {{-- Normal role select (non-primary users) --}}
                             <div class="input-group" id="editRoleSelectWrap">
                                 <span class="input-group-text"><i class="bx bx-lock"></i></span>
-                                <select class="form-control" name="role" id="editRole" required>
+                                <select class="form-control" id="editRole">
                                     <option value="">{{__('general.choose')}}</option>
                                     @foreach($roles as $role)
                                     <option value="{{$role->id}}">{{$role->name}}</option>
@@ -1274,6 +1274,8 @@ function openEditModal(userId) {
             lockWrap.classList.add('d-none');
             rSel.setAttribute('required', '');
             for (let o of rSel.options) o.selected = (o.value == data.role_id);
+            // FIX: always sync hidden input so only one role value is submitted
+            document.getElementById('editRoleHidden').value = data.role_id || '';
         }
 
         // Business (Select2 multi)
@@ -1312,6 +1314,14 @@ function openEditModal(userId) {
 
 // Edit modal image upload
 document.addEventListener('DOMContentLoaded', function() {
+    // FIX: Keep editRoleHidden in sync when select changes
+    const editRoleSel = document.getElementById('editRole');
+    if (editRoleSel) {
+        editRoleSel.addEventListener('change', function() {
+            document.getElementById('editRoleHidden').value = this.value;
+        });
+    }
+
     const editImageInput   = document.getElementById('editImageInput');
     const editImgPreview   = document.getElementById('editImagePreview');
     const editAvatarPrev   = document.getElementById('editAvatarPreview');
