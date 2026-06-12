@@ -170,9 +170,12 @@ class InstagramController extends Controller
                 return false;
             }
 
-            DB::transaction(function () use ($messageData, $instagramAccount) {
-                // Get or create chat history
-                $histories = $this->getOrCreateHistory($messageData, $instagramAccount);
+            // Pre-fetch sender info BEFORE transaction — HTTP must not block DB locks
+            $senderInfo = $this->preFetchSenderInfo($instagramAccount, $messageData['from']);
+
+            DB::transaction(function () use ($messageData, $instagramAccount, $senderInfo) {
+                // Get or create chat history (no HTTP calls here — senderInfo pre-fetched)
+                $histories = $this->getOrCreateHistory($messageData, $instagramAccount, $senderInfo);
                 if (!$histories) {
                     return false;
                 }
@@ -264,7 +267,29 @@ class InstagramController extends Controller
     /**
      * Get or create chat history
      */
-    private function getOrCreateHistory(array $messageData, InstagramAccount $instagramAccount): mixed
+    /**
+     * Pre-fetch sender info OUTSIDE any DB transaction (HTTP must not hold DB locks).
+     */
+    private function preFetchSenderInfo(InstagramAccount $instagramAccount, string $senderId): ?array
+    {
+        $existing = $this->historyChatObserver->getByNumber(
+            'personal', $senderId, null, 'instagram', null, null, null, $instagramAccount->id
+        );
+
+        $needsFetch = !$existing
+            || empty($existing->avatar_url)
+            || str_contains((string) $existing->avatar_url, 'fbsbx.com')
+            || str_contains((string) $existing->avatar_url, 'lookaside.facebook.com')
+            || str_contains((string) $existing->avatar_url, 'platform-lookaside');
+
+        if (!$needsFetch) {
+            return null;
+        }
+
+        return $this->getSenderInfo($instagramAccount, $senderId);
+    }
+
+    private function getOrCreateHistory(array $messageData, InstagramAccount $instagramAccount, ?array $senderInfo = null): mixed
     {
         $histories = $this->historyChatObserver->getByNumber(
             'personal',
@@ -278,9 +303,7 @@ class InstagramController extends Controller
         );
 
         if (!$histories) {
-            // New chat — fetch sender info from Instagram API
-            $senderInfo = $this->getSenderInfo($instagramAccount, $messageData['from']);
-
+            // $senderInfo pre-fetched OUTSIDE transaction
             $histories = $this->historyChatObserver->createData(
                 null,
                 'personal',
@@ -292,24 +315,20 @@ class InstagramController extends Controller
                 'instagram',
                 null,
                 null,
-                $senderInfo['profile_pic'] ?? null,
+                $senderInfo['profile_pic'] ?? null,  // local path or null
                 null,
                 $instagramAccount->id
             );
-        } else {
-            // Existing chat — refresh avatar if null or expired Meta CDN URL
-            $needsAvatarRefresh = empty($histories->avatar_url)
-                || str_contains((string) $histories->avatar_url, 'fbsbx.com')
-                || str_contains((string) $histories->avatar_url, 'lookaside.facebook.com');
-
-            if ($needsAvatarRefresh) {
-                $senderInfo = $this->getSenderInfo($instagramAccount, $messageData['from']);
-                if (!empty($senderInfo['profile_pic'])) {
-                    $histories->update(['avatar_url' => $senderInfo['profile_pic']]);
-                }
-                if ($histories->name === 'Instagram User' && ($senderInfo['name'] ?? 'Instagram User') !== 'Instagram User') {
-                    $histories->update(['name' => $senderInfo['name']]);
-                }
+        } elseif ($senderInfo !== null) {
+            $updates = [];
+            if (!empty($senderInfo['profile_pic'])) {
+                $updates['avatar_url'] = $senderInfo['profile_pic'];
+            }
+            if ($histories->name === 'Instagram User' && ($senderInfo['name'] ?? 'Instagram User') !== 'Instagram User') {
+                $updates['name'] = $senderInfo['name'];
+            }
+            if (!empty($updates)) {
+                $histories->update($updates);
             }
         }
 
@@ -360,7 +379,7 @@ class InstagramController extends Controller
 
                 return [
                     'name'        => $data['name'] ?? ($data['username'] ?? 'Instagram User'),
-                    'profile_pic' => $localAvatar ?? $profilePicUrl
+                    'profile_pic' => $localAvatar  // null if download fails — never store expiring Meta CDN URL
                 ];
             }
  

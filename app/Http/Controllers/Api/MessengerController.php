@@ -174,9 +174,12 @@ class MessengerController extends Controller
                 return false;
             }
 
-            DB::transaction(function () use ($messageData, $messengerAccount) {
-                // Get or create chat history
-                $histories = $this->getOrCreateHistory($messageData, $messengerAccount);
+            // Pre-fetch sender info BEFORE transaction — HTTP must not block DB locks
+            $senderInfo = $this->preFetchSenderInfo($messengerAccount, $messageData['from']);
+
+            DB::transaction(function () use ($messageData, $messengerAccount, $senderInfo) {
+                // Get or create chat history (no HTTP calls inside — senderInfo already fetched)
+                $histories = $this->getOrCreateHistory($messageData, $messengerAccount, $senderInfo);
                 if (!$histories) {
                     return false;
                 }
@@ -268,7 +271,32 @@ class MessengerController extends Controller
     /**
      * Get or create chat history
      */
-    private function getOrCreateHistory(array $messageData, MessengerAccount $messengerAccount): mixed
+    /**
+     * Pre-fetch sender info OUTSIDE any DB transaction.
+     * HTTP calls (getSenderInfo + avatar download) must not run inside a transaction
+     * because they hold DB locks for the entire HTTP round-trip duration.
+     */
+    private function preFetchSenderInfo(MessengerAccount $messengerAccount, string $senderId): ?array
+    {
+        // Check if we already have a fresh local avatar — skip API call if so
+        $existing = $this->historyChatObserver->getByNumber(
+            'personal', $senderId, null, 'messanger', null, null, null, null, $messengerAccount->id
+        );
+
+        $needsFetch = !$existing
+            || empty($existing->avatar_url)
+            || str_contains((string) $existing->avatar_url, 'fbsbx.com')
+            || str_contains((string) $existing->avatar_url, 'lookaside.facebook.com')
+            || str_contains((string) $existing->avatar_url, 'platform-lookaside');
+
+        if (!$needsFetch) {
+            return null; // Existing local avatar is fine — no API call needed
+        }
+
+        return $this->getSenderInfo($messengerAccount, $senderId);
+    }
+
+    private function getOrCreateHistory(array $messageData, MessengerAccount $messengerAccount, ?array $senderInfo = null): mixed
     {
         $histories = $this->historyChatObserver->getByNumber(
             'personal',
@@ -283,9 +311,7 @@ class MessengerController extends Controller
         );
 
         if (!$histories) {
-            // New chat — fetch sender info from Messenger API
-            $senderInfo = $this->getSenderInfo($messengerAccount, $messageData['from']);
-
+            // $senderInfo was pre-fetched OUTSIDE the transaction — no HTTP here
             $histories = $this->historyChatObserver->createData(
                 null,
                 'personal',
@@ -297,26 +323,22 @@ class MessengerController extends Controller
                 'messanger',
                 null,
                 null,
-                $senderInfo['profile_pic'] ?? null,
+                $senderInfo['profile_pic'] ?? null,  // local path or null
                 null,
                 null,
                 $messengerAccount->id
             );
-        } else {
-            // Existing chat — refresh avatar if null or expired Meta CDN URL
-            $needsAvatarRefresh = empty($histories->avatar_url)
-                || str_contains((string) $histories->avatar_url, 'fbsbx.com')
-                || str_contains((string) $histories->avatar_url, 'lookaside.facebook.com');
-
-            if ($needsAvatarRefresh) {
-                $senderInfo = $this->getSenderInfo($messengerAccount, $messageData['from']);
-                if (!empty($senderInfo['profile_pic'])) {
-                    $histories->update(['avatar_url' => $senderInfo['profile_pic']]);
-                }
-                // Also update name if it's still the default fallback
-                if ($histories->name === 'Messenger User' && ($senderInfo['name'] ?? 'Messenger User') !== 'Messenger User') {
-                    $histories->update(['name' => $senderInfo['name']]);
-                }
+        } elseif ($senderInfo !== null) {
+            // senderInfo was pre-fetched because avatar needed refresh — apply updates
+            $updates = [];
+            if (!empty($senderInfo['profile_pic'])) {
+                $updates['avatar_url'] = $senderInfo['profile_pic'];
+            }
+            if ($histories->name === 'Messenger User' && ($senderInfo['name'] ?? 'Messenger User') !== 'Messenger User') {
+                $updates['name'] = $senderInfo['name'];
+            }
+            if (!empty($updates)) {
+                $histories->update($updates);
             }
         }
 
@@ -376,7 +398,7 @@ class MessengerController extends Controller
 
                 return [
                     'name'        => $data['name'] ?? ($data['first_name'] ?? 'Messenger User'),
-                    'profile_pic' => $localAvatar ?? $profilePicUrl
+                    'profile_pic' => $localAvatar  // null if download fails — never store expiring Meta CDN URL
                 ];
             }
         } catch (\Exception $e) {
