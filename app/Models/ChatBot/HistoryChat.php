@@ -197,10 +197,14 @@ class HistoryChat extends Model
     public function getImageDataAttribute()
     {
         if ($this->avatar_url != null) {
-            return $this->avatar_url;
-        } else {
-            return asset('assets/img/icons/user.png');
+            // External URL (http/https) — return as-is
+            if (str_starts_with($this->avatar_url, 'http://') || str_starts_with($this->avatar_url, 'https://')) {
+                return $this->avatar_url;
+            }
+            // Local path (e.g. uploads/messenger/avatars/xxx.jpg) — wrap with asset()
+            return asset($this->avatar_url);
         }
+        return asset('assets/img/icons/user.png');
     }
 
     public function getFromNameAttribute()

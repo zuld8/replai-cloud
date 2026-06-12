@@ -302,6 +302,18 @@ class InstagramController extends Controller
             $instagramAccount->id
         );
 
+        // Fallback: after page reconnect, instagram_id changes but IGSID+page_id stays the same.
+        if (!$histories) {
+            $histories = HistoryChat::where('from', 'instagram')
+                ->where('from_number', $messageData['from'])
+                ->whereHas('instagram', fn($q) => $q->where('instagram_id', $instagramAccount->instagram_id))
+                ->first();
+
+            if ($histories) {
+                $histories->update(['instagram_id' => $instagramAccount->id]);
+            }
+        }
+
         if (!$histories) {
             // $senderInfo pre-fetched OUTSIDE transaction
             $histories = $this->historyChatObserver->createData(

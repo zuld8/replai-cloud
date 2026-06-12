@@ -310,6 +310,19 @@ class MessengerController extends Controller
             $messengerAccount->id
         );
 
+        // Fallback: after page reconnect, messanger_id changes but PSID+page_id stays the same.
+        // Re-link the old history to the new account instead of creating a duplicate.
+        if (!$histories) {
+            $histories = HistoryChat::where('from', 'messanger')
+                ->where('from_number', $messageData['from'])
+                ->whereHas('messenger', fn($q) => $q->where('page_id', $messengerAccount->page_id))
+                ->first();
+
+            if ($histories) {
+                $histories->update(['messanger_id' => $messengerAccount->id]);
+            }
+        }
+
         if (!$histories) {
             // $senderInfo was pre-fetched OUTSIDE the transaction — no HTTP here
             $histories = $this->historyChatObserver->createData(
