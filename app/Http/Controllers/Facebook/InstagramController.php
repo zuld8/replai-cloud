@@ -45,7 +45,7 @@ class InstagramController extends Controller
     public function redirectToInstagram()
     {
         $platform    = platform_currency();
-        $appId       = $platform->fb_app_id;
+        $appId       = $platform->ig_app_id ?? $platform->fb_app_id;  // Instagram App ID (consistent with handleCallback)
         $redirectUri = route('instagram.redirect');
 
         $scopes = implode(',', [
