@@ -106,7 +106,7 @@
                         <!-- Show profile photo directly (like WhatsApp) -->
                         <img :src="list.photo" :alt="list.name"
                              class="instagram-photo-direct"
-                             @error="onInstagramPhotoError($event)" />
+                             @error="$event.target.style.display='none'; $event.target.closest('.chat-avatar-instagram').classList.remove('has-photo')" />
                         <!-- Small IG badge in corner -->
                         <span class="ig-badge"><i class="bx bxl-instagram"></i></span>
                     </div>
