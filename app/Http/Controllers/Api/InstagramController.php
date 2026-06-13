@@ -381,8 +381,8 @@ class InstagramController extends Controller
             // ✅ Instagram API endpoint untuk mendapatkan info user
             // Pakai Instagram Account ID sebagai prefix
             $response = Http::withToken($instagramAccount->access_token)
-                ->get("https://graph.facebook.com/v22.0/{$senderId}", [
-                    'fields' => 'id,name,username,profile_pic'
+                ->get("https://graph.instagram.com/v22.0/{$senderId}", [
+                    'fields' => 'name,username,profile_pic'
                 ]);
 
             if ($response->successful()) {

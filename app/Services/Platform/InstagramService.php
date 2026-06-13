@@ -128,9 +128,9 @@ class InstagramService
         }
 
         $response   = Http::withToken($instagram->access_token)
-            ->post("https://graph.facebook.com/v22.0/me/messages", [
+            ->post("https://graph.instagram.com/v22.0/{$instagram->instagram_id}/messages", [
                 'recipient' => ['id' => $from],
-                'message' => $dataOfMessage
+                'message'   => $dataOfMessage
             ]);
 
         return $response;
