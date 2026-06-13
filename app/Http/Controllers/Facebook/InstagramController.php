@@ -152,7 +152,7 @@ class InstagramController extends Controller
             // Try Instagram Graph API first (for Instagram Login tokens)
             $igResponse = Http::get('https://graph.instagram.com/me', [
                 'access_token' => $userAccessToken,
-                'fields' => 'id,username',
+                'fields' => 'id,user_id,username',  // user_id = classic IG ID (appears as entry.id in webhooks)
             ]);
 
             Log::info("IG Graph API /me", [
@@ -183,6 +183,11 @@ class InstagramController extends Controller
                     $longToken = $longResponse->json()['access_token'] ?? $userAccessToken;
                 }
 
+                // For Instagram API with Instagram Login:
+                // - igData['id'] = IGBAID (used for API calls, stored as instagram_id)
+                // - igData['user_id'] = classic IG User ID (used in webhook entry.id, stored as page_id for lookup)
+                $igUserId = $igData['user_id'] ?? null; // Classic IG ID — appears as entry.id in webhooks
+
                 $accountData = [
                     'instagram_id' => $profile['id'] ?? $igData['id'],
                     'username' => $profile['username'] ?? $igData['username'] ?? null,
@@ -193,7 +198,7 @@ class InstagramController extends Controller
                     'followers_count' => $profile['followers_count'] ?? 0,
                     'follows_count' => $profile['follows_count'] ?? 0,
                     'media_count' => $profile['media_count'] ?? 0,
-                    'page_id' => null,
+                    'page_id' => $igUserId,   // Classic IG user_id — used as entry.id in webhooks
                     'page_name' => null,
                     'access_token' => $longToken,
                 ];
