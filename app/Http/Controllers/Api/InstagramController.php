@@ -162,7 +162,6 @@ class InstagramController extends Controller
             }
 
             if (!$instagramAccount) {
-                Log::warning("Instagram account not found for page ID: {$pageId}");
                 return false;
             }
 
@@ -231,9 +230,6 @@ class InstagramController extends Controller
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Error processing Instagram message: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
             // Don't re-throw — let outer handler return 200 to Meta
             return false;
         }
