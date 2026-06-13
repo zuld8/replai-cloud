@@ -53,9 +53,12 @@ class ContactListResource extends JsonResource
             'device'        => $device,
             'livechat'      => $this->livechat->name ?? '',
             'telegram'      => $this->telegram->name ?? '',
+            'instagram'     => $this->instagram->name ?? '',
             'is_assignment' => $this->data_assignment,
             'not_read'      => $this->unread_count, // FIX: pakai kolom langsung, tidak perlu query details
-            'photo'         => $this->image_data,
+            'photo'         => $this->from === 'instagram'
+                ? ($this->avatar_url ? asset($this->avatar_url) : null)
+                : $this->image_data,
             'last_message'  => array(
                 'message'       => $this->getPreviewMessage(),
                 'time'          => $this->last_message

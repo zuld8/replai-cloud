@@ -102,6 +102,16 @@
                              :src="list.photo" :alt="list.name" class="messenger-photo"
                              @error="$event.target.style.display='none'" />
                     </div>
+                    <div v-else-if="list.from === 'instagram'" class="chat-avatar-instagram">
+                        <!-- Instagram icon always visible as base layer -->
+                        <div class="instagram-icon-bg">
+                            <i class="bx bxl-instagram"></i>
+                        </div>
+                        <!-- Profile photo overlaid on top (absolute pos); hidden on error -->
+                        <img v-if="list.photo"
+                             :src="list.photo" :alt="list.name" class="instagram-photo"
+                             @error="$event.target.style.display='none'" />
+                    </div>
                     <div v-else class="chat-avatar" :style="{ backgroundColor: getChannelColor(list.from) }">
                         <i :class="getChannelIcon(list.from)"></i>
                     </div>
@@ -135,11 +145,11 @@
                         </div>
 
                         <!-- WABA / Device Name — right-aligned with logo -->
-                        <div class="chat-device-row" v-if="list.device || list.telegram || list.livechat">
+                        <div class="chat-device-row" v-if="list.device || list.telegram || list.livechat || list.instagram">
                             <span class="device-logo">
                                 <i :class="getChannelIcon(list.from)"></i>
                             </span>
-                            <span class="device-label">{{ list.device || list.telegram || list.livechat }}</span>
+                            <span class="device-label">{{ list.device || list.telegram || list.livechat || list.instagram }}</span>
                         </div>
 
                         <!-- Label Text (Optional) -->

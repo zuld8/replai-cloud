@@ -104,6 +104,7 @@ class CrmController extends Controller
             'waba:id,phone,meta_account_id', 'waba.meta:id,name',
             'livechat:id,name',
             'telegram:id,name',
+            'instagram:id,name',   // Instagram account name for sidebar label
         ];
 
         if ($page === 1) {
