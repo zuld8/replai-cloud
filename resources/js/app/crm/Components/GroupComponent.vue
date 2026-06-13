@@ -102,15 +102,16 @@
                              :src="list.photo" :alt="list.name" class="messenger-photo"
                              @error="$event.target.style.display='none'" />
                     </div>
-                    <div v-else-if="list.from === 'instagram'" class="chat-avatar-instagram">
-                        <!-- Instagram icon always visible as base layer -->
-                        <div class="instagram-icon-bg">
-                            <i class="bx bxl-instagram"></i>
-                        </div>
-                        <!-- Profile photo overlaid on top (absolute pos); hidden on error -->
-                        <img v-if="list.photo"
-                             :src="list.photo" :alt="list.name" class="instagram-photo"
-                             @error="$event.target.style.display='none'" />
+                    <div v-else-if="list.from === 'instagram' && list.photo" class="chat-avatar-instagram has-photo">
+                        <!-- Show profile photo directly (like WhatsApp) -->
+                        <img :src="list.photo" :alt="list.name"
+                             class="instagram-photo-direct"
+                             @error="onInstagramPhotoError($event)" />
+                        <!-- Small IG badge in corner -->
+                        <span class="ig-badge"><i class="bx bxl-instagram"></i></span>
+                    </div>
+                    <div v-else-if="list.from === 'instagram'" class="chat-avatar" :style="{ backgroundColor: getChannelColor(list.from) }">
+                        <i :class="getChannelIcon(list.from)"></i>
                     </div>
                     <div v-else class="chat-avatar" :style="{ backgroundColor: getChannelColor(list.from) }">
                         <i :class="getChannelIcon(list.from)"></i>
@@ -1521,30 +1522,45 @@ export default {
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    overflow: visible;
+    overflow: hidden;
     flex-shrink: 0;
-}
-
-.instagram-icon-bg {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 20px;
 }
 
-.instagram-photo {
-    position: absolute;
-    top: 0;
-    left: 0;
+.chat-avatar-instagram.has-photo {
+    overflow: visible;
+    background: transparent;
+}
+
+.instagram-photo-direct {
     width: 42px;
     height: 42px;
     border-radius: 50%;
     object-fit: cover;
+    display: block;
+}
+
+.ig-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #f09433, #dc2743, #bc1888);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid white;
+}
+
+.ig-badge i {
+    font-size: 9px;
+    color: white;
+    line-height: 1;
 }
 .chat-avatar-photo {
     width: 42px;
