@@ -172,7 +172,7 @@ class InstagramController extends Controller
                 $profile = $profileResponse->successful() ? $profileResponse->json() : $igData;
 
                 // Get long-lived token
-                $appSecret = platform_currency()->fb_app_secret;
+                $appSecret = platform_currency()->ig_app_secret ?? platform_currency()->fb_app_secret;
                 $longResponse = Http::get('https://graph.instagram.com/access_token', [
                     'grant_type' => 'ig_exchange_token',
                     'client_secret' => $appSecret,
@@ -199,6 +199,22 @@ class InstagramController extends Controller
                 ];
 
                 $this->instagramService->createData($accountData);
+
+                // Auto-subscribe this IG account to webhook (messages field)
+                try {
+                    $igAccountId = $accountData['instagram_id'];
+                    $subResp = Http::post("https://graph.instagram.com/v22.0/{$igAccountId}/subscribed_apps", [
+                        'subscribed_fields' => 'messages',
+                        'access_token'      => $longToken,
+                    ]);
+                    Log::info("IG webhook subscribe", [
+                        'ig_id'  => $igAccountId,
+                        'status' => $subResp->status(),
+                        'body'   => $subResp->json(),
+                    ]);
+                } catch (\Exception $subEx) {
+                    Log::warning("IG webhook subscribe failed", ['error' => $subEx->getMessage()]);
+                }
 
                 Log::info("Instagram connected via IG Graph API", ['username' => $accountData['username']]);
 
