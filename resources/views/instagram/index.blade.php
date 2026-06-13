@@ -379,22 +379,14 @@
 
         // Instagram Login via FB SDK - with retry and auth check
         window.launchInstagramLogin = function() {
-            if (typeof FB === 'undefined') {
-                alert('Facebook SDK belum load. Refresh halaman dan coba lagi.');
-                return;
-            }
-            showLoader();
-
-            // Facebook OAuth — scope-based (TANPA config_id)
-            // Lebih singkat: langsung pilih Page, tidak perlu pilih Business Portfolio
-            // Server akan ambil Instagram Business Account yang linked ke Page yang dipilih
             const appId       = document.getElementById('fbAppId').value;
             const redirectUri = '{{ route("instagram.redirect") }}';
-
-            const igAppId = document.getElementById('igAppId')?.value || appId;
+            const igAppId     = document.getElementById('igAppId')?.value || '';
 
             if (igAppId && igAppId !== appId) {
-                // Instagram Business Login (dedicated Instagram app)
+                // ── Instagram Business Login (Instagram API with Instagram Login) ──
+                // Uses dedicated Instagram App ID, no FB SDK needed
+                showLoader();
                 const params = new URLSearchParams({
                     client_id:     igAppId,
                     redirect_uri:  redirectUri,
@@ -404,7 +396,12 @@
                 });
                 window.location.href = 'https://www.instagram.com/oauth/authorize?' + params.toString();
             } else {
-                // Fallback: Facebook OAuth dialog
+                // ── Fallback: Facebook OAuth dialog (needs FB SDK) ──
+                if (typeof FB === 'undefined') {
+                    alert('Facebook SDK belum load. Refresh halaman dan coba lagi.');
+                    return;
+                }
+                showLoader();
                 const params = new URLSearchParams({
                     client_id:     appId,
                     redirect_uri:  redirectUri,
