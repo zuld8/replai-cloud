@@ -106,12 +106,6 @@ class InstagramController extends Controller
         try {
             $data = $request->all();
 
-            file_put_contents(storage_path('ig_debug.txt'),
-                date('Y-m-d H:i:s') . " WEBHOOK keys=" . implode(',', array_keys($data))
-                . " entry_id=" . ($data['entry'][0]['id'] ?? 'none')
-                . " has_msg=" . (isset($data['entry'][0]['messaging']) ? 'yes' : 'no') . "\n",
-                FILE_APPEND|LOCK_EX);
-
             if (!isset($data['entry'])) {
                 return response()->json(['status' => 'ok']);
             }
