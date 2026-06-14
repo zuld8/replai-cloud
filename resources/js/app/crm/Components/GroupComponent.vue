@@ -865,9 +865,10 @@ export default {
 
                 let data = response.data;
                 let newContacts = data.contacts;
-                // DEBUG: log instagram contact data
-                const igContact = newContacts.find(c => c.from === 'instagram');
-                if (igContact) console.log('[DEBUG] Instagram contact:', {from: igContact.from, photo: igContact.photo, instagram: igContact.instagram});
+                // DEBUG: log ALL contacts from values (use console.error so always visible)
+                console.error('[DEBUG] contacts count:', newContacts.length, 
+                    '| from values:', newContacts.map(c => c.from).join(','),
+                    '| instagram contacts:', newContacts.filter(c => c.from === 'instagram').map(c => ({n: c.name, photo: c.photo ? 'HAS_PHOTO' : 'NO_PHOTO', ig: c.instagram})));
                 this.merchantId = data.merchant_id;
                 if (append) {
                     this.chats.list = [...this.chats.list, ...newContacts];
