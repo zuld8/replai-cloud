@@ -865,6 +865,9 @@ export default {
 
                 let data = response.data;
                 let newContacts = data.contacts;
+                // DEBUG: log instagram contact data
+                const igContact = newContacts.find(c => c.from === 'instagram');
+                if (igContact) console.log('[DEBUG] Instagram contact:', {from: igContact.from, photo: igContact.photo, instagram: igContact.instagram});
                 this.merchantId = data.merchant_id;
                 if (append) {
                     this.chats.list = [...this.chats.list, ...newContacts];
@@ -2194,5 +2197,53 @@ export default {
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 180px;
+}
+</style>
+<style>
+/* Instagram avatar - global styles (not scoped to avoid hash issues) */
+.chat-avatar-instagram {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.chat-avatar-instagram.has-photo {
+    overflow: visible;
+    background: transparent;
+}
+
+.instagram-photo-direct {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+.ig-badge {
+    position: absolute !important;
+    bottom: -2px !important;
+    right: -2px !important;
+    width: 16px !important;
+    height: 16px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(45deg, #f09433, #dc2743, #bc1888) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1.5px solid white !important;
+}
+
+.ig-badge i {
+    font-size: 9px !important;
+    color: white !important;
+    line-height: 1;
 }
 </style>
