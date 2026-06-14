@@ -86,6 +86,12 @@
 
             <!-- Chat Items -->
             <div class="chat-items-container">
+                    <!-- DEBUG BAR - REMOVE AFTER DEBUGGING -->
+                    <div style="background:#ff0000;color:white;padding:4px;font-size:10px;position:sticky;top:0;z-index:999;">
+                        Called:{{ chats._debugCalled }} Total:{{ chats.list.length }} | 
+                        IG: {{ chats.list.filter(l => l.from === 'instagram').length }} | 
+                        IG photo: {{ chats.list.find(l => l.from === 'instagram') ? (chats.list.find(l => l.from === 'instagram').photo ? 'HAS' : 'NULL') : 'NONE' }}
+                    </div>
                 <div class="chat-item" v-for="(list, index) in chats.list" :key="index"
                     :class="{ active: $route.params.chatid === list.id, unread: list.not_read > 0 }" @click="selectChat(list)">
                     <!-- Avatar - Conditional: Photo untuk WhatsApp/Messenger, Icon untuk platform lain -->
@@ -482,6 +488,7 @@ export default {
                 page: 1,
                 limit: 10,
                 hasMoreChats: true,
+                _debugCalled: 0,
             },
             modalContactsPage: 1,
             modalContactsLoading: false,
