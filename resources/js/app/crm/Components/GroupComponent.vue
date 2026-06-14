@@ -88,18 +88,23 @@
             <div class="chat-items-container">
                 <div class="chat-item" v-for="(list, index) in chats.list" :key="index"
                     :class="{ active: $route.params.chatid === list.id, unread: list.not_read > 0 }" @click="selectChat(list)">
-                    <!-- Universal Avatar: photo + platform badge if photo available, else colored icon -->
-                    <div v-if="list.photo && !list.photo.includes('user.png') && !list.photo.includes('default')"
-                         class="chat-avatar-badge">
-                        <img :src="list.photo" :alt="list.name"
-                             class="avatar-img-round"
-                             @error="$event.target.style.opacity='0'" />
+                    <!-- Avatar with Platform Badge - always shows badge in bottom-right corner -->
+                    <div class="chat-avatar-outer">
+                        <!-- With real profile photo -->
+                        <div v-if="list.photo && !list.photo.includes('user.png') && !list.photo.includes('default')"
+                             class="chat-avatar-badge">
+                            <img :src="list.photo" :alt="list.name"
+                                 class="avatar-img-round"
+                                 @error="$event.target.style.opacity='0'" />
+                        </div>
+                        <!-- Without photo: colored circle with platform icon -->
+                        <div v-else class="chat-avatar" :style="{ backgroundColor: getChannelColor(list.from) }">
+                            <i :class="getChannelIcon(list.from)"></i>
+                        </div>
+                        <!-- Platform badge always shows -->
                         <span class="ch-badge" :class="`ch-badge--${list.from}`">
                             <i :class="getChannelIcon(list.from)"></i>
                         </span>
-                    </div>
-                    <div v-else class="chat-avatar" :style="{ backgroundColor: getChannelColor(list.from) }">
-                        <i :class="getChannelIcon(list.from)"></i>
                     </div>
 
                     <div class="chat-info">
@@ -2183,13 +2188,20 @@ export default {
 
 /* ================================================================
    Universal Platform Badge System
-   Round photo + platform icon badge in bottom-right corner
+   Works for BOTH: photo avatars AND colored-circle avatars
    ================================================================ */
+
+/* Outer wrapper - always relative for badge positioning */
+.chat-avatar-outer {
+    position: relative;
+    flex-shrink: 0;
+    display: inline-flex;
+}
+
 .chat-avatar-badge {
     position: relative;
     width: 48px;
     height: 48px;
-    flex-shrink: 0;
     border-radius: 50%;
 }
 
@@ -2203,6 +2215,39 @@ export default {
     background: #f0f0f0;
     transition: opacity 0.2s;
 }
+
+/* Also make the existing .chat-avatar work inside .chat-avatar-outer */
+.chat-avatar-outer .chat-avatar {
+    flex-shrink: 0;
+}
+
+/* Platform badge - bottom right corner (works for BOTH photo and circle avatars) */
+.ch-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    color: #fff;
+    z-index: 2;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.ch-badge i { font-size: 9px; line-height: 1; }
+
+/* Platform badge colors */
+.ch-badge--whatsapp,
+.ch-badge--waba     { background: #25D366; }
+.ch-badge--instagram { background: linear-gradient(135deg, #833AB4 0%, #E1306C 60%, #F77737 100%); }
+.ch-badge--messanger { background: #0084FF; }
+.ch-badge--telegram  { background: #229ED9; }
+.ch-badge--livechat  { background: #FF6B35; }
+
+
 
 /* Platform badge - bottom right corner */
 .ch-badge {
