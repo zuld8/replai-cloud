@@ -88,20 +88,27 @@
             <div class="chat-items-container">
                 <div class="chat-item" v-for="(list, index) in chats.list" :key="index"
                     :class="{ active: $route.params.chatid === list.id, unread: list.not_read > 0 }" @click="selectChat(list)">
-                    <!-- Avatar with Platform Badge - always shows badge in bottom-right corner -->
+                    <!-- Avatar with Platform Badge in corner -->
                     <div class="chat-avatar-outer">
-                        <!-- With real profile photo -->
-                        <div v-if="list.photo && !list.photo.includes('user.png') && !list.photo.includes('default')"
+                        <!-- WhatsApp/WABA: always show photo (real or default person icon) -->
+                        <div v-if="list.from === 'whatsapp' || list.from === 'waba'"
+                             class="chat-avatar-badge">
+                            <img :src="list.photo || defaultUserIcon" :alt="list.name"
+                                 class="avatar-img-round"
+                                 @error="$event.target.src = defaultUserIcon" />
+                        </div>
+                        <!-- Other platforms with real profile photo -->
+                        <div v-else-if="list.photo && !list.photo.includes('user.png') && !list.photo.includes('default')"
                              class="chat-avatar-badge">
                             <img :src="list.photo" :alt="list.name"
                                  class="avatar-img-round"
                                  @error="$event.target.style.opacity='0'" />
                         </div>
-                        <!-- Without photo: colored circle with platform icon -->
+                        <!-- No photo: colored circle with platform icon -->
                         <div v-else class="chat-avatar" :style="{ backgroundColor: getChannelColor(list.from) }">
                             <i :class="getChannelIcon(list.from)"></i>
                         </div>
-                        <!-- Platform badge always shows -->
+                        <!-- Platform badge ALWAYS shows in bottom-right corner -->
                         <span class="ch-badge" :class="`ch-badge--${list.from}`">
                             <i :class="getChannelIcon(list.from)"></i>
                         </span>
