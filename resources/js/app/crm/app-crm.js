@@ -40,7 +40,15 @@ Vue.use(Vue3Toastify, {
 // Buat fungsi toast global
 Vue.config.globalProperties.$showToast = showToast;
 
+// DEBUG: Alert on body before Promise.all
+const __entryDbg = document.createElement('div');
+__entryDbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:blue;color:white;padding:4px;font-size:11px;font-weight:bold;';
+__entryDbg.textContent = 'ENTRY: Promise.all starting @ ' + new Date().toLocaleTimeString();
+document.body.appendChild(__entryDbg);
+
 Promise.all([routerPromise, storePromise,NprogressContainerPromise, MultiselectPromise]).then(([router, store,NprogressContainer, Multiselect]) => {
+    __entryDbg.style.background = 'green';
+    __entryDbg.textContent = 'ENTRY: Promise.all RESOLVED, mounting Vue @ ' + new Date().toLocaleTimeString();
     Vue.mixin(errorHandlerMixin);
     Vue.component("NprogressContainer", NprogressContainer.default);
     Vue.component("Multiselect", Multiselect.default);
@@ -48,4 +56,9 @@ Promise.all([routerPromise, storePromise,NprogressContainerPromise, MultiselectP
     Vue.use(router.default);
     Vue.use(store.default);
     Vue.mount("#app");
+    __entryDbg.textContent = 'ENTRY: Vue MOUNTED @ ' + new Date().toLocaleTimeString();
+}).catch(err => {
+    __entryDbg.style.background = 'red';
+    __entryDbg.textContent = 'ENTRY: Promise.all FAILED! ' + (err?.message || String(err));
+    console.error('[ENTRY FAIL]', err);
 });
