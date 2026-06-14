@@ -1,9 +1,6 @@
 <template>
     <div class="sidebar-left" id="leftSidebar">
-        <!-- FIXED DEBUG BAR - ALWAYS VISIBLE -->
-        <div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#e53e3e;color:white;padding:3px 8px;font-size:10px;font-weight:bold;text-align:center;pointer-events:none;">
-            🔴 GroupComponent MOUNTED | getChatList called:{{ chats._debugCalled }} | contacts:{{ chats.list.length }} | IG:{{ chats.list.filter(l=>l.from==='instagram').length }}
-        </div>
+        
         <button class="sidebar-close-btn d-lg-none" @click="$emit('close-sidebar')">
             <i class='bx bx-x'></i>
         </button>
@@ -89,39 +86,18 @@
 
 
             <!-- Chat Items -->
-            <div class="chat-items-container">
-                    <!-- DEBUG BAR - REMOVE AFTER DEBUGGING -->
-                    <div style="background:#ff0000;color:white;padding:4px;font-size:10px;position:sticky;top:0;z-index:999;">
-                        Called:{{ chats._debugCalled }} Total:{{ chats.list.length }} | 
-                        IG: {{ chats.list.filter(l => l.from === 'instagram').length }} | 
-                        IG photo: {{ chats.list.find(l => l.from === 'instagram') ? (chats.list.find(l => l.from === 'instagram').photo ? 'HAS' : 'NULL') : 'NONE' }}
-                    </div>
+            
                 <div class="chat-item" v-for="(list, index) in chats.list" :key="index"
                     :class="{ active: $route.params.chatid === list.id, unread: list.not_read > 0 }" @click="selectChat(list)">
-                    <!-- Avatar - Conditional: Photo untuk WhatsApp/Messenger, Icon untuk platform lain -->
-                    <div v-if="list.from === 'whatsapp' || list.from === 'waba'" class="chat-avatar-photo">
-                        <img :src="list.photo || defaultUserIcon" :alt="list.name" />
-                    </div>
-                    <div v-else-if="list.from === 'messanger'" class="chat-avatar-messenger">
-                        <!-- Messenger icon always visible as base layer -->
-                        <div class="messenger-icon-bg">
-                            <i class="bx bxl-messenger"></i>
-                        </div>
-                        <!-- Profile photo overlaid on top (absolute pos); hidden on error -->
-                        <img v-if="list.photo && !list.photo.includes('user.png')"
-                             :src="list.photo" :alt="list.name" class="messenger-photo"
-                             @error="$event.target.style.display='none'" />
-                    </div>
-                    <div v-else-if="list.from === 'instagram' && list.photo" class="chat-avatar-instagram has-photo">
-                        <!-- Show profile photo directly (like WhatsApp) -->
+                    <!-- Universal Avatar: photo+badge if photo exists, else colored platform icon -->
+                    <div v-if="list.photo && !list.photo.includes('user.png') && !list.photo.includes('default')"
+                         class="chat-avatar-badge">
                         <img :src="list.photo" :alt="list.name"
-                             class="instagram-photo-direct"
-                             @error="$event.target.style.display='none'; $event.target.closest('.chat-avatar-instagram').classList.remove('has-photo')" />
-                        <!-- Small IG badge in corner -->
-                        <span class="ig-badge"><i class="bx bxl-instagram"></i></span>
-                    </div>
-                    <div v-else-if="list.from === 'instagram'" class="chat-avatar" :style="{ backgroundColor: getChannelColor(list.from) }">
-                        <i :class="getChannelIcon(list.from)"></i>
+                             class="avatar-img-round"
+                             @error="$event.target.style.opacity='0'" />
+                        <span class="ch-badge" :class="`ch-badge--${list.from}`">
+                            <i :class="getChannelIcon(list.from)"></i>
+                        </span>
                     </div>
                     <div v-else class="chat-avatar" :style="{ backgroundColor: getChannelColor(list.from) }">
                         <i :class="getChannelIcon(list.from)"></i>
@@ -1154,18 +1130,6 @@ export default {
     },
 
     mounted() {
-        // DEBUG: Create DOM element directly on body (bypasses CSS issues)
-        const __dbg = document.createElement('div');
-        __dbg.id = 'gc-debug-bar';
-        __dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#c0392b;color:#fff;padding:4px 8px;font-size:11px;font-weight:bold;font-family:monospace;text-align:center;pointer-events:none;';
-        __dbg.textContent = '🔴 GroupComponent.mounted() CALLED @ ' + new Date().toLocaleTimeString();
-        document.body.appendChild(__dbg);
-        setTimeout(() => {
-            __dbg.textContent = '✅ contacts: ' + (this.chats?.list?.length || 0) + 
-                ' | IG: ' + (this.chats?.list?.filter(c=>c.from==='instagram')?.length || 0) + 
-                ' | IG photo: ' + (this.chats?.list?.find(c=>c.from==='instagram')?.photo || 'NONE');
-        }, 3000);
-
         // Request browser notification permission
         if ("Notification" in window && Notification.permission === "default") {
             Notification.requestPermission();
@@ -2270,4 +2234,59 @@ export default {
     color: white !important;
     line-height: 1;
 }
+
+/* ============================================================
+   Universal Avatar Badge System - Photo + Platform Badge
+   ============================================================ */
+.chat-avatar-badge {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: visible;
+}
+
+.chat-avatar-badge .avatar-img-round {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 2px solid rgba(0,0,0,0.06);
+    background: #f0f0f0;
+}
+
+/* Platform badge - bottom right corner */
+.ch-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    font-size: 9px;
+    color: #fff;
+    z-index: 2;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.ch-badge i { font-size: 9px; line-height: 1; }
+
+/* Platform colors */
+.ch-badge--whatsapp,
+.ch-badge--waba    { background: #25D366; }
+
+.ch-badge--instagram { background: linear-gradient(135deg, #833AB4 0%, #E1306C 60%, #F77737 100%); }
+
+.ch-badge--messanger { background: #0084FF; }
+
+.ch-badge--telegram  { background: #229ED9; }
+
+.ch-badge--livechat  { background: #FF6B35; }
+
 </style>
