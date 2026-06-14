@@ -1,6 +1,5 @@
 <template>
     <div class="sidebar-left" id="leftSidebar">
-        
         <button class="sidebar-close-btn d-lg-none" @click="$emit('close-sidebar')">
             <i class='bx bx-x'></i>
         </button>
@@ -86,10 +85,10 @@
 
 
             <!-- Chat Items -->
-            
+            <div class="chat-items-container">
                 <div class="chat-item" v-for="(list, index) in chats.list" :key="index"
                     :class="{ active: $route.params.chatid === list.id, unread: list.not_read > 0 }" @click="selectChat(list)">
-                    <!-- Universal Avatar: photo+badge if photo exists, else colored platform icon -->
+                    <!-- Universal Avatar: photo + platform badge if photo available, else colored icon -->
                     <div v-if="list.photo && !list.photo.includes('user.png') && !list.photo.includes('default')"
                          class="chat-avatar-badge">
                         <img :src="list.photo" :alt="list.name"
@@ -468,7 +467,6 @@ export default {
                 page: 1,
                 limit: 10,
                 hasMoreChats: true,
-                _debugCalled: 0,
             },
             modalContactsPage: 1,
             modalContactsLoading: false,
@@ -852,10 +850,6 @@ export default {
 
                 let data = response.data;
                 let newContacts = data.contacts;
-                // DEBUG: log ALL contacts from values (use console.error so always visible)
-                console.error('[DEBUG] contacts count:', newContacts.length, 
-                    '| from values:', newContacts.map(c => c.from).join(','),
-                    '| instagram contacts:', newContacts.filter(c => c.from === 'instagram').map(c => ({n: c.name, photo: c.photo ? 'HAS_PHOTO' : 'NO_PHOTO', ig: c.instagram})));
                 this.merchantId = data.merchant_id;
                 if (append) {
                     this.chats.list = [...this.chats.list, ...newContacts];
@@ -2186,65 +2180,17 @@ export default {
     white-space: nowrap;
     max-width: 180px;
 }
-</style>
-<style>
-/* Instagram avatar - global styles (not scoped to avoid hash issues) */
-.chat-avatar-instagram {
-    position: relative;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    flex-shrink: 0;
-}
 
-.chat-avatar-instagram.has-photo {
-    overflow: visible;
-    background: transparent;
-}
-
-.instagram-photo-direct {
-    width: 42px !important;
-    height: 42px !important;
-    border-radius: 50% !important;
-    object-fit: cover !important;
-    display: block !important;
-}
-
-.ig-badge {
-    position: absolute !important;
-    bottom: -2px !important;
-    right: -2px !important;
-    width: 16px !important;
-    height: 16px !important;
-    border-radius: 50% !important;
-    background: linear-gradient(45deg, #f09433, #dc2743, #bc1888) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border: 1.5px solid white !important;
-}
-
-.ig-badge i {
-    font-size: 9px !important;
-    color: white !important;
-    line-height: 1;
-}
-
-/* ============================================================
-   Universal Avatar Badge System - Photo + Platform Badge
-   ============================================================ */
+/* ================================================================
+   Universal Platform Badge System
+   Round photo + platform icon badge in bottom-right corner
+   ================================================================ */
 .chat-avatar-badge {
     position: relative;
     width: 48px;
     height: 48px;
     flex-shrink: 0;
     border-radius: 50%;
-    overflow: visible;
 }
 
 .chat-avatar-badge .avatar-img-round {
@@ -2253,8 +2199,9 @@ export default {
     border-radius: 50%;
     object-fit: cover;
     display: block;
-    border: 2px solid rgba(0,0,0,0.06);
+    border: 1.5px solid rgba(0,0,0,0.08);
     background: #f0f0f0;
+    transition: opacity 0.2s;
 }
 
 /* Platform badge - bottom right corner */
@@ -2269,24 +2216,18 @@ export default {
     align-items: center;
     justify-content: center;
     border: 2px solid #fff;
-    font-size: 9px;
     color: #fff;
     z-index: 2;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
 }
-
 .ch-badge i { font-size: 9px; line-height: 1; }
 
-/* Platform colors */
+/* Platform badge colors */
 .ch-badge--whatsapp,
-.ch-badge--waba    { background: #25D366; }
-
+.ch-badge--waba     { background: #25D366; }
 .ch-badge--instagram { background: linear-gradient(135deg, #833AB4 0%, #E1306C 60%, #F77737 100%); }
-
 .ch-badge--messanger { background: #0084FF; }
-
 .ch-badge--telegram  { background: #229ED9; }
-
 .ch-badge--livechat  { background: #FF6B35; }
 
 </style>
