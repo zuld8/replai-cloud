@@ -1154,6 +1154,18 @@ export default {
     },
 
     mounted() {
+        // DEBUG: Create DOM element directly on body (bypasses CSS issues)
+        const __dbg = document.createElement('div');
+        __dbg.id = 'gc-debug-bar';
+        __dbg.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#c0392b;color:#fff;padding:4px 8px;font-size:11px;font-weight:bold;font-family:monospace;text-align:center;pointer-events:none;';
+        __dbg.textContent = '🔴 GroupComponent.mounted() CALLED @ ' + new Date().toLocaleTimeString();
+        document.body.appendChild(__dbg);
+        setTimeout(() => {
+            __dbg.textContent = '✅ contacts: ' + (this.chats?.list?.length || 0) + 
+                ' | IG: ' + (this.chats?.list?.filter(c=>c.from==='instagram')?.length || 0) + 
+                ' | IG photo: ' + (this.chats?.list?.find(c=>c.from==='instagram')?.photo || 'NONE');
+        }, 3000);
+
         // Request browser notification permission
         if ("Notification" in window && Notification.permission === "default") {
             Notification.requestPermission();
