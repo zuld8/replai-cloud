@@ -1,5 +1,9 @@
 <template>
     <div class="sidebar-left" id="leftSidebar">
+        <!-- FIXED DEBUG BAR - ALWAYS VISIBLE -->
+        <div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#e53e3e;color:white;padding:3px 8px;font-size:10px;font-weight:bold;text-align:center;pointer-events:none;">
+            🔴 GroupComponent MOUNTED | getChatList called:{{ chats._debugCalled }} | contacts:{{ chats.list.length }} | IG:{{ chats.list.filter(l=>l.from==='instagram').length }}
+        </div>
         <button class="sidebar-close-btn d-lg-none" @click="$emit('close-sidebar')">
             <i class='bx bx-x'></i>
         </button>
