@@ -1942,16 +1942,18 @@ export default {
     top: 100%;
     right: 0;
     margin-top: 4px;
-    background: white;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    min-width: 140px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    min-width: 185px;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.2s;
-    z-index: 100;
+    transform: translateY(-8px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 999;
+    overflow: hidden;
 }
 
 .dropdown-menu-chat.show {
@@ -1961,30 +1963,37 @@ export default {
 }
 
 .dropdown-item-chat {
-    padding: 10px 14px;
+    padding: 9px 14px;
     display: flex;
     align-items: center;
     gap: 10px;
     cursor: pointer;
     transition: background-color 0.15s;
     font-size: 13px;
-    color: #dc2626;
+    color: #374151;
+    background-color: transparent;
+    border-radius: 0;
 }
 
 .dropdown-item-chat:first-child {
-    border-radius: 8px 8px 0 0;
+    border-radius: 10px 10px 0 0;
 }
 
 .dropdown-item-chat:last-child {
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 10px 10px;
 }
 
 .dropdown-item-chat:hover {
-    background-color: #fee2e2;
+    background-color: #f3f4f6;
+}
+
+.dropdown-item-chat span {
+    color: #374151;
 }
 
 .dropdown-item-chat i {
     font-size: 16px;
+    color: #6b7280;
 }
 
 /* ===== Empty State ===== */
