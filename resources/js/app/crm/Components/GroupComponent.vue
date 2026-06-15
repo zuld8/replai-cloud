@@ -1191,9 +1191,17 @@ export default {
             try {
                 const res = await this.$axios.post(`/crm/action/pin/${list.id}`);
                 list.is_pinned = res.data.is_pinned;
-                const idx = this.contacts.findIndex(c => c.id === list.id);
-                if (idx >= 0) { this.contacts.splice(idx, 1); list.is_pinned ? this.contacts.unshift(list) : this.contacts.push(list); }
-            } catch (e) { console.error('togglePin', e); }
+                const idx = this.chats.list.findIndex(c => c.id === list.id);
+                if (idx >= 0) {
+                    this.chats.list.splice(idx, 1);
+                    list.is_pinned
+                        ? this.chats.list.unshift(list)
+                        : this.chats.list.push(list);
+                }
+            } catch (e) {
+                console.error('togglePin', e);
+                this.$toast?.error('Gagal mengubah pin chat');
+            }
             this.activeDropdown = null;
         },
         async resolveChat(list) {
@@ -1203,14 +1211,25 @@ export default {
         },
         openAssignModal(list) { this.assignModal = list; this.activeDropdown = null; if (!this.agentsList.length) this.loadAgents(); },
         async assignAgent(list, agentId) {
-            try { await this.$axios.post(`/crm/users/user-change/${list.id}`, { user_id: agentId }); }
-            catch (e) { console.error('assignAgent', e); }
+            try {
+                await this.$axios.post(`/crm/users/user-change/${list.id}`, { user_id: agentId });
+                const agent = this.agentsList.find(a => a.id === agentId);
+                if (agent) list.user = agent.name;
+            } catch (e) {
+                console.error('assignAgent', e);
+                this.$toast?.error('Gagal assign agent');
+            }
             this.assignModal = null;
         },
         openLabelModal(list) { this.labelModal = list; this.activeDropdown = null; if (!this.labelsList.length) this.loadLabels(); },
         async changeLabel(list, labelId) {
-            try { await this.$axios.post(`/crm/labels/change/${list.id}`, { label: labelId }); }
-            catch (e) { console.error('changeLabel', e); }
+            try {
+                await this.$axios.post(`/crm/labels/change/${list.id}`, { label: labelId });
+                list.label = labelId;
+            } catch (e) {
+                console.error('changeLabel', e);
+                this.$toast?.error('Gagal mengubah label');
+            }
             this.labelModal = null;
         },
         async markRead(list) {
@@ -1224,8 +1243,15 @@ export default {
             this.activeDropdown = null;
         },
         async toggleArchive(list) {
-            try { const res = await this.$axios.post(`/crm/action/archive/${list.id}`); list.is_archived = res.data.is_archived; this.contacts = this.contacts.filter(c => c.id !== list.id); }
-            catch (e) { console.error('toggleArchive', e); }
+            try {
+                const res = await this.$axios.post(`/crm/action/archive/${list.id}`);
+                list.is_archived = res.data.is_archived;
+                // Remove from current inbox view immediately
+                this.chats.list = this.chats.list.filter(c => c.id !== list.id);
+            } catch (e) {
+                console.error('toggleArchive', e);
+                this.$toast?.error('Gagal mengarsipkan chat');
+            }
             this.activeDropdown = null;
         },
         async blockChat(list) {
@@ -1239,8 +1265,14 @@ export default {
             const { type, chatId } = this.pendingConfirm;
             this.pendingConfirm = null;
             try {
-                if (type === 'delete') { await this.$axios.delete(`/crm/remove/${chatId}`); this.contacts = this.contacts.filter(c => c.id !== chatId); }
-                else if (type === 'clear') { await this.$axios.post(`/crm/action/clear-history/${chatId}`); const chat = this.contacts.find(c => c.id === chatId); if (chat) chat.last_message = { message: '', time: '', date: '' }; }
+                if (type === 'delete') {
+                    await this.$axios.delete(`/crm/remove/${chatId}`);
+                    this.chats.list = this.chats.list.filter(c => c.id !== chatId);
+                } else if (type === 'clear') {
+                    await this.$axios.post(`/crm/action/clear-history/${chatId}`);
+                    const chat = this.chats.list.find(c => c.id === chatId);
+                    if (chat) chat.last_message = { message: 'Riwayat chat dihapus', time: '', date: '' };
+                }
             } catch (e) { console.error('executeConfirmedAction', e); }
         },
         async loadAgents() { try { const res = await this.$axios.get('/crm/users'); this.agentsList = res.data.agents || []; } catch (e) { console.error(e); } },
