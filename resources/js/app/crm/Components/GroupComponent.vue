@@ -215,64 +215,6 @@
 
                         </div>
                     </div>
-                    <div class="chat-dropdown" @click.stop>
-                        <button class="dropdown-toggle-btn" @click="toggleDropdown(list.id)">
-                            <i class='bx bx-dots-vertical'></i>
-                        </button>
-                        <div class="dropdown-menu-chat" :class="{ show: activeDropdown === list.id }">
-
-                            <!-- === Primary actions === -->
-                            <div class="dropdown-item-chat" @click="togglePin(list)">
-                                <i :class="list.is_pinned ? 'bx bxs-pin pin-active' : 'bx bx-pin'"></i>
-                                <span>{{ list.is_pinned ? 'Unpin' : 'Pin' }}</span>
-                            </div>
-                            <div class="dropdown-item-chat" @click="resolveChat(list)">
-                                <i :class="list.status === 'resolved' ? 'bx bx-refresh c-resolve' : 'bx bx-check-circle c-resolve'"></i>
-                                <span>{{ list.status === 'resolved' ? 'Buka Kembali' : 'Selesaikan' }}</span>
-                            </div>
-                            <div class="dropdown-item-chat" @click="openAssignModal(list)">
-                                <i class="bx bx-user-plus c-assign"></i>
-                                <span>Assign Agent</span>
-                            </div>
-                            <div class="dropdown-item-chat" @click="openLabelModal(list)">
-                                <i class="bx bx-label c-label"></i>
-                                <span>Label</span>
-                            </div>
-                            <div class="dropdown-item-chat" @click="list.not_read > 0 ? markRead(list) : markUnread(list)">
-                                <i :class="list.not_read > 0 ? 'bx bx-envelope-open' : 'bx bx-envelope'"></i>
-                                <span>{{ list.not_read > 0 ? 'Tandai Dibaca' : 'Tandai Belum Dibaca' }}</span>
-                            </div>
-
-                            <!-- === Lainnya submenu === -->
-                            <div class="dropdown-divider-line"></div>
-                            <div class="dropdown-item-chat has-submenu"
-                                 @mouseenter="showSubMenu = list.id"
-                                 @mouseleave="showSubMenu = null">
-                                <i class="bx bx-dots-horizontal-rounded"></i>
-                                <span>Lainnya</span>
-                                <i class="bx bx-chevron-right submenu-arrow"></i>
-                                <div class="dropdown-submenu" v-show="showSubMenu === list.id">
-                                    <div class="dropdown-item-chat" @click.stop="toggleArchive(list)">
-                                        <i :class="list.is_archived ? 'bx bx-archive-out c-archive' : 'bx bx-archive-in c-archive'"></i>
-                                        <span>{{ list.is_archived ? 'Keluarkan Arsip' : 'Arsip' }}</span>
-                                    </div>
-                                    <div class="dropdown-item-chat" @click.stop="blockChat(list)">
-                                        <i class="bx bx-block c-block"></i>
-                                        <span>{{ list.status === 'block' ? 'Unblock' : 'Block User' }}</span>
-                                    </div>
-                                    <div class="dropdown-item-chat" @click.stop="confirmAction('clear', list.id)">
-                                        <i class="bx bx-eraser c-clear"></i>
-                                        <span>Hapus Riwayat Chat</span>
-                                    </div>
-                                    <div class="dropdown-item-chat c-danger" @click.stop="confirmAction('delete', list.id)">
-                                        <i class="bx bx-trash"></i>
-                                        <span>Hapus Percakapan</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Empty State -->
@@ -557,7 +499,6 @@
             </div>
         </div>
     </transition>
-
     <!-- Assign Agent Modal -->
     <transition name="crm-fade">
         <div v-if="assignModal" class="crm-modal-overlay" @click.self="assignModal = null">
@@ -578,7 +519,6 @@
             </div>
         </div>
     </transition>
-
     <!-- Label Picker Modal -->
     <transition name="crm-fade">
         <div v-if="labelModal" class="crm-modal-overlay" @click.self="labelModal = null">
@@ -596,7 +536,6 @@
             </div>
         </div>
     </transition>
-
 </template>
 
 <script>
@@ -668,12 +607,6 @@ export default {
             modalContactSearch: "",
             hoveredContactId: null,
             activeDropdown: null,
-            showSubMenu:    null,
-            pendingConfirm: null,
-            assignModal:    null,
-            labelModal:     null,
-            agentsList:     [],
-            labelsList:     [],
             showSubMenu:    null,
             pendingConfirm: null,
             assignModal:    null,
@@ -754,75 +687,6 @@ export default {
 
             // Reset device selection
             this.selectedDeviceId = '';
-
-    <!-- Confirmation Dialog -->
-    <transition name="crm-fade">
-        <div v-if="pendingConfirm" class="crm-modal-overlay" @click.self="pendingConfirm = null">
-            <div class="crm-confirm-dialog">
-                <div class="crm-confirm-icon" :class="pendingConfirm.type === 'delete' ? 'c-icon-danger' : 'c-icon-warn'">
-                    <i :class="pendingConfirm.type === 'delete' ? 'bx bx-trash' : 'bx bx-eraser'"></i>
-                </div>
-                <h4 class="crm-confirm-title">
-                    {{ pendingConfirm.type === 'delete' ? 'Hapus Percakapan?' : 'Hapus Riwayat Chat?' }}
-                </h4>
-                <p class="crm-confirm-desc">
-                    <template v-if="pendingConfirm.type === 'delete'">
-                        Percakapan ini akan dihapus. Tindakan ini <strong>tidak dapat dibatalkan</strong>.
-                    </template>
-                    <template v-else>
-                        Semua pesan akan dihapus secara permanen, namun percakapan tetap ada.
-                    </template>
-                </p>
-                <div class="crm-confirm-actions">
-                    <button class="btn-crm-cancel" @click="pendingConfirm = null">Batal</button>
-                    <button class="btn-crm-confirm" :class="pendingConfirm.type === 'delete' ? 'btn-crm-danger' : 'btn-crm-warn'"
-                            @click="executeConfirmedAction">
-                        {{ pendingConfirm.type === 'delete' ? 'Hapus' : 'Hapus Riwayat' }}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </transition>
-
-    <!-- Assign Agent Modal -->
-    <transition name="crm-fade">
-        <div v-if="assignModal" class="crm-modal-overlay" @click.self="assignModal = null">
-            <div class="crm-confirm-dialog crm-assign-dialog">
-                <h4 class="crm-confirm-title">Assign Agent</h4>
-                <div class="crm-agent-list">
-                    <div v-for="agent in agentsList" :key="agent.id"
-                         class="crm-agent-item" @click="assignAgent(assignModal, agent.id)">
-                        <div class="crm-agent-avatar">{{ agent.name ? agent.name.charAt(0).toUpperCase() : '?' }}</div>
-                        <div class="crm-agent-info">
-                            <span class="crm-agent-name">{{ agent.name }}</span>
-                            <span class="crm-agent-email">{{ agent.email }}</span>
-                        </div>
-                    </div>
-                    <p v-if="agentsList.length === 0" class="crm-confirm-desc" style="margin:12px 0">Memuat...</p>
-                </div>
-                <button class="btn-crm-cancel" @click="assignModal = null" style="width:100%;margin-top:12px">Batal</button>
-            </div>
-        </div>
-    </transition>
-
-    <!-- Label Picker Modal -->
-    <transition name="crm-fade">
-        <div v-if="labelModal" class="crm-modal-overlay" @click.self="labelModal = null">
-            <div class="crm-confirm-dialog crm-assign-dialog">
-                <h4 class="crm-confirm-title">Pilih Label</h4>
-                <div class="crm-agent-list">
-                    <div v-for="lbl in labelsList" :key="lbl.id"
-                         class="crm-agent-item" @click="changeLabel(labelModal, lbl.id)">
-                        <i class="bx bx-label" style="color:#f59e0b;font-size:18px"></i>
-                        <span class="crm-agent-name">{{ lbl.name }}</span>
-                    </div>
-                    <p v-if="labelsList.length === 0" class="crm-confirm-desc" style="margin:12px 0">Tidak ada label.</p>
-                </div>
-                <button class="btn-crm-cancel" @click="labelModal = null" style="width:100%;margin-top:12px">Batal</button>
-            </div>
-        </div>
-    </transition>
-
 
             // Open device selector modal
             setTimeout(() => {
@@ -1322,218 +1186,66 @@ export default {
             return ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'file', 'document'].includes(type);
         },
 
-        // ─── Context menu actions ───────────────────────────────────
-        async togglePin(list) {
-            try {
-                const res = await this.$axios.post(`/crm/action/pin/${list.id}`);
-                list.is_pinned = res.data.is_pinned;
-                const idx = this.contacts.findIndex(c => c.id === list.id);
-                if (idx >= 0) {
-                    this.contacts.splice(idx, 1);
-                    list.is_pinned ? this.contacts.unshift(list) : this.contacts.push(list);
-                }
-            } catch (e) { console.error('togglePin', e); }
-            this.activeDropdown = null;
-        },
-        async resolveChat(list) {
-            try {
-                await this.$axios.post(`/crm/action/resolved/${list.id}`);
-                list.status = list.status === 'resolved' ? 'open' : 'resolved';
-            } catch (e) { console.error('resolveChat', e); }
-            this.activeDropdown = null;
-        },
-        openAssignModal(list) {
-            this.assignModal = list;
-            this.activeDropdown = null;
-            if (!this.agentsList.length) this.loadAgents();
-        },
-        async assignAgent(list, agentId) {
-            try {
-                await this.$axios.post(`/crm/users/user-change/${list.id}`, { user_id: agentId });
-            } catch (e) { console.error('assignAgent', e); }
-            this.assignModal = null;
-        },
-        openLabelModal(list) {
-            this.labelModal = list;
-            this.activeDropdown = null;
-            if (!this.labelsList.length) this.loadLabels();
-        },
-        async changeLabel(list, labelId) {
-            try {
-                await this.$axios.post(`/crm/labels/change/${list.id}`, { label: labelId });
-            } catch (e) { console.error('changeLabel', e); }
-            this.labelModal = null;
-        },
-        async markRead(list) {
-            try {
-                await this.$axios.post(`/crm/mark-read/${list.id}`);
-                list.not_read = 0;
-            } catch (e) { console.error('markRead', e); }
-            this.activeDropdown = null;
-        },
-        async markUnread(list) {
-            try {
-                await this.$axios.post(`/crm/action/mark-unread/${list.id}`);
-                list.not_read = Math.max(list.not_read || 0, 1);
-            } catch (e) { console.error('markUnread', e); }
-            this.activeDropdown = null;
-        },
-        async toggleArchive(list) {
-            try {
-                const res = await this.$axios.post(`/crm/action/archive/${list.id}`);
-                list.is_archived = res.data.is_archived;
-                this.contacts = this.contacts.filter(c => c.id !== list.id);
-            } catch (e) { console.error('toggleArchive', e); }
-            this.activeDropdown = null;
-        },
-        async blockChat(list) {
-            try {
-                await this.$axios.post(`/crm/action/block/${list.id}`);
-                list.status = list.status === 'block' ? 'open' : 'block';
-            } catch (e) { console.error('blockChat', e); }
-            this.activeDropdown = null;
-            this.showSubMenu = null;
-        },
-        confirmAction(type, chatId) {
-            this.pendingConfirm = { type, chatId };
-            this.activeDropdown = null;
-            this.showSubMenu = null;
-        },
-        async executeConfirmedAction() {
-            if (!this.pendingConfirm) return;
-            const { type, chatId } = this.pendingConfirm;
-            this.pendingConfirm = null;
-            try {
-                if (type === 'delete') {
-                    await this.$axios.delete(`/crm/remove/${chatId}`);
-                    this.contacts = this.contacts.filter(c => c.id !== chatId);
-                } else if (type === 'clear') {
-                    await this.$axios.post(`/crm/action/clear-history/${chatId}`);
-                    const chat = this.contacts.find(c => c.id === chatId);
-                    if (chat) chat.last_message = { message: '', time: '', date: '' };
-                }
-            } catch (e) { console.error('executeConfirmedAction', e); }
-        },
-        async loadAgents() {
-        closeDropdownOutside() {
-            this.activeDropdown = null;
-            this.showSubMenu    = null;
-        },
-        },
-            } catch (e) { console.error('loadAgents', e); }
-        },
-        async loadLabels() {
-            try {
-                const res = await this.$axios.get('/crm/labels/?type=CRM');
-                this.labelsList = res.data.labels || [];
-            } catch (e) { console.error('loadLabels', e); }
-        },
-        // ─────────────────────────────────────────────────────────────
         // ─── Context menu actions ─────────────────────────────────────
         async togglePin(list) {
             try {
                 const res = await this.$axios.post(`/crm/action/pin/${list.id}`);
                 list.is_pinned = res.data.is_pinned;
                 const idx = this.contacts.findIndex(c => c.id === list.id);
-                if (idx >= 0) {
-                    this.contacts.splice(idx, 1);
-                    list.is_pinned ? this.contacts.unshift(list) : this.contacts.push(list);
-                }
+                if (idx >= 0) { this.contacts.splice(idx, 1); list.is_pinned ? this.contacts.unshift(list) : this.contacts.push(list); }
             } catch (e) { console.error('togglePin', e); }
             this.activeDropdown = null;
         },
         async resolveChat(list) {
-            try {
-                await this.$axios.post(`/crm/action/resolved/${list.id}`);
-                list.status = list.status === 'resolved' ? 'open' : 'resolved';
-            } catch (e) { console.error('resolveChat', e); }
+            try { await this.$axios.post(`/crm/action/resolved/${list.id}`); list.status = list.status === 'resolved' ? 'open' : 'resolved'; }
+            catch (e) { console.error('resolveChat', e); }
             this.activeDropdown = null;
         },
-        openAssignModal(list) {
-            this.assignModal = list;
-            this.activeDropdown = null;
-            if (!this.agentsList.length) this.loadAgents();
-        },
+        openAssignModal(list) { this.assignModal = list; this.activeDropdown = null; if (!this.agentsList.length) this.loadAgents(); },
         async assignAgent(list, agentId) {
-            try {
-                await this.$axios.post(`/crm/users/user-change/${list.id}`, { user_id: agentId });
-            } catch (e) { console.error('assignAgent', e); }
+            try { await this.$axios.post(`/crm/users/user-change/${list.id}`, { user_id: agentId }); }
+            catch (e) { console.error('assignAgent', e); }
             this.assignModal = null;
         },
-        openLabelModal(list) {
-            this.labelModal = list;
-            this.activeDropdown = null;
-            if (!this.labelsList.length) this.loadLabels();
-        },
+        openLabelModal(list) { this.labelModal = list; this.activeDropdown = null; if (!this.labelsList.length) this.loadLabels(); },
         async changeLabel(list, labelId) {
-            try {
-                await this.$axios.post(`/crm/labels/change/${list.id}`, { label: labelId });
-            } catch (e) { console.error('changeLabel', e); }
+            try { await this.$axios.post(`/crm/labels/change/${list.id}`, { label: labelId }); }
+            catch (e) { console.error('changeLabel', e); }
             this.labelModal = null;
         },
         async markRead(list) {
-            try {
-                await this.$axios.post(`/crm/mark-read/${list.id}`);
-                list.not_read = 0;
-            } catch (e) { console.error('markRead', e); }
+            try { await this.$axios.post(`/crm/mark-read/${list.id}`); list.not_read = 0; }
+            catch (e) { console.error('markRead', e); }
             this.activeDropdown = null;
         },
         async markUnread(list) {
-            try {
-                await this.$axios.post(`/crm/action/mark-unread/${list.id}`);
-                list.not_read = Math.max(list.not_read || 0, 1);
-            } catch (e) { console.error('markUnread', e); }
+            try { await this.$axios.post(`/crm/action/mark-unread/${list.id}`); list.not_read = Math.max(list.not_read || 0, 1); }
+            catch (e) { console.error('markUnread', e); }
             this.activeDropdown = null;
         },
         async toggleArchive(list) {
-            try {
-                const res = await this.$axios.post(`/crm/action/archive/${list.id}`);
-                list.is_archived = res.data.is_archived;
-                this.contacts = this.contacts.filter(c => c.id !== list.id);
-            } catch (e) { console.error('toggleArchive', e); }
+            try { const res = await this.$axios.post(`/crm/action/archive/${list.id}`); list.is_archived = res.data.is_archived; this.contacts = this.contacts.filter(c => c.id !== list.id); }
+            catch (e) { console.error('toggleArchive', e); }
             this.activeDropdown = null;
         },
         async blockChat(list) {
-            try {
-                await this.$axios.post(`/crm/action/block/${list.id}`);
-                list.status = list.status === 'block' ? 'open' : 'block';
-            } catch (e) { console.error('blockChat', e); }
-            this.activeDropdown = null;
-            this.showSubMenu = null;
+            try { await this.$axios.post(`/crm/action/block/${list.id}`); list.status = list.status === 'block' ? 'open' : 'block'; }
+            catch (e) { console.error('blockChat', e); }
+            this.activeDropdown = null; this.showSubMenu = null;
         },
-        confirmAction(type, chatId) {
-            this.pendingConfirm = { type, chatId };
-            this.activeDropdown = null;
-            this.showSubMenu = null;
-        },
+        confirmAction(type, chatId) { this.pendingConfirm = { type, chatId }; this.activeDropdown = null; this.showSubMenu = null; },
         async executeConfirmedAction() {
             if (!this.pendingConfirm) return;
             const { type, chatId } = this.pendingConfirm;
             this.pendingConfirm = null;
             try {
-                if (type === 'delete') {
-                    await this.$axios.delete(`/crm/remove/${chatId}`);
-                    this.contacts = this.contacts.filter(c => c.id !== chatId);
-                } else if (type === 'clear') {
-                    await this.$axios.post(`/crm/action/clear-history/${chatId}`);
-                    const chat = this.contacts.find(c => c.id === chatId);
-                    if (chat) chat.last_message = { message: '', time: '', date: '' };
-                }
+                if (type === 'delete') { await this.$axios.delete(`/crm/remove/${chatId}`); this.contacts = this.contacts.filter(c => c.id !== chatId); }
+                else if (type === 'clear') { await this.$axios.post(`/crm/action/clear-history/${chatId}`); const chat = this.contacts.find(c => c.id === chatId); if (chat) chat.last_message = { message: '', time: '', date: '' }; }
             } catch (e) { console.error('executeConfirmedAction', e); }
         },
-        async loadAgents() {
-            try {
-                const res = await this.$axios.get('/crm/users');
-                this.agentsList = res.data.agents || [];
-            } catch (e) { console.error('loadAgents', e); }
-        },
-        async loadLabels() {
-            try {
-                const res = await this.$axios.get('/crm/labels/?type=CRM');
-                this.labelsList = res.data.labels || [];
-            } catch (e) { console.error('loadLabels', e); }
-        },
-        // ──────────────────────────────────────────────────────────────────
+        async loadAgents() { try { const res = await this.$axios.get('/crm/users'); this.agentsList = res.data.agents || []; } catch (e) { console.error(e); } },
+        async loadLabels() { try { const res = await this.$axios.get('/crm/labels/?type=CRM'); this.labelsList = res.data.labels || []; } catch (e) { console.error(e); } },
+        // ─────────────────────────────────────────────────────────────────
 
         toggleDropdown(chatId) {
             this.activeDropdown = this.activeDropdown === chatId ? null : chatId;
@@ -1541,6 +1253,7 @@ export default {
 
         closeDropdownOutside() {
             this.activeDropdown = null;
+            this.showSubMenu    = null;
         },
 
         async deleteChat(id) {
@@ -1604,8 +1317,6 @@ export default {
 
         // Close dropdown when clicking outside
             document.addEventListener('click', this.closeDropdownOutside);
-            this.loadAgents();
-            this.loadLabels();
             this.loadAgents();
             this.loadLabels();
 
@@ -2737,91 +2448,17 @@ export default {
 .ch-badge--telegram  { background: #229ED9; }
 .ch-badge--livechat  { background: #FF6B35; }
 
-/* ── Context Menu Extensions ───────────────────────────── */
-.bx.pin-active{color:#f59e0b!important}
-.c-resolve{color:#22c55e!important}
-.c-assign{color:#6366f1!important}
-.c-label{color:#f59e0b!important}
-.c-archive{color:#3b82f6!important}
-.c-block{color:#f97316!important}
-.c-clear{color:#ec4899!important}
+.bx.pin-active{color:#f59e0b!important}.c-resolve{color:#22c55e!important}.c-assign{color:#6366f1!important}.c-label{color:#f59e0b!important}.c-archive{color:#3b82f6!important}.c-block{color:#f97316!important}.c-clear{color:#ec4899!important}
 .dropdown-divider-line{height:1px;background:rgba(255,255,255,.08);margin:4px 0}
-.has-submenu{position:relative;justify-content:space-between!important}
-.has-submenu .submenu-arrow{margin-left:auto;font-size:14px;color:#94a3b8}
-.c-danger:hover{background:rgba(255,77,79,.15)!important}
-.c-danger:hover span,.c-danger:hover i{color:#ff4d4f!important}
-.dropdown-submenu{position:absolute;left:calc(100% + 4px);top:-4px;
-  background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:10px;
-  padding:4px;min-width:190px;z-index:1001;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-/* Modals */
-.crm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
-  display:flex;align-items:center;justify-content:center;z-index:9999}
-.crm-confirm-dialog{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:16px;
-  padding:28px;width:340px;max-width:90vw;text-align:center;
-  box-shadow:0 24px 48px rgba(0,0,0,.5);color:#e2e8f0}
-.crm-confirm-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;margin:0 auto 16px;font-size:24px}
-.c-icon-danger{background:rgba(255,77,79,.15);color:#ff4d4f}
-.c-icon-warn{background:rgba(249,115,22,.15);color:#f97316}
-.crm-confirm-title{font-size:16px;font-weight:600;margin:0 0 8px;color:#f1f5f9}
-.crm-confirm-desc{font-size:13px;color:#94a3b8;margin:0 0 20px;line-height:1.5}
-.crm-confirm-actions{display:flex;gap:10px}
-.btn-crm-cancel{flex:1;padding:9px 0;border-radius:8px;border:1px solid rgba(255,255,255,.15);
-  background:transparent;color:#94a3b8;cursor:pointer;font-size:13px;transition:all .2s}
-.btn-crm-cancel:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
-.btn-crm-confirm{flex:1;padding:9px 0;border-radius:8px;border:none;cursor:pointer;
-  font-size:13px;font-weight:600;transition:all .2s;color:#fff}
-.btn-crm-danger{background:linear-gradient(135deg,#ef4444,#dc2626);
-  box-shadow:0 4px 12px rgba(239,68,68,.35)}
-.btn-crm-warn{background:linear-gradient(135deg,#f97316,#ea580c);
-  box-shadow:0 4px 12px rgba(249,115,22,.35)}
-.btn-crm-confirm:hover{transform:translateY(-1px)}
-.crm-assign-dialog{text-align:left}
-.crm-agent-list{max-height:280px;overflow-y:auto}
-.crm-agent-item{display:flex;align-items:center;gap:10px;padding:10px 8px;
-  border-radius:8px;cursor:pointer;transition:background .15s}
-.crm-agent-item:hover{background:rgba(99,102,241,.12)}
-.crm-agent-avatar{width:34px;height:34px;border-radius:50%;
-  background:linear-gradient(135deg,#6366f1,#4f46e5);
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
-.crm-agent-info{flex:1;min-width:0}
-.crm-agent-name{display:block;font-size:13px;color:#e2e8f0;font-weight:500}
-.crm-agent-email{display:block;font-size:11px;color:#64748b}
-.crm-fade-enter-active,.crm-fade-leave-active{transition:opacity .2s}
-.crm-fade-enter-from,.crm-fade-leave-to{opacity:0}
-.bx.pin-active{color:#f59e0b!important}
-.c-resolve{color:#22c55e!important}.c-assign{color:#6366f1!important}
-.c-label{color:#f59e0b!important}.c-archive{color:#3b82f6!important}
-.c-block{color:#f97316!important}.c-clear{color:#ec4899!important}
-.dropdown-divider-line{height:1px;background:rgba(255,255,255,.08);margin:4px 0}
-.has-submenu{position:relative;display:flex;align-items:center}
-.has-submenu>.submenu-arrow{margin-left:auto;font-size:14px;color:#94a3b8}
-.c-danger:hover{background:rgba(255,77,79,.15)!important}
-.c-danger:hover span,.c-danger:hover i{color:#ff4d4f!important}
+.has-submenu{position:relative;display:flex!important;align-items:center!important}.has-submenu>.submenu-arrow{margin-left:auto;font-size:14px;color:#94a3b8}
+.c-danger:hover{background:rgba(255,77,79,.15)!important}.c-danger:hover span,.c-danger:hover i{color:#ff4d4f!important}
 .dropdown-submenu{position:absolute;left:calc(100% + 4px);top:-4px;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:4px;min-width:190px;z-index:1001;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .crm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999}
 .crm-confirm-dialog{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px;width:340px;max-width:90vw;text-align:center;box-shadow:0 24px 48px rgba(0,0,0,.5);color:#e2e8f0}
-.crm-confirm-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px}
-.c-icon-danger{background:rgba(255,77,79,.15);color:#ff4d4f}.c-icon-warn{background:rgba(249,115,22,.15);color:#f97316}
-.crm-confirm-title{font-size:16px;font-weight:600;margin:0 0 8px;color:#f1f5f9}
-.crm-confirm-desc{font-size:13px;color:#94a3b8;margin:0 0 20px;line-height:1.5}
-.crm-confirm-actions{display:flex;gap:10px}
-.btn-crm-cancel{flex:1;padding:9px 0;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#94a3b8;cursor:pointer;font-size:13px;transition:all .2s}
-.btn-crm-cancel:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
-.btn-crm-confirm{flex:1;padding:9px 0;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;color:#fff}
-.btn-crm-danger{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 12px rgba(239,68,68,.35)}
-.btn-crm-warn{background:linear-gradient(135deg,#f97316,#ea580c);box-shadow:0 4px 12px rgba(249,115,22,.35)}
-.btn-crm-confirm:hover{transform:translateY(-1px)}
-.crm-assign-dialog{text-align:left}
-.crm-agent-list{max-height:280px;overflow-y:auto}
-.crm-agent-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:8px;cursor:pointer;transition:background .15s}
-.crm-agent-item:hover{background:rgba(99,102,241,.12)}
-.crm-agent-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
-.crm-agent-info{flex:1;min-width:0}
-.crm-agent-name{display:block;font-size:13px;color:#e2e8f0;font-weight:500}
-.crm-agent-email{display:block;font-size:11px;color:#64748b}
-.crm-fade-enter-active,.crm-fade-leave-active{transition:opacity .2s}
-.crm-fade-enter-from,.crm-fade-leave-to{opacity:0}
-
+.crm-confirm-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px}.c-icon-danger{background:rgba(255,77,79,.15);color:#ff4d4f}.c-icon-warn{background:rgba(249,115,22,.15);color:#f97316}
+.crm-confirm-title{font-size:16px;font-weight:600;margin:0 0 8px;color:#f1f5f9}.crm-confirm-desc{font-size:13px;color:#94a3b8;margin:0 0 20px;line-height:1.5}
+.crm-confirm-actions{display:flex;gap:10px}.btn-crm-cancel{flex:1;padding:9px 0;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#94a3b8;cursor:pointer;font-size:13px;transition:all .2s}.btn-crm-cancel:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
+.btn-crm-confirm{flex:1;padding:9px 0;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;color:#fff}.btn-crm-danger{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 12px rgba(239,68,68,.35)}.btn-crm-warn{background:linear-gradient(135deg,#f97316,#ea580c);box-shadow:0 4px 12px rgba(249,115,22,.35)}.btn-crm-confirm:hover{transform:translateY(-1px)}
+.crm-assign-dialog{text-align:left}.crm-agent-list{max-height:280px;overflow-y:auto}.crm-agent-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:8px;cursor:pointer;transition:background .15s}.crm-agent-item:hover{background:rgba(99,102,241,.12)}.crm-agent-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}.crm-agent-info{flex:1;min-width:0}.crm-agent-name{display:block;font-size:13px;color:#e2e8f0;font-weight:500}.crm-agent-email{display:block;font-size:11px;color:#64748b}
+.crm-fade-enter-active,.crm-fade-leave-active{transition:opacity .2s}.crm-fade-enter-from,.crm-fade-leave-to{opacity:0}
 </style>
