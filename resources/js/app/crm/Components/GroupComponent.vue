@@ -1251,7 +1251,10 @@ export default {
             this.activeDropdown = this.activeDropdown === chatId ? null : chatId;
         },
 
-        closeDropdownOutside() {
+        closeDropdownOutside(event) {
+            if (event && event.target && event.target.closest('.dropdown-menu-chat, .dropdown-submenu, .dropdown-toggle-btn')) {
+                return;
+            }
             this.activeDropdown = null;
             this.showSubMenu    = null;
         },
@@ -1908,11 +1911,18 @@ export default {
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s;
+    z-index: 998;
 }
 
 .chat-item:hover .chat-dropdown {
     opacity: 1;
     visibility: visible;
+}
+
+/* Keep dropdown visible when menu is open (so items remain clickable) */
+.chat-dropdown:has(.dropdown-menu-chat.show) {
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .dropdown-toggle-btn {
@@ -1950,15 +1960,17 @@ export default {
     min-width: 185px;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transform: translateY(-8px);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 999;
-    overflow: hidden;
+    z-index: 9999;
+    overflow: visible;
 }
 
 .dropdown-menu-chat.show {
     opacity: 1;
     visibility: visible;
+    pointer-events: all;
     transform: translateY(0);
 }
 
