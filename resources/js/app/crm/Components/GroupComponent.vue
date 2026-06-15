@@ -1937,13 +1937,13 @@ export default {
 /* Chat Dropdown Menu */
 .chat-dropdown {
     position: absolute;
-    right: 12px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s;
-    z-index: 998;
+    transition: opacity 0.2s;
+    z-index: 900;
 }
 
 .chat-item:hover .chat-dropdown {
@@ -1951,7 +1951,7 @@ export default {
     visibility: visible;
 }
 
-/* Keep dropdown visible when menu is open (so items remain clickable) */
+/* Keep dropdown visible when menu is open */
 .chat-dropdown:has(.dropdown-menu-chat.show) {
     opacity: 1 !important;
     visibility: visible !important;
@@ -1981,29 +1981,29 @@ export default {
 
 .dropdown-menu-chat {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 4px);
     right: 0;
-    margin-top: 4px;
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-    border: 1px solid #e5e7eb;
+    background: #fff;
+    background-color: #fff;
+    border: 1px solid #e2e8f0;
     border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
-    min-width: 185px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    min-width: 190px;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transform: translateY(-8px);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
     z-index: 9999;
     overflow: visible;
+    padding: 4px 0;
 }
 
 .dropdown-menu-chat.show {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: all;
-    transform: translateY(0);
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: all !important;
+    transform: translateY(0) !important;
 }
 
 .dropdown-item-chat {
@@ -2014,30 +2014,23 @@ export default {
     cursor: pointer;
     transition: background-color 0.15s;
     font-size: 13px;
-    color: #374151;
-    background-color: transparent;
-    border-radius: 0;
-}
-
-.dropdown-item-chat:first-child {
-    border-radius: 10px 10px 0 0;
-}
-
-.dropdown-item-chat:last-child {
-    border-radius: 0 0 10px 10px;
+    color: #1f2937 !important;
+    background-color: #ffffff !important;
 }
 
 .dropdown-item-chat:hover {
-    background-color: #f3f4f6;
+    background-color: #f0f4f8 !important;
 }
 
 .dropdown-item-chat span {
-    color: #374151;
+    color: #1f2937 !important;
+    font-weight: 400;
 }
 
 .dropdown-item-chat i {
-    font-size: 16px;
-    color: #6b7280;
+    font-size: 15px;
+    color: #6b7280 !important;
+    flex-shrink: 0;
 }
 
 /* ===== Empty State ===== */
@@ -2501,17 +2494,165 @@ export default {
 .ch-badge--telegram  { background: #229ED9; }
 .ch-badge--livechat  { background: #FF6B35; }
 
-.bx.pin-active{color:#f59e0b!important}.c-resolve{color:#22c55e!important}.c-assign{color:#6366f1!important}.c-label{color:#f59e0b!important}.c-archive{color:#3b82f6!important}.c-block{color:#f97316!important}.c-clear{color:#ec4899!important}
-.dropdown-divider-line{height:1px;background:rgba(255,255,255,.08);margin:4px 0}
-.has-submenu{position:relative;display:flex!important;align-items:center!important}.has-submenu>.submenu-arrow{margin-left:auto;font-size:14px;color:#94a3b8}
-.c-danger:hover{background:rgba(255,77,79,.15)!important}.c-danger:hover span,.c-danger:hover i{color:#ff4d4f!important}
-.dropdown-submenu{position:absolute;left:calc(100% + 4px);top:-4px;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:4px;min-width:190px;z-index:1001;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-.crm-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999}
-.crm-confirm-dialog{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px;width:340px;max-width:90vw;text-align:center;box-shadow:0 24px 48px rgba(0,0,0,.5);color:#e2e8f0}
-.crm-confirm-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px}.c-icon-danger{background:rgba(255,77,79,.15);color:#ff4d4f}.c-icon-warn{background:rgba(249,115,22,.15);color:#f97316}
-.crm-confirm-title{font-size:16px;font-weight:600;margin:0 0 8px;color:#f1f5f9}.crm-confirm-desc{font-size:13px;color:#94a3b8;margin:0 0 20px;line-height:1.5}
-.crm-confirm-actions{display:flex;gap:10px}.btn-crm-cancel{flex:1;padding:9px 0;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:transparent;color:#94a3b8;cursor:pointer;font-size:13px;transition:all .2s}.btn-crm-cancel:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
-.btn-crm-confirm{flex:1;padding:9px 0;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;color:#fff}.btn-crm-danger{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 4px 12px rgba(239,68,68,.35)}.btn-crm-warn{background:linear-gradient(135deg,#f97316,#ea580c);box-shadow:0 4px 12px rgba(249,115,22,.35)}.btn-crm-confirm:hover{transform:translateY(-1px)}
-.crm-assign-dialog{text-align:left}.crm-agent-list{max-height:280px;overflow-y:auto}.crm-agent-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:8px;cursor:pointer;transition:background .15s}.crm-agent-item:hover{background:rgba(99,102,241,.12)}.crm-agent-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}.crm-agent-info{flex:1;min-width:0}.crm-agent-name{display:block;font-size:13px;color:#e2e8f0;font-weight:500}.crm-agent-email{display:block;font-size:11px;color:#64748b}
 .crm-fade-enter-active,.crm-fade-leave-active{transition:opacity .2s}.crm-fade-enter-from,.crm-fade-leave-to{opacity:0}
+
+/* ── Context menu icon colors ── */
+.bx.pin-active { color: #f59e0b !important; }
+.c-resolve      { color: #22c55e !important; }
+.c-assign       { color: #6366f1 !important; }
+.c-label        { color: #f59e0b !important; }
+.c-archive      { color: #3b82f6 !important; }
+.c-block        { color: #f97316 !important; }
+.c-clear        { color: #ec4899 !important; }
+
+/* Divider inside dropdown */
+.dropdown-divider-line {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 3px 0;
+}
+
+/* Submenu trigger item */
+.has-submenu {
+    position: relative;
+    display: flex !important;
+    align-items: center !important;
+}
+.has-submenu > .submenu-arrow {
+    margin-left: auto;
+    font-size: 14px;
+    color: #9ca3af;
+}
+
+/* Danger item (delete) */
+.c-danger:hover {
+    background: rgba(239, 68, 68, 0.08) !important;
+}
+.c-danger:hover span,
+.c-danger:hover i {
+    color: #ef4444 !important;
+}
+
+/* Submenu panel */
+.dropdown-submenu {
+    position: absolute;
+    left: calc(100% + 4px);
+    top: -4px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 4px 0;
+    min-width: 190px;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* Confirmation modal overlay */
+.crm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+.crm-confirm-dialog {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 28px;
+    width: 340px;
+    max-width: 90vw;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    color: #1f2937;
+}
+.crm-confirm-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 24px;
+}
+.c-icon-danger { background: rgba(239,68,68,0.1); color: #ef4444; }
+.c-icon-warn   { background: rgba(249,115,22,0.1); color: #f97316; }
+.crm-confirm-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: #111827;
+}
+.crm-confirm-desc {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 20px;
+    line-height: 1.5;
+}
+.crm-confirm-actions { display: flex; gap: 10px; }
+.btn-crm-cancel {
+    flex: 1;
+    padding: 9px 0;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.btn-crm-cancel:hover { background: #f3f4f6; color: #374151; }
+.btn-crm-confirm {
+    flex: 1;
+    padding: 9px 0;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    color: #fff;
+}
+.btn-crm-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.btn-crm-warn   { background: linear-gradient(135deg, #f97316, #ea580c); }
+.btn-crm-confirm:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+/* Assign agent modal */
+.crm-assign-dialog { text-align: left; }
+.crm-agent-list { max-height: 280px; overflow-y: auto; }
+.crm-agent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.crm-agent-item:hover { background: rgba(99,102,241,0.08); }
+.crm-agent-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+.crm-agent-info { flex: 1; min-width: 0; }
+.crm-agent-name  { display: block; font-size: 13px; color: #1f2937; font-weight: 500; }
+.crm-agent-email { display: block; font-size: 11px; color: #9ca3af; }
+
+/* Transitions */
+.crm-fade-enter-active, .crm-fade-leave-active { transition: opacity 0.2s; }
+.crm-fade-enter-from, .crm-fade-leave-to { opacity: 0; }
+
 </style>
