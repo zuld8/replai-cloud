@@ -4,10 +4,13 @@ namespace App\Models\ChatBot;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Ramsey\Uuid\Uuid;
 
 class HistoryChatDetail extends Model
 {
+    use SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      *

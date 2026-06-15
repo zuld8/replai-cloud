@@ -9,6 +9,7 @@ use App\Http\Resources\Crm\ContactListResource;
 use App\Http\Resources\Crm\MessagestResource;
 use App\Http\Resources\LiveChat\HistoryChatResources;
 use App\Models\ChatBot\HistoryChat;
+use App\Models\ChatBot\HistoryChatPin;
 use App\Models\Master\MessageTemplate;
 use App\Models\ChatBot\HistoryChatDetail;
 use App\Models\LiveChat;
@@ -24,6 +25,7 @@ use App\Observers\LiveChatObserver;
 use App\Observers\Master\CategoryObserver;
 use App\Observers\Master\LabelObserver;
 use App\Observers\Store\StoreObserver;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use App\Observers\UserObserver;
 use App\Observers\WhatsappDeviceObserver;
@@ -92,6 +94,24 @@ class CrmController extends Controller
         $limit  = $request->limit ?: 10;
         $page   = (int)($request->page ?? 1);
         $data   = $this->historyChatObserver->getData($request);
+
+        // Pin ordering: pinned-first (per agent, no N+1 — LEFT JOIN instead of subquery per row)
+        $userId = my_user()->id;
+        $data->addSelect(['history_chats.*', \DB::raw(
+            'CASE WHEN hcp.user_id IS NOT NULL THEN 1 ELSE 0 END as is_pinned_for_user'
+        )])->leftJoin('history_chat_pins as hcp', function ($join) use ($userId) {
+            $join->on('hcp.history_chat_id', '=', 'history_chats.id')
+                 ->where('hcp.user_id', '=', $userId);
+        })->orderByRaw(
+            'is_pinned_for_user DESC, history_chats.last_message_at DESC'
+        );
+
+        // Archived filter: hide archived from main inbox, show only in archived tab
+        if (($request->tab ?? '') === 'archived') {
+            $data->where('history_chats.is_archived', true);
+        } else {
+            $data->where('history_chats.is_archived', false);
+        }
 
         $bizId    = my_business();
         $userId   = my_user()->id;
@@ -825,10 +845,15 @@ class CrmController extends Controller
 
     public function deleteMessage(HistoryChatDetail $detail)
     {
-        $detail->delete();
+        // Security: ensure the detail belongs to a chat in the current business (IDOR fix)
+        if ($detail->history && $detail->history->business_id !== my_business()) {
+            return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+        }
+
+        $detail->delete(); // soft delete (SoftDeletes on model)
 
         return response()->json([
-            'status'     => true,
+            'status' => true,
         ], 200);
     }
 
@@ -988,22 +1013,25 @@ class CrmController extends Controller
 
     public function deleteChats(HistoryChat $history)
     {
+        // Security: FilterByBusinessScope on HistoryChat model already guards tenant isolation
         try {
-
             DB::beginTransaction();
-            $history->delete();
+            $history->delete(); // soft delete via SoftDeletes trait
             DB::commit();
 
-            return response()->json([
-                'status'        => false,
-                'message'       => 'Berhasil menghapus pesan',
-            ], 200);
+            // Invalidate contact list cache
+            try {
+                $prefix  = config('cache.prefix', 'replai_automation_cache');
+                $pattern = $prefix . '_crm_contacts_' . $history->merchant_id . '_%';
+                \DB::table('cache')->where('key', 'like', $pattern)->delete();
+            } catch (\Exception $e) {}
+
+            return response()->json(['status' => true, 'messages' => 'success'], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with(['gagal' => $e->getMessage()]);
+            return response()->json(['status' => false, 'messages' => $e->getMessage()], 500);
         }
     }
-
     public function getDevices(Request $request)
     {
 
@@ -1342,5 +1370,94 @@ class CrmController extends Controller
             'error'   => $response['message'] ?? 'Failed to send template',
         ], 500);
     }
+
+    // ================================================================
+    // NEW: Pin toggle (per-agent)
+    // ================================================================
+    public function togglePin(HistoryChat $history)
+    {
+        $userId = my_user()->id;
+        $pin    = HistoryChatPin::where('history_chat_id', $history->id)
+                                ->where('user_id', $userId)
+                                ->first();
+        if ($pin) {
+            $pin->delete();
+            $isPinned = false;
+        } else {
+            HistoryChatPin::create(['history_chat_id' => $history->id, 'user_id' => $userId]);
+            $isPinned = true;
+        }
+
+        // Invalidate contact list cache
+        try {
+            $prefix  = config('cache.prefix', 'replai_automation_cache');
+            $pattern = $prefix . '_crm_contacts_' . $history->merchant_id . '_%';
+            \DB::table('cache')->where('key', 'like', $pattern)->delete();
+        } catch (\Exception $e) {}
+        return response()->json(['status' => true, 'is_pinned' => $isPinned], 200);
+    }
+
+    // ================================================================
+    // NEW: Mark as unread (set unread_count >= 1)
+    // ================================================================
+    public function markUnread(HistoryChat $history)
+    {
+        if ($history->unread_count < 1) {
+            $history->update(['unread_count' => 1]);
+        }
+
+        // Invalidate contact list cache
+        try {
+            $prefix  = config('cache.prefix', 'replai_automation_cache');
+            $pattern = $prefix . '_crm_contacts_' . $history->merchant_id . '_%';
+            \DB::table('cache')->where('key', 'like', $pattern)->delete();
+        } catch (\Exception $e) {}
+        return response()->json(['status' => true], 200);
+    }
+
+    // ================================================================
+    // NEW: Toggle archive
+    // ================================================================
+    public function toggleArchive(HistoryChat $history)
+    {
+        $history->update(['is_archived' => !$history->is_archived]);
+
+        // Invalidate contact list cache
+        try {
+            $prefix  = config('cache.prefix', 'replai_automation_cache');
+            $pattern = $prefix . '_crm_contacts_' . $history->merchant_id . '_%';
+            \DB::table('cache')->where('key', 'like', $pattern)->delete();
+        } catch (\Exception $e) {}
+        return response()->json(['status' => true, 'is_archived' => $history->is_archived], 200);
+    }
+
+    // ================================================================
+    // NEW: Clear chat history (soft delete all messages)
+    // ================================================================
+    public function clearHistory(HistoryChat $history)
+    {
+        // HistoryChatDetail scoped via $history->details() relationship
+        $history->details()->delete(); // soft delete via SoftDeletes
+
+        // Invalidate contact list cache
+        try {
+            $prefix  = config('cache.prefix', 'replai_automation_cache');
+            $pattern = $prefix . '_crm_contacts_' . $history->merchant_id . '_%';
+            \DB::table('cache')->where('key', 'like', $pattern)->delete();
+        } catch (\Exception $e) {}
+        return response()->json(['status' => true], 200);
+    }
+
+    // ================================================================
+    // NEW: Get agents list for assign picker
+    // ================================================================
+    public function getAgents(Request $request)
+    {
+        $merchantId = my_user()->merchant_id;
+        $agents     = User::where('merchant_id', $merchantId)
+                          ->get(['id', 'name', 'email']);
+        return response()->json(['agents' => $agents], 200);
+    }
+
 
 }

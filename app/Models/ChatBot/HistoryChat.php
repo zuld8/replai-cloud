@@ -14,10 +14,13 @@ use App\Models\WhatsappDevice;
 use App\Models\WhatsappKeyAccount;
 use App\Observers\ChatBot\HistoryChatObserver;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Ramsey\Uuid\Uuid;
 
 class HistoryChat extends Model
 {
+    use SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -34,6 +37,7 @@ class HistoryChat extends Model
         'expire_date',
         'from',
         'status',
+        'is_archived',
         'label',
         'note',
         'handled_by',
@@ -245,6 +249,11 @@ class HistoryChat extends Model
         return $this->hasOne(HistoryChatDetail::class, 'history_chat_id')
             ->where('from', 'user')
             ->latest('created_at');
+    }
+
+    public function pinnedBy(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(HistoryChatPin::class, 'history_chat_id');
     }
 
 }

@@ -583,10 +583,17 @@ Route::middleware('package_active')->group(function () {
         // Actions
         Route::prefix('action')->group(function () {
             Route::post('change-additional/{history}', [CrmController::class, 'changeAddional']);
-            Route::post('block/{history}', [CrmController::class, 'blockAndUnblock']);
-            Route::post('resolved/{history}', [CrmController::class, 'resolvedChange']);
-            Route::delete('delete/{detail}', [CrmController::class, 'deleteMessage']);
+            Route::post('block/{history}',             [CrmController::class, 'blockAndUnblock']);
+            Route::post('resolved/{history}',          [CrmController::class, 'resolvedChange']);
+            Route::post('pin/{history}',               [CrmController::class, 'togglePin']);
+            Route::post('mark-unread/{history}',       [CrmController::class, 'markUnread']);
+            Route::post('archive/{history}',           [CrmController::class, 'toggleArchive']);
+            Route::post('clear-history/{history}',     [CrmController::class, 'clearHistory']);
+            Route::delete('delete/{detail}',           [CrmController::class, 'deleteMessage']);
         });
+
+        // Users (agents list for assign picker)
+        Route::get('users', [CrmController::class, 'getAgents']);
 
         Route::delete('remove/{history}', [CrmController::class, 'deleteChats']);
         Route::get('contacts', [CrmController::class, 'getContacts']);
