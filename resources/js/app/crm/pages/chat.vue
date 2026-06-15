@@ -38,7 +38,7 @@
                         {{ formatDateSeparator(msg.datetime.date) }}
                     </div>
 
-                    <div class="message" :class="msg.sent_by === 'system' ? 'sent' : 'received'">
+                    <div v-if="msg.media_type !== 'reaction' && msg.media_type !== 'revoked'" class="message" :class="msg.sent_by === 'system' ? 'sent' : 'received'">
                         <div class="message-wrapper">
 
 
@@ -153,6 +153,31 @@
 
                                     <!-- Message Text -->
                                     <div class="message-text" v-if="msg.message" v-html="formattedText(msg.message)">
+                                    </div>
+
+                                    <!-- Button Reply (user tapped WA interactive button) -->
+                                    <div v-if="msg.media_type === 'button' && !msg.message"
+                                         class="msg-type-indicator msg-button-reply">
+                                        <i class="bx bx-grid-horizontal"></i>
+                                        <span>Membalas dengan tombol</span>
+                                    </div>
+
+                                    <!-- Unsupported message type (poll, location, contact card, etc.) -->
+                                    <div v-if="msg.media_type === 'unsupported' && !msg.message"
+                                         class="msg-type-indicator msg-unsupported">
+                                        <i class="bx bx-info-circle"></i>
+                                        <span>Pesan tidak didukung</span>
+                                    </div>
+
+                                    <!-- General fallback: completely blank message -->
+                                    <div v-if="!msg.message && !msg.media_url
+                                               && msg.media_type !== 'image' && msg.media_type !== 'video'
+                                               && msg.media_type !== 'audio' && msg.media_type !== 'sticker'
+                                               && !isDocumentType(msg.media_type)
+                                               && msg.media_type !== 'button' && msg.media_type !== 'unsupported'"
+                                         class="msg-type-indicator msg-unknown">
+                                        <i class="bx bx-question-mark"></i>
+                                        <span>{{ msg.media_type || 'Pesan kosong' }}</span>
                                     </div>
 
                                     <!-- Message Time -->
@@ -3618,5 +3643,27 @@ export default {
 .media-unavailable i {
     font-size: 1.2rem;
 }
+
+
+/* ============================================================
+   Blank Bubble Fix: Indicators for special message types
+   ============================================================ */
+.msg-type-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #aaa;
+    font-style: italic;
+    padding: 2px 0;
+}
+.msg-type-indicator i {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.msg-button-reply { color: #25a244; }
+.msg-button-reply i { color: #25a244; }
+.msg-unsupported { color: #999; }
+.msg-unknown { color: #bbb; }
 
 </style>
