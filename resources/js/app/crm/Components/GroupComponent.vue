@@ -2707,3 +2707,102 @@ export default {
 }
 
 </style>
+
+<style>
+/*
+ * CRM Sidebar Mobile Drawer
+ * NON-SCOPED — applies globally to .sidebar-left.
+ * Must be non-scoped to override scoped CSS from this component.
+ * This is the source of truth; do NOT edit chatui.css.
+ */
+
+/* ── Desktop (≥993px): sidebar in-flow flex column ── */
+@media (min-width: 993px) {
+    .sidebar-left {
+        position: relative !important;
+        transform: none !important;
+        width: 340px;
+        min-width: 280px;
+        flex-shrink: 0;
+        height: auto;
+        overflow-y: auto;
+        background: #fff;
+        border-right: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .sidebar-overlay {
+        display: none !important;
+    }
+}
+
+/* ── Mobile/Tablet (≤992px): off-canvas drawer ── */
+@media (max-width: 992px) {
+    /* Default: fully off-screen via transform */
+    .sidebar-left {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 85vw !important;
+        max-width: 360px !important;
+        height: 100% !important;
+        z-index: 99999 !important;
+        transform: translateX(-105%) !important;  /* 105% = fully hidden + buffer */
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        will-change: transform;
+    }
+
+    /* Open: slide in from left */
+    .sidebar-left.show {
+        transform: translateX(0) !important;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Kill any hover-open behavior on touch devices */
+    @media (hover: none) {
+        .sidebar-left:not(.show) {
+            transform: translateX(-105%) !important;
+        }
+    }
+
+    /* Overlay: dim background */
+    .sidebar-overlay {
+        display: block !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        z-index: 99998 !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        transition: opacity 0.3s ease, visibility 0.3s ease !important;
+        cursor: pointer;
+    }
+
+    .sidebar-overlay.show {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar-left {
+        width: 90vw !important;
+        max-width: 340px !important;
+    }
+}
+</style>
