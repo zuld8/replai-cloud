@@ -70,10 +70,8 @@ export default {
 
 <style>
 /*
- * CRM Shell Layout
- * Single source of truth — lives in source code (not gitignored chatui.css).
- * Mobile: uses position:absolute inside .chat-container to avoid stacking-context
- *         issues from Blade/theme ancestor elements (transform, overflow, etc).
+ * CRM Shell Layout — single source of truth (not in gitignored chatui.css)
+ * Non-scoped so rules apply globally to .sidebar-left etc rendered by child components.
  */
 
 /* ── Desktop: two-column flex (sidebar + content) ── */
@@ -82,7 +80,6 @@ export default {
     flex-direction: column;
     height: 100dvh;
     overflow: hidden;
-    position: relative; /* stacking context anchor for mobile absolute children */
 }
 
 .chat-body {
@@ -92,7 +89,7 @@ export default {
     position: relative;
 }
 
-/* sidebar-left is GroupComponent root div */
+/* sidebar-left is GroupComponent root */
 .sidebar-left {
     width: 340px;
     min-width: 280px;
@@ -105,56 +102,49 @@ export default {
     flex-direction: column;
     position: relative;
     z-index: 1;
+    transition: left 0.3s ease;
 }
 
-/* sidebar-overlay — hidden on desktop */
+/* sidebar-overlay hidden on desktop */
 .sidebar-overlay {
     display: none;
 }
 
-/* ── Mobile / Tablet (max 992px): off-canvas ────────────────────────────────
- * Uses position:absolute (relative to .chat-body which is position:relative).
- * Avoids position:fixed issues when ancestor Blade layout uses transforms.
- * ────────────────────────────────────────────────────────────────────────── */
+/* ── Mobile/Tablet (max 992px): off-canvas ── */
 @media (max-width: 992px) {
     .chat-container {
         height: 100dvh;
-        overflow: hidden; /* clips the off-screen sidebar */
     }
 
-    /* Sidebar: off-screen left by default */
     .sidebar-left {
-        position: absolute;
+        position: fixed;
         top: 0;
         bottom: 0;
         left: -100%;
         width: 85%;
         max-width: 360px;
         min-width: 0;
-        z-index: 200;
-        transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1100;
+        transition: left 0.3s ease;
         box-shadow: none;
         overflow-y: auto;
         background: #fff;
     }
 
-    /* Sidebar: slide in */
     .sidebar-left.show {
         left: 0;
-        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+        box-shadow: 2px 0 20px rgba(0, 0, 0, 0.18);
     }
 
-    /* Overlay: covers .chat-body area */
     .sidebar-overlay {
         display: block;
-        position: absolute;
+        position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.45);
         opacity: 0;
         visibility: hidden;
-        transition: opacity 0.28s ease, visibility 0.28s ease;
-        z-index: 190;
-        cursor: pointer;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        z-index: 1090;
     }
 
     .sidebar-overlay.show {
@@ -162,7 +152,6 @@ export default {
         visibility: visible;
     }
 
-    /* Main content: full width */
     .chat-body > .chat-wrapper,
     .chat-body > div:not(.sidebar-left):not(.sidebar-overlay) {
         width: 100%;
@@ -179,15 +168,13 @@ export default {
     }
 }
 
-/* ── Sidebar close button (only shown on mobile via d-lg-none) ── */
+/* ── Close button inside sidebar ── */
 .sidebar-close-btn {
     position: absolute;
     top: 12px;
     right: 12px;
     width: 36px;
     height: 36px;
-    min-width: 44px;
-    min-height: 44px;
     border: none;
     background: rgba(0,0,0,0.07);
     border-radius: 50%;
@@ -199,9 +186,11 @@ export default {
     color: #374151;
     z-index: 10;
     transition: background 0.2s;
+    min-height: 44px;
+    min-width: 44px;
 }
 
 .sidebar-close-btn:hover {
-    background: rgba(0,0,0,0.14);
+    background: rgba(0,0,0,0.13);
 }
 </style>
