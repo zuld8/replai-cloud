@@ -32,9 +32,15 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
     public $tries = 2;
 
     /**
-     * Array of blast IDs to process
+     * Array of blast IDs to process (BlashDetail UUIDs)
      */
     protected $blastIds;
+
+    /**
+     * Parent broadcast ID (BlashWhatsapp UUID).
+     * Passed from dispatch site to scope failed() reset to this batch only.
+     */
+    protected $blashWhatsappId;
 
     /**
      * Delay between messages (seconds)
@@ -60,12 +66,13 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
      * @param int $stopSending Stop after X messages
      * @param int $restSending Rest time in seconds
      */
-    public function __construct(array $blastIds, int $messageDelay = 5, int $stopSending = 20, int $restSending = 90)
+    public function __construct(array $blastIds, int $messageDelay = 5, int $stopSending = 20, int $restSending = 90, ?string $blashWhatsappId = null)
     {
-        $this->blastIds = $blastIds;
-        $this->messageDelay = $messageDelay;
-        $this->stopSending = $stopSending;
-        $this->restSending = $restSending;
+        $this->blastIds        = $blastIds;
+        $this->messageDelay    = $messageDelay;
+        $this->stopSending     = $stopSending;
+        $this->restSending     = $restSending;
+        $this->blashWhatsappId = $blashWhatsappId; // parent broadcast ID, for scoped failed() reset
     }
 
     /**
@@ -142,14 +149,24 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
             // ── WA Biasa: keep original sequential loop with delays ──────────
             foreach ($this->blastIds as $blastId) {
                 try {
-                    $blast = BlashDetail::with(['store.category', 'store.merchant', 'parent.template'])->find($blastId);
-                    if (!$blast) { FacadesLog::warning("BlashDetail not found: {$blastId}"); continue; }
-                    if ($blast->sending_status === 'yes') continue;
+                    // ATOMIC CLAIM: no -> sending -> yes (3-state idempotency)
+                    // Only one worker wins; claimed=0 = already claimed/sent, skip.
+                    $claimed = \DB::table('blash_details')
+                        ->where('id', $blastId)
+                        ->where('sending_status', 'no')
+                        ->update([
+                            'sending_status'  => 'sending',
+                            'sending'         => now(),
+                            'delivery_status' => 'processing',
+                        ]);
+                    if ($claimed === 0) {
+                        FacadesLog::debug("CLAIM SKIP (WA): {$blastId} already claimed/sent");
+                        continue;
+                    }
 
-                    $updated = \DB::table('blash_details')
-                        ->where('id', $blastId)->where('sending_status', '!=', 'yes')
-                        ->update(['delivery_status' => 'processing']);
-                    if ($updated === 0) continue;
+                    // Reload fresh after claim
+                    $blast = BlashDetail::with(['store.category', 'store.merchant', 'parent.template'])->find($blastId);
+                    if (!$blast) { FacadesLog::warning("BlashDetail not found after claim: {$blastId}"); continue; }
 
                     $this->processWhatsappMessage($blast);
                     $messageCount++;
@@ -166,6 +183,11 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                 } catch (Exception $e) {
                     $errorCount++;
                     FacadesLog::error("Error processing BlashDetail {$blastId}: " . $e->getMessage());
+                    // Rollback claim: sending -> no so it can be retried
+                    \DB::table('blash_details')
+                        ->where('id', $blastId)
+                        ->where('sending_status', 'sending')
+                        ->update(['sending_status' => 'no', 'delivery_status' => 'failed']);
                 }
             }
         }
@@ -183,8 +205,9 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
             $cleanedUp = \Illuminate\Support\Facades\DB::table('blash_details')
                 ->whereIn('id', $this->blastIds)
                 ->where('delivery_status', 'processing')
-                ->where('sending_status', '!=', 'yes')
+                ->where('sending_status', 'sending')  // only reset truly stuck in-flight
                 ->update([
+                    'sending_status'  => 'no',
                     'delivery_status' => 'failed',
                     'reports' => json_encode(['code' => 'BATCH_INCOMPLETE', 'message' => 'Sending incomplete — please retry']),
                 ]);
@@ -278,7 +301,9 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
             try {
                 $blast = BlashDetail::with(['store.category', 'store.merchant', 'parent.template'])->find($blastId);
                 if (!$blast) { FacadesLog::warning("Concurrent PASS1: BlashDetail {$blastId} not found"); continue; }
-                if ($blast->sending_status === 'yes') continue;
+                // ATOMIC CLAIM: no -> sending -> yes (3-state idempotency)
+                // Also handles 'yes' from auto-blocked records below.
+                if (in_array($blast->sending_status, ['yes', 'sending'])) continue;
 
                 // Auto-blocked (Meta 131026: number not on WhatsApp)
                 if (!empty($blast->store_id) && ($blast->store->waba_blocked ?? 0)) {
@@ -292,16 +317,19 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                     continue;
                 }
 
-                // Atomic lock: prevents double-send from concurrent workers
-                // FIX 5: Also exclude already-processing/sent records to prevent race with redispatch-stuck
-                $updated = \DB::table('blash_details')
+                // ATOMIC CLAIM: sending_status 'no' -> 'sending' (only one worker wins)
+                // If $claimed=0: already claimed/sent by another worker — skip safely
+                $claimed = \DB::table('blash_details')
                     ->where('id', $blastId)
-                    ->where('sending_status', '!=', 'yes')
-                    ->whereNotIn('delivery_status', ['processing', 'sent', 'delivered', 'read'])
-                    ->update(['delivery_status' => 'processing']);
-                if ($updated === 0) {
-                    FacadesLog::warning('WABA PASS1 SKIP: blastId=' . $blastId . ' delivery_status=' . (\DB::table('blash_details')->where('id', $blastId)->value('delivery_status') ?? 'null') . ' — already locked');
-                    continue; // Another worker grabbed this or already done
+                    ->where('sending_status', 'no')
+                    ->update([
+                        'sending_status'  => 'sending',
+                        'sending'         => now(),
+                        'delivery_status' => 'processing',
+                    ]);
+                if ($claimed === 0) {
+                    FacadesLog::debug('WABA CLAIM SKIP: blastId=' . $blastId . ' already claimed/sent');
+                    continue;
                 }
 
                 // Resolve device account
@@ -386,10 +414,10 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                 ];
             } catch (\Throwable $e) {
                 FacadesLog::error("Concurrent PASS1 error {$blastId}: " . $e->getMessage());
-                // FIX: ensure record doesn't stay stuck at 'processing'
+                // Rollback claim: sending -> no (allow retry)
                 \DB::table('blash_details')->where('id', $blastId)
-                    ->where('delivery_status', 'processing')
-                    ->update(['delivery_status' => 'failed', 'reports' => 'PASS1 exception: ' . substr($e->getMessage(), 0, 200)]);
+                    ->where('sending_status', 'sending')
+                    ->update(['sending_status' => 'no', 'delivery_status' => 'failed', 'reports' => 'PASS1 exception: ' . substr($e->getMessage(), 0, 200)]);
                 $errorCount++;
             }
         }
@@ -1103,14 +1131,28 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
     {
         FacadesLog::error("WhatsApp batch job failed: {$exception->getMessage()} - Processing " . count($this->blastIds) . " messages");
 
-        // N+1 FIX: bulk update sekaligus (1 query) vs find() per ID
-        BlashDetail::whereIn('id', $this->blastIds)
-            ->where('status', '!=', 'yes')
-            ->update([
-                'status'          => 'yes',
-                'sending_status'  => 'no',
-                'delivery_status' => 'failed',
-                'reports'         => json_encode(['code' => 'JOB_CRASH', 'message' => 'Batch job failed: ' . $exception->getMessage()])
-            ]);
+        // Scope reset to THIS batch's in-flight records ONLY.
+        // Rules:
+        //  1. whereIn('id', blastIds)       — only this batch's specific record UUIDs
+        //  2. where('sending_status','sending') — ONLY in-flight; NEVER touch 'no'
+        //     'no' records may belong to concurrent batches (pool A/B/C) that are
+        //     still actively processing — resetting them causes cross-batch double-claim.
+        //  3. blash_whatsapp_id guard       — extra safety if parent ID available
+        $failedQuery = \DB::table('blash_details')
+            ->whereIn('id', $this->blastIds)
+            ->where('sending_status', 'sending'); // in-flight only — do NOT reset 'no'
+
+        if ($this->blashWhatsappId) {
+            $failedQuery->where('blash_whatsapp_id', $this->blashWhatsappId); // extra guard
+        }
+
+        $reset = $failedQuery->update([
+            'sending_status'  => 'no',
+            'delivery_status' => 'failed',
+            'reports'         => json_encode(['code' => 'JOB_CRASH', 'message' => 'Batch job failed: ' . $exception->getMessage()]),
+            'updated_at'      => now(),
+        ]);
+
+        FacadesLog::warning("failed() reset {$reset} in-flight 'sending' records for batch [" . implode(',', array_slice($this->blastIds, 0, 3)) . "...]");
     }
 }

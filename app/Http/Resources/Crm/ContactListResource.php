@@ -69,7 +69,17 @@ class ContactListResource extends JsonResource
                         : $this->last_message->created_at->format('n/j/y h:i A'))
                     : '',
                 'date'          => $date,
-            )
+            ),
+            // Labels: decode JSON column, return array of {id,name,color} objects
+            // Data baru tersimpan sebagai array objek lengkap — no N+1 needed.
+            'labels'        => collect(json_decode($this->label ?? '[]', true) ?: [])
+                ->map(fn($l) => is_array($l) ? [
+                    'id'    => $l['id']    ?? null,
+                    'name'  => $l['name']  ?? '',
+                    'color' => $l['color'] ?? '#888888',
+                ] : ['id' => $l, 'name' => '', 'color' => '#888888']) // fallback for old id-only data
+                ->filter(fn($l) => !empty($l['id']))
+                ->values(),
         ];
     }
 

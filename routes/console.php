@@ -110,3 +110,18 @@ Schedule::call(function () {
         \Illuminate\Support\Facades\Log::warning("Cleanup history_chat_details failed: " . $e->getMessage());
     }
 })->dailyAt('04:30')->name('cleanup:history-chat-details')->withoutOverlapping(30);
+
+// ─── Weekly DB purge (Sunday 04:00 — safe, no lock on InnoDB) ───
+Schedule::command('crm:purge-old-data --months=6 --force')
+    ->weekly()
+    ->sundays()
+    ->at('04:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/purge-old-data.log'));
+
+// Every 10 min: reset blash_details stuck in 'sending' (worker crashed mid-flight)
+Schedule::command('broadcast:reset-stuck --minutes=45') // 45min > max job runtime (1800s+buffer)
+    ->everyTenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

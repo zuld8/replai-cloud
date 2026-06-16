@@ -228,16 +228,16 @@ return [
                     'broadcast-pool-8',
                     'broadcast-pool-9',
                 ],
-                'balance' => 'simple',
-                'maxProcesses' => 10,
-                'minProcesses' => 2,
-                'balanceMaxShift' => 2,
-                'balanceCooldown' => 3,
+                'balance' => 'auto',
+                'maxProcesses' => 8,
+                'minProcesses' => 1,
+                'balanceMaxShift' => 3,
+                'balanceCooldown' => 2,
 
                 'maxJobs' => 500,
-                'memory' => 512,
+                'memory' => 256,
                 'tries' => 3,
-                'timeout' => 1800,
+                'timeout' => 1900, // > longest job $timeout (1800s)
             ],
 
             // Broadcast workers GROUP B (pool 10-19)
@@ -255,16 +255,16 @@ return [
                     'broadcast-pool-18',
                     'broadcast-pool-19',
                 ],
-                'balance' => 'simple',
-                'maxProcesses' => 10,
-                'minProcesses' => 2,
-                'balanceMaxShift' => 2,
-                'balanceCooldown' => 3,
+                'balance' => 'auto',
+                'maxProcesses' => 8,
+                'minProcesses' => 1,
+                'balanceMaxShift' => 3,
+                'balanceCooldown' => 2,
 
                 'maxJobs' => 500,
-                'memory' => 512,
+                'memory' => 256,
                 'tries' => 3,
-                'timeout' => 1800,
+                'timeout' => 1900, // > longest job $timeout (1800s)
             ],
 
             // Broadcast workers GROUP C (pool 20-29)
@@ -282,16 +282,16 @@ return [
                     'broadcast-pool-28',
                     'broadcast-pool-29',
                 ],
-                'balance' => 'simple',
-                'maxProcesses' => 10,
-                'minProcesses' => 2,
-                'balanceMaxShift' => 2,
-                'balanceCooldown' => 3,
+                'balance' => 'auto',
+                'maxProcesses' => 8,
+                'minProcesses' => 1,
+                'balanceMaxShift' => 3,
+                'balanceCooldown' => 2,
 
                 'maxJobs' => 500,
-                'memory' => 512,
+                'memory' => 256,
                 'tries' => 3,
-                'timeout' => 1800,
+                'timeout' => 1900, // > longest job $timeout (1800s)
             ],
 
             // Follow up workers - MEDIUM PRIORITY
@@ -358,7 +358,7 @@ return [
                 'maxJobs' => 200,
                 'memory' => 256,
                 'tries' => 2,
-                'timeout' => 120,
+                'timeout' => 1900, // > longest job $timeout (1800s)
             ],
 
             // Default queue (untuk job yang ga specify queue)

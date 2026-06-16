@@ -150,9 +150,18 @@
                             <span class="device-label">{{ list.device || list.telegram || list.livechat || list.instagram }}</span>
                         </div>
 
-                        <!-- Label Text (Optional) -->
-                        <div v-if="getLabelName(list.label)" class="chat-label">
-                            {{ getLabelName(list.label) }}
+                        <!-- Label Chips (colored badges) -->
+                        <div class="chat-label-row" v-if="list.labels && list.labels.length">
+                            <span
+                                v-for="lbl in list.labels"
+                                :key="lbl.id"
+                                class="chat-label-chip"
+                                :style="{
+                                    backgroundColor: (lbl.color || '#888888') + '22',
+                                    color: lbl.color || '#888888',
+                                    borderColor: (lbl.color || '#888888') + '66'
+                                }"
+                            >{{ lbl.name }}</span>
                         </div>
                     </div>
 
@@ -526,7 +535,7 @@
                 <h4 class="crm-confirm-title">Pilih Label</h4>
                 <div class="crm-agent-list">
                     <div v-for="lbl in labelsList" :key="lbl.id"
-                         class="crm-agent-item" @click="changeLabel(labelModal, lbl.id)">
+                         class="crm-agent-item" @click="changeLabel(labelModal, lbl)">
                         <i class="bx bx-label" style="color:#f59e0b;font-size:18px"></i>
                         <span class="crm-agent-name">{{ lbl.name }}</span>
                     </div>
@@ -1222,10 +1231,11 @@ export default {
             this.assignModal = null;
         },
         openLabelModal(list) { this.labelModal = list; this.activeDropdown = null; if (!this.labelsList.length) this.loadLabels(); },
-        async changeLabel(list, labelId) {
+        async changeLabel(list, label) { // label = full object {id, name, color}
             try {
-                await this.$axios.post(`/crm/labels/change/${list.id}`, { label: labelId });
-                list.label = labelId;
+                await this.$axios.post(`/crm/labels/change/${list.id}`, { labels: [label] });
+                list.labels = [label]; // update chip display instantly
+                list.label   = label;  // keep legacy field in sync
             } catch (e) {
                 console.error('changeLabel', e);
                 this.$toast?.error('Gagal mengubah label');
@@ -1926,6 +1936,29 @@ export default {
 }
 
 /* Chat Label */
+.chat-label-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 3px;
+    padding: 0 2px;
+}
+.chat-label-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+}
 .chat-label {
     font-size: 11px;
     color: #d97706;

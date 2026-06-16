@@ -863,7 +863,7 @@ class CrmController extends Controller
             return $request->type ? $q->where('type', $request->type) : $q->where('type', 'keyword');
         })->where(function ($q) use ($request) {
             return $request->pipeline_id ? $q->where('pipeline_segment_id', $request->pipeline_id) : '';
-        })->get(['id', 'name']);
+        })->get(['id', 'name', 'color']);
         return response()->json([
             'labels'     => $labels,
         ], 200);

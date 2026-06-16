@@ -289,13 +289,17 @@ class SendWhatsappJob implements ShouldQueue
             $queue = QueueRouter::getQueue($routingKey, 'broadcast');
             Log::info("BroadcastRouting: biz={$schedulingPromotions->business_id}, meta_acc={$schedulingPromotions->meta_account_id}, key={$routingKey}, queue={$queue}, isWABA:" . ($isWabaBroadcast ? 'YES' : 'NO'));
 
+            // Pass $schedulingPromotions->id as 5th arg (blashWhatsappId)
+            // so BatchJob::failed() can scope its reset to this broadcast only.
+            $broadcastId = $schedulingPromotions->id;
+
             if ($isWabaBroadcast) {
                 // WABA: dispatch immediately without delay
-                dispatch(new SendPromotionWhatsappBatchJob($blastIds, $delay, $stopSending, $restSending))
+                dispatch(new SendPromotionWhatsappBatchJob($blastIds, $delay, $stopSending, $restSending, $broadcastId))
                     ->onQueue($queue);
             } else {
                 // WA Biasa: dispatch with calculated delay
-                dispatch(new SendPromotionWhatsappBatchJob($blastIds, $delay, $stopSending, $restSending))
+                dispatch(new SendPromotionWhatsappBatchJob($blastIds, $delay, $stopSending, $restSending, $broadcastId))
                     ->onQueue($queue)
                     ->delay(now()->addSeconds($batchDelay));
             }
