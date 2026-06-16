@@ -1,20 +1,16 @@
 <template>
     <div class="chat-container"> 
         <div class="chat-body"> 
-            
-            <!-- Sidebar Overlay untuk Mobile -->
+            <!-- Sidebar Overlay -->
             <div class="sidebar-overlay" :class="{ show: showOverlay }" @click="closeAllSidebars"></div>
-
-            <!-- Left Sidebar - Group Component -->
+            <!-- Left Sidebar -->
             <GroupComponent 
                 :class="{ show: showLeftSidebar }"
                 @close-sidebar="closeLeftSidebar"
             />
-
-            <!-- Main Content Area -->
-          <router-view @toggle-left-sidebar="toggleLeftSidebar"></router-view>
+            <!-- Main Content -->
+            <router-view @toggle-left-sidebar="toggleLeftSidebar"></router-view>
         </div>
-
         <nprogress-container></nprogress-container>
     </div>
 </template>
@@ -24,15 +20,18 @@ import GroupComponent from "./Components/GroupComponent.vue";
 
 export default {
     name: "App",
-    components: {
-        GroupComponent,
-    },
+    components: { GroupComponent },
     data() {
         return {
             userName: "",
             showLeftSidebar: false,
             showOverlay: false,
         };
+    },
+    watch: {
+        showLeftSidebar(val) {
+            this.$nextTick(() => this._applySidebar(val));
+        }
     },
     methods: {
         toggleLeftSidebar() {
@@ -47,11 +46,77 @@ export default {
             this.showLeftSidebar = false;
             this.showOverlay = false;
         },
+
+        /* ─── JS-driven mobile drawer ─────────────────────────────────
+         * Sets inline styles with 'important' priority.
+         * This beats ANY external CSS, including !important in stylesheets,
+         * because inline style + 'important' has absolute highest priority.
+         * ────────────────────────────────────────────────────────────── */
+        _isMobile() {
+            return window.innerWidth <= 992;
+        },
+
+        _initSidebar() {
+            const el = document.getElementById('leftSidebar');
+            if (!el) return;
+
+            if (this._isMobile()) {
+                // Force base styles for off-canvas drawer
+                const styles = {
+                    'position': 'fixed',
+                    'top': '0',
+                    'left': '0',
+                    'bottom': '0',
+                    'height': '100%',
+                    'width': '85vw',
+                    'max-width': '360px',
+                    'z-index': '999999',
+                    'transform': 'translateX(-110%)',
+                    'transition': 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                    'background-color': '#fff',
+                    'overflow-y': 'auto',
+                    'overflow-x': 'hidden',
+                    'visibility': 'visible',
+                    'opacity': '1',
+                    'will-change': 'transform',
+                };
+                for (const [k, v] of Object.entries(styles)) {
+                    el.style.setProperty(k, v, 'important');
+                }
+            } else {
+                // Reset to desktop flow
+                el.style.cssText = '';
+            }
+        },
+
+        _applySidebar(open) {
+            if (!this._isMobile()) return;
+            const el = document.getElementById('leftSidebar');
+            if (!el) return;
+
+            if (open) {
+                el.style.setProperty('transform', 'translateX(0)', 'important');
+                el.style.setProperty('box-shadow', '4px 0 24px rgba(0,0,0,0.3)', 'important');
+            } else {
+                el.style.setProperty('transform', 'translateX(-110%)', 'important');
+                el.style.setProperty('box-shadow', 'none', 'important');
+            }
+        },
+
+        _onResize() {
+            this._initSidebar();
+            if (!this._isMobile()) {
+                this.showLeftSidebar = false;
+                this.showOverlay = false;
+            }
+        },
+
         themeConfiguration() {
             if ($(".main-wrapper").length > 0) {
                 document.getElementsByClassName("main-wrapper")[0].style.visibility = "visible";
             }
         },
+
         async getUserInfo() {
             try {
                 const response = await this.$axios.get("/components/system");
@@ -61,120 +126,80 @@ export default {
             }
         },
     },
+
     mounted() {
         this.themeConfiguration();
         this.getUserInfo();
+        // Init sidebar after Vue renders GroupComponent
+        this.$nextTick(() => {
+            this._initSidebar();
+        });
+        window.addEventListener('resize', this._onResize);
+    },
+
+    beforeDestroy() {
+        window.removeEventListener('resize', this._onResize);
     },
 };
 </script>
 
 <style>
 /*
- * CRM Shell Layout — source of truth (not gitignored chatui.css).
- * Uses transform-based off-canvas with !important to override any chatui.css rules.
- * Desktop layout preserved at min-width: 993px.
+ * CRM Shell — minimal CSS, backed by JS for mobile sidebar.
+ * The JS-driven approach (_initSidebar, _applySidebar) overrides all CSS.
  */
 
-/* ── Shell containers ── */
 .chat-container {
     display: flex;
     flex-direction: column;
     height: 100dvh;
-    overflow: hidden;
     position: relative;
 }
 
 .chat-body {
     display: flex;
     flex: 1;
-    overflow: hidden;
     position: relative;
+    min-height: 0;
 }
 
-/* ── Desktop (≥993px): sidebar in-flow, side by side ── */
+/* Desktop: sidebar in-flow */
 @media (min-width: 993px) {
     .sidebar-left {
-        transform: none !important;
-        position: relative !important;
         width: 340px;
         min-width: 280px;
         flex-shrink: 0;
+        overflow-y: auto;
+        background: #fff;
+        border-right: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        position: relative;
     }
-
-    .sidebar-overlay {
-        display: none !important;
-    }
+    .sidebar-overlay { display: none !important; }
 }
 
-/* ── Mobile / Tablet (≤992px): transform-based drawer ──────────────────────
- * !important overrides any chatui.css hover/opacity/left rules on .sidebar-left
- * ────────────────────────────────────────────────────────────────────────── */
+/* Overlay — CSS fallback (JS might not set this) */
+.sidebar-overlay {
+    display: none;
+    position: fixed !important;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999998 !important;
+    cursor: pointer;
+}
+.sidebar-overlay.show {
+    display: block !important;
+}
+
+/* Mobile: sidebar initial state (JS will override on mount) */
 @media (max-width: 992px) {
-    /* Drawer: fully off-screen left via transform */
-    .sidebar-left {
-        position: fixed !important;
-        top: 0 !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        width: 85% !important;
-        max-width: 360px !important;
-        height: 100% !important;
-        z-index: 1100 !important;
-        transform: translateX(-100%) !important;
-        transition: transform 0.3s ease !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        overflow-y: auto !important;
-        background: #fff !important;
-    }
-
-    /* Drawer open: slide in */
-    .sidebar-left.show {
-        transform: translateX(0) !important;
-        box-shadow: 2px 0 14px rgba(0, 0, 0, 0.25) !important;
-    }
-
-    /* Kill any hover-open from chatui.css on touch devices */
-    .sidebar-left:hover {
-        transform: translateX(-100%);
-    }
-    .sidebar-left.show:hover {
-        transform: translateX(0);
-    }
-
-    /* Dim overlay behind sidebar */
-    .sidebar-overlay {
-        display: block !important;
-        position: fixed !important;
-        inset: 0 !important;
-        background: rgba(0, 0, 0, 0.45);
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s ease, visibility 0.3s ease;
-        z-index: 1090 !important;
-        cursor: pointer;
-    }
-
-    .sidebar-overlay.show {
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-
-    /* Main content: full width on mobile */
-    .chat-body > .chat-wrapper,
     .chat-body > div:not(.sidebar-left):not(.sidebar-overlay) {
-        width: 100%;
         flex: 1;
         min-width: 0;
+        width: 100%;
     }
 
-    /* Touch target: buttons >= 44px */
-    .btn-control {
-        min-width: 44px !important;
-        min-height: 44px !important;
-    }
-
-    /* Main chat area: correct height */
     .main-chat {
         height: 100dvh;
         display: flex;
@@ -186,29 +211,9 @@ export default {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
-}
 
-/* Sidebar close button */
-.sidebar-close-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 44px;
-    height: 44px;
-    border: none;
-    background: rgba(0, 0, 0, 0.07);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 18px;
-    color: #374151;
-    z-index: 10;
-    transition: background 0.2s;
-}
-
-.sidebar-close-btn:hover {
-    background: rgba(0, 0, 0, 0.14);
+    .chat-input-area {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
 }
 </style>
