@@ -108,13 +108,21 @@ class SendWhatsappJob implements ShouldQueue
         $getStores = $storeQuery->get();
 
         if ($getStores->isEmpty()) {
-            // Check if all blash_details are already sent
+            // FIX #3: No stores matched filter -> check for existing blash_details
+            $totalDetails = BlashDetail::where('blash_whatsapp_id', $schedulingPromotions->id)->count();
+            if ($totalDetails === 0) {
+                // No recipients at all -> mark failed immediately (stop infinite poll)
+                $schedulingPromotions->update(['status' => 'failed', 'stat_total' => 0]);
+                Log::warning("Broadcast {$schedulingPromotions->id} ({$schedulingPromotions->name}): 0 recipients - marked failed.");
+                return;
+            }
             $unsent = BlashDetail::where('blash_whatsapp_id', $schedulingPromotions->id)
                 ->where('status', 'no')->count();
             if ($unsent == 0) {
                 $schedulingPromotions->update(['status' => 'success']);
+                Log::info("Broadcast {$schedulingPromotions->id}: all {$totalDetails} details sent - marked success.");
             } else {
-                Log::warning("Broadcast {$schedulingPromotions->id}: no stores found but {$unsent} details unsent. Keeping pending.");
+                Log::warning("Broadcast {$schedulingPromotions->id}: no stores but {$unsent}/{$totalDetails} details unsent. Keeping pending.");
             }
             return;
         }
@@ -123,7 +131,9 @@ class SendWhatsappJob implements ShouldQueue
         $availableDevices = $this->getAvailableDevices($schedulingPromotions);
 
         if ($availableDevices->isEmpty()) {
-            Log::warning("Broadcast {$schedulingPromotions->id} ({$schedulingPromotions->name}): no available devices. Waba={$schedulingPromotions->waba}, Devices={$schedulingPromotions->devices}");
+            // FIX #3: No devices available -> mark failed to stop re-polling
+            $schedulingPromotions->update(['status' => 'failed']);
+            Log::warning("Broadcast {$schedulingPromotions->id} ({$schedulingPromotions->name}): no devices - marked failed. Waba={$schedulingPromotions->waba}");
             return;
         }
 

@@ -35,7 +35,12 @@ class BlashWhatsappObserver
             'city_id'               => $request->city,
             'district_id'           => $request->district,
             'name'                  => $request->name,
-            'schedule'              => $request->schedule,
+            // FIX TZ: Convert WIB (Asia/Jakarta) -> UTC before storing
+            'schedule'              => \Carbon\Carbon::hasFormat($request->schedule, 'Y-m-d H:i')
+                ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $request->schedule, 'Asia/Jakarta')
+                    ->setTimezone('UTC')
+                    ->format('Y-m-d H:i:s')
+                : $request->schedule,
             'use'                   => $type,
             'template_id'           => $request->template,
             'delay'                 => $request->delay ?? 60,
@@ -54,7 +59,12 @@ class BlashWhatsappObserver
             'city_id'               => $request->city,
             'district_id'           => $request->district,
             'name'                  => $request->name,
-            'schedule'              => $request->schedule,
+            // FIX TZ: Convert WIB (Asia/Jakarta) -> UTC before storing
+            'schedule'              => \Carbon\Carbon::hasFormat($request->schedule, 'Y-m-d H:i')
+                ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $request->schedule, 'Asia/Jakarta')
+                    ->setTimezone('UTC')
+                    ->format('Y-m-d H:i:s')
+                : $request->schedule,
             'template_id'           => $request->template,
             'delay'                 => $request->delay ?? 60,
             'devices'               => $request->devices ? implode(",", $request->devices) : null,
