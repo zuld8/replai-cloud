@@ -2185,6 +2185,11 @@ export default {
         padding: 10px 6px;
     }
 
+    /* Touch target: hamburger/control buttons >= 44px */
+    .chat-item {
+        min-height: 60px;
+    }
+
     .tab-btn span:last-child {
         display: none;
     }
@@ -2687,5 +2692,18 @@ export default {
 /* Transitions */
 .crm-fade-enter-active, .crm-fade-leave-active { transition: opacity 0.2s; }
 .crm-fade-enter-from, .crm-fade-leave-to { opacity: 0; }
+
+
+/* Sidebar close button — mobile touch target */
+@media (max-width: 992px) {
+    .sidebar-close-btn {
+        min-width: 44px;
+        min-height: 44px;
+        width: 44px;
+        height: 44px;
+        top: 8px;
+        right: 8px;
+    }
+}
 
 </style>

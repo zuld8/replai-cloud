@@ -2526,6 +2526,8 @@ export default {
     background-color: #fff;
     border-top: 1px solid #e5e7eb;
     z-index: 10;
+    /* iOS safe area: prevent input from hiding behind home bar */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .chat-input {
@@ -3080,6 +3082,8 @@ export default {
    ============================ */
 .chat-input-area {
     padding: 12px 16px;
+    /* iOS safe area: prevent input bar from hiding behind home bar / gesture strip */
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
 .input-wrapper {
@@ -3665,5 +3669,41 @@ export default {
 .msg-button-reply i { color: #25a244; }
 .msg-unsupported { color: #999; }
 .msg-unknown { color: #bbb; }
+
+
+/* === Mobile responsive: main chat area === */
+@media (max-width: 992px) {
+    .main-chat {
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Touch target: toggle + control buttons >= 44px */
+    .btn-control {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .chat-header-main {
+        padding: 8px 12px;
+    }
+
+    .status-select {
+        font-size: 12px;
+        padding: 4px 6px;
+    }
+}
 
 </style>
