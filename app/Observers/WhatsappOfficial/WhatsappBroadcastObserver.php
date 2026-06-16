@@ -31,11 +31,12 @@ class WhatsappBroadcastObserver
             'city_id'               => $request->city,
             'district_id'           => $request->district,
             'name'                  => $request->name,
-            // FIX TZ: Convert WIB (Asia/Jakarta) -> UTC before storing
+            // TZ NOTE: APP_TIMEZONE=Asia/Jakarta → now() = WIB.
+            // Polling: where('schedule','<=',now()) = WIB comparison.
+            // So store schedule AS WIB — just normalize format, NO timezone conversion.
             'schedule'              => \Carbon\Carbon::hasFormat($request->schedule, 'Y-m-d H:i')
                 ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $request->schedule, 'Asia/Jakarta')
-                    ->setTimezone('UTC')
-                    ->format('Y-m-d H:i:s')
+                    ->format('Y-m-d H:i:s')  // stay WIB — matches now() WIB comparison
                 : $request->schedule,
             'template_id'           => $request->template,
             'delay'                 => $request->delay ?? 60,
@@ -59,11 +60,12 @@ class WhatsappBroadcastObserver
             'city_id'               => $request->city,
             'district_id'           => $request->district,
             'name'                  => $request->name,
-            // FIX TZ: Convert WIB (Asia/Jakarta) -> UTC before storing
+            // TZ NOTE: APP_TIMEZONE=Asia/Jakarta → now() = WIB.
+            // Polling: where('schedule','<=',now()) = WIB comparison.
+            // So store schedule AS WIB — just normalize format, NO timezone conversion.
             'schedule'              => \Carbon\Carbon::hasFormat($request->schedule, 'Y-m-d H:i')
                 ? \Carbon\Carbon::createFromFormat('Y-m-d H:i', $request->schedule, 'Asia/Jakarta')
-                    ->setTimezone('UTC')
-                    ->format('Y-m-d H:i:s')
+                    ->format('Y-m-d H:i:s')  // stay WIB — matches now() WIB comparison
                 : $request->schedule,
             'template_id'           => $request->template,
             'delay'                 => $request->delay ?? 60, 
