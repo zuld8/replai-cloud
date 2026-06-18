@@ -362,7 +362,8 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                     $errorCount++; continue;
                 }
 
-                if (!$this->validateBusinessLimits($blast, $cachedSettings, $log)) { $errorCount++; continue; }
+                // WABA: Meta handles billing directly. Internal whatsapp_sender limit not applicable.
+                // validateBusinessLimits skipped for WABA to prevent false DAILY_LIMIT_EXCEEDED errors.
 
                 if (!$this->validateCredit($blast)) {
                     $this->handleNoCredit($blast, ['message' => 'Credit Token Anda tidak mencukupi'], $log);
@@ -647,12 +648,18 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
             return true;
         }
 
-        $merchant = $blast->store->merchant ?? null;
-        if (!$settings || !$merchant) {
+        if (!$settings) {
             return true;
         }
 
-        $transaction = $merchant->package_active;
+        // Load package_active directly using business_id to avoid partial-select issues
+        $businessId = $blast->store->business_id ?? $settings->id ?? null;
+        $transaction = $businessId ? \App\Models\PackageTransaction::where('business_id', $businessId)
+            ->where('type', 'package')
+            ->where('status', 'success')
+            ->where(function($q) { $q->where('expire_date', '>=', now())->orWhere('days_option', 'unlimited'); })
+            ->orderBy('created_at', 'desc')
+            ->first() : null;
         if (!$transaction) {
             $blast->update([
                 'status'          => 'yes',

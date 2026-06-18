@@ -294,12 +294,13 @@
                 <div class="btn-list text-center">
                     <div class="btn-list">
                         @php
-                            $metaWa = json_decode($account->meta_data ?? '{}', true);
-                            $accountMode = $metaWa['whatsapp']['account_mode'] ?? 'PRODUCTION';
+                            $firstDevice = $account->devices->first();
+                            $metaWa = json_decode($firstDevice?->meta_data ?? '{}', true);
+                            $accountMode = $metaWa['whatsapp']['account_mode'] ?? 'LIVE';
                         @endphp
                         @if($accountMode === 'COEXISTENCE')
                             <span class="badge-wa-hybrid" title="Nomor ini bisa dipakai WA Business App + WABA API sekaligus">🔀 WA Hybrid</span>
-                        @elseif($accountMode === 'PRODUCTION')
+                        @elseif(in_array($accountMode, ['LIVE', 'PRODUCTION']))
                             <span class="badge-api-only" title="API Only mode">⚡ API Only</span>
                         @endif
                         @if($detailBusiness['healt_status']['data']['account_review_status'] == 'APPROVED')

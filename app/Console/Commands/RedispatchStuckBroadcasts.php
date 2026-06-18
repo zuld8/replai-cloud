@@ -183,6 +183,14 @@ class RedispatchStuckBroadcasts extends Command
             ->get();
 
         foreach ($processing as $bc) {
+            $total = BlashDetail::where('blash_whatsapp_id', $bc->id)->count();
+
+            // GUARD: skip if no details yet — broadcast hasn't started processing
+            if ($total === 0) {
+                Log::info("RedispatchStuck: {$bc->name} — skipped (0 details, not yet processed)");
+                continue;
+            }
+
             $unsent = BlashDetail::where('blash_whatsapp_id', $bc->id)
                 ->where('sending_status', '!=', 'yes')
                 ->count();

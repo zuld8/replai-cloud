@@ -63,7 +63,22 @@ class InstagramService
             ]
         );
 
-        $instagram->agents()->syncWithoutDetaching([my_user()->id]);
+        // Fix: use DB::table to avoid Pivot non-pluralized table name ambiguity
+        $userId = my_user()->id;
+        $alreadyLinked = \Illuminate\Support\Facades\DB::table('instagram_agents')
+            ->where('instagram_id', $instagram->id)
+            ->where('user_id', $userId)
+            ->exists();
+
+        if (!$alreadyLinked) {
+            \Illuminate\Support\Facades\DB::table('instagram_agents')->insert([
+                'id'           => (string) \Illuminate\Support\Str::uuid(),
+                'instagram_id' => $instagram->id,
+                'user_id'      => $userId,
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ]);
+        }
 
         return $instagram;
     }

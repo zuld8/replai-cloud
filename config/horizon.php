@@ -199,7 +199,7 @@ return [
             'queue' => ['default'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
-            'maxProcesses' => 2,
+            'maxProcesses' => 8, // Increased: handles SendWhatsappJob (1 per broadcast, up to 8 concurrent)
             'maxTime' => 0,
             'maxJobs' => 0,
             'memory' => 256,

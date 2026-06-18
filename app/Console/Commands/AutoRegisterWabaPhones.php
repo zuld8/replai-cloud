@@ -74,10 +74,12 @@ class AutoRegisterWabaPhones extends Command
                         $verifiedName = $phoneData['verified_name'] ?? '';
                         $cleanedPhone = preg_replace('/[^0-9]/', '', $displayPhone);
 
-                        // Check if already registered
-                        $existing = WhatsappKeyAccount::where('phone', $cleanedPhone)->first();
+                        // Check if already registered under THIS specific meta account
+                        $existing = WhatsappKeyAccount::where('phone', $cleanedPhone)
+                            ->where('meta_account_id', $meta->id)
+                            ->first();
                         if ($existing && $existing->status === 'active') {
-                            $this->info("  Phone {$displayPhone} already active - skipping");
+                            $this->info("  Phone {$displayPhone} already active for this WABA - skipping");
                             continue;
                         }
 
@@ -186,16 +188,18 @@ class AutoRegisterWabaPhones extends Command
 
                 // Only act if phone is still PENDING
                 if ($currentStatus !== 'PENDING') continue;
-                
-                // Skip if currently rate-limited
-                $rateLimitUntil = $keyAccount->rate_limit_until ?? null;
+
+                // Define $displayPhone early (needed for rate-limit message and logging)
+                $displayPhone = $wa['display_phone_number'] ?? $device->phone;
+
+                // Skip if currently rate-limited (error 133016 sets rate_limit_until for 6h)
+                $rateLimitUntil = $device->rate_limit_until ?? null; // Fixed: was $keyAccount (undefined)
                 if ($rateLimitUntil && now()->lessThan($rateLimitUntil)) {
                     $this->info("  Skipping {$displayPhone} — rate limited until {$rateLimitUntil}");
                     continue;
                 }
 
                 $pendingCount++;
-                $displayPhone = $wa['display_phone_number'] ?? $device->phone;
                 $this->warn("  Phone {$displayPhone} still PENDING at Meta — re-registering...");
 
                 // Re-call /register
@@ -237,7 +241,8 @@ class AutoRegisterWabaPhones extends Command
 
                 // Re-subscribe webhook
                 if ($wabaId) {
-                    $tokenUid = $meta->business_id; // fixed: use merchant's own business_id, not first settings row
+                    // Fixed: use $device->business_id (not $meta which is out of scope in PHASE 2)
+                    $tokenUid = $device->business_id;
                     $webhookUrl = config('app.url') . '/api-app/waba/callback-url/' . $tokenUid;
                     Http::withToken($accessToken)
                         ->post("https://graph.facebook.com/{$apiVersion}/{$wabaId}/subscribed_apps", [

@@ -15,7 +15,8 @@ class WhatsappServiceObserver
 {
     public function createSession(WhatsappDevice $device)
     {
-        return Http::post(config('custom.whatsapp_server_url') . '/sessions/add', [
+        // timeout(60): Baileys needs up to ~15s to connect WhatsApp & generate QR
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->timeout(60)->post(config('custom.whatsapp_server_url') . '/sessions/add', [
             'id'            => 'device_' . $device->id,
             'notification'  => $device->phone_notification == 'yes' ? false : true,
             'history'       => false,
@@ -25,47 +26,47 @@ class WhatsappServiceObserver
 
     public function getContacts($session_id)
     {
-        return Http::get(config('custom.whatsapp_server_url') . "/chats/get-contacts?id={$session_id}");
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->get(config('custom.whatsapp_server_url') . "/chats/get-contacts?id={$session_id}");
     }
 
     public function getContactDevices($session_id, $id)
     {
-        return Http::get(config('custom.whatsapp_server_url') . "/sessions/get-contacts/{$id}?id=device_{$session_id}");
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->get(config('custom.whatsapp_server_url') . "/sessions/get-contacts/{$id}?id=device_{$session_id}");
     }
 
     public function getGroupContact($session_id, $id, $businessId)
     {
-        return Http::get(config('custom.whatsapp_server_url') . "/groups/group-data/{$id}?id=device_{$session_id}&business={$businessId}");
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->get(config('custom.whatsapp_server_url') . "/groups/group-data/{$id}?id=device_{$session_id}&business={$businessId}");
     }
 
     public function getGroups($session_id, $id)
     {
-        return Http::get(config('custom.whatsapp_server_url') . "/groups/scraping-data/{$id}?id=device_{$session_id}");
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->get(config('custom.whatsapp_server_url') . "/groups/scraping-data/{$id}?id=device_{$session_id}");
     }
 
     public function getChats($session_id, $isGroup = false, $lastChat = null)
     {
-        return Http::get(config('custom.whatsapp_server_url') . "/chats?id={$session_id}&isgroup={$isGroup}&last_chat={$lastChat}");
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->get(config('custom.whatsapp_server_url') . "/chats?id={$session_id}&isgroup={$isGroup}&last_chat={$lastChat}");
     }
 
     public function getChatDetail($session_id, $chatID)
     {
-        return Http::get(config('custom.whatsapp_server_url') . '/chats/' . $chatID . '?id=' . $session_id);
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->get(config('custom.whatsapp_server_url') . '/chats/' . $chatID . '?id=' . $session_id);
     }
 
     public function deleteSession(WhatsappDevice $device)
     {
-        return Http::delete(config('custom.whatsapp_server_url') . '/sessions/delete/device_' . $device->id);
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->delete(config('custom.whatsapp_server_url') . '/sessions/delete/device_' . $device->id);
     }
 
     public function checkSession(WhatsappDevice $device)
     {
-        return Http::get(config('custom.whatsapp_server_url') . '/sessions/status/device_' . $device->id);
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->get(config('custom.whatsapp_server_url') . '/sessions/status/device_' . $device->id);
     }
 
     public function readMessages(Request $request, WhatsappDevice $device)
     {
-        return Http::post(config('custom.whatsapp_server_url') . '/chats/read-messages?id=device_' . $device->id, [
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->post(config('custom.whatsapp_server_url') . '/chats/read-messages?id=device_' . $device->id, [
             'chatid'    => $request->chatid,
             'messages'  => $request->messages
         ]);
@@ -73,7 +74,7 @@ class WhatsappServiceObserver
 
     public function deleteMessage(Request $request, WhatsappDevice $device)
     {
-        return Http::post(config('custom.whatsapp_server_url') . '/chats/delete-message?id=device_' . $device->id, [
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->post(config('custom.whatsapp_server_url') . '/chats/delete-message?id=device_' . $device->id, [
             'chatid'    => $request->chatid,
             'message'   => $request->message
         ]);
@@ -81,7 +82,7 @@ class WhatsappServiceObserver
 
     public function deleteEveryOne(Request $request, WhatsappDevice $device)
     {
-        return Http::post(config('custom.whatsapp_server_url') . '/chats/delete-everyone?id=device_' . $device->id, [
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->post(config('custom.whatsapp_server_url') . '/chats/delete-everyone?id=device_' . $device->id, [
             'chatid'    => $request->chatid,
             'message'   => $request->message
         ]);
@@ -89,7 +90,7 @@ class WhatsappServiceObserver
 
     public function downloadMedia(Request $request, WhatsappDevice $device)
     {
-        return Http::post(config('custom.whatsapp_server_url') . '/chats/download-media?id=device_' . $device->id, [
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->post(config('custom.whatsapp_server_url') . '/chats/download-media?id=device_' . $device->id, [
             'type'      => $request->type,
             'medianame' => $request->medianame,
             'message'   => $request->message
@@ -98,14 +99,14 @@ class WhatsappServiceObserver
 
     public function getPhotoProfile(Request $request, WhatsappDevice $device)
     {
-        return Http::post(config('custom.whatsapp_server_url') . '/chats/get-profile?id=device_' . $device->id, [
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->post(config('custom.whatsapp_server_url') . '/chats/get-profile?id=device_' . $device->id, [
             'phone'     => $request->phone,
         ]);
     }
 
     public function markMessage(Request $request, WhatsappDevice $device)
     {
-        return Http::post(config('custom.whatsapp_server_url') . '/chats/mark-message?id=device_' . $device->id, [
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->post(config('custom.whatsapp_server_url') . '/chats/mark-message?id=device_' . $device->id, [
             'status'    => $request->status,
             'chatid'    => $request->chatid
         ]);
@@ -113,7 +114,7 @@ class WhatsappServiceObserver
 
     public function deleteChats(Request $request, WhatsappDevice $device)
     {
-        return Http::post(config('custom.whatsapp_server_url') . '/chats/delete-chat?id=device_' . $device->id, [
+        return Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->post(config('custom.whatsapp_server_url') . '/chats/delete-chat?id=device_' . $device->id, [
             'chatid'     => $request->chatid,
         ]);
     }
@@ -160,7 +161,7 @@ class WhatsappServiceObserver
                     'replydata'     => null
                 ];
 
-                $response = Http::timeout(60)
+                $response = Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->timeout(60)
                     ->connectTimeout(15)
                     ->post($whatsappServerUrl . $endpoint, $payload);
 
@@ -191,7 +192,7 @@ class WhatsappServiceObserver
             ];
 
             // Menggunakan konfigurasi timeout yang lebih tinggi (90 detik)
-            $response = Http::timeout(60)
+            $response = Http::withHeaders(['x-api-key' => env('WASERVER_API_KEY')])->timeout(60)
                 ->connectTimeout(15) // Waktu untuk membuat koneksi
                 ->post($whatsappServerUrl . $endpoint, $payload);
 

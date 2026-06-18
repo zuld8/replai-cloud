@@ -19,15 +19,63 @@ use App\Models\Blash\BlashWhatsapp;
 use App\Models\Store\Scrapping;
 use Illuminate\Support\Facades\Schedule;
 
+// Clear stale broadcast:creating locks (10-min TTL sometimes causes stuck broadcasts)
+Schedule::call(function () {
+    try {
+        $redis = \Illuminate\Support\Facades\Redis::connection();
+        $keys = $redis->keys('*broadcast:creating*');
+        foreach ($keys as $key) {
+            $ttl = $redis->ttl($key);
+            // Delete if no expiry (crashed) or been running > 8 min (stuck)
+            if ($ttl === -1 || $ttl > 120) {
+                $redis->del($key);
+                \Illuminate\Support\Facades\Log::info("Cleared stuck broadcast:creating lock: {$key}");
+            }
+        }
+    } catch (\Throwable $e) {
+        // silently ignore
+    }
+})->everyMinute()->name('clear-broadcast-locks')->withoutOverlapping(1);
+
+// Dispatch to background queue - job runs fast (dispatches batches to Horizon)
+// withoutOverlapping(2) prevents duplicate runs within 2 min window
 Schedule::job(new SendWhatsappJob)
     ->everyMinute()
-    ->withoutOverlapping(30)
+    ->withoutOverlapping(2)
     ->when(function () {
-        return BlashWhatsapp::where('status', 'pending')
+        return BlashWhatsapp::withoutGlobalScopes()
+            ->where('status', 'pending')
             ->where("use", "whatsapp")
             ->where('schedule', '<=', now())
             ->exists();
     });
+
+// RESCUE: Catch broadcasts that cron missed (overdue >2min, 0 details)
+// Runs every minute as safety net
+Schedule::call(function () {
+    $overdue = \App\Models\Blash\BlashWhatsapp::withoutGlobalScopes()
+        ->where('status', 'pending')
+        ->where('use', 'whatsapp')
+        ->where('schedule', '<=', now()->subMinutes(2))
+        ->whereDoesntHave('details')
+        ->count();
+    if ($overdue > 0) {
+        // Clear any stale locks for overdue broadcasts
+        try {
+            $redis = \Illuminate\Support\Facades\Redis::connection();
+            foreach ($redis->keys('*broadcast:creating*') as $key) {
+                if ($redis->ttl($key) < 0 || $redis->ttl($key) > 55) {
+                    $redis->del($key);
+                }
+            }
+        } catch (\Throwable $e) {}
+        \App\Jobs\SendWhatsappJob::dispatch();
+        \Illuminate\Support\Facades\Log::warning("RescuePending: {$overdue} overdue broadcasts, dispatched SendWhatsappJob");
+    }
+})
+    ->everyMinute()
+    ->name('rescue-pending-broadcasts')
+    ->withoutOverlapping(1);
 
 Schedule::job(new BlashWhatsappGroupJob)
     ->everyMinute()
@@ -125,3 +173,9 @@ Schedule::command('broadcast:reset-stuck --minutes=45') // 45min > max job runti
     ->everyTenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Reset daily send counters at midnight WIB
+Schedule::job(new ResetWhatsappDailySendJob)
+    ->dailyAt('00:00')
+    ->name('reset-daily-send')
+    ->withoutOverlapping();

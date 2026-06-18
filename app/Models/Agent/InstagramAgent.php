@@ -9,7 +9,9 @@ class InstagramAgent extends Pivot
 {
     use HasUuids;
 
-    protected $fillable = ['instagram_id', 'user_id'];
+    protected $table = 'instagram_agents'; // Pivot does NOT auto-pluralize, must set explicitly
+
+    protected $fillable = ['id', 'instagram_id', 'user_id'];
     public $incrementing = false;
     protected $keyType = 'string';
 }

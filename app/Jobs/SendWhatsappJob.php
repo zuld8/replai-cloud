@@ -38,7 +38,8 @@ class SendWhatsappJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            $schedules = BlashWhatsapp::where("use", "whatsapp")
+            $schedules = BlashWhatsapp::withoutGlobalScopes()
+                ->where("use", "whatsapp")
                 ->where("status", "pending")
                 ->where("schedule", "<=", now())
                 ->orderBy('created_at', 'asc')
@@ -63,7 +64,7 @@ class SendWhatsappJob implements ShouldQueue
     {
         // ATOMIC LOCK: Prevent concurrent processing of same broadcast
         $lockKey = "broadcast:creating:{$schedulingPromotions->id}";
-        $lock = Cache::lock($lockKey, 600); // 10 min lock
+        $lock = Cache::lock($lockKey, 60); // 1 min lock (job dispatches in <1s)
         
         if (!$lock->get()) {
             Log::info("SendWhatsappJob: Broadcast {$schedulingPromotions->id} already being processed by another worker, skipping");
@@ -141,6 +142,13 @@ class SendWhatsappJob implements ShouldQueue
         // Distribute stores to devices (round-robin)
         $deviceGroups = $this->distributeStores($getStores, $availableDevices);
 
+        // EARLY STATUS UPDATE: Mark as 'processing' immediately so:
+        // 1. User sees progress right away (not pending for 2+ minutes)
+        // 2. Next handle() run won't re-process this broadcast
+        // 3. broadcast:redispatch-stuck will handle any stuck 'processing' broadcasts
+        $schedulingPromotions->update(['status' => 'processing', 'stat_total' => $getStores->count()]);
+        Log::info("Broadcast {$schedulingPromotions->id} ({$schedulingPromotions->name}): status=processing, {$getStores->count()} stores to process");
+
         // Schedule BATCH messages for each device group
         $totalBatches = 0;
         foreach ($deviceGroups as $deviceId => $stores) {
@@ -159,12 +167,15 @@ class SendWhatsappJob implements ShouldQueue
 
         if ($totalBatches > 0) {
             Log::info("Broadcast {$schedulingPromotions->id}: dispatched {$totalBatches} batches for {$totalDetails} contacts, {$unsentDetails} still unsent");
-            // Don't mark success yet — let RedispatchStuckBroadcasts verify all sent
-            $schedulingPromotions->update(['status' => 'processing']);
+            // Status already set to 'processing' above — nothing to do here
         } else {
-            // No batches dispatched — keep pending for retry
-            Log::warning("Broadcast {$schedulingPromotions->id}: 0 batches dispatched! Keeping pending for retry.");
-            $schedulingPromotions->update(['status' => 'pending']);
+            // No batches dispatched (all details already sent or no new stores) — revert
+            Log::warning("Broadcast {$schedulingPromotions->id}: 0 batches dispatched! Checking if already complete.");
+            if ($unsentDetails == 0 && $totalDetails > 0) {
+                $schedulingPromotions->update(['status' => 'partial_success']);
+            } else {
+                $schedulingPromotions->update(['status' => 'pending']);
+            }
         }
     }
 
@@ -173,12 +184,12 @@ class SendWhatsappJob implements ShouldQueue
         $wabaOfficial = $schedulingPromotions->waba ?? 'no';
 
         if ($wabaOfficial == 'yes') {
-            $query = WhatsappKeyAccount::where(function ($q) {
+            $query = WhatsappKeyAccount::withoutGlobalScopes()->where(function ($q) {
                 return $q->whereRaw('daily_send < limit_per_day')->orWhere("daily_limit", "no");
             })->where("status", "active")
               ->where("meta_account_id", $schedulingPromotions->meta_account_id);
         } else {
-            $query = WhatsappDevice::where(function ($q) {
+            $query = WhatsappDevice::withoutGlobalScopes()->where(function ($q) {
                 return $q->whereRaw('daily_send < limit_per_day')->orWhere("daily_limit", "no");
             })->where("business_id", $schedulingPromotions->business_id)
                 ->where("status", "active");
@@ -263,9 +274,14 @@ class SendWhatsappJob implements ShouldQueue
                     ]
                 );
 
-                // If this was NOT newly created, skip (already exists)
+                // Include both new records AND existing unsent records (re-dispatch scenario)
                 if (!$message->wasRecentlyCreated) {
-                    continue;
+                    // Only skip if already sent or currently sending
+                    if ($message->status === 'yes' || $message->sending_status === 'yes') {
+                        continue;
+                    }
+                    // Unsent record from previous failed run — re-assign device and include
+                    $message->update(['device_id' => $deviceId]);
                 }
 
                 $blastIds[] = $message->id;

@@ -44,7 +44,7 @@ class WhatsappWabaController extends Controller
 
     public function index(Request $request)
     {
-        $accounts     = $this->whatsappOfficialObserver->getMetaAccount($request)->get();
+        $accounts     = $this->whatsappOfficialObserver->getMetaAccount($request)->with('devices')->get();
         return view('waba.index', ['page'    => 'Wa Business Device', 'breadcumb' => true], compact('accounts'));
     }
 
@@ -550,7 +550,9 @@ class WhatsappWabaController extends Controller
             $removeExistingWebhook  = $this->whatsappServiceObserver->removeExistingAdnReplce($meta->business_app, $meta->access_token);
 
             if (!$removeExistingWebhook->success) {
-                return redirect()->back()->with(['gagal'    => 'Gagal Saat hapus webhook yang ada, Pesan :' . $removeExistingWebhook->data->error->message]);
+                // Non-fatal: log warning but continue — token may lack whatsapp_business_management scope
+                // (expected for hybrid/COEXISTENCE accounts where webhooks are managed at App level)
+                \Illuminate\Support\Facades\Log::warning('removeExistingWebhook failed for ' . $meta->id . ': ' . ($removeExistingWebhook->data->error->message ?? 'Unknown error'));
             }
 
             $webhookUrl = config('app.url') . '/api-app/waba/callback-url/' . $tokenUid;

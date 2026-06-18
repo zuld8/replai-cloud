@@ -206,9 +206,8 @@ class WhatsappDeviceController extends Controller
 
     public function createSession(Request $request, WhatsappDevice $device)
     {
-
         $response = $this->whatsappServiceObserver->createSession($device);
- 
+
         if ($response->status() == 200) {
             $body               = json_decode($response->body());
             $data['qr']         = $body->data->qr;
@@ -219,10 +218,33 @@ class WhatsappDeviceController extends Controller
             ]);
 
             return response()->json($data);
+
         } elseif ($response->status() == 409) {
+            // Session exists in WhatsmailServer memory.
+            // If device never authenticated (whatsapp_key empty), delete and recreate to get fresh QR.
+            if (empty($device->whatsapp_key)) {
+                $this->whatsappServiceObserver->deleteSession($device);
+                $freshResponse = $this->whatsappServiceObserver->createSession($device);
+
+                if ($freshResponse->status() == 200) {
+                    $body            = json_decode($freshResponse->body());
+                    $data['qr']      = $body->data->qr;
+                    $data['message'] = $body->message;
+                    $device->update(['whatsapp_key' => $body->data->qr ?? '']);
+                    return response()->json($data);
+                }
+
+                return response()->json(['qr' => null, 'message' => 'server_error'], 500);
+            }
+
+            // Session exists and device was previously authenticated — return stored key
             $data['qr']      = $device->whatsapp_key;
             $data['message'] = 'success';
             return response()->json($data);
+
+        } else {
+            // WhatsmailServer returned error (500, timeout, etc.)
+            return response()->json(['qr' => null, 'message' => 'server_error'], 500);
         }
     }
 
