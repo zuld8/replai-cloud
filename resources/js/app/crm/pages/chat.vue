@@ -2494,7 +2494,7 @@ export default {
 .chat-wrapper {
     display: flex;
     flex: 1;
-    height: 100;
+    min-height: 0;     /* fix: height:100 invalid → min-height:0 untuk flex */
     overflow: hidden;
 }
 
