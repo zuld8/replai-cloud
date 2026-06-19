@@ -14,6 +14,17 @@
     <link rel="stylesheet" href="{{asset('assets/css/livechat.css')}}?v=1781843320" />
 
     <style>
+      /* FIX: Transparent iframe body (no grey box behind bubble) */
+      body#chat-widget-container {
+        background: transparent !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+      /* Chat popup gets white bg when open */
+      #chat-popup {
+        background: white !important;
+      }
       /* v2: Kill text-align:center inheritance from container */
       #chat-widget-container .messages.chat-area,
       #chat-widget-container .chats { text-align: left !important; }

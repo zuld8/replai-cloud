@@ -2494,7 +2494,7 @@ export default {
 .chat-wrapper {
     display: flex;
     flex: 1;
-    height: 100;
+    min-height: 0;    /* flex: izinkan shrink di bawah content size */
     overflow: hidden;
 }
 
@@ -2804,6 +2804,9 @@ export default {
 @media (max-width: 992px) {
     .chat-wrapper {
         position: relative;
+        height: 100vh;    /* mobile: fill viewport */
+        height: 100dvh;   /* dvh: nyesuai address bar & keyboard */
+        min-height: 0;
     }
 
     .sidebar-right {
