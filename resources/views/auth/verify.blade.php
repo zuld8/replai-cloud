@@ -25,7 +25,7 @@
   <div class="auth-left" style="flex:1;overflow-y:auto;max-height:100vh;">
     <div class="auth-topbar">
       <a href="{{route('login')}}" class="auth-brand">
-        <img src="{{asset($internalSetting->logo)}}" alt="Replai" style="max-height:36px;">
+        <img src="{{$internalSetting->logo ? asset($internalSetting->logo) : asset('assets/img/color-logo.png')}}" alt="Replai" style="max-height:36px;">
       </a>
     </div>
     <div style="padding:40px 36px 40px;">

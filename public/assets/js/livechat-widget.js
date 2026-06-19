@@ -25,8 +25,8 @@
                     ? "100%"
                     : "84px"
                 : chatBubbleHeight,
-            bottom: "0",
-            right: "0",
+            bottom: (window.mychat && window.mychat.bottom) ? window.mychat.bottom : "0",
+            right: (window.mychat && window.mychat.right) ? window.mychat.right : "0",
             "max-width": mobile ? "100%" : "80%",
             "max-height": mobile ? "100%" : "90%",
         };

@@ -32,7 +32,7 @@ body { background: #fff !important; }
     <div class="auth-left">
         <div class="auth-topbar">
             <a href="{{route('login')}}" class="auth-brand">
-                <img src="{{asset($internalSetting->logo)}}" alt="Replai" style="max-height:38px;">
+                <img src="{{$internalSetting->logo ? asset($internalSetting->logo) : asset('assets/img/color-logo.png')}}" alt="Replai" style="max-height:38px;">
             </a>
             {{-- Language Selector --}}
             <div class="dropdown">
