@@ -61,6 +61,8 @@ class TelegramService
         ]);
 
         $telegram->agents()->sync($agents);
+
+        return $telegram; // FIX: return created TelegramKey so store() can call setWebhook($telegram)
     }
 
     public function updateData(Request $request, TelegramKey $telegram)

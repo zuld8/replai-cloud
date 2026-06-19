@@ -10,8 +10,45 @@
 
     <title>{{$page}}</title>
     <x-meta-component></x-meta-component>
-    <link href="{{asset('assets/css/livechat-output.css')}}" rel="stylesheet" />
-    <link rel="stylesheet" href="{{asset('assets/css/livechat.css')}}" />
+    <link href="{{asset('assets/css/livechat-output.css')}}?v=1781843320" rel="stylesheet" />
+    <link rel="stylesheet" href="{{asset('assets/css/livechat.css')}}?v=1781843320" />
+
+    <style>
+      /* v2: Kill text-align:center inheritance from container */
+      #chat-widget-container .messages.chat-area,
+      #chat-widget-container .chats { text-align: left !important; }
+
+      /* Limit bubble width + push to correct side via margin (bulletproof, works block+flex) */
+      #chat-widget-container .chats .chat-content {
+        max-width: 80% !important;
+        width: fit-content !important;
+        margin-right: auto !important;   /* incoming = kiri */
+        margin-left: 0 !important;
+      }
+      #chat-widget-container .chats.chats-right .chat-content {
+        margin-left: auto !important;    /* outgoing = kanan */
+        margin-right: 0 !important;
+      }
+
+      /* Bubble text tidak melebar penuh */
+      #chat-widget-container .chats .message-content {
+        display: inline-block !important;
+        max-width: 100% !important;
+        width: fit-content !important;
+        text-align: left !important;
+        word-break: break-word !important;
+      }
+
+      /* Gambar tidak kegedean */
+      #chat-widget-container .chats .message-content img {
+        max-width: 220px !important;
+        height: auto !important;
+      }
+
+      /* Profile name alignment */
+      #chat-widget-container .chats .chat-profile-name { text-align: left !important; }
+      #chat-widget-container .chats.chats-right .chat-profile-name { text-align: right !important; }
+    </style>
 </head>
 
 <body id="chat-widget-container">
@@ -106,7 +143,7 @@
                     </button>
                 </form>
                 <div class="powered-by text-center mt-8 text-sm text-gray-500">
-                    Powered by <a href="https://replai.org/replai-pro" target="_blank" class="text-blue-600">replai.org</a>
+                    Powered by <a href="https://replai.id" target="_blank" class="text-blue-600">replai.id</a>
                 </div>
             </div>
         </div>
@@ -161,9 +198,9 @@
             <div class="flex text-center text-xs pt-4">
                 <span class="flex-1">Powered by
                     <a
-                        href="https://replai.org/"
+                        href="https://replai.id/"
                         target="_blank"
-                        class="text-indigo-600">replai.org</a></span>
+                        class="text-indigo-600">replai.id</a></span>
             </div>
         </div>
     </div>
