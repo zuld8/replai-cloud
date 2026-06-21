@@ -194,6 +194,11 @@ export default {
 
 /* Mobile: sidebar initial state (JS will override on mount) */
 @media (max-width: 992px) {
+    /* Fix: subtract header height so container doesn't overflow viewport */
+    .chat-container {
+        height: calc(100dvh - 3.75rem);
+    }
+
     .chat-body > div:not(.sidebar-left):not(.sidebar-overlay) {
         flex: 1;
         min-width: 0;
@@ -201,18 +206,22 @@ export default {
     }
 
     .main-chat {
-        height: 100dvh;
+        /* Removed: height: 100dvh — caused input to go off-screen on mobile */
+        flex: 1;
+        min-height: 0;
         display: flex;
         flex-direction: column;
     }
 
     .chat-messages {
         flex: 1;
+        min-height: 0;  /* Critical: allows flex shrinking so input stays visible */
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
 
     .chat-input-area {
+        flex-shrink: 0;
         padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 }

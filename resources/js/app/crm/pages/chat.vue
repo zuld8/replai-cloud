@@ -3674,13 +3674,16 @@ export default {
 /* === Mobile responsive: main chat area === */
 @media (max-width: 992px) {
     .main-chat {
-        height: 100dvh;
+        /* Removed: height: 100dvh — caused input to go off-screen */
+        flex: 1;
+        min-height: 0;
         display: flex;
         flex-direction: column;
     }
 
     .chat-messages {
         flex: 1;
+        min-height: 0;  /* Critical: allow shrinking so input stays visible */
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
