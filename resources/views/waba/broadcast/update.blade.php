@@ -182,5 +182,5 @@
         $('.devices').select2();
     });
 </script>
-<script src="/js/app-broadcast.js?v=1773059842"></script>
+<script src="{{ mix('js/app-broadcast.js') }}"></script>
 @endsection

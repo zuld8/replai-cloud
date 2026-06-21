@@ -16,5 +16,5 @@
         translations: @json(__('crm'))
     };
 </script>
-<script src="/js/app-crm.js?v={{ filemtime(public_path('js/app-crm.js')) }}"></script>
+<script src="{{ mix('js/app-crm.js') }}"></script>
 @endsection

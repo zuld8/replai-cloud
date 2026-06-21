@@ -36,5 +36,5 @@
         translations: @json(__('template'))
     };
 </script>
-<script src="/js/whatsapp-template.js"></script>
+<script src="{{ mix('js/whatsapp-template.js') }}"></script>
 @endsection

@@ -176,5 +176,5 @@
 
 
 @section('scripts')
-<script src="/js/app-template.js?v=1773139293"></script>
+<script src="{{ mix('js/app-template.js') }}"></script>
 @endsection

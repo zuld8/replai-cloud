@@ -183,5 +183,5 @@
         $('.devices').select2();
     });
 </script>
-<script src="/js/app-chatbot.js"></script>
+<script src="{{ mix('js/app-chatbot.js') }}"></script>
 @endsection
