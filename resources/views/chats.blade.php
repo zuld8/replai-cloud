@@ -221,7 +221,7 @@
             socketUrl: @json(config('custom.socket_url'))
         };
     </script>
-    <script src="{{asset('assets/js/livechat.js')}}" type="module"></script>
+    <script src="{{asset('assets/js/livechat.js')}}?v={{ filemtime(public_path('assets/js/livechat.js')) }}" type="module"></script>
 </body>
 
 </html>

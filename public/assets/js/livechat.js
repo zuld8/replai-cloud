@@ -310,8 +310,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const phone = formatPhoneNumber(phoneInput.value);
 
         // Basic validation
-        if (phone.length < 7) {
-            phoneInput.setCustomValidity("Please enter a valid phone number");
+        if (phone.length < 9 || phone.length > 15) {
+            phoneInput.setCustomValidity("Masukkan nomor WhatsApp yang valid (min. 9 digit)");
             phoneInput.reportValidity();
             return;
         }
@@ -346,6 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document
         .getElementById("user-phone")
         .addEventListener("input", function (e) {
+            e.target.setCustomValidity(""); // Reset validity on each keystroke — fix stuck invalid state
             let value = e.target.value.replace(/\D/g, "");
 
             // Remove leading zero if present
