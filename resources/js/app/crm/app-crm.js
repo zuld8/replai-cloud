@@ -1,3 +1,4 @@
+import '../../public-path.js'; // MUST be first: sets webpack publicPath
 import { createApp } from "vue";
 import App from "./App.vue";
 import VueLazyload from "vue-lazyload";
