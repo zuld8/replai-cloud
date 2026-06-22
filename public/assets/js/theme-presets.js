@@ -110,7 +110,7 @@
       '#broadcastStatusSection small{color:rgba(255,255,255,0.8)!important}',
 
       /* === HEADER & BREADCRUMB === */
-      '.app-header{background:linear-gradient(135deg,' + h + ',' + l + ')!important;border-bottom:none!important;box-shadow:0 2px 12px rgba(' + p + ',0.15)!important}',
+      '.app-header{background:linear-gradient(90deg,#2E8DE1 0%,#5B8EE0 45%,#6D5DD3 100%)!important;border-bottom:none!important;box-shadow:0 2px 12px rgba(46,141,225,0.18)!important}',
       '.app-header .nav-link,.app-header .header-link,.app-header .header-element .header-link{color:rgba(255,255,255,0.85)!important}',
       '.app-header .nav-link:hover,.app-header .header-link:hover{color:#fff!important}',
       '.app-header .header-link-icon:hover,.app-header .header-link:hover .header-link-icon{background-color:rgba(0,0,0,0.12)!important;border-radius:50%!important;transition:all 0.2s ease!important}',
