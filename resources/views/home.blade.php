@@ -61,7 +61,12 @@
 .dash-greeting p  { opacity: 0.88 !important; font-size: 0.78rem !important; margin-bottom: 0; }
 
 /* Top stat cards */
-.dash-top-card { text-decoration: none !important; }
+.dash-top-card {
+    text-decoration: none !important;
+    border-radius: 10px !important;   /* Match card radius so no gap shows */
+    overflow: hidden !important;       /* Clip inner card → no background bleed at corners */
+    display: block !important;
+}
 .dash-top-card .card { border-radius: 10px !important; min-height: 78px !important; border: none !important; outline: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; }
 .dash-top-card .card-body { padding: 0.55rem 0.7rem !important; }
 .dash-top-card img { width: 30px !important; height: 30px !important; object-fit: contain; filter: none; }
