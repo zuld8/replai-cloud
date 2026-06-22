@@ -61,24 +61,20 @@
 .dash-greeting p  { opacity: 0.88 !important; font-size: 0.78rem !important; margin-bottom: 0; }
 
 /* Top stat cards */
-.dash-top-card {
-    text-decoration: none !important;
-    border-radius: 10px !important;   /* Match card radius so no gap shows */
-    overflow: hidden !important;       /* Clip inner card → no background bleed at corners */
-    display: block !important;
-}
-.dash-top-card .card { border-radius: 10px !important; min-height: 78px !important; border: none !important; outline: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; }
+.dash-top-card { text-decoration: none !important; }
+.dash-top-card .card { border-radius: 10px !important; min-height: 78px !important; border: none !important; outline: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; background-color: #fff !important; overflow: hidden !important; }
 .dash-top-card .card-body { padding: 0.55rem 0.7rem !important; }
 .dash-top-card img { width: 30px !important; height: 30px !important; object-fit: contain; filter: none; }
 .dash-top-card h3 { font-size: 1.15rem !important; font-weight: 700 !important; color: var(--rp-navy) !important; margin-top: 2px; }
 .dash-top-card h6 { font-size: 0.7rem !important; font-weight: 500 !important; color: var(--rp-muted) !important; }
 .dash-top-card small { font-size: 0.72rem !important; font-weight: 600 !important; color: var(--rp-muted) !important; }
-.dash-top-card:nth-child(1) .card { border-top: 3px solid #25D366 !important; }    /* WA Personal */
-.dash-top-card:nth-child(2) .card { border-top: 3px solid #128C7E !important; }    /* WABA */
-.dash-top-card:nth-child(3) .card { border-top: 3px solid #0088CC !important; }    /* Telegram */
-.dash-top-card:nth-child(4) .card { border-top: 3px solid #0084FF !important; }    /* Messenger */
-.dash-top-card:nth-child(5) .card { border-top: 3px solid #E4405F !important; }    /* Instagram */
-.dash-top-card:nth-child(6) .card { border-top: 3px solid var(--rp-primary) !important; } /* Live Chat */
+/* Colored top bar via background-image — INSIDE border-radius, zero corner artifact */
+.dash-top-card:nth-child(1) .card { background-image: linear-gradient(to bottom, #25D366 3px, #fff 3px) !important; }   /* WA Personal */
+.dash-top-card:nth-child(2) .card { background-image: linear-gradient(to bottom, #128C7E 3px, #fff 3px) !important; }   /* WABA */
+.dash-top-card:nth-child(3) .card { background-image: linear-gradient(to bottom, #0088CC 3px, #fff 3px) !important; }   /* Telegram */
+.dash-top-card:nth-child(4) .card { background-image: linear-gradient(to bottom, #0084FF 3px, #fff 3px) !important; }   /* Messenger */
+.dash-top-card:nth-child(5) .card { background-image: linear-gradient(to bottom, #E4405F 3px, #fff 3px) !important; }   /* Instagram */
+.dash-top-card:nth-child(6) .card { background-image: linear-gradient(to bottom, #2E8DE1 3px, #fff 3px) !important; }   /* Live Chat */
 
 /* Date filter buttons */
 .date-filter-btn {
