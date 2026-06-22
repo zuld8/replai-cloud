@@ -3,212 +3,166 @@
 @section('content')
 
 <style>
-/* ============================================
-   DASHBOARD ENHANCEMENT - CSS Only
-   Zero Lag, No New Libraries
-   ============================================ */
+/* ============================================================
+   Replai Dashboard — Compact Brand-Consistent Styles v2
+   ============================================================ */
+:root {
+  --rp-primary:#2E8DE1; --rp-primary-soft:#EAF3FC;
+  --rp-ai:#8B5CF6; --rp-ai-soft:#F1ECFE;
+  --rp-navy:#1E2A4A; --rp-muted:#6B7A99;
+  --rp-surface:#FFFFFF; --rp-bg:#F5F8FC; --rp-border:#E4EAF2;
+  --rp-success:#16A34A; --rp-warn:#D97706; --rp-danger:#DC2626;
+}
+
+/* Base card */
 .dashboard-enhanced .card {
-    border: none;
-    border-radius: 14px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    border: 0.5px solid var(--rp-border) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    transition: box-shadow 0.18s ease !important;
     overflow: hidden;
-    background: #fff;
+    background: var(--rp-surface);
 }
 .dashboard-enhanced a .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07) !important;
 }
-/* Greeting */
+
+/* Greeting — flat brand primary (no gradient) */
 .dash-greeting {
-    background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 60%, #38BDF8 100%);
-    border-radius: 16px;
-    padding: 1.4rem 2rem;
-    margin-bottom: 1.25rem;
+    background: var(--rp-primary) !important;
+    border-radius: 12px !important;
+    padding: 0.7rem 1.1rem !important;
+    margin-bottom: 1rem;
     color: #fff;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 3px 10px rgba(46,141,225,0.2) !important;
+    border: none !important;
 }
 .dash-greeting::after {
     content: '';
     position: absolute;
     right: -20px; top: -20px;
-    width: 120px; height: 120px;
-    background: rgba(255,255,255,0.08);
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.07);
     border-radius: 50%;
+    pointer-events: none;
 }
 .dash-greeting::before {
     content: '';
     position: absolute;
-    right: 60px; bottom: -30px;
-    width: 80px; height: 80px;
-    background: rgba(255,255,255,0.06);
+    right: 60px; bottom: -20px;
+    width: 56px; height: 56px;
+    background: rgba(255,255,255,0.05);
     border-radius: 50%;
+    pointer-events: none;
 }
-.dash-greeting h4 { font-weight: 700; font-size: 1.2rem; margin-bottom: 0.2rem; }
-.dash-greeting p  { opacity: 0.88; font-size: 0.85rem; margin-bottom: 0; }
+.dash-greeting h4 { font-weight: 700 !important; font-size: 0.98rem !important; margin-bottom: 0.15rem; text-shadow: none; }
+.dash-greeting p  { opacity: 0.88 !important; font-size: 0.78rem !important; margin-bottom: 0; }
 
-/* Top 4 cards */
+/* Top stat cards */
 .dash-top-card { text-decoration: none !important; }
-.dash-top-card .card { border-radius: 16px; min-height: 130px; }
-.dash-top-card .card-body { padding: 1.2rem 1rem; }
-.dash-top-card img { width: 48px !important; height: 48px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12)); }
-.dash-top-card h3 { font-size: 1.6rem; font-weight: 700; color: #1a1a2e; margin-top: 4px; }
-.dash-top-card h6 { font-size: 0.76rem; font-weight: 500; color: #6b7280; }
-.dash-top-card:nth-child(1) .card { border-top: 3px solid #25D366; }
-.dash-top-card:nth-child(2) .card { border-top: 3px solid #128C7E; }
-.dash-top-card:nth-child(3) .card { border-top: 3px solid #3B82F6; }
-.dash-top-card:nth-child(4) .card { border-top: 3px solid #F59E0B; }
+.dash-top-card .card { border-radius: 10px !important; min-height: 78px !important; border: 0.5px solid var(--rp-border) !important; }
+.dash-top-card .card-body { padding: 0.55rem 0.7rem !important; }
+.dash-top-card img { width: 30px !important; height: 30px !important; object-fit: contain; filter: none; }
+.dash-top-card h3 { font-size: 1.15rem !important; font-weight: 700 !important; color: var(--rp-navy) !important; margin-top: 2px; }
+.dash-top-card h6 { font-size: 0.7rem !important; font-weight: 500 !important; color: var(--rp-muted) !important; }
+.dash-top-card small { font-size: 0.72rem !important; font-weight: 600 !important; color: var(--rp-muted) !important; }
+.dash-top-card:nth-child(1) .card { border-top: 3px solid #25D366 !important; }
+.dash-top-card:nth-child(2) .card { border-top: 3px solid #128C7E !important; }
+.dash-top-card:nth-child(3) .card { border-top: 3px solid var(--rp-primary) !important; }
+.dash-top-card:nth-child(4) .card { border-top: 3px solid var(--rp-warn) !important; }
 
 /* Date filter buttons */
-.date-filter-btn { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; font-weight: 500; transition: all 0.15s; }
-.date-filter-btn:hover { background: #e2e8f0; color: #334155; }
-.date-filter-btn.active { background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%); color: #fff; border-color: transparent; }
+.date-filter-btn {
+    background: #fff; color: var(--rp-muted); border: 1px solid var(--rp-border);
+    font-weight: 600; font-size: 0.72rem;
+    padding: 4px 14px; border-radius: 20px;
+    cursor: pointer; transition: all 0.15s ease; box-shadow: none;
+}
+.date-filter-btn:hover { background: var(--rp-primary-soft); color: var(--rp-primary); border-color: #BFDBFE; }
+.date-filter-btn.active {
+    background: var(--rp-primary); color: #fff; border-color: transparent;
+    box-shadow: 0 2px 6px rgba(46,141,225,0.3);
+}
 
 /* Chart cards */
-.dash-chart-card .card { border-radius: 14px; }
+.dash-chart-card .card { border-radius: 10px; border: 0.5px solid var(--rp-border); }
 .dash-chart-card .card-header {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border-bottom: 1px solid #e5e7eb;
-    padding: 1rem 1.25rem;
-    border-radius: 14px 14px 0 0;
+    background: #fff;
+    border-bottom: 1px solid var(--rp-border);
+    padding: 0.6rem 1rem;
+    border-radius: 10px 10px 0 0;
 }
-.dash-chart-card .card-title { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
-.dash-chart-card .card-subtitle { font-size: 0.76rem; color: #94a3b8; }
+.dash-chart-card .card-title { font-size: 0.84rem !important; font-weight: 700; color: var(--rp-navy); }
+.dash-chart-card .card-subtitle { font-size: 0.76rem; color: var(--rp-muted); }
 
-/* Label card */
-.dash-label-card .card { border-radius: 14px; min-height: 300px; }
-.dash-label-card .card-header { background: linear-gradient(135deg,#f0fdf4,#ecfdf5); border-bottom: 1px solid #d1fae5; border-radius: 14px 14px 0 0; }
-.dash-label-card .card-title { font-weight: 700; color: #0C4A6E; font-size: 0.92rem; }
+/* Label / donut card */
+.dash-label-card .card { border-radius: 10px; min-height: 200px; border: 0.5px solid var(--rp-border); }
+.dash-label-card .card-header {
+    background: #fff !important;
+    border-bottom: 1px solid var(--rp-border) !important;
+    border-radius: 10px 10px 0 0;
+    padding: 0.65rem 1rem !important;
+}
+.dash-label-card .card-title { font-weight: 700; color: var(--rp-navy) !important; font-size: 0.82rem; }
 
-/* Log card */
-.dash-log-item { transition: background 0.15s; border-radius: 8px; padding: 0.6rem 0.75rem; margin-bottom: 4px; }
-.dash-log-item:hover { background: #f8fafc; }
+/* Log / message items */
+.dash-log-item {
+    transition: background 0.15s; border-radius: 8px;
+    padding: 0.4rem 0.6rem !important; margin-bottom: 2px;
+    border: 1px solid transparent !important;
+}
+.dash-log-item:hover { background: var(--rp-primary-soft) !important; border-color: #BFDBFE !important; }
 
-@media (max-width: 768px) {
-    .dash-greeting { padding: 1rem 1.25rem; }
-    .dash-greeting h4 { font-size: 1rem; }
-    .dash-top-card img { width: 38px !important; height: 38px; }
-    .dash-top-card h3 { font-size: 1.25rem; }
+/* Platform cards */
+.dash-platform-card { border-radius: 10px !important; }
+.dash-platform-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 0.4rem;
+}
+.dash-connect-btn {
+    font-size: 0.65rem; color: var(--rp-primary);
+    font-weight: 600; display: block; margin-top: 2px;
 }
 
+/* Chart card header */
 .chart-card-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; 
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border-bottom: 1px solid #e2e8f0;
-    border-radius: 12px 12px 0 0;
+    padding: 10px 16px;
+    background: #fff;
+    border-bottom: 1px solid var(--rp-border);
+    border-radius: 10px 10px 0 0;
 }
 .chart-selector {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 14px; border-radius: 10px;
-    background: #fff; border: 1px solid #e2e8f0;
-    font-size: 0.82rem; font-weight: 600; color: #1e293b;
-    cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    appearance: none; -webkit-appearance: none;
+    padding: 5px 26px 5px 12px; border-radius: 8px;
+    background: #fff; border: 1px solid var(--rp-border);
+    font-size: 0.8rem; font-weight: 600; color: var(--rp-navy);
+    cursor: pointer; appearance: none; -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 10px center;
-    padding-right: 30px;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    background-repeat: no-repeat; background-position: right 8px center;
+    transition: border-color 0.15s;
 }
-.chart-selector:hover { border-color: #38BDF8; }
-.chart-selector:focus { outline: none; border-color: #38BDF8; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
-.date-filter-btn {
-    background: #fff; color: #64748b; border: 1px solid #e2e8f0;
-    font-weight: 600; font-size: 0.72rem;
-    padding: 5px 16px; border-radius: 20px;
-    cursor: pointer; transition: all 0.15s ease;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-}
-.date-filter-btn:hover { background: #F0F9FF; color: #0284C7; border-color: #BAE6FD; }
-.date-filter-btn.active {
-    background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%);
-    color: #fff; border-color: transparent;
-    box-shadow: 0 2px 6px rgba(14,165,233,0.3);
-}
-.chart-body { padding: 16px 12px 8px; min-height: 260px; }
+.chart-selector:hover, .chart-selector:focus { outline: none; border-color: var(--rp-primary); }
+.chart-body { padding: 12px 10px 6px; min-height: 185px; }
 .chart-card-wrap {
-    background: #fff; border-radius: 14px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
-    border: 1px solid #f1f5f9; overflow: hidden;
+    background: #fff; border-radius: 10px;
+    box-shadow: none; border: 0.5px solid var(--rp-border); overflow: hidden;
 }
-.card:has(#chartViewSelector) { border-radius: 14px; border: 1px solid #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04); overflow: hidden; }
-.card:has(#chartViewSelector) > .card-header { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 12px 20px; }
-.card:has(#chartViewSelector) > .card-body { padding: 16px 12px 8px; }
+.card:has(#chartViewSelector) { border-radius: 10px; border: 0.5px solid var(--rp-border); box-shadow: none; overflow: hidden; }
+.card:has(#chartViewSelector) > .card-header { background: #fff; border-bottom: 1px solid var(--rp-border); padding: 10px 16px; }
+.card:has(#chartViewSelector) > .card-body { padding: 12px 10px 6px; }
 
-
-/* Dashboard Polish */
-.dashboard-enhanced .card {
-    border-radius: 14px !important;
-    border: 1px solid #E2E8F0 !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02) !important;
-    transition: box-shadow 0.2s ease !important;
-    overflow: hidden;
+@media (max-width: 768px) {
+    .dash-greeting { padding: 0.7rem 0.9rem !important; }
+    .dash-greeting h4 { font-size: 0.92rem !important; }
+    .dash-top-card img { width: 30px !important; height: 30px !important; }
+    .dash-top-card h3 { font-size: 0.95rem !important; }
+    .dash-top-card .card { min-height: 78px !important; }
 }
-.dashboard-enhanced .card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04) !important;
-}
-.dash-greeting {
-    border-radius: 14px !important;
-    padding: 1.25rem 1.5rem !important;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.2) !important;
-    border: none !important;
-}
-.dash-greeting h4 {
-    font-weight: 800 !important;
-    font-size: 1.15rem !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-.dash-greeting p {
-    font-size: 0.82rem !important;
-    opacity: 0.9 !important;
-}
-.dash-top-card .card {
-    border-radius: 14px !important;
-    transition: all 0.2s ease !important;
-    border: 1px solid #E2E8F0 !important;
-}
-.dash-top-card .card:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.08) !important;
-}
-.dash-top-card h3 {
-    font-weight: 800 !important;
-    font-size: 1.35rem !important;
-    color: #1E293B !important;
-}
-.dash-top-card small {
-    font-size: 0.72rem !important;
-    font-weight: 600 !important;
-    color: #64748B !important;
-}
-.dash-label-card .card {
-    border-radius: 14px !important;
-    overflow: hidden;
-}
-.dash-label-card .card-header {
-    background: linear-gradient(135deg, #F8FAFC, #F1F5F9) !important;
-    border-bottom: 1px solid #E2E8F0 !important;
-    padding: 14px 20px !important;
-}
-.dash-log-item {
-    border-radius: 10px !important;
-    padding: 0.7rem 0.85rem !important;
-    border: 1px solid transparent !important;
-    transition: all 0.15s ease !important;
-}
-.dash-log-item:hover {
-    background: #F0F9FF !important;
-    border-color: #BAE6FD !important;
-}
-.dash-chart-card .card-title {
-    font-size: 0.95rem !important;
-    font-weight: 700 !important;
-    color: #1E293B !important;
-}
-
 </style>
 
 <div class="dashboard-enhanced">
@@ -238,7 +192,7 @@
                             <button class="date-filter-btn" data-days="90" onclick="window._chartFilter(90)" style="font-size:0.72rem;border-radius:20px;padding:4px 14px;cursor:pointer;">90 Hari</button>
                     </div>
                 </div>
-                <div class="card-body" style="min-height:280px;">
+                <div class="card-body" style="min-height:210px;">
                     <div id="labelLeads"></div>
                     <div id="pesanMasukChart" style="display:none;"></div>
                     <div id="broadcastSummaryChart" style="display:none;"></div>
@@ -374,10 +328,10 @@
 {{-- Row 4.5: Broadcast Status Hybrid --}}
 <div class="row mb-3">
     <div class="col-lg-6 col-sm-12 mb-3 mb-lg-0">
-        <div class="card custom-card" style="border-radius:14px;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.06);height:100%;">
-            <div class="card-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border-bottom:1px solid #BFDBFE;border-radius:14px 14px 0 0;padding:1rem 1.25rem;">
+        <div class="card custom-card" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;height:100%;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff;border-bottom:1px solid var(--rp-border);border-left:3px solid var(--rp-primary);border-radius:10px 10px 0 0;padding:0.65rem 1rem;">
                 <div>
-                    <h6 class="mb-0 fw-700" style="color:#0C4A6E;font-size:0.92rem;">💬 5 Pesan Baru di CRM</h6>
+                    <h6 class="mb-0 fw-700" style="color:var(--rp-navy);font-size:0.84rem;">💬 5 Pesan Baru di CRM</h6>
                     <small style="font-size:0.72rem;color:#60A5FA;">Pesan masuk terbaru yang perlu ditangani</small>
                 </div>
                 <a href="{{ route('crm') }}" class="btn btn-sm btn-outline-light rounded-pill px-3" style="font-size:0.75rem;">Buka CRM →</a>
@@ -428,8 +382,8 @@
         </div>
     </div>
     <div class="col-lg-6 col-sm-12">
-        <div class="card custom-card" style="border-radius:14px;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.06);height:100%;">
-            <div class="card-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#FFF7ED,#FFEDD5);border-bottom:1px solid #FED7AA;border-radius:14px 14px 0 0;padding:1rem 1.25rem;">
+        <div class="card custom-card" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;height:100%;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff;border-bottom:1px solid var(--rp-border);border-left:3px solid var(--rp-warn);border-radius:10px 10px 0 0;padding:0.65rem 1rem;">
                 <div>
                     <h6 class="mb-0 fw-700" style="color:#1e293b;font-size:0.92rem;">⏳ Pesan Belum Dibalas</h6>
                     <div class="d-flex align-items-center gap-1 mt-1">
@@ -487,21 +441,21 @@
 
 <div class="row mb-3" id="broadcastStatusSection">
     <div class="col-12">
-        <div class="card custom-card" style="border-radius:14px;border:none;box-shadow:0 4px 20px rgba(14,165,233,0.15),0 1px 4px rgba(0,0,0,0.06);overflow:hidden;">
-            <div class="card-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#0369a1 0%,#0284C7 50%,#0EA5E9 100%);border-bottom:none;border-radius:14px 14px 0 0;padding:0.85rem 1.5rem;position:relative;overflow:hidden;">
+        <div class="card custom-card" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;overflow:hidden;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff;border-bottom:1px solid var(--rp-border);border-left:3px solid var(--rp-primary);border-radius:10px 10px 0 0;padding:0.65rem 1rem;position:relative;overflow:hidden;">
                 <!-- subtle wave/glow top right -->
                 <div style="position:absolute;top:-50%;right:-5%;width:220px;height:220px;background:radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 60%);border-radius:50%;pointer-events:none;"></div>
                 <div style="position:relative;z-index:1;display:flex;align-items:center;gap:0.625rem;">
                     <span style="font-size:1.1rem;">🚀</span>
                     <div>
-                        <h6 class="mb-0 fw-700" style="color:#fff;font-size:0.9rem;">Status Broadcast Terakhir</h6>
+                        <h6 class="mb-0 fw-700" style="color:var(--rp-navy);font-size:0.84rem;">Status Broadcast Terakhir</h6>
                         <div class="d-flex align-items-center gap-1 mt-1">
                             <span style="width:5px;height:5px;border-radius:50%;background:#86efac;display:inline-block;animation:pulse-dot 2s infinite;"></span>
-                            <small style="font-size:0.68rem;color:rgba(255,255,255,0.75);">Diperbarui setiap 5 menit</small>
+                            <small style="font-size:0.68rem;color:var(--rp-muted);">Diperbarui setiap 5 menit</small>
                         </div>
                     </div>
                 </div>
-                <a href="{{ route('broadcast') }}" class="btn btn-sm rounded-pill px-3" style="font-size:0.72rem;background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.3);position:relative;z-index:1;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">Lihat Semua →</a>
+                <a href="{{ route('broadcast') }}" class="btn btn-sm rounded-pill px-3" style="font-size:0.72rem;background:var(--rp-primary-soft);color:var(--rp-primary);border:1px solid #BFDBFE;position:relative;z-index:1;transition:background 0.2s;" onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='var(--rp-primary-soft)'">Lihat Semua →</a>
             </div>
             <div class="card-body p-0">
                 <!-- Skeleton loader -->
