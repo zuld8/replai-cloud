@@ -62,16 +62,18 @@
 
 /* Top stat cards */
 .dash-top-card { text-decoration: none !important; }
-.dash-top-card .card { border-radius: 10px !important; min-height: 78px !important; border: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; }
+.dash-top-card .card { border-radius: 10px !important; min-height: 78px !important; border: none !important; outline: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; }
 .dash-top-card .card-body { padding: 0.55rem 0.7rem !important; }
 .dash-top-card img { width: 30px !important; height: 30px !important; object-fit: contain; filter: none; }
 .dash-top-card h3 { font-size: 1.15rem !important; font-weight: 700 !important; color: var(--rp-navy) !important; margin-top: 2px; }
 .dash-top-card h6 { font-size: 0.7rem !important; font-weight: 500 !important; color: var(--rp-muted) !important; }
 .dash-top-card small { font-size: 0.72rem !important; font-weight: 600 !important; color: var(--rp-muted) !important; }
-.dash-top-card:nth-child(1) .card { border-top: 3px solid #25D366 !important; }
-.dash-top-card:nth-child(2) .card { border-top: 3px solid #128C7E !important; }
-.dash-top-card:nth-child(3) .card { border-top: 3px solid var(--rp-primary) !important; }
-.dash-top-card:nth-child(4) .card { border-top: 3px solid var(--rp-warn) !important; }
+.dash-top-card:nth-child(1) .card { border-top: 3px solid #25D366 !important; }    /* WA Personal */
+.dash-top-card:nth-child(2) .card { border-top: 3px solid #128C7E !important; }    /* WABA */
+.dash-top-card:nth-child(3) .card { border-top: 3px solid #0088CC !important; }    /* Telegram */
+.dash-top-card:nth-child(4) .card { border-top: 3px solid #0084FF !important; }    /* Messenger */
+.dash-top-card:nth-child(5) .card { border-top: 3px solid #E4405F !important; }    /* Instagram */
+.dash-top-card:nth-child(6) .card { border-top: 3px solid var(--rp-primary) !important; } /* Live Chat */
 
 /* Date filter buttons */
 .date-filter-btn {
