@@ -360,7 +360,7 @@
                 </div>
                 <a href="{{ route('crm') }}" class="btn-crm-outline">Buka CRM →</a>
             </div>
-            <div class="card-body p-0" style="max-height:340px;overflow-y:auto;">
+            <div class="card-body p-0" style="max-height:290px;overflow-y:auto;">
                 @forelse($crmMessages['newest'] ?? [] as $msg)
                 <a href="{{ url('app/crm/chat/' . $msg['id']) }}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;cursor:pointer;color:inherit;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                     <div class="flex-shrink-0" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0369A1,#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.75rem;">
@@ -424,7 +424,7 @@
                 </div>
                 <a href="{{ route('crm') }}" class="btn-crm-outline">Buka CRM →</a>
             </div>
-            <div class="card-body p-0" id="unrepliedBody" style="max-height:340px;overflow-y:auto;">
+            <div class="card-body p-0" id="unrepliedBody" style="max-height:290px;overflow-y:auto;">
                 @forelse($crmMessages['oldest'] ?? [] as $msg)
                 <a href="{{ url('app/crm/chat/' . $msg['id']) }}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;cursor:pointer;color:inherit;" onmouseover="this.style.background='#FFFBEB'" onmouseout="this.style.background='transparent'">
                     <div class="flex-shrink-0" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.75rem;">
@@ -490,8 +490,8 @@
             <div class="card-body p-0">
                 <!-- Skeleton loader -->
                 <div id="broadcastSkeleton" style="padding:1.25rem;">
-                    <div style="height:60px;background:linear-gradient(90deg,#f1f5f9 25%,#e5e7eb 50%,#f1f5f9 75%);background-size:200% 100%;border-radius:8px;animation:shimmer 1.5s infinite;"></div>
-                    <div style="height:60px;background:linear-gradient(90deg,#f1f5f9 25%,#e5e7eb 50%,#f1f5f9 75%);background-size:200% 100%;border-radius:8px;margin-top:8px;animation:shimmer 1.5s infinite;"></div>
+                    <div style="height:44px;background:linear-gradient(90deg,#f1f5f9 25%,#e5e7eb 50%,#f1f5f9 75%);background-size:200% 100%;border-radius:8px;animation:shimmer 1.5s infinite;"></div>
+                    <div style="height:44px;background:linear-gradient(90deg,#f1f5f9 25%,#e5e7eb 50%,#f1f5f9 75%);background-size:200% 100%;border-radius:8px;margin-top:6px;animation:shimmer 1.5s infinite;"></div>
                 </div>
                 <!-- Real content -->
                 <div id="broadcastStatusList" style="display:none;"></div>
@@ -516,7 +516,7 @@
 }
 /* ── Compact single-row blast items ─────────────────────────────── */
 .blast-item {
-    padding: 0.6rem 1.5rem;
+    padding: 0.45rem 1rem;
     border-bottom: 1px solid #f1f5f9;
     transition: background 0.12s ease;
 }
@@ -756,6 +756,46 @@ body { background: #F5F8FC !important; }
     white-space: nowrap;
 }
 .btn-crm-outline:hover { background: #DBEAFE; color: #1B5FA6; }
+
+/* ── Compact message panel rows ─────────────────────────── */
+/* Message items: px-3 py-2 (Bootstrap) → lebih rapat */
+.dash-crm-pesan .card-body a,
+.dash-crm-unreplied .card-body a {
+    padding: 5px 10px !important;
+    gap: 8px !important;
+}
+/* Avatar: 36px → 28px */
+.dash-crm-pesan .card-body a > .flex-shrink-0,
+.dash-crm-unreplied .card-body a > .flex-shrink-0 {
+    width: 28px !important; height: 28px !important;
+    font-size: 0.65rem !important; flex-shrink: 0 !important;
+}
+/* Nama & teks: sedikit lebih compact */
+.dash-crm-pesan .card-body .fw-semibold,
+.dash-crm-unreplied .card-body .fw-semibold {
+    font-size: 0.78rem !important;
+}
+.dash-crm-pesan .card-body p,
+.dash-crm-unreplied .card-body p {
+    font-size: 0.7rem !important;
+    margin-bottom: 0 !important;
+}
+/* Panel body max-height sedikit lebih kecil */
+.dash-crm-pesan .card-body,
+.dash-crm-unreplied .card-body {
+    max-height: 290px;
+}
+
+/* ── Compact broadcast rows ──────────────────────────────── */
+.blast-item { padding: 0.45rem 1rem !important; }
+.blast-row { min-height: 30px !important; gap: 0.45rem !important; }
+/* Skeleton loader height */
+#broadcastSkeleton > div { height: 44px !important; }
+#broadcastSkeleton > div + div { margin-top: 6px !important; }
+
+/* ── Compact empty state ─────────────────────────────────── */
+#broadcastEmpty { padding: 1.25rem !important; }
+#broadcastEmpty i { font-size: 2rem !important; }
 </style>
 
 <script>
