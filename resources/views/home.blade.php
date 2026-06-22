@@ -331,8 +331,8 @@
 {{-- Row 4.5: Broadcast Status Hybrid --}}
 <div class="row mb-3">
     <div class="col-lg-6 col-sm-12 mb-3 mb-lg-0">
-        <div class="card custom-card dash-crm-pesan" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;height:100%;">
-            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff;">
+        <div class="card dash-crm-pesan" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;height:100%;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff !important;">
                 <div>
                     <h6 class="mb-0 fw-700" style="color:var(--rp-navy);font-size:0.84rem;">💬 5 Pesan Baru di CRM</h6>
                     <small style="font-size:0.72rem;color:#60A5FA;">Pesan masuk terbaru yang perlu ditangani</small>
@@ -385,8 +385,8 @@
         </div>
     </div>
     <div class="col-lg-6 col-sm-12">
-        <div class="card custom-card dash-crm-unreplied" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;height:100%;">
-            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff;">
+        <div class="card dash-crm-unreplied" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;height:100%;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff !important;">
                 <div>
                     <h6 class="mb-0 fw-700" style="color:#1e293b;font-size:0.92rem;">⏳ Pesan Belum Dibalas</h6>
                     <div class="d-flex align-items-center gap-1 mt-1">
@@ -444,8 +444,8 @@
 
 <div class="row mb-3" id="broadcastStatusSection">
     <div class="col-12">
-        <div class="card custom-card" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;overflow:hidden;">
-            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff;">
+        <div class="card" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;overflow:hidden;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff !important;">
                 <!-- subtle wave/glow top right -->
                 <div style="position:absolute;top:-50%;right:-5%;width:220px;height:220px;background:radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 60%);border-radius:50%;pointer-events:none;"></div>
                 <div style="position:relative;z-index:1;display:flex;align-items:center;gap:0.625rem;">
