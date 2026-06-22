@@ -676,3 +676,13 @@ html:not([data-toggled])
     height: 3px !important;
     margin-top: 4px !important;
 }
+
+/* Logout chip (sidebar) */
+.sidebar-profile-card .sidebar-navs .btn-chip-danger {
+    background: #FEF2F2 !important;
+    color: #DC2626 !important;
+}
+.sidebar-profile-card .sidebar-navs .btn-chip-danger:hover {
+    background: #FEE2E2 !important;
+    color: #B91C1C !important;
+}

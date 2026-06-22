@@ -21,7 +21,10 @@
             <!-- Sidebar Profile Card -->
             <div class="sidebar-profile-card">
 
-            <!-- User Profile Section - Horizontal Compact -->
+            <!-- Sidebar Profile Card -->
+            <div class="sidebar-profile-card">
+
+            <!-- User Profile Section -->
             <div class="main-sidebar-loggedin">
                 <div class="app-sidebar__user">
                     @php
@@ -33,113 +36,112 @@
                         $__photo    = auth()->user()->photo ?? '';
                         $__hasPhoto = $__photo && $__photo !== 'images/user.png';
                     @endphp
-                    <div style="display:flex;align-items:center;gap:10px;padding:2px 0 6px;overflow:hidden;width:100%;box-sizing:border-box;">
 
-                        {{-- Avatar (left) --}}
+                    {{-- Row 1: Avatar + Name/Email --}}
+                    <div style="display:flex;align-items:center;gap:10px;width:100%;">
+
+                        {{-- Avatar --}}
                         <div style="position:relative;flex-shrink:0;">
-                            <div style="background:linear-gradient(135deg,#2E8DE1,#6D5DD3);border-radius:50%;padding:2px;display:inline-flex;box-shadow:0 3px 10px rgba(46,141,225,0.28);">
+                            <div style="background:linear-gradient(135deg,#2E8DE1,#6D5DD3);border-radius:50%;padding:2px;display:inline-flex;box-shadow:0 2px 8px rgba(46,141,225,0.22);">
                                 @if($__hasPhoto)
                                     <img src="{{asset(auth()->user()->image_data)}}" alt="user-img"
-                                        style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid white;">
+                                        style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid white;">
                                 @else
-                                    <div style="width:46px;height:46px;border-radius:50%;background:{{$__avatarBg}};border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;letter-spacing:0.5px;">{{$__initials}}</div>
+                                    <div style="width:38px;height:38px;border-radius:50%;background:{{$__avatarBg}};border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;letter-spacing:0.5px;">{{$__initials}}</div>
                                 @endif
                             </div>
-                            <span style="position:absolute;bottom:1px;right:1px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid white;"></span>
+                            <span style="position:absolute;bottom:1px;right:1px;width:9px;height:9px;background:#22c55e;border-radius:50%;border:2px solid white;"></span>
                         </div>
 
-                        {{-- Info (right) --}}
-                        <div style="flex:1;min-width:0;overflow:hidden;width:0;">
-                            <div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;margin-bottom:2px;">
-                                <span style="font-weight:700;font-size:14px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;">{{auth()->user()->name}}</span>
-                                <span style="flex-shrink:0;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;font-size:9.5px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;">{{ucfirst(auth()->user()->role)}}</span>
+                        {{-- Info (name + email only, NO badge here) --}}
+                        <div style="flex:1;min-width:0;overflow:hidden;">
+                            <div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;margin-bottom:1px;">
+                                <span style="font-weight:700;font-size:13px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62%;">{{auth()->user()->name}}</span>
+                                <span style="flex-shrink:0;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;font-size:9px;font-weight:600;padding:1px 7px;border-radius:20px;white-space:nowrap;">{{ucfirst(auth()->user()->role)}}</span>
                             </div>
-                            <div style="font-size:12px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px;width:100%;display:block;" title="{{auth()->user()->email}}">{{auth()->user()->email}}</div>
-
-                            @if(auth()->user()->role == 'user')
-                            @php
-                                try {
-                                    $__spkg = \Illuminate\Support\Facades\DB::connection('mysql')
-                                        ->table('package_transactions')
-                                        ->where('business_id', my_business())
-                                        ->where('type', 'package')
-                                        ->where('status', 'success')
-                                        ->where(function($q){ $q->where('expire_date','>=',now())->orWhere('days_option','unlimited'); })
-                                        ->orderBy('created_at','desc')
-                                        ->first(['expire_date','days_option','created_at']);
-                                    if ($__spkg) {
-                                        $__isUnlimited = $__spkg->days_option == 'unlimited';
-                                        $__expDate     = $__isUnlimited ? null : \Carbon\Carbon::parse($__spkg->expire_date);
-                                        $__daysLeft    = $__isUnlimited ? 999 : (int) now()->diffInDays($__expDate, false);
-                                        $__hasPkg      = true;
-                                    } else {
-                                        $__hasPkg = false; $__isUnlimited = false; $__daysLeft = 0; $__expDate = null;
-                                    }
-                                } catch(\Exception $e) {
-                                    $__hasPkg = false; $__isUnlimited = false; $__daysLeft = 0; $__expDate = null;
-                                }
-                                if (!isset($__isUnlimited) || $__isUnlimited) {
-                                    $__uc='#10b981';$__ub='rgba(16,185,129,0.12)';$__ubr='rgba(16,185,129,0.3)';
-                                } elseif ($__daysLeft<=0)  { $__uc='#dc2626';$__ub='rgba(220,38,38,0.15)';$__ubr='rgba(220,38,38,0.4)';
-                                } elseif ($__daysLeft<=3)  { $__uc='#ef4444';$__ub='rgba(239,68,68,0.13)';$__ubr='rgba(239,68,68,0.35)';
-                                } elseif ($__daysLeft<=7)  { $__uc='#f97316';$__ub='rgba(249,115,22,0.12)';$__ubr='rgba(249,115,22,0.3)';
-                                } elseif ($__daysLeft<=15) { $__uc='#f59e0b';$__ub='rgba(245,158,11,0.12)';$__ubr='rgba(245,158,11,0.3)';
-                                } elseif ($__daysLeft<=30) { $__uc='#3b82f6';$__ub='rgba(59,130,246,0.12)';$__ubr='rgba(59,130,246,0.3)';
-                                } else                     { $__uc='#10b981';$__ub='rgba(16,185,129,0.12)';$__ubr='rgba(16,185,129,0.3)'; }
-                                // Progress bar %
-                                $__totalDays = ($__hasPkg && !$__isUnlimited && isset($__spkg->created_at) && $__expDate)
-                                    ? max(1, \Carbon\Carbon::parse($__spkg->created_at)->diffInDays($__expDate))
-                                    : 30;
-                                $__pct = ($__hasPkg && !$__isUnlimited)
-                                    ? max(3, min(100, (int)round($__daysLeft / $__totalDays * 100)))
-                                    : 100;
-                            @endphp
-                            @if($__hasPkg)
-                            {{-- Badge + date: stacked column --}}
-                            <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;">
-                                @if($__isUnlimited)
-                                    <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,0.12);color:#10b981;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid rgba(16,185,129,0.25);">
-                                        <i class="bx bx-infinite"></i> Lifetime
-                                    </span>
-                                @else
-                                    <span style="display:inline-flex;align-items:center;gap:3px;background:{{$__ub}};color:{{$__uc}};font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid {{$__ubr}};">
-                                        <i class="bx bx-time-five"></i>
-                                        {{ $__daysLeft<=0 ? 'Habis!' : $__daysLeft.' hari lagi' }}
-                                    </span>
-                                    @if($__expDate)
-                                        <span style="font-size:11px;color:#94a3b8;padding-left:2px;">s/d {{ $__expDate->format('d M Y') }}</span>
-                                    @endif
-                                @endif
-                            </div>
-                            {{-- Progress bar --}}
-                            @if(!$__isUnlimited)
-                            <div style="margin-top:5px;height:4px;background:rgba(0,0,0,0.06);border-radius:10px;overflow:hidden;width:100%;">
-                                <div style="height:100%;width:{{$__pct}}%;background:{{$__uc}};border-radius:10px;transition:width 0.4s ease;"></div>
-                            </div>
-                            @endif
-                            @endif
-                            @endif
+                            <div style="font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{auth()->user()->email}}">{{auth()->user()->email}}</div>
                         </div>
                     </div>
+
+                    @if(auth()->user()->role == 'user')
+                    @php
+                        try {
+                            $__spkg = \Illuminate\Support\Facades\DB::connection('mysql')
+                                ->table('package_transactions')
+                                ->where('business_id', my_business())
+                                ->where('type', 'package')
+                                ->where('status', 'success')
+                                ->where(function($q){ $q->where('expire_date','>=',now())->orWhere('days_option','unlimited'); })
+                                ->orderBy('created_at','desc')
+                                ->first(['expire_date','days_option','created_at']);
+                            if ($__spkg) {
+                                $__isUnlimited = $__spkg->days_option == 'unlimited';
+                                $__expDate     = $__isUnlimited ? null : \Carbon\Carbon::parse($__spkg->expire_date);
+                                $__daysLeft    = $__isUnlimited ? 999 : (int) now()->diffInDays($__expDate, false);
+                                $__hasPkg      = true;
+                            } else {
+                                $__hasPkg = false; $__isUnlimited = false; $__daysLeft = 0; $__expDate = null;
+                            }
+                        } catch(\Exception $e) {
+                            $__hasPkg = false; $__isUnlimited = false; $__daysLeft = 0; $__expDate = null;
+                        }
+                        if (!isset($__isUnlimited) || $__isUnlimited) {
+                            $__uc='#10b981';$__ub='rgba(16,185,129,0.12)';$__ubr='rgba(16,185,129,0.3)';
+                        } elseif ($__daysLeft<=0)  { $__uc='#dc2626';$__ub='rgba(220,38,38,0.15)';$__ubr='rgba(220,38,38,0.4)';
+                        } elseif ($__daysLeft<=3)  { $__uc='#ef4444';$__ub='rgba(239,68,68,0.13)';$__ubr='rgba(239,68,68,0.35)';
+                        } elseif ($__daysLeft<=7)  { $__uc='#f97316';$__ub='rgba(249,115,22,0.12)';$__ubr='rgba(249,115,22,0.3)';
+                        } elseif ($__daysLeft<=15) { $__uc='#f59e0b';$__ub='rgba(245,158,11,0.12)';$__ubr='rgba(245,158,11,0.3)';
+                        } elseif ($__daysLeft<=30) { $__uc='#3b82f6';$__ub='rgba(59,130,246,0.12)';$__ubr='rgba(59,130,246,0.3)';
+                        } else                     { $__uc='#10b981';$__ub='rgba(16,185,129,0.12)';$__ubr='rgba(16,185,129,0.3)'; }
+                        $__totalDays = ($__hasPkg && !$__isUnlimited && isset($__spkg->created_at) && $__expDate)
+                            ? max(1, \Carbon\Carbon::parse($__spkg->created_at)->diffInDays($__expDate)) : 30;
+                        $__pct = ($__hasPkg && !$__isUnlimited)
+                            ? max(3, min(100, (int)round($__daysLeft / $__totalDays * 100))) : 100;
+                    @endphp
+                    @if($__hasPkg)
+                    {{-- Row 2: Badge + date (full width below avatar row) --}}
+                    <div style="margin-top:8px;">
+                        @if($__isUnlimited)
+                            <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,0.12);color:#10b981;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid rgba(16,185,129,0.25);">
+                                <i class="bx bx-infinite"></i> Lifetime
+                            </span>
+                        @else
+                            <span style="display:inline-flex;align-items:center;gap:3px;background:{{$__ub}};color:{{$__uc}};font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid {{$__ubr}};">
+                                <i class="bx bx-time-five"></i>
+                                {{ $__daysLeft<=0 ? 'Habis!' : $__daysLeft.' hari lagi' }}
+                            </span>
+                            @if($__expDate)
+                                <div style="font-size:11px;color:#94a3b8;margin-top:3px;padding-left:2px;">s/d {{ $__expDate->format('d M Y') }}</div>
+                            @endif
+                        @endif
+                    </div>
+                    {{-- Row 3: Progress bar (full width) --}}
+                    @if(!$__isUnlimited)
+                    <div style="margin-top:5px;height:3px;background:rgba(0,0,0,0.06);border-radius:10px;overflow:hidden;">
+                        <div style="height:100%;width:{{$__pct}}%;background:{{$__uc}};border-radius:10px;transition:width 0.4s ease;"></div>
+                    </div>
+                    @endif
+                    @endif
+                    @endif
+
                 </div>
             </div>
 
-            <!-- Quick Actions -->
+            {{-- Row 4: Quick Action Chips --}}
             <div class="sidebar-navs">
-                <a href="{{route('setting')}}" class="btn btn-icon btn-outline-light rounded-pill btn-wave m-1" title="{{__('sidebar.settings')}}">
+                <a href="{{route('setting')}}" class="btn btn-icon" title="{{__'sidebar.settings'}}">
                     <i class="fe fe-settings"></i>
                 </a>
-                <a href="{{ route('profile') }}" class="btn btn-icon btn-outline-light rounded-pill btn-wave m-1" title="{{__('sidebar.profile')}}">
+                <a href="{{ route('profile') }}" class="btn btn-icon" title="{{__('sidebar.profile')}}">
                     <i class="fe fe-user"></i>
                 </a>
                 @if (auth()->user()->role == 'user')
-                <a href="{{ route('billing.index') }}" class="btn btn-icon btn-outline-light rounded-pill btn-wave m-1" title="{{__('sidebar.topup_credit')}}">
+                <a href="{{ route('billing.index') }}" class="btn btn-icon" title="{{__('sidebar.topup_credit')}}">
                     <i class="bx bx-wallet"></i>
                 </a>
                 @endif
-
                 <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-sidebar').submit();"
-                    class="btn btn-icon btn-outline-danger rounded-pill btn-wave m-1" title="{{__('sidebar.logout')}}">
+                    class="btn btn-icon btn-chip-danger" title="{{__('sidebar.logout')}}">
                     <i class="fe fe-power"></i>
                 </a>
                 <form id="logout-sidebar" action="{{ route('logout') }}" method="POST" class="d-none">
