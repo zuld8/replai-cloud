@@ -236,17 +236,25 @@ a:hover {
 
 /* ========== ADDITIONAL GREEN OVERRIDES ========== */
 
-/* Header/Navbar background - if themed */
-.app-header.bg-primary,
-.app-header[style*="background"] {
-    background: linear-gradient(90deg, #2E8DE1 0%, #5B8EE0 45%, #6D5DD3 100%) !important;  /* biru→ungu */
+/* Header gradient brand biru→ungu — covers ALL Azira header modes
+   .app-header { background: var(--header-bg) } ada di styles.css L18437
+   Override langsung + CSS var untuk semua mode (color/gradient/default/non-default) */
+
+/* A. Override CSS variable untuk semua mode */
+[data-header-styles="color"],
+[data-header-styles="gradient"],
+[data-default-header-styles="color"],
+[data-default-header-styles="gradient"] {
+    --header-bg: linear-gradient(90deg, #2E8DE1 0%, #5B8EE0 45%, #6D5DD3 100%);
 }
 
-/* ── Azira data-header-styles override (correct selector) ─── */
-/* Covers: color mode = --header-bg: var(--primary-color)     */
-/*         gradient mode = --header-bg: linear-gradient(...)  */
+/* B. Override background langsung (beats CSS variable resolution) */
 [data-header-styles="color"] .app-header,
-[data-header-styles="gradient"] .app-header {
+[data-header-styles="gradient"] .app-header,
+[data-default-header-styles="color"] .app-header,
+[data-default-header-styles="gradient"] .app-header,
+.app-header.bg-primary,
+.app-header[style*="background"] {
     background: linear-gradient(90deg, #2E8DE1 0%, #5B8EE0 45%, #6D5DD3 100%) !important;
 }
 
