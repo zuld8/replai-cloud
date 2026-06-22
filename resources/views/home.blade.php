@@ -879,8 +879,7 @@ body { background: #F5F8FC !important; }
     var RESUME_MS = 60000;   // jeda setelah user pilih manual
     var sel = document.getElementById('chartViewSelector');
     if (!sel) return;
-    // Random initial view (beda tiap refresh)
-    var idx = Math.floor(Math.random() * VIEWS.length);
+    var idx = 0; // Synced with switcher after 150ms
     var timer = null, paused = false, auto = false;
 
     function go() {
@@ -908,14 +907,12 @@ body { background: #F5F8FC !important; }
         document.hidden ? stop() : start();
     });
 
-    // Trigger random view immediately (override default 'label' load)
-    if (idx !== 0) {
-        auto = true;
-        sel.value = VIEWS[idx];
-        sel.dispatchEvent(new Event('change'));
-        auto = false;
-    }
-    start();
+    // Sync idx dengan random view yang dipilih switcher, lalu mulai rotasi
+    setTimeout(function() {
+        var syncIdx = sel ? VIEWS.indexOf(sel.value) : -1;
+        if (syncIdx >= 0) idx = syncIdx;
+        start();
+    }, 150);
 })();
 </script>
 
@@ -1327,7 +1324,20 @@ body { background: #F5F8FC !important; }
         x.send();
     }
 
-    _loadLabel();
+    // ── Random Initial View (tiap refresh/login berbeda) ──────────
+    (function() {
+        var INIT_VIEWS = ['label', 'pesan-masuk', 'broadcast'];
+        var initV = INIT_VIEWS[Math.floor(Math.random() * INIT_VIEWS.length)];
+        _view = initV;
+        if (selector) selector.value = initV;
+        if (initV === 'label') {
+            if (dateGroup) dateGroup.style.display = 'none';
+            _loadLabel();
+        } else {
+            if (dateGroup) dateGroup.style.display = 'flex';
+            window._chartFilter(7);
+        }
+    })();
 })();
 </script>
 
