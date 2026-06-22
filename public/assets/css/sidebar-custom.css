@@ -614,3 +614,65 @@ html:not([data-toggled])
     padding: 4px 6px 6px !important;
     margin: 0 !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR PROFILE CARD — compact white card, chip actions
+   Applied: 20260622_172957
+═══════════════════════════════════════════════════════════ */
+
+.sidebar-profile-card {
+    background: #fff;
+    border: 0.5px solid #E4EAF2;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(16,42,74,0.08);
+    padding: 12px 14px 10px;
+    margin: 8px 10px 6px;
+}
+
+/* Quick Actions row: flex chip layout */
+.sidebar-profile-card .sidebar-navs {
+    display: flex !important;
+    gap: 6px !important;
+    margin: 8px 0 0 !important;
+    padding: 0 !important;
+    justify-content: stretch !important;
+}
+.sidebar-profile-card .sidebar-navs .btn {
+    flex: 1 !important;
+    height: 30px !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    background: #F2F8FE !important;
+    color: #64748B !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.95rem !important;
+    transition: all 0.18s ease !important;
+    box-shadow: none !important;
+}
+.sidebar-profile-card .sidebar-navs .btn:hover {
+    background: #DBEAFE !important;
+    color: #1B5FA6 !important;
+    transform: none !important;
+}
+/* Logout chip = soft merah */
+.sidebar-profile-card .sidebar-navs .btn-outline-danger {
+    background: #FEF2F2 !important;
+    color: #DC2626 !important;
+}
+.sidebar-profile-card .sidebar-navs .btn-outline-danger:hover {
+    background: #FEE2E2 !important;
+    color: #B91C1C !important;
+}
+
+/* Progress bar tipis di dalam card */
+.sidebar-profile-card .progress,
+.sidebar-profile-card [style*="height:4px"] {
+    height: 3px !important;
+    margin-top: 4px !important;
+}

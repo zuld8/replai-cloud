@@ -18,6 +18,9 @@
         <!-- Start::nav -->
         <nav class="main-menu-container nav nav-pills flex-column sub-open">
 
+            <!-- Sidebar Profile Card -->
+            <div class="sidebar-profile-card">
+
             <!-- User Profile Section - Horizontal Compact -->
             <div class="main-sidebar-loggedin">
                 <div class="app-sidebar__user">
@@ -30,11 +33,11 @@
                         $__photo    = auth()->user()->photo ?? '';
                         $__hasPhoto = $__photo && $__photo !== 'images/user.png';
                     @endphp
-                    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px 6px;overflow:hidden;width:100%;box-sizing:border-box;">
+                    <div style="display:flex;align-items:center;gap:10px;padding:2px 0 6px;overflow:hidden;width:100%;box-sizing:border-box;">
 
                         {{-- Avatar (left) --}}
                         <div style="position:relative;flex-shrink:0;">
-                            <div style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:50%;padding:2px;display:inline-flex;box-shadow:0 3px 10px rgba(59,130,246,0.28);">
+                            <div style="background:linear-gradient(135deg,#2E8DE1,#6D5DD3);border-radius:50%;padding:2px;display:inline-flex;box-shadow:0 3px 10px rgba(46,141,225,0.28);">
                                 @if($__hasPhoto)
                                     <img src="{{asset(auth()->user()->image_data)}}" alt="user-img"
                                         style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid white;">
@@ -122,7 +125,7 @@
             </div>
 
             <!-- Quick Actions -->
-            <div class="sidebar-navs mx-auto my-1">
+            <div class="sidebar-navs">
                 <a href="{{route('setting')}}" class="btn btn-icon btn-outline-light rounded-pill btn-wave m-1" title="{{__('sidebar.settings')}}">
                     <i class="fe fe-settings"></i>
                 </a>
@@ -143,6 +146,8 @@
                     @csrf
                 </form>
             </div>
+
+            </div><!-- /.sidebar-profile-card -->
 
             <!-- Sidebar Toggle -->
             <div class="slide-left" id="slide-left">
