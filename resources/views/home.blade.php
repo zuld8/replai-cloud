@@ -62,7 +62,7 @@
 
 /* Top stat cards */
 .dash-top-card { text-decoration: none !important; }
-.dash-top-card .card { border-radius: 10px !important; min-height: 78px !important; border: 0.5px solid var(--rp-border) !important; }
+.dash-top-card .card { border-radius: 10px !important; min-height: 78px !important; border: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; }
 .dash-top-card .card-body { padding: 0.55rem 0.7rem !important; }
 .dash-top-card img { width: 30px !important; height: 30px !important; object-fit: contain; filter: none; }
 .dash-top-card h3 { font-size: 1.15rem !important; font-weight: 700 !important; color: var(--rp-navy) !important; margin-top: 2px; }
