@@ -21,9 +21,6 @@
             <!-- Sidebar Profile Card -->
             <div class="sidebar-profile-card">
 
-            <!-- Sidebar Profile Card -->
-            <div class="sidebar-profile-card">
-
             <!-- User Profile Section -->
             <div class="main-sidebar-loggedin">
                 <div class="app-sidebar__user">
