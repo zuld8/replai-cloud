@@ -304,15 +304,15 @@
     
     <!-- Stat Mini Cards -->
     <div class="row g-2 mt-2">
-        <div class="col-4"><div class="card mb-0" style="border-radius:10px;border:1px dashed #CBD5E1;background:linear-gradient(135deg,#F8FAFC,#F1F5F9);box-shadow:none;"><div class="card-body py-2 px-2 text-center"><small class="text-muted" style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">CONTACT / LEADS</small><h5 class="mb-0 mt-1" style="font-weight:800;font-size:1.1rem;color:#1e293b;">{{number_format($summary['stores'])}}</h5></div></div></div>
-        <div class="col-4"><div class="card mb-0" style="border-radius:10px;border:1px dashed #CBD5E1;background:linear-gradient(135deg,#F8FAFC,#F1F5F9);box-shadow:none;"><div class="card-body py-2 px-2 text-center"><small class="text-muted" style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">CATEGORY</small><h5 class="mb-0 mt-1" style="font-weight:800;font-size:1.1rem;color:#1e293b;">{{number_format($summary['categories'])}}</h5></div></div></div>
+        <div class="col-4"><div class="card dash-stat-card mb-0"><div class="card-body py-2 px-2 text-center"><div class="stat-chip blue mx-auto mb-1">👥</div><small>CONTACT / LEADS</small><h5 class="c-blue">{{number_format($summary['stores'])}}</h5></div></div></div>
+        <div class="col-4"><div class="card dash-stat-card mb-0"><div class="card-body py-2 px-2 text-center"><div class="stat-chip pink mx-auto mb-1">🏷️</div><small>CATEGORY</small><h5 class="c-pink">{{number_format($summary['categories'])}}</h5></div></div></div>
         <div class="col-4">
             <a href="{{route('finetunnel')}}" class="text-decoration-none">
-                <div class="card mb-0" style="border-radius:10px;border:1px dashed #CBD5E1;background:linear-gradient(135deg,#F8FAFC,#F1F5F9);box-shadow:none;transition:all 0.2s ease;">
+                <div class="card dash-stat-card mb-0" style="transition:all 0.2s ease;">
                     <div class="card-body py-2 px-2 text-center">
-                        <small class="text-muted" style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">AI AGENTS</small>
+                        <div class="stat-chip purple mx-auto mb-1">🤖</div><small class="text-muted" style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">AI AGENTS</small>
                         @if(($summary['finetunnels'] ?? 0) > 0)
-                            <h5 class="mb-0 mt-1" style="font-weight:800;font-size:1.1rem;color:#1e293b;">{{number_format($summary['finetunnels'])}}</h5>
+                            <h5 class="mb-0 mt-1" style="font-weight:800;font-size:1.1rem;color:#5B3FB0;">{{number_format($summary['finetunnels'])}}</h5>
                         @else
                             <div class="mt-1">
                                 <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;font-weight:700;color:#F59E0B;background:#FFFBEB;border:1px dashed #FCD34D;border-radius:20px;padding:3px 10px;">
@@ -332,12 +332,18 @@
 <div class="row mb-3">
     <div class="col-lg-6 col-sm-12 mb-3 mb-lg-0">
         <div class="card dash-crm-pesan" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;height:100%;">
-            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff !important;">
-                <div>
-                    <h6 class="mb-0 fw-700" style="color:var(--rp-navy);font-size:0.84rem;">💬 5 Pesan Baru di CRM</h6>
-                    <small style="font-size:0.72rem;color:#60A5FA;">Pesan masuk terbaru yang perlu ditangani</small>
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#F2F8FE !important;">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="icon-chip blue">💬</span>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h6 class="mb-0 fw-700" style="color:var(--rp-navy);font-size:0.84rem;">5 Pesan Baru di CRM</h6>
+                            <span class="dash-hdr-badge blue">{{ count($crmMessages['newest'] ?? []) }} baru</span>
+                        </div>
+                        <small style="font-size:0.7rem;color:var(--rp-muted);">Pesan masuk terbaru yang perlu ditangani</small>
+                    </div>
                 </div>
-                <a href="{{ route('crm') }}" class="btn btn-sm btn-outline-light rounded-pill px-3" style="font-size:0.75rem;">Buka CRM →</a>
+                <a href="{{ route('crm') }}" class="btn-crm-outline">Buka CRM →</a>
             </div>
             <div class="card-body p-0" style="max-height:340px;overflow-y:auto;">
                 @forelse($crmMessages['newest'] ?? [] as $msg)
@@ -386,16 +392,22 @@
     </div>
     <div class="col-lg-6 col-sm-12">
         <div class="card dash-crm-unreplied" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;height:100%;">
-            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff !important;">
-                <div>
-                    <h6 class="mb-0 fw-700" style="color:#1e293b;font-size:0.92rem;">⏳ Pesan Belum Dibalas</h6>
-                    <div class="d-flex align-items-center gap-1 mt-1">
-                        <button class="unreplied-filter active" data-days="7"   onclick="filterUnreplied(7,this)"  style="font-size:0.65rem;padding:2px 8px;border-radius:20px;border:1px solid #F97316;background:#F97316;color:#fff;cursor:pointer;font-weight:600;">7 Hari</button>
-                        <button class="unreplied-filter"        data-days="30"  onclick="filterUnreplied(30,this)" style="font-size:0.65rem;padding:2px 8px;border-radius:20px;border:1px solid #FED7AA;background:transparent;color:#9A3412;cursor:pointer;font-weight:600;">30 Hari</button>
-                        <button class="unreplied-filter"        data-days="0"   onclick="filterUnreplied(0,this)"  style="font-size:0.65rem;padding:2px 8px;border-radius:20px;border:1px solid #FED7AA;background:transparent;color:#9A3412;cursor:pointer;font-weight:600;">Semua</button>
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#F2F8FE !important;">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="icon-chip amber">⏳</span>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h6 class="mb-0 fw-700" style="color:var(--rp-navy);font-size:0.84rem;">Pesan Belum Dibalas</h6>
+                            <span class="dash-hdr-badge amber" id="unrepliedBadge">—</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            <button class="unreplied-filter active" data-days="7"   onclick="filterUnreplied(7,this)"  style="font-size:0.65rem;padding:2px 8px;border-radius:20px;border:1px solid #F97316;background:#F97316;color:#fff;cursor:pointer;font-weight:600;">7 Hari</button>
+                            <button class="unreplied-filter"        data-days="30"  onclick="filterUnreplied(30,this)" style="font-size:0.65rem;padding:2px 8px;border-radius:20px;border:1px solid #FED7AA;background:transparent;color:#9A3412;cursor:pointer;font-weight:600;">30 Hari</button>
+                            <button class="unreplied-filter"        data-days="0"   onclick="filterUnreplied(0,this)"  style="font-size:0.65rem;padding:2px 8px;border-radius:20px;border:1px solid #FED7AA;background:transparent;color:#9A3412;cursor:pointer;font-weight:600;">Semua</button>
+                        </div>
                     </div>
                 </div>
-                <a href="{{ route('crm') }}" class="btn btn-sm btn-outline-light rounded-pill px-3" style="font-size:0.75rem;">Buka CRM →</a>
+                <a href="{{ route('crm') }}" class="btn-crm-outline">Buka CRM →</a>
             </div>
             <div class="card-body p-0" id="unrepliedBody" style="max-height:340px;overflow-y:auto;">
                 @forelse($crmMessages['oldest'] ?? [] as $msg)
@@ -445,11 +457,11 @@
 <div class="row mb-3" id="broadcastStatusSection">
     <div class="col-12">
         <div class="card" style="border-radius:10px;border:0.5px solid var(--rp-border);box-shadow:none;overflow:hidden;">
-            <div class="card-header d-flex justify-content-between align-items-center" style="background:#fff !important;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#F2F8FE !important;">
                 <!-- subtle wave/glow top right -->
                 <div style="position:absolute;top:-50%;right:-5%;width:220px;height:220px;background:radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 60%);border-radius:50%;pointer-events:none;"></div>
                 <div style="position:relative;z-index:1;display:flex;align-items:center;gap:0.625rem;">
-                    <span style="font-size:1.1rem;">🚀</span>
+                    <span class="icon-chip brand" style="font-size:1.1rem;">🚀</span>
                     <div>
                         <h6 class="mb-0 fw-700" style="color:var(--rp-navy);font-size:0.84rem;">Status Broadcast Terakhir</h6>
                         <div class="d-flex align-items-center gap-1 mt-1">
@@ -652,6 +664,83 @@
     color: var(--rp-primary) !important; 
     border-color: #BFDBFE !important; 
 }
+
+/* ── Depth & Character Pass (bersih tapi bernyawa) ──────── */
+
+/* Page background: kartu putih "pop" di atas abu-biru */
+body { background: #F5F8FC !important; }
+.dashboard-enhanced { background: #F5F8FC; }
+
+/* Soft shadow di semua dashboard cards */
+.dashboard-enhanced .card {
+    border: 0.5px solid #E4EAF2 !important;
+    box-shadow: 0 1px 4px rgba(16,42,74,0.07) !important;
+}
+/* Override spesifik untuk dash-top-card (sudah punya box-shadow sendiri) */
+.dash-top-card .card {
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06) !important;
+}
+
+/* Panel header tint — sangat muda, bukan gradient penuh */
+.dash-crm-pesan .card-header,
+.dash-crm-unreplied .card-header,
+#broadcastStatusSection .card-header {
+    background: #F2F8FE !important;
+    border-bottom: 0.5px solid #E4EAF2 !important;
+}
+
+/* Icon chip — lingkaran berwarna untuk ikon di header */
+.icon-chip {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+    line-height: 1;
+}
+.icon-chip.blue   { background: #E0EEFC; }
+.icon-chip.amber  { background: #FEF3C7; }
+.icon-chip.brand  { background: #EAF3FC; }
+.icon-chip.purple { background: #EDE9FE; }
+
+/* Count badge di header panel */
+.dash-hdr-badge {
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 6px;
+    line-height: 1.4; vertical-align: middle;
+}
+.dash-hdr-badge.blue  { background: #E0EEFC; color: #1B5FA6; }
+.dash-hdr-badge.amber { background: #FEF3C7; color: #92400E; }
+
+/* Stat mini card refinements */
+.dash-stat-card {
+    border-radius: 10px !important;
+    border: 0.5px solid #E4EAF2 !important;
+    background: #fff !important;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06) !important;
+}
+.dash-stat-card small { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; }
+.dash-stat-card h5 { font-weight: 800; font-size: 1.1rem; margin: 2px 0 0; }
+.dash-stat-card h5.c-blue   { color: #1B5FA6; }
+.dash-stat-card h5.c-purple { color: #5B3FB0; }
+.dash-stat-card h5.c-pink   { color: #9D174D; }
+
+/* Stat icon chip */
+.stat-chip {
+    width: 24px; height: 24px; border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; margin-bottom: 2px;
+}
+.stat-chip.blue   { background: #E0EEFC; color: #1B5FA6; }
+.stat-chip.purple { background: #EDE9FE; color: #5B3FB0; }
+.stat-chip.pink   { background: #FCE7F3; color: #9D174D; }
+
+/* Buka CRM button: outline brand */
+.btn-crm-outline {
+    font-size: 0.72rem; padding: 4px 12px; border-radius: 20px;
+    background: #EAF3FC; color: #1B5FA6; border: 1px solid #BFDBFE;
+    font-weight: 600; text-decoration: none; transition: background 0.2s;
+    white-space: nowrap;
+}
+.btn-crm-outline:hover { background: #DBEAFE; color: #1B5FA6; }
 </style>
 
 <script>
@@ -1102,6 +1191,10 @@
 
 <script>
 // ── Pesan Belum Dibalas — filter by days ──────────────────────
+function updateUnrepliedBadge(count) {
+    var badge = document.getElementById('unrepliedBadge');
+    if (badge) badge.textContent = count > 0 ? count + ' pesan' : '—';
+}
 function filterUnreplied(days, btn) {
     // Update active button styles
     document.querySelectorAll('.unreplied-filter').forEach(function(b) {
