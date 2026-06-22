@@ -879,7 +879,9 @@ body { background: #F5F8FC !important; }
     var RESUME_MS = 60000;   // jeda setelah user pilih manual
     var sel = document.getElementById('chartViewSelector');
     if (!sel) return;
-    var idx = 0, timer = null, paused = false, auto = false;
+    // Random initial view (beda tiap refresh)
+    var idx = Math.floor(Math.random() * VIEWS.length);
+    var timer = null, paused = false, auto = false;
 
     function go() {
         if (paused || document.hidden) return;
@@ -906,6 +908,13 @@ body { background: #F5F8FC !important; }
         document.hidden ? stop() : start();
     });
 
+    // Trigger random view immediately (override default 'label' load)
+    if (idx !== 0) {
+        auto = true;
+        sel.value = VIEWS[idx];
+        sel.dispatchEvent(new Event('change'));
+        auto = false;
+    }
     start();
 })();
 </script>

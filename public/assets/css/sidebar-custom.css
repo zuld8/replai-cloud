@@ -268,9 +268,9 @@ img.desktop-logo,
 .header-logo a {
     display: flex !important;
     align-items: center !important;
-    padding: 8px 16px !important;
+    padding: 4px 14px !important;
     height: auto !important;
-    min-height: 84px !important;
+    min-height: 52px !important;
 }
 
 /* Horizontal logo wrapper */
