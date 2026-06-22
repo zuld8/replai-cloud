@@ -50,7 +50,7 @@
                             <span style="position:absolute;bottom:1px;right:1px;width:9px;height:9px;background:#22c55e;border-radius:50%;border:2px solid white;"></span>
                         </div>
 
-                        {{-- Info (name + email only, NO badge here) --}}
+                        {{-- Info (name + email only) --}}
                         <div style="flex:1;min-width:0;overflow:hidden;">
                             <div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap;margin-bottom:1px;">
                                 <span style="font-weight:700;font-size:13px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62%;">{{auth()->user()->name}}</span>
@@ -96,7 +96,7 @@
                             ? max(3, min(100, (int)round($__daysLeft / $__totalDays * 100))) : 100;
                     @endphp
                     @if($__hasPkg)
-                    {{-- Row 2: Badge + date (full width below avatar row) --}}
+                    {{-- Row 2: Badge (full width below avatar row) --}}
                     <div style="margin-top:8px;">
                         @if($__isUnlimited)
                             <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,0.12);color:#10b981;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid rgba(16,185,129,0.25);">
@@ -126,7 +126,7 @@
 
             {{-- Row 4: Quick Action Chips --}}
             <div class="sidebar-navs">
-                <a href="{{route('setting')}}" class="btn btn-icon" title="{{__'sidebar.settings'}}">
+                <a href="{{route('setting')}}" class="btn btn-icon" title="{{__('sidebar.settings')}}">
                     <i class="fe fe-settings"></i>
                 </a>
                 <a href="{{ route('profile') }}" class="btn btn-icon" title="{{__('sidebar.profile')}}">
