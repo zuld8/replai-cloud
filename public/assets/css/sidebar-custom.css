@@ -472,9 +472,9 @@ html body .app-header img {
 }
 .app-sidebar .main-sidebar-header img,
 .app-sidebar .main-sidebar-header .header-logo img {
-    max-height: 50px !important;
+    height: 44px !important;
+    max-height: 44px !important;
     max-width: 160px !important;
-    height: auto !important;
     width: auto !important;
     object-fit: contain !important;
     display: block !important;
