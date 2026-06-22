@@ -868,6 +868,47 @@ body { background: #F5F8FC !important; }
     }, 600);
 })();
 </script>
+<script>
+/* ── Auto-rotate chart views ─────────────────────────────────
+   30 detik per view: label → pesan-masuk → broadcast → ulang
+   Berhenti saat user pilih manual, lanjut 60 detik kemudian.
+   Berhenti saat tab tidak aktif (hemat CPU). */
+(function(){
+    var VIEWS     = ['label','pesan-masuk','broadcast'];
+    var ROTATE_MS = 30000;   // 30 detik. Ganti: 15000/60000/300000
+    var RESUME_MS = 60000;   // jeda setelah user pilih manual
+    var sel = document.getElementById('chartViewSelector');
+    if (!sel) return;
+    var idx = 0, timer = null, paused = false, auto = false;
+
+    function go() {
+        if (paused || document.hidden) return;
+        idx = (idx + 1) % VIEWS.length;
+        auto = true;
+        sel.value = VIEWS[idx];
+        sel.dispatchEvent(new Event('change'));
+        auto = false;
+    }
+    function start() { stop(); timer = setInterval(go, ROTATE_MS); }
+    function stop()  { if (timer) { clearInterval(timer); timer = null; } }
+
+    // User pilih manual → jeda, lanjut setelah RESUME_MS
+    sel.addEventListener('change', function() {
+        if (auto) return;
+        idx = VIEWS.indexOf(sel.value);
+        if (idx < 0) idx = 0;
+        paused = true; stop();
+        setTimeout(function() { paused = false; start(); }, RESUME_MS);
+    });
+
+    // Hemat saat tab tidak aktif
+    document.addEventListener('visibilitychange', function() {
+        document.hidden ? stop() : start();
+    });
+
+    start();
+})();
+</script>
 
 </div>{{-- end .dashboard-enhanced --}}
 
@@ -991,6 +1032,25 @@ body { background: #F5F8FC !important; }
                 colors.push(labelData[i].color);
             }
         }
+        // Top-6 + Lainnya (declutter donut)
+        (function(){
+            var N = 7;
+            if (labels.length > N) {
+                var rows = labels.map(function(l,i){ return { label:l, val:series[i], color:colors[i] }; });
+                rows.sort(function(a,b){ return b.val - a.val; });
+                var top = rows.slice(0, N - 1);
+                var rest = rows.slice(N - 1);
+                var restSum = rest.reduce(function(s,r){ return s + (r.val||0); }, 0);
+                labels = top.map(function(r){ return r.label; });
+                series = top.map(function(r){ return r.val; });
+                colors = top.map(function(r){ return r.color; });
+                if (restSum > 0) {
+                    labels.push('Lainnya (' + rest.length + ' label)');
+                    series.push(restSum);
+                    colors.push('#B4B2A9');
+                }
+            }
+        })();
         if (series.length === 0) {
             labelEl.innerHTML = '<div style="text-align:center;padding:3rem;color:#9ca3af">Tidak ada data label</div>';
             return;
@@ -1002,7 +1062,7 @@ body { background: #F5F8FC !important; }
             colors: colors.length ? colors : ['#0EA5E9','#0EA5E9','#F59E0B','#EF4444','#0369A1','#38BDF8','#14B8A6','#F97316'],
             labels: labels,
             legend: { position: 'bottom', fontSize: '12px', fontWeight: 600, labels: { colors: '#475569' }, markers: { width: 10, height: 10, radius: 3 }, itemMargin: { horizontal: 8, vertical: 4 } },
-            dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }, dropShadow: { enabled: false } },
+            dataLabels: { enabled: false },
             plotOptions: { pie: { donut: { size: '60%', labels: { show: true, name: { fontSize: '13px', fontWeight: 600, color: '#64748b' }, value: { fontSize: '24px', fontWeight: 800, color: '#1e293b', offsetY: 4 }, total: { show: true, label: 'Total', fontSize: '13px', fontWeight: 600, color: '#94a3b8', formatter: function(w) { return w.globals.spikeFilter ? 0 : w.globals.spikeFilter || w.globals.series.reduce(function(a,b){return a+b},0); } } } } } },
             stroke: { width: 3, colors: ['#fff'] },
             tooltip: { style: { fontSize: '12px' }, y: { formatter: function(v) { return v + ' chat'; } } }
@@ -1035,7 +1095,7 @@ body { background: #F5F8FC !important; }
         _charts.bc = new ApexCharts(bcEl, {
             series: [{ name: 'Terkirim', data: data.sent || [] }, { name: 'Gagal', data: data.failed || [] }],
             chart: { type: 'bar', height: 270, toolbar: { show: false }, fontFamily: 'inherit', stacked: true },
-            colors: ['#0EA5E9', '#F43F5E'],
+            colors: ['#22C55E', '#F43F5E'],  // Terkirim=hijau, Gagal=merah
             dataLabels: { enabled: false },
             grid: { show: true, borderColor: '#f1f5f9', padding: { left: 8, right: 8 } },
             xaxis: { categories: data.dates || [], axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { fontSize: '10px', colors: '#94a3b8', fontWeight: 500 }, rotate: -45 } },
@@ -1087,6 +1147,25 @@ body { background: #F5F8FC !important; }
                         colors.push(labelData[i].color);
                     }
                 }
+                // Top-6 + Lainnya (declutter donut)
+                (function(){
+                    var N = 7;
+                    if (labels.length > N) {
+                        var rows = labels.map(function(l,i){ return { label:l, val:series[i], color:colors[i] }; });
+                        rows.sort(function(a,b){ return b.val - a.val; });
+                        var top = rows.slice(0, N - 1);
+                        var rest = rows.slice(N - 1);
+                        var restSum = rest.reduce(function(s,r){ return s + (r.val||0); }, 0);
+                        labels = top.map(function(r){ return r.label; });
+                        series = top.map(function(r){ return r.val; });
+                        colors = top.map(function(r){ return r.color; });
+                        if (restSum > 0) {
+                            labels.push('Lainnya (' + rest.length + ' label)');
+                            series.push(restSum);
+                            colors.push('#B4B2A9');
+                        }
+                    }
+                })();
                 if (series.length === 0) {
                     labelEl.innerHTML = '<div style="text-align:center;padding:3rem;color:#9ca3af">Tidak ada data label</div>';
                     return;
@@ -1098,7 +1177,7 @@ body { background: #F5F8FC !important; }
                     colors: colors.length ? colors : ['#0EA5E9','#0EA5E9','#F59E0B','#EF4444','#0369A1','#38BDF8','#14B8A6','#F97316'],
                     labels: labels,
                     legend: { position: 'bottom', fontSize: '12px', fontWeight: 600, labels: { colors: '#475569' }, markers: { width: 10, height: 10, radius: 3 }, itemMargin: { horizontal: 8, vertical: 4 } },
-                    dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 700, colors: ['#fff'] }, dropShadow: { enabled: false } },
+                    dataLabels: { enabled: false },
                     plotOptions: { pie: { donut: { size: '60%', labels: { show: true, name: { fontSize: '13px', fontWeight: 600, color: '#64748b' }, value: { fontSize: '24px', fontWeight: 800, color: '#1e293b', offsetY: 4 }, total: { show: true, label: 'Total', fontSize: '13px', fontWeight: 600, color: '#94a3b8', formatter: function(w) { return w.globals.spikeFilter ? 0 : w.globals.spikeFilter || w.globals.series.reduce(function(a,b){return a+b},0); } } } } } },
                     stroke: { width: 3, colors: ['#fff'] },
                     tooltip: { style: { fontSize: '12px' }, y: { formatter: function(v) { return v + ' chat'; } } }
@@ -1215,7 +1294,7 @@ body { background: #F5F8FC !important; }
                         { name: 'Gagal', data: data.failed || [] }
                     ],
                     chart: { type: 'bar', height: 270, toolbar: { show: false }, fontFamily: 'inherit', stacked: true },
-                    colors: ['#0EA5E9', '#F43F5E'],
+                    colors: ['#22C55E', '#F43F5E'],  // Terkirim=hijau, Gagal=merah
                     dataLabels: { enabled: false },
                     grid: { show: true, borderColor: '#f1f5f9', strokeDashArray: 0, padding: { left: 8, right: 8 }, xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
                     xaxis: { categories: data.dates || [], axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { fontSize: '10px', colors: '#94a3b8', fontWeight: 500 }, rotate: -45 }, crosshairs: { show: false } },
