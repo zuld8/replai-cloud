@@ -22,13 +22,13 @@
 }
 
 .app-sidebar .side-menu__item {
-    border-radius: 10px !important;
-    margin: 2px 12px !important;
-    padding: 9px 14px !important;
+    border-radius: 8px !important;
+    margin: 1px 10px !important;
+    padding: 7px 12px !important;
     transition: all 0.2s ease !important;
     color: #1E293B !important;
     font-weight: 500 !important;
-    font-size: 0.84rem !important;
+    font-size: 0.82rem !important;
 }
 
 .app-sidebar .side-menu__item:hover {
@@ -44,27 +44,30 @@
 }
 
 .app-sidebar .side-menu__item.active {
-    background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%) !important;
-    color: #fff !important;
+    background: #EAF3FC !important;
+    border-left: 3px solid #2E8DE1 !important;
+    border-radius: 0 8px 8px 0 !important;
+    color: #1B5FA6 !important;
     font-weight: 600 !important;
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35) !important;
+    box-shadow: none !important;
 }
 .app-sidebar .side-menu__item.active .side-menu__icon,
 .app-sidebar .side-menu__item.active .side-menu__label {
-    color: #fff !important;
+    color: #1B5FA6 !important;
 }
 .app-sidebar .side-menu__item.active:hover {
-    color: #fff !important;
+    background: #D6E9FA !important;
+    color: #1B5FA6 !important;
 }
 .app-sidebar .side-menu__item.active:hover .side-menu__label,
 .app-sidebar .side-menu__item.active:hover .side-menu__icon {
-    color: #fff !important;
+    color: #1B5FA6 !important;
 }
 
 .app-sidebar .side-menu__icon {
-    font-size: 1.15rem !important;
-    width: 28px !important;
-    height: 28px !important;
+    font-size: 1rem !important;
+    width: 26px !important;
+    height: 26px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -140,10 +143,15 @@
     padding: 4px !important;
 }
 .app-sidebar .slide-menu .side-menu__item {
-    font-size: 0.8rem !important;
-    padding: 7px 12px !important;
+    font-size: 0.79rem !important;
+    padding: 5px 12px 5px 1.6rem !important;
     margin: 1px 0 !important;
-    border-radius: 8px !important;
+    border-radius: 6px !important;
+}
+.app-sidebar .slide-menu .side-menu__item.active {
+    background: #EEF5FB !important;
+    border-left: 2px solid #2E8DE1 !important;
+    border-radius: 0 6px 6px 0 !important;
 }
 
 .app-sidebar #slide-left,

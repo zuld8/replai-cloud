@@ -35,9 +35,9 @@
       /* === SIDEBAR === */
       '.app-sidebar{background:linear-gradient(180deg,#fff 0%,#F8FAFC 40%,' + bg1 + ' 100%)!important}',
       '.app-sidebar .main-sidebar-header{background:linear-gradient(135deg,' + bg1 + ' 0%,' + bg2 + ' 100%)!important}',
-      '.app-sidebar .side-menu__item.active{background:linear-gradient(135deg,' + h + ',' + l + ')!important;box-shadow:0 4px 12px rgba(' + p + ',0.35)!important;color:#fff!important}',
-      '.app-sidebar .side-menu__item.active .side-menu__icon,.app-sidebar .side-menu__item.active .side-menu__label{color:#fff!important}',
-      '.app-sidebar .side-menu__item.active:hover,.app-sidebar .side-menu__item.active:hover .side-menu__label,.app-sidebar .side-menu__item.active:hover .side-menu__icon{color:#fff!important}',
+      '.app-sidebar .side-menu__item.active{background:#EAF3FC!important;border-left:3px solid #2E8DE1!important;border-radius:0 8px 8px 0!important;box-shadow:none!important;color:#1B5FA6!important}',
+      '.app-sidebar .side-menu__item.active .side-menu__icon,.app-sidebar .side-menu__item.active .side-menu__label{color:#1B5FA6!important}',
+      '.app-sidebar .side-menu__item.active:hover,.app-sidebar .side-menu__item.active:hover .side-menu__label,.app-sidebar .side-menu__item.active:hover .side-menu__icon{color:#1B5FA6!important}',
       '.app-sidebar .side-menu__item:hover:not(.active){background:rgba(' + p + ',0.1)!important;color:' + d + '!important}',
       '.app-sidebar .side-menu__item:hover:not(.active) .side-menu__label{color:' + d + '!important}',
       '.app-sidebar .side-menu__item:hover:not(.active) .side-menu__icon,.app-sidebar .side-menu__item:hover:not(.active) .side-menu__angle{color:' + h + '!important}',
@@ -50,7 +50,7 @@
       '.app-sidebar .slide-menu .nav-sub-link{color:#475569!important}',
       '.app-sidebar .slide-menu .nav-sub-link:hover{color:' + d + '!important;background:rgba(' + p + ',0.06)!important}',
       '.app-sidebar .slide-menu .nav-sub-link.active{color:#fff!important;background:linear-gradient(135deg,' + h + ',' + l + ')!important;border-radius:6px!important}',
-      '.app-sidebar .side-menu__item.active .side-menu__label,.app-sidebar .side-menu__item.active .side-menu__icon,.app-sidebar .side-menu__item.active .side-menu__angle{color:#fff!important}',
+      '.app-sidebar .side-menu__item.active .side-menu__label,.app-sidebar .side-menu__item.active .side-menu__icon,.app-sidebar .side-menu__item.active .side-menu__angle{color:#1B5FA6!important}',
       '.app-sidebar .has-sub.open > .side-menu__item{background:rgba(' + p + ',0.06)!important}',
       '.app-sidebar .has-sub.open > .side-menu__item .side-menu__label,.app-sidebar .has-sub.open > .side-menu__item .side-menu__icon{color:' + d + '!important}',
 
