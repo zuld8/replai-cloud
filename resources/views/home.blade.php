@@ -29,16 +29,28 @@
 
 /* Greeting — flat brand primary (no gradient) */
 .dash-greeting {
-    background: var(--rp-primary) !important;
-    border-radius: 12px !important;
-    padding: 0.7rem 1.1rem !important;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    background: #EAF3FC !important;              /* tint biru muda, bukan biru pekat */
+    border: 0.5px solid #D6E6F8 !important;
+    border-radius: 10px !important;
+    padding: 11px 14px !important;
     margin-bottom: 1rem;
-    color: #fff;
+    box-shadow: none !important;
     position: relative;
-    overflow: hidden;
-    box-shadow: 0 3px 10px rgba(46,141,225,0.2) !important;
-    border: none !important;
+    overflow: visible;
 }
+.dash-greeting::before, .dash-greeting::after { display: none !important; }
+.dash-greeting .greet-chip {
+    width: 32px; height: 32px; border-radius: 9px;
+    background: #fff; color: #1B5FA6;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.1);
+}
+.dash-greeting h4 { font-size: 0.95rem !important; font-weight: 600 !important; color: #1E2A4A !important; margin: 0 !important; }
+.dash-greeting p  { font-size: 0.76rem !important; color: #5A7196 !important; margin: 0 !important; opacity: 1 !important; }
 .dash-greeting::after {
     content: '';
     position: absolute;
@@ -172,8 +184,11 @@
 
 {{-- Greeting --}}
 <div class="dash-greeting">
-    <h4>👋 Halo, {{ auth()->user()->name ?? 'User' }}!</h4>
-    <p>Ringkasan aktivitas bisnis {{ config('app.name') }} bulan ini.</p>
+    <span class="greet-chip">👋</span>
+    <div>
+        <h4>Halo, {{ auth()->user()->name ?? 'User' }}!</h4>
+        <p>Ringkasan aktivitas bisnis {{ config('app.name') }} bulan ini.</p>
+    </div>
 </div>
 
 {{-- Row 1: Label chart + Top 4 stats --}}
