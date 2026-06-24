@@ -128,7 +128,7 @@ class WhatsappOfficialServiceObserver
     {
 
         $responseObject = new \stdClass();
-        $fields         = 'display_phone_number,account_mode,certificate,name_status,new_certificate,new_name_status,verified_name,quality_rating,messaging_limit_tier';
+        $fields         = 'display_phone_number,account_mode,platform_type,certificate,name_status,new_certificate,new_name_status,verified_name,quality_rating,messaging_limit_tier';
         $response       = Http::get("https://graph.facebook.com/v22.0/{$wabaId}/phone_numbers", [
             'fields'        => $fields,
             'access_token'  => $accessToken,

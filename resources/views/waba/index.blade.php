@@ -133,6 +133,31 @@
         white-space: nowrap;
     }
 </style>
+
+/* ── WABA Account Cards ── */
+.waba-account-card {
+    border: 0.5px solid #E4EAF2 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06) !important;
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.waba-account-card:hover {
+    box-shadow: 0 4px 14px rgba(16,42,74,0.1) !important;
+    transform: translateY(-1px);
+}
+.waba-badge {
+    font-size: 11px; padding: 2px 9px; border-radius: 6px;
+    font-weight: 600; display: inline-block;
+}
+.waba-badge-hybrid   { background: #EDE9FE; color: #5B3FB0; }
+.waba-badge-api      { background: #F1F5F9; color: #475569; }
+.waba-badge-approved { background: #DCFCE7; color: #166534; }
+.waba-badge-pending  { background: #FEF3C7; color: #854F0B; }
+.waba-badge-green    { background: #DCFCE7; color: #166534; }
+.waba-badge-limited  { background: #FEF3C7; color: #854F0B; }
+.waba-badge-red      { background: #FEECEC; color: #B91C1C; }
+.waba-badge-muted    { background: #F1F5F9; color: #64748B; }
+
 @endsection
 
 
@@ -267,67 +292,102 @@
 @endsection
 
 @section('content')
-<div class="row">
+<div class="row g-3">
     @foreach ($accounts as $account)
-
     @php
-    $detailBusiness = json_decode($account->details,true);
+        $detailBusiness = json_decode($account->details, true);
+        $firstDevice    = $account->devices->first();
+        $metaWa         = json_decode($firstDevice?->meta_data ?? '{}', true);
+        $platformType   = $metaWa['whatsapp']['platform_type'] ?? null;
+        $displayPhone   = $metaWa['whatsapp']['display_phone_number'] ?? '';
+        $reviewStatus   = $detailBusiness['healt_status']['data']['account_review_status'] ?? '-';
+        $qualityRating  = strtoupper($metaWa['whatsapp']['quality_rating'] ?? '');
+
+        // Avatar: inisial dari nama WA
+        $__nm    = $detailBusiness['healt_status']['data']['name'] ?? ($account->name ?? 'WA');
+        $words   = preg_split('/\s+/', trim($__nm));
+        $__init  = strtoupper(substr($words[0],0,1) . (isset($words[1]) ? substr($words[1],0,1) : ''));
+        $pal     = ['#EAF3FC|#1B5FA6','#F1ECFE|#5B3FB0','#FBEAF0|#993556','#DCFCE7|#166534','#FEF3C7|#854F0B'];
+        [$abg,$afg] = explode('|', $pal[abs(crc32($__nm)) % count($pal)]);
+        $photoUrl   = $detailBusiness['business_detail']['profile_picture_url'] ?? null;
     @endphp
-    <div class="col-lg-4 col-md-6 col-sm-12 h-100">
-        <div class="card custom-card ">
-            <div class="card-body">
-                <div class="text-center">
-                    <span class="avatar avatar-xxxl rounded">
-                        <img src="{{isset($detailBusiness['business_detail']['profile_picture_url']) ? $detailBusiness['business_detail']['profile_picture_url'] : asset('uploads/image.jpg')}}" alt="" class="rounded-circle">
-                    </span>
-                </div>
-                <div class="d-flex  text-center justify-content-between mt-1 mb-3">
-                    <div class="flex-fill">
-                        <p class="mb-0 fw-semibold fs-16 text-truncate max-w-150 mx-auto">
-                            <a href="#">{{$detailBusiness['healt_status']['data']['name']}}</a>
-                        </p>
-                        <p class="mb-0 fs-12 text-muted mt-2 mx-auto">
-                            {{isset($detailBusiness['business_detail']['about']) ? $detailBusiness['business_detail']['about'] : ''}}
-                        </p>
+    <div class="col-lg-4 col-md-6 col-sm-12">
+        <div class="card waba-account-card">
+            <div class="card-body text-center py-4 px-3">
+
+                {{-- Avatar: foto atau inisial --}}
+                @if($photoUrl)
+                    <img src="{{ $photoUrl }}" alt=""
+                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 10px;border:2px solid #E4EAF2;">
+                @else
+                    <div style="width:48px;height:48px;border-radius:50%;background:{{$abg}};color:{{$afg}};
+                         display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;
+                         margin:0 auto 10px;flex-shrink:0;">
+                        {{ $__init }}
                     </div>
+                @endif
+
+                {{-- Nama --}}
+                <div style="font-weight:700;font-size:13.5px;color:#1E2A4A;margin-bottom:2px;
+                     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;margin-left:auto;margin-right:auto;"
+                     title="{{ $detailBusiness['healt_status']['data']['name'] ?? $account->name ?? '' }}">
+                    {{ $detailBusiness['healt_status']['data']['name'] ?? $account->name ?? '—' }}
                 </div>
-                <div class="btn-list text-center">
-                    <div class="btn-list">
-                        @php
-                            $firstDevice = $account->devices->first();
-                            $metaWa = json_decode($firstDevice?->meta_data ?? '{}', true);
-                            $accountMode = $metaWa['whatsapp']['account_mode'] ?? 'LIVE';
-                        @endphp
-                        @if($accountMode === 'COEXISTENCE')
-                            <span class="badge-wa-hybrid" title="Nomor ini bisa dipakai WA Business App + WABA API sekaligus">🔀 WA Hybrid</span>
-                        @elseif(in_array($accountMode, ['LIVE', 'PRODUCTION']))
-                            <span class="badge-api-only" title="API Only mode">⚡ API Only</span>
-                        @endif
-                        @if($detailBusiness['healt_status']['data']['account_review_status'] == 'APPROVED')
-                        <button class="btn btn-sm btn-info-light btn-wave waves-effect waves-light">
-                            APPROVED
-                        </button>
-                        @else
-                        <button class="btn btn-sm btn-info-light btn-wave waves-effect waves-light">
-                            {{$detailBusiness['healt_status']['data']['account_review_status']}}
-                        </button>
-                        @endif
-                    </div>
+
+                {{-- Nomor --}}
+                @if($displayPhone)
+                <div style="font-size:12px;color:#64748B;margin-bottom:10px;">
+                    {{ $displayPhone }}
+                </div>
+                @else
+                <div style="font-size:11px;color:#94A3B8;margin-bottom:10px;font-style:italic;">
+                    — nomor belum tersinkron —
+                </div>
+                @endif
+
+                {{-- Badges --}}
+                <div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;">
+
+                    {{-- Platform type badge (FIXED: pakai platform_type, bukan account_mode) --}}
+                    @if($platformType === 'COEXISTENCE')
+                        <span class="waba-badge waba-badge-hybrid" title="WA Business App + API sekaligus">🔀 WA Hybrid</span>
+                    @else
+                        <span class="waba-badge waba-badge-api" title="API Only mode">⚡ API Only</span>
+                    @endif
+
+                    {{-- Review status --}}
+                    @if($reviewStatus === 'APPROVED')
+                        <span class="waba-badge waba-badge-approved">✓ Approved</span>
+                    @elseif(in_array($reviewStatus, ['PENDING','PENDING_REVIEW']))
+                        <span class="waba-badge waba-badge-pending">⏳ Pending</span>
+                    @elseif($reviewStatus !== '-')
+                        <span class="waba-badge waba-badge-muted">{{ $reviewStatus }}</span>
+                    @endif
+
+                    {{-- Quality rating --}}
+                    @if(in_array($qualityRating, ['HIGH','GREEN']))
+                        <span class="waba-badge waba-badge-green">● Green</span>
+                    @elseif(in_array($qualityRating, ['MEDIUM','YELLOW']))
+                        <span class="waba-badge waba-badge-limited">● Medium</span>
+                    @elseif(in_array($qualityRating, ['LOW','RED']))
+                        <span class="waba-badge waba-badge-red">● Low</span>
+                    @endif
+
                 </div>
             </div>
-            <div class="card-footer border-block-start-dashed text-center p-0">
-                <div class="d-flex align-items-center justify-content-center">
-                    <div class="d-flex p-3">
-                        <a href="{{route('waba.update',$account->id)}}" class="btn btn-outline-info d-flex align-items-center me-3"><i class="bx bx-user-check me-1"></i>Informasi Detail</a>
-                    </div>
-                </div>
+            <div class="card-footer text-center py-2" style="background:transparent;border-top:0.5px solid #F1F5F9;">
+                <a href="{{ route('waba.update', $account->id) }}"
+                   style="border:1px solid #E4EAF2;color:#2E8DE1;border-radius:8px;font-size:12px;padding:5px 16px;display:inline-flex;align-items:center;gap:5px;text-decoration:none;transition:all 0.15s;"
+                   onmouseover="this.style.background='#EAF3FC'" onmouseout="this.style.background='transparent'">
+                    <i class="bx bx-settings"></i>Informasi Detail
+                </a>
             </div>
         </div>
     </div>
-
     @endforeach
-
 </div>
+
+
 
 <div id="loaderCallback" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.7);z-index:9999;justify-content:center;align-items:center;">
     <div class="spinner-border text-primary" role="status">

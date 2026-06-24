@@ -316,6 +316,7 @@ class WhatsappWabaController extends Controller
                     $metadataArray['whatsapp']['name_status']           = $data['name_status'];
                     $metadataArray['whatsapp']['messaging_limit_tier']  = $data['messaging_limit_tier'] ?? null;
                     $metadataArray['whatsapp']['account_mode']           = $data['account_mode'] ?? 'PRODUCTION';
+                    $metadataArray['whatsapp']['platform_type']          = $data['platform_type'] ?? null;
 
                     $metadataArray['whatsapp']['webhook_subscribed']        = true;
                     $metadataArray['whatsapp']['webhook_fields']            = 'messages,message_template_quality_update,message_template_status_update,account_update';
@@ -621,6 +622,7 @@ class WhatsappWabaController extends Controller
                 $metadataArray['whatsapp']['messaging_limit_tier']  = $data['messaging_limit_tier'] ?? NULL;
                 $metadataArray['whatsapp']['status']                = $data['code_verification_status'] ?? 'CONNECTED';
                 $metadataArray['whatsapp']['account_mode']          = $data['account_mode'] ?? 'PRODUCTION';
+                $metadataArray['whatsapp']['platform_type']         = $data['platform_type'] ?? null;
                 $metadataArray['whatsapp']['webhook_subscribed']    = true;
 
                 $phoneStatus    = $this->whatsappServiceObserver->getPhoneNumberStatus($meta->access_token, $data['id']);
