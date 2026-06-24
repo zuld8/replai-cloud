@@ -193,6 +193,7 @@
 <script src="{{asset('assets/libs/datatable/js/jquery.dataTables.min.js')}}"></script>
 <script src="{{asset('assets/libs/datatable/js/dataTables.bootstrap5.min.js')}}"></script>
 <script src="{{asset('assets/libs/datatable/js/dataTables.responsive.min.js')}}"></script>
+<script src="{{asset('assets/libs/apexcharts/apexcharts.min.js')}}"></script>
 
 <script>
     const blashId = $("#idBlash").val();
