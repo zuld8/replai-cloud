@@ -298,8 +298,8 @@ class WhatsappBroadcastController extends Controller
                 SUM(CASE WHEN sending_status='no'  THEN 1 ELSE 0 END) as unsent,
                 SUM(CASE WHEN delivery_status='delivered' THEN 1 ELSE 0 END) as delivered,
                 SUM(CASE WHEN delivery_status='read' THEN 1 ELSE 0 END) as `read`,
-                SUM(CASE WHEN delivery_status='failed' AND reports REGEXP '\"code\":[0-9]+' THEN 1 ELSE 0 END) as delivery_failed,
-                SUM(CASE WHEN delivery_status='failed' AND (reports NOT REGEXP '\"code\":[0-9]+' OR reports IS NULL) THEN 1 ELSE 0 END) as delivery_timeout
+                SUM(CASE WHEN delivery_status='failed' AND reports LIKE '{%' THEN 1 ELSE 0 END) as delivery_failed,
+                SUM(CASE WHEN delivery_status='failed' AND (reports NOT LIKE '{%' OR reports IS NULL) THEN 1 ELSE 0 END) as delivery_timeout
             ")
             ->first();
 
@@ -329,16 +329,22 @@ class WhatsappBroadcastController extends Controller
             ]);
 
         // Status filter (diperluas: failed_real, timeout, delivered, read)
+        // Status filter — gunakan LIKE '{%' untuk detect JSON (gagal asli) vs plain text (recovery)
         match ($request->status_filter) {
-            'yes'          => $query->where('bd.sending_status', 'yes'),
-            'no'           => $query->where('bd.sending_status', 'no'),
-            'delivered'    => $query->where('bd.delivery_status', 'delivered'),
-            'read'         => $query->where('bd.delivery_status', 'read'),
-            'failed_real'  => $query->where('bd.delivery_status', 'failed')
-                                     ->whereRaw("bd.reports REGEXP '"code":[0-9]+'"),
-            'timeout'      => $query->where('bd.delivery_status', 'failed')
-                                     ->whereRaw("(bd.reports NOT REGEXP '"code":[0-9]+' OR bd.reports IS NULL)"),
-            default        => null,
+            'yes'         => $query->where('bd.sending_status', 'yes'),
+            'no'          => $query->where('bd.sending_status', 'no'),
+            'delivered'   => $query->where('bd.delivery_status', 'delivered'),
+            'read'        => $query->where('bd.delivery_status', 'read'),
+            // Gagal asli: reports JSON dari Meta (dimulai '{')
+            'failed_real' => $query->where('bd.delivery_status', 'failed')
+                                   ->where('bd.reports', 'LIKE', '{%'),
+            // Recovery/nyangkut: reports plain text ATAU NULL (bukan JSON Meta)
+            'timeout'     => $query->where('bd.delivery_status', 'failed')
+                                   ->where(function ($q) {
+                                       $q->whereNull('bd.reports')
+                                         ->orWhere('bd.reports', 'NOT LIKE', '{%');
+                                   }),
+            default       => null,
         };
 
         return DataTables::of($query)
@@ -357,7 +363,7 @@ class WhatsappBroadcastController extends Controller
                         return '<span class="bc-tick bc-tick-timeout" title="Status tidak pasti — di-reset oleh sistem">'
                              . '⟳ Nyangkut</span>';
                     }
-                    $code = $r['code'];
+                    $code = is_array($r) ? ($r['code'] ?? '') : '';
                     return '<span class="bc-tick bc-tick-failed" title="Error Meta ' . e($code) . '">'
                          . '✕ Gagal</span>';
                 }
@@ -384,9 +390,9 @@ class WhatsappBroadcastController extends Controller
                     return '<span class="text-muted">-</span>';
                 }
 
-                // Recovery/timeout: plain text, bukan JSON Meta
-                $rCheck = @json_decode($error, true);
-                if (!is_array($rCheck) || !is_numeric($rCheck['code'] ?? null)) {
+                // Recovery/timeout: plain text, bukan JSON Meta (tidak dimulai '{')
+                $rCheck = (str_starts_with(ltrim($error), '{')) ? @json_decode($error, true) : null;
+                if (!is_array($rCheck)) {
                     return '<span class="text-muted" style="font-size:11px;font-style:italic;">'
                          . '<i class="bx bx-info-circle me-1"></i>'
                          . e(substr($error, 0, 80)) . '</span>';
