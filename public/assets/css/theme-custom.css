@@ -744,3 +744,29 @@ body, .app-content { font-size: 0.875rem; }
 
 /* Page header compact */
 .page-header-breadcrumb { padding-block-end: 1.5rem !important; min-height: auto !important; }
+
+/* ════════════════════════════════════════════════════
+   WABA Account Cards — /app/waba
+   ════════════════════════════════════════════════════ */
+.waba-account-card {
+    border: 0.5px solid #E4EAF2 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06) !important;
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.waba-account-card:hover {
+    box-shadow: 0 4px 14px rgba(16,42,74,0.10) !important;
+    transform: translateY(-1px);
+}
+.waba-badge {
+    font-size: 11px; padding: 2px 9px; border-radius: 6px;
+    font-weight: 600; display: inline-block; line-height: 1.5;
+}
+.waba-badge-hybrid   { background: #EDE9FE; color: #5B3FB0; }
+.waba-badge-api      { background: #F1F5F9; color: #475569; }
+.waba-badge-approved { background: #DCFCE7; color: #166534; }
+.waba-badge-pending  { background: #FEF3C7; color: #854F0B; }
+.waba-badge-green    { background: #DCFCE7; color: #166534; }
+.waba-badge-limited  { background: #FEF3C7; color: #854F0B; }
+.waba-badge-red      { background: #FEECEC; color: #B91C1C; }
+.waba-badge-muted    { background: #F1F5F9; color: #64748B; }

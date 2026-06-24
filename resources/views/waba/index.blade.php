@@ -133,31 +133,6 @@
         white-space: nowrap;
     }
 </style>
-
-/* ── WABA Account Cards ── */
-.waba-account-card {
-    border: 0.5px solid #E4EAF2 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 1px 3px rgba(16,42,74,0.06) !important;
-    transition: box-shadow 0.2s ease, transform 0.15s ease;
-}
-.waba-account-card:hover {
-    box-shadow: 0 4px 14px rgba(16,42,74,0.1) !important;
-    transform: translateY(-1px);
-}
-.waba-badge {
-    font-size: 11px; padding: 2px 9px; border-radius: 6px;
-    font-weight: 600; display: inline-block;
-}
-.waba-badge-hybrid   { background: #EDE9FE; color: #5B3FB0; }
-.waba-badge-api      { background: #F1F5F9; color: #475569; }
-.waba-badge-approved { background: #DCFCE7; color: #166534; }
-.waba-badge-pending  { background: #FEF3C7; color: #854F0B; }
-.waba-badge-green    { background: #DCFCE7; color: #166534; }
-.waba-badge-limited  { background: #FEF3C7; color: #854F0B; }
-.waba-badge-red      { background: #FEECEC; color: #B91C1C; }
-.waba-badge-muted    { background: #F1F5F9; color: #64748B; }
-
 @endsection
 
 
@@ -305,8 +280,13 @@
 
         // Avatar: inisial dari nama WA
         $__nm    = $detailBusiness['healt_status']['data']['name'] ?? ($account->name ?? 'WA');
-        $words   = preg_split('/\s+/', trim($__nm));
-        $__init  = strtoupper(substr($words[0],0,1) . (isset($words[1]) ? substr($words[1],0,1) : ''));
+        $_wds    = array_values(array_filter(
+            preg_split('/\s+/', trim($__nm)),
+            fn($w) => $w !== '' && ctype_alpha(mb_substr($w, 0, 1))
+        ));
+        $__init  = count($_wds) >= 2
+            ? strtoupper(mb_substr($_wds[0],0,1) . mb_substr($_wds[1],0,1))
+            : strtoupper(mb_substr($_wds[0] ?? 'WA', 0, 2));
         $pal     = ['#EAF3FC|#1B5FA6','#F1ECFE|#5B3FB0','#FBEAF0|#993556','#DCFCE7|#166534','#FEF3C7|#854F0B'];
         [$abg,$afg] = explode('|', $pal[abs(crc32($__nm)) % count($pal)]);
         $photoUrl   = $detailBusiness['business_detail']['profile_picture_url'] ?? null;
