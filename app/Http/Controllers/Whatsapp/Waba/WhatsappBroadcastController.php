@@ -360,8 +360,8 @@ class WhatsappBroadcastController extends Controller
                     $isRealFail = is_array($r) && is_numeric($r['code'] ?? null);
                     if (!$isRealFail) {
                         // Recovery/timeout — bukan gagal asli
-                        return '<span class="bc-tick bc-tick-timeout" title="Status tidak pasti — di-reset oleh sistem">'
-                             . '⟳ Nyangkut</span>';
+                        return '<span class="bc-tick bc-tick-timeout" title="Status tertunda, direset otomatis">'
+                             . '⟳ Tertunda</span>';
                     }
                     $code = is_array($r) ? ($r['code'] ?? '') : '';
                     return '<span class="bc-tick bc-tick-failed" title="Error Meta ' . e($code) . '">'

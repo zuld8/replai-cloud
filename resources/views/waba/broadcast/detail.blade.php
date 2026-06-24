@@ -32,6 +32,19 @@
     display: flex; align-items: center; gap: 20px;
 }
 .bc-donut-wrap { flex-shrink: 0; width: 160px; }
+.bc-conic {
+    width: 160px; height: 160px; border-radius: 50%;
+    position: relative; transition: background 0.5s ease;
+}
+.bc-conic-center {
+    position: absolute; inset: 22px; background: #fff;
+    border-radius: 50%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1px;
+}
+.bc-rate-val { font-size: 26px; font-weight: 700; color: #16A34A; line-height: 1; }
+.bc-rate-val.rate-mid { color: #D97706; }
+.bc-rate-val.rate-low { color: #DC2626; }
+.bc-rate-lbl { font-size: 10px; color: #64748B; }
 .bc-donut-legend { flex: 1; }
 .bc-legend-grid {
     display: grid; grid-template-columns: 1fr 1fr;
@@ -117,17 +130,22 @@
     </div>
 </div>
 
-{{-- ═══ Donut Summary Card ═══ --}}
+{{-- ═══ Donat Ringkasan (CSS conic-gradient, no JS library) ═══ --}}
 <div class="bc-donut-card" id="statCards">
-    {{-- Donut chart --}}
+    {{-- Donat CSS --}}
     <div class="bc-donut-wrap">
-        <div id="donutChart"></div>
+        <div class="bc-conic" id="donutRing" style="background:conic-gradient(#E2E8F0 0% 100%);">
+            <div class="bc-conic-center">
+                <span class="bc-rate-val" id="donutRate">–</span>
+                <span class="bc-rate-lbl">sampai HP</span>
+            </div>
+        </div>
     </div>
     {{-- Legend angka --}}
     <div class="bc-donut-legend">
         <div class="bc-legend-grid">
             <div class="bc-legend-row">
-                <span class="lbl"><span class="bc-dot" style="background:#16A34A"></span>Delivered</span>
+                <span class="lbl"><span class="bc-dot" style="background:#16A34A"></span>Sampai ke HP</span>
                 <span class="num" id="statDelivered">–</span>
             </div>
             <div class="bc-legend-row">
@@ -135,15 +153,15 @@
                 <span class="num" id="statRead">–</span>
             </div>
             <div class="bc-legend-row">
-                <span class="lbl"><span class="bc-dot" style="background:#DC2626"></span>Gagal asli</span>
+                <span class="lbl"><span class="bc-dot" style="background:#DC2626"></span>Gagal</span>
                 <span class="num" id="statFailed">–</span>
             </div>
             <div class="bc-legend-row">
-                <span class="lbl"><span class="bc-dot" style="background:#9B8EC4"></span>Nyangkut</span>
+                <span class="lbl"><span class="bc-dot" style="background:#9B8EC4"></span>Tertunda</span>
                 <span class="num" id="statTimeout">–</span>
             </div>
             <div class="bc-legend-row">
-                <span class="lbl"><span class="bc-dot" style="background:#E2E8F0"></span>Menunggu</span>
+                <span class="lbl"><span class="bc-dot" style="background:#E2E8F0;border:1px solid #CBD5E1"></span>Menunggu</span>
                 <span class="num" id="statPending">–</span>
             </div>
             <div class="bc-legend-row is-total">
@@ -157,16 +175,18 @@
 
 
 
+
+
 {{-- Detail DataTable --}}
 <div class="card table-card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span style="font-size:13px;font-weight:600;color:#1E2A4A;">Detail Penerima</span>
         <div class="d-flex gap-2" id="filterBadges">
             <button class="bc-filter-btn active" onclick="filterTable(null, this)">Semua</button>
-            <button class="bc-filter-btn" onclick="filterTable('delivered', this)">✓✓ Delivered</button>
+            <button class="bc-filter-btn" onclick="filterTable('delivered', this)">✓✓ Sampai ke HP</button>
             <button class="bc-filter-btn" onclick="filterTable('read', this)">✓✓ Dibaca</button>
             <button class="bc-filter-btn" onclick="filterTable('failed_real', this)" style="color:#B91C1C">✕ Gagal</button>
-            <button class="bc-filter-btn" onclick="filterTable('timeout', this)" style="color:#5B3FB0">⟳ Nyangkut</button>
+            <button class="bc-filter-btn" onclick="filterTable('timeout', this)" style="color:#5B3FB0">⟳ Tertunda</button>
         </div>
     </div>
     <div class="card-body p-0">
@@ -193,7 +213,6 @@
 <script src="{{asset('assets/libs/datatable/js/jquery.dataTables.min.js')}}"></script>
 <script src="{{asset('assets/libs/datatable/js/dataTables.bootstrap5.min.js')}}"></script>
 <script src="{{asset('assets/libs/datatable/js/dataTables.responsive.min.js')}}"></script>
-<script src="{{asset('assets/libs/apexcharts/apexcharts.min.js')}}"></script>
 
 <script>
     const blashId = $("#idBlash").val();
@@ -256,51 +275,27 @@
                     $('#statPending').text(pending.toLocaleString('id-ID'));
                     $('#legendSub').text(sent.toLocaleString('id-ID') + ' terkirim ke Meta · ' + reached.toLocaleString('id-ID') + ' sampai HP');
 
-                    // Donut chart — update atau init
+                    // ── Conic-gradient donat ────────────────────────────────
                     const rateColor = deliveryRate >= 70 ? '#16A34A' : deliveryRate >= 40 ? '#D97706' : '#DC2626';
-                    const safeDelivered = delivered || 0;
-                    const safeRead      = read      || 0;
-                    const safeFailed    = deliveryFailed || 0;
-                    const safeTimeout   = timeout   || 0;
-                    const safePending   = pending   || 0;
-                    // Ensure at least 1 for empty chart
-                    const totalSafe = safeDelivered + safeRead + safeFailed + safeTimeout + safePending;
-                    const series = totalSafe > 0
-                        ? [safeDelivered, safeRead, safeFailed, safeTimeout, safePending]
-                        : [0, 0, 0, 0, 1];
-
-                    if (window.donutChart) {
-                        window.donutChart.updateOptions({
-                            series: series,
-                            plotOptions: { pie: { donut: { labels: { show: true,
-                                value: { show: false },
-                                total: { show: true, label: deliveryRate + '%', formatter: () => 'sampai HP',
-                                    color: rateColor, fontSize: '22px', fontWeight: '700' }
-                            }}}}
-                        });
-                    } else {
-                        window.donutChart = new ApexCharts(document.querySelector('#donutChart'), {
-                            series: series,
-                            labels: ['Delivered','Dibaca','Gagal asli','Nyangkut','Menunggu'],
-                            colors: ['#16A34A','#2E8DE1','#DC2626','#9B8EC4','#E2E8F0'],
-                            chart: { type: 'donut', height: 160, sparkline: { enabled: false },
-                                     animations: { enabled: true, speed: 600 }, toolbar: { show: false } },
-                            legend: { show: false },
-                            dataLabels: { enabled: false },
-                            stroke: { width: 0 },
-                            plotOptions: { pie: { donut: { size: '68%', labels: { show: true,
-                                name: { show: true, fontSize: '11px', color: '#64748B', offsetY: 14 },
-                                value: { show: false },
-                                total: { show: true,
-                                    label: deliveryRate + '%',
-                                    formatter: () => 'sampai HP',
-                                    color: rateColor, fontSize: '22px', fontWeight: '700'
-                                }
-                            }}}},
-                            tooltip: { y: { formatter: (v) => v.toLocaleString('id-ID') + ' orang' } }
-                        });
-                        window.donutChart.render();
+                    const rateEl2 = document.getElementById('donutRate');
+                    if (rateEl2) {
+                        rateEl2.textContent = deliveryRate + '%';
+                        rateEl2.className = 'bc-rate-val' + (deliveryRate >= 70 ? '' : deliveryRate >= 40 ? ' rate-mid' : ' rate-low');
                     }
+                    // Segmen kumulatif (%)
+                    const pD  = total > 0 ? delivered      / total * 100 : 0;
+                    const pR  = total > 0 ? read            / total * 100 : 0;
+                    const pF  = total > 0 ? deliveryFailed  / total * 100 : 0;
+                    const pT  = total > 0 ? timeout         / total * 100 : 0;
+                    const c1 = pD;           // delivered end
+                    const c2 = c1 + pR;      // read end
+                    const c3 = c2 + pF;      // failed end
+                    const c4 = c3 + pT;      // timeout end
+                    const grad = total > 0
+                        ? `conic-gradient(#16A34A 0% ${c1}%,#2E8DE1 ${c1}% ${c2}%,#DC2626 ${c2}% ${c3}%,#9B8EC4 ${c3}% ${c4}%,#E2E8F0 ${c4}% 100%)`
+                        : 'conic-gradient(#E2E8F0 0% 100%)';
+                    const ring = document.getElementById('donutRing');
+                    if (ring) ring.style.background = grad;
                 }
             }
         });
