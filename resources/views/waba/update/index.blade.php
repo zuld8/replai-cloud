@@ -2,6 +2,43 @@
 
 @section('styles')
 <link href="{{asset('assets/libs/select2/select2.css')}}" rel="stylesheet">
+<style>
+/* ── Info Row Layout ── */
+.info-row {
+    display: flex; align-items: flex-start;
+    padding: 6px 0; border-bottom: 0.5px solid #F1F5F9;
+    font-size: 13px; gap: 8px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row .lbl { width: 160px; flex-shrink: 0; color: #64748B; padding-top: 1px; }
+.info-row .val { color: #1E2A4A; font-weight: 500; flex: 1; }
+.info-row .val.empty { color: #94A3B8; font-weight: 400; font-style: italic; }
+
+/* ── Status Badges ── */
+.badge-status  { font-size: 11px; padding: 2px 9px; border-radius: 6px; font-weight: 600; display: inline-block; }
+.badge-green   { background: #DCFCE7; color: #166534; }
+.badge-limited { background: #FEF3C7; color: #854F0B; }
+.badge-red     { background: #FEECEC; color: #B91C1C; }
+.badge-muted   { background: #F1F5F9; color: #64748B; }
+
+/* ── Section Header with Icon Chip ── */
+.section-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.88rem; font-weight: 700; color: #1E2A4A;
+    margin-bottom: 0.6rem;
+}
+.icon-chip {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: #EAF3FC; color: #2E8DE1;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.95rem; flex-shrink: 0;
+}
+.section-divider { border: none; border-top: 0.5px solid #E4EAF2; margin: 1rem 0; }
+
+/* ── Credential toggle link ── */
+.cred-toggle-link { font-size: 12px; color: #2E8DE1; cursor: pointer; margin-left: auto; }
+.cred-toggle-link:hover { color: #1B5FA6; }
+</style>
 @endsection
 
 @section('button')
@@ -23,8 +60,7 @@
             <div class="row g-0">
                 <x-waba-sidebar-update-component idwaba="{{$meta->id}}"></x-waba-sidebar-update-component>
                 <div class="col-12 col-md-10 d-flex flex-column">
-                    <div class="card-body">
-                        <h2 class="mb-4">{{__('page.waba.general')}}</h2>
+                    <div class="card-body" style="min-height:400px;">
 
                         @php
                             $qCache       = $detail['waba_quality_cache'] ?? null;
@@ -43,84 +79,108 @@
                             ];
                             $tierLabel = $tierMap[$tier] ?? ($tier ?? '-');
                             $qualityLabel = match($quality) {
-                                'HIGH'           => 'High',
-                                'MEDIUM'         => 'Medium',
-                                'LOW'            => 'Low',
-                                'UNKNOWN_RATING' => '-',
+                                'HIGH', 'GREEN'  => 'Green / High',
+                                'MEDIUM','YELLOW'=> 'Medium',
+                                'LOW',  'RED'    => 'Low',
+                                'UNKNOWN_RATING','UNKNOWN' => 'Unknown',
                                 default          => ucfirst(strtolower($quality)),
                             };
-                            $qualityColor = match($quality) {
-                                'HIGH'   => 'color:#1a7a45;',
-                                'MEDIUM' => 'color:#b07c00;',
-                                'LOW'    => 'color:#c0392b;',
-                                default  => '',
+                            $qualityBadge = match($quality) {
+                                'HIGH','GREEN'   => 'badge-green',
+                                'MEDIUM','YELLOW'=> 'badge-limited',
+                                'LOW','RED'      => 'badge-red',
+                                default          => 'badge-muted',
                             };
-                            $statusColor = ($canSend === 'AVAILABLE') ? 'color:#1a7a45;' : '';
+                            $canSendBadge = match(strtoupper($canSend)) {
+                                'AVAILABLE','CONNECTED' => 'badge-green',
+                                'LIMITED'               => 'badge-limited',
+                                default                 => (strlen($canSend) > 1 ? 'badge-muted' : 'badge-muted'),
+                            };
+                            $canSendLabel = match(strtoupper($canSend)) {
+                                'AVAILABLE' => 'Tersedia',
+                                'LIMITED'   => 'Limited',
+                                default     => ($canSend ?: '— belum diisi'),
+                            };
                         @endphp
 
-                        {{-- Semua info dalam satu list tanpa duplikasi --}}
-                        <div class="mb-2 d-flex justify-content-between">
-                            Nama Akun :
-                            <strong>{{ isset($detail['healt_status']['data']['name']) ? $detail['healt_status']['data']['name'] : '' }}</strong>
-                        </div>
-                        <div class="mb-2 d-flex justify-content-between">
-                            Tentang :
-                            <strong>{{ isset($detail['business_detail']['about']) ? $detail['business_detail']['about'] : '' }}</strong>
-                        </div>
-                        <div class="mb-2 d-flex justify-content-between">
-                            Email :
-                            <strong>{{ isset($detail['business_detail']['email']) ? $detail['business_detail']['email'] : '' }}</strong>
-                        </div>
-                        <div class="mb-2 d-flex justify-content-between">
-                            Bisa Mengirim Pesan :
-                            <strong>{{ isset($detail['healt_status']['data']['health_status']['can_send_message']) ? $detail['healt_status']['data']['health_status']['can_send_message'] : '' }}</strong>
-                        </div>
-                        <div class="mb-2 d-flex justify-content-between">
-                            Deskripsi :
-                            <strong>{{ isset($detail['business_detail']['description']) ? $detail['business_detail']['description'] : '' }}</strong>
+                        {{-- Section: Informasi Umum --}}
+                        <div class="section-header">
+                            <span class="icon-chip"><i class="ti ti-info-circle"></i></span>
+                            Informasi Umum
                         </div>
 
-                        <hr class="my-3">
+                        <div class="info-row">
+                            <span class="lbl">Nama Akun</span>
+                            @php $v = $detail['healt_status']['data']['name'] ?? ''; @endphp
+                            <span class="val {{ $v ? '' : 'empty' }}">{{ $v ?: '— belum diisi' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="lbl">Tentang</span>
+                            @php $v = $detail['business_detail']['about'] ?? ''; @endphp
+                            <span class="val {{ $v ? '' : 'empty' }}">{{ $v ?: '— belum diisi' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="lbl">Email</span>
+                            @php $v = $detail['business_detail']['email'] ?? ''; @endphp
+                            <span class="val {{ $v ? '' : 'empty' }}">{{ $v ?: '— belum diisi' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="lbl">Deskripsi</span>
+                            @php $v = $detail['business_detail']['description'] ?? ''; @endphp
+                            <span class="val {{ $v ? '' : 'empty' }}">{{ $v ?: '— belum diisi' }}</span>
+                        </div>
 
-                        {{-- Status & Kualitas Nomor --}}
-                        <div class="mb-2 d-flex justify-content-between align-items-center">
-                            <span>Nomor WhatsApp :</span>
-                            <strong data-q="phone">{{ $displayPhone }}</strong>
+                        <hr class="section-divider">
+
+                        {{-- Section: Nomor & Status --}}
+                        <div class="section-header">
+                            <span class="icon-chip"><i class="ti ti-phone"></i></span>
+                            Nomor & Status
                         </div>
-                        <div class="mb-2 d-flex justify-content-between align-items-center">
-                            <span>Status Nomor :</span>
-                            <strong style="{{ $statusColor }}">{{ $canSend }}</strong>
+
+                        <div class="info-row">
+                            <span class="lbl">Nomor WhatsApp</span>
+                            <span class="val" data-q="phone">{{ $displayPhone }}</span>
                         </div>
-                        <div class="mb-2 d-flex justify-content-between align-items-center">
-                            <span>Kualitas Nomor :</span>
-                            <strong data-q="quality" style="{{ $qualityColor }}">{{ $qualityLabel }}</strong>
+                        <div class="info-row">
+                            <span class="lbl">Bisa Mengirim Pesan</span>
+                            <span class="badge-status {{ $canSendBadge }}" data-q="cansend">{{ $canSendLabel }}</span>
                         </div>
-                        <div class="mb-2 d-flex justify-content-between align-items-center">
-                            <span>Limit Broadcast :</span>
-                            <strong data-q="tier">{{ $tierLabel }}</strong>
+                        <div class="info-row">
+                            <span class="lbl">Status Nomor</span>
+                            <span class="badge-status {{ $canSendBadge }}" data-q="status">{{ $canSendLabel }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="lbl">Kualitas Nomor</span>
+                            <span class="badge-status {{ $qualityBadge }}" data-q="quality">{{ $qualityLabel }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="lbl">Limit Broadcast</span>
+                            <span class="val" data-q="tier">{{ $tierLabel }}</span>
                         </div>
                         @if($lastUpdated)
-                        <div class="mb-2 d-flex justify-content-between align-items-center">
-                            <span>Terakhir Diperbarui :</span>
-                            <small class="text-muted">{{ \Carbon\Carbon::parse($lastUpdated)->format('d M Y, H:i') }}</small>
+                        <div class="info-row">
+                            <span class="lbl">Terakhir Diperbarui</span>
+                            <span class="val empty" style="font-style:normal;">{{ \Carbon\Carbon::parse($lastUpdated)->format('d M Y, H:i') }}</span>
                         </div>
                         @endif
 
-                        <hr class="my-3">
+                        <hr class="section-divider">
 
-                        {{-- Kredensial Akun --}}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>Kredensial Akun</span>
-                            <span onclick="toggleCredentials()" style="cursor:pointer; color:#00ceec; font-size:12px;">
+                        {{-- Section: Kredensial Akun --}}
+                        <div class="section-header">
+                            <span class="icon-chip"><i class="ti ti-key"></i></span>
+                            Kredensial Akun
+                            <span class="cred-toggle-link ms-auto" onclick="toggleCredentials()">
                                 <i class="ti ti-eye" id="credToggleIcon"></i> Tampilkan untuk update
                             </span>
                         </div>
                         <div id="credentialForm" style="display:none;">
-                            <p class="text-muted" style="font-size:12px; background:#fff8e1; padding:8px 12px; border-radius:6px;">
+                            <p class="text-muted mb-3" style="font-size:12px; background:#fff8e1; padding:8px 12px; border-radius:6px;">
                                 <i class="ti ti-alert-triangle me-1 text-warning"></i>
                                 Hati-hati! Jangan bagikan ke siapapun. Isi hanya jika ingin memperbarui.
                             </p>
-                            <div class="row g-3 mt-1">
+                            <div class="row g-3">
                                 <div class="col-lg-6 col-sm-12">
                                     <label class="form-label">Facebook App Secret</label>
                                     <input class="form-control" name="app_secret" form="credForm" type="password"
