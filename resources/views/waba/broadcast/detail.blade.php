@@ -23,31 +23,53 @@
 .waba-detail-header p  { font-size: 11px; color: #64748B; margin: 2px 0 0; }
 
 /* Stat cards */
-.waba-stat-card {
-    background: #fff; border: 0.5px solid #E4EAF2;
-    border-radius: 10px; padding: 11px 13px;
-    box-shadow: 0 1px 3px rgba(16,42,74,0.06);
-    position: relative; overflow: hidden;
-    transition: box-shadow 0.15s, transform 0.15s;
+/* bc-summary: 1 hero metric + breakdown grid */
+.bc-summary {
+    display: flex; background: #fff;
+    border: 0.5px solid #E4EAF2; border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06); overflow: hidden;
+    margin-bottom: 12px;
 }
-.waba-stat-card:hover { box-shadow: 0 4px 12px rgba(16,42,74,0.10); transform: translateY(-1px); }
-.waba-stat-card .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748B; }
-.waba-stat-card .stat-value { font-size: 22px; font-weight: 700; line-height: 1.2; margin: 3px 0 1px; color: #1E2A4A; }
-.waba-stat-card .stat-sub { font-size: 10px; color: #94A3B8; }
-.waba-stat-card .stat-icon { font-size: 22px; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0.12; color: #1E2A4A; }
-
-.stat-total  .stat-icon { color: #1B5FA6; }
-.stat-timeout .stat-icon { color: #5B3FB0; }
-.stat-failed .stat-icon { color: #DC2626; }
-.stat-rate   .stat-icon { color: #16A34A; }
+.bc-summary-hero {
+    padding: 14px 20px; border-right: 0.5px solid #E4EAF2;
+    min-width: 150px; display: flex; flex-direction: column;
+    justify-content: center; gap: 1px; flex-shrink: 0;
+}
+.bc-summary-hero .lbl {
+    font-size: 9.5px; color: #64748B; text-transform: uppercase;
+    letter-spacing: .5px; font-weight: 600;
+}
+.bc-summary-hero .val {
+    font-size: 32px; font-weight: 700; color: #16A34A;
+    line-height: 1; margin: 3px 0 2px;
+}
+.bc-summary-hero .val.rate-mid  { color: #D97706; }
+.bc-summary-hero .val.rate-low  { color: #DC2626; }
+.bc-summary-hero .sub { font-size: 10px; color: #94A3B8; }
+.bc-summary-grid {
+    flex: 1; display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: #F1F5F9;
+}
+.bc-summary-grid > div {
+    background: #fff; padding: 10px 14px;
+    font-size: 11px; color: #64748B; line-height: 1.3;
+}
+.bc-summary-grid b {
+    display: block; font-size: 17px; font-weight: 600;
+    color: #1E2A4A; margin-top: 1px;
+}
+.bc-dot { margin-right: 3px; }
+@media (max-width: 768px) {
+    .bc-summary { flex-direction: column; }
+    .bc-summary-hero { border-right: none; border-bottom: 0.5px solid #E4EAF2; }
+    .bc-summary-grid { grid-template-columns: repeat(2, 1fr); }
+}
 
 /* Progress bar overall */
 .overall-progress-wrap {
-    background: #f1f5f9;
-    border-radius: 14px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    background: #fff; border: 0.5px solid #E4EAF2;
+    border-radius: 10px; padding: 11px 16px;
+    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(16,42,74,0.06);
 }
 .overall-progress-bar {
     height: 8px; border-radius: 5px;
@@ -195,8 +217,8 @@
 {{-- Overall Progress --}}
 <div class="overall-progress-wrap mb-4">
     <div class="d-flex justify-content-between align-items-center">
-        <span class="fw-600" style="font-size:0.88rem;color:#374151;">Progress Pengiriman</span>
-        <span id="progressLabel" class="fw-700" style="color:#0EA5E9;font-size:0.88rem;">– %</span>
+        <span class="fw-600" style="font-size:12px;color:#1E2A4A;">Progress Pengiriman</span>
+        <span id="progressLabel" style="font-size:12px;font-weight:600;color:#16A34A;">–</span>
     </div>
     <div class="overall-progress-bar">
         <div class="overall-progress-fill" id="progressFill" style="width:0%"></div>
@@ -213,7 +235,7 @@
 {{-- Detail DataTable --}}
 <div class="card table-card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <div class="card-title mb-0">Detail Penerima</div>
+        <span style="font-size:13px;font-weight:600;color:#1E2A4A;">Detail Penerima</span>
         <div class="d-flex gap-2" id="filterBadges">
             <button class="bc-filter-btn active" onclick="filterTable(null, this)">Semua</button>
             <button class="bc-filter-btn" onclick="filterTable('delivered', this)">✓✓ Delivered</button>
@@ -306,13 +328,24 @@
                     const failPct     = total > 0 ? Math.round(deliveryFailed / total * 100) : 0;
                     const timeoutPct  = total > 0 ? Math.round(timeout   / total * 100) : 0;
 
-                    $('#statTotal').text(total.toLocaleString('id-ID'));
+                    const pending = total - sent - delivered - read - deliveryFailed - timeout;
+
+                    // Hero: Delivery Rate + warna responsif
+                    const rateEl = $('#statRate');
+                    rateEl.text(deliveryRate + '%');
+                    rateEl.removeClass('rate-mid rate-low');
+                    if (deliveryRate < 40)      rateEl.addClass('rate-low');
+                    else if (deliveryRate < 70) rateEl.addClass('rate-mid');
+
+                    $('#statRateSub').text(reached.toLocaleString('id-ID') + ' / ' + total.toLocaleString('id-ID') + ' sampai HP');
+
+                    // Grid rincian
                     $('#statSent').text(sent.toLocaleString('id-ID'));
                     $('#statDelivered').text(delivered.toLocaleString('id-ID'));
                     $('#statRead').text(read.toLocaleString('id-ID'));
                     $('#statFailed').text(deliveryFailed.toLocaleString('id-ID'));
                     $('#statTimeout').text(timeout.toLocaleString('id-ID'));
-                    $('#statRate').text(deliveryRate + '%');
+                    $('#statPending').text(Math.max(0, pending).toLocaleString('id-ID'));
 
                     // Segmented progress bar
                     $('#progressFill').css('width', delivPct + '%');
