@@ -8,53 +8,38 @@
    WABA Broadcast Detail - Premium Design
    ============================================ */
 .waba-detail-header {
-    background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 60%, #34D399 100%);
-    border-radius: 16px;
-    padding: 1.5rem 2rem;
-    margin-bottom: 1.5rem;
-    color: #fff;
-    position: relative;
-    overflow: hidden;
+    background: #fff; border: 0.5px solid #E4EAF2;
+    border-radius: 10px; box-shadow: 0 1px 3px rgba(16,42,74,0.06);
+    padding: 11px 16px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 12px;
 }
-.waba-detail-header::after {
-    content: '';
-    position: absolute;
-    right: -30px; top: -30px;
-    width: 140px; height: 140px;
-    background: rgba(255,255,255,0.07);
-    border-radius: 50%;
+.waba-detail-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: #EAF3FC; color: #1B5FA6;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
 }
-.waba-detail-header::before {
-    content: '';
-    position: absolute;
-    right: 80px; bottom: -40px;
-    width: 90px; height: 90px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 50%;
-}
-.waba-detail-header h4 { font-weight: 700; font-size: 1.15rem; margin-bottom: 0.25rem; }
-.waba-detail-header p  { opacity: 0.85; font-size: 0.82rem; margin-bottom: 0; }
+.waba-detail-header h4 { font-size: 13px; font-weight: 600; color: #1E2A4A; margin: 0; }
+.waba-detail-header p  { font-size: 11px; color: #64748B; margin: 2px 0 0; }
 
 /* Stat cards */
 .waba-stat-card {
-    border-radius: 14px;
-    border: none;
-    padding: 1.25rem 1.5rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.18s, box-shadow 0.18s;
+    background: #fff; border: 0.5px solid #E4EAF2;
+    border-radius: 10px; padding: 11px 13px;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06);
+    position: relative; overflow: hidden;
+    transition: box-shadow 0.15s, transform 0.15s;
 }
-.waba-stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
-.waba-stat-card .stat-label { font-size: 0.73rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.75; }
-.waba-stat-card .stat-value { font-size: 2rem; font-weight: 800; line-height: 1.1; margin: 0.3rem 0; }
-.waba-stat-card .stat-sub { font-size: 0.78rem; opacity: 0.7; }
-.waba-stat-card .stat-icon { font-size: 2.5rem; position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%); opacity: 0.15; }
+.waba-stat-card:hover { box-shadow: 0 4px 12px rgba(16,42,74,0.10); transform: translateY(-1px); }
+.waba-stat-card .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748B; }
+.waba-stat-card .stat-value { font-size: 22px; font-weight: 700; line-height: 1.2; margin: 3px 0 1px; color: #1E2A4A; }
+.waba-stat-card .stat-sub { font-size: 10px; color: #94A3B8; }
+.waba-stat-card .stat-icon { font-size: 22px; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0.12; color: #1E2A4A; }
 
-.stat-total   { background: #1e293b; color: #fff; }
-.stat-sent    { background: #0EA5E9; color: #fff; }
-.stat-failed  { background: #DC2626; color: #fff; }
-.stat-rate    { background: #1D4ED8; color: #fff; }
+.stat-total  .stat-icon { color: #1B5FA6; }
+.stat-timeout .stat-icon { color: #5B3FB0; }
+.stat-failed .stat-icon { color: #DC2626; }
+.stat-rate   .stat-icon { color: #16A34A; }
 
 /* Progress bar overall */
 .overall-progress-wrap {
@@ -65,18 +50,17 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 .overall-progress-bar {
-    height: 12px;
-    border-radius: 8px;
-    background: #e5e7eb;
-    overflow: hidden;
-    margin: 0.75rem 0;
+    height: 8px; border-radius: 5px;
+    background: #EEF2F7; overflow: hidden;
+    margin: 8px 0; display: flex;
 }
 .overall-progress-fill {
-    height: 100%;
-    border-radius: 8px;
-    background: linear-gradient(90deg, #0EA5E9, #38BDF8);
-    transition: width 1s ease;
+    height: 100%; border-radius: 0;
+    background: #16A34A; transition: width 0.8s ease;
 }
+.overall-progress-read  { height: 100%; background: #2E8DE1; }
+.overall-progress-fail  { height: 100%; background: #DC2626; }
+.overall-progress-timeout { height: 100%; background: #9B8EC4; }
 
 /* Table card */
 .table-card {
@@ -138,11 +122,14 @@
 
 {{-- Broadcast Info Header --}}
 <div class="waba-detail-header">
-    <h4>📢 {{ $blash->name }}</h4>
-    <p>
-        Dijadwalkan: {{ $blash->schedule ? \Carbon\Carbon::parse($blash->schedule)->format('d M Y H:i') : '-' }}
-        &nbsp;·&nbsp; Dibuat: {{ $blash->created_at ? \Carbon\Carbon::parse($blash->created_at)->format('d M Y H:i') : '-' }}
-    </p>
+    <div class="waba-detail-icon"><i class="bx bx-broadcast"></i></div>
+    <div>
+        <h4>{{ $blash->name }}</h4>
+        <p>
+            Dijadwal: {{ $blash->schedule ? \Carbon\Carbon::parse($blash->schedule)->format('d M Y H:i') : '-' }}
+            &nbsp;·&nbsp; Dibuat: {{ $blash->created_at ? \Carbon\Carbon::parse($blash->created_at)->format('d M Y H:i') : '-' }}
+        </p>
+    </div>
 </div>
 
 {{-- Summary Stat Cards --}}
@@ -156,11 +143,11 @@
         </div>
     </div>
     <div class="col-6 col-lg-2 mb-3">
-        <div class="waba-stat-card stat-sent">
-            <div class="stat-label">Antrian</div>
+        <div class="waba-stat-card">
+            <div class="stat-label">Terkirim</div>
             <div class="stat-value" id="statSent">–</div>
             <div class="stat-sub">Masuk antrian Meta</div>
-            <i class="bx bx-time-five stat-icon"></i>
+            <i class="bx bx-check stat-icon" style="color:#64748B"></i>
         </div>
     </div>
     <div class="col-6 col-lg-2 mb-3">
@@ -181,17 +168,25 @@
     </div>
     <div class="col-6 col-lg-2 mb-3">
         <div class="waba-stat-card stat-failed">
-            <div class="stat-label">Gagal</div>
+            <div class="stat-label">Gagal Asli</div>
             <div class="stat-value" id="statFailed">–</div>
-            <div class="stat-sub">Tidak terkirim</div>
+            <div class="stat-sub">Error code Meta</div>
             <i class="bx bx-x-circle stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2 mb-3">
+        <div class="waba-stat-card stat-timeout">
+            <div class="stat-label">Nyangkut</div>
+            <div class="stat-value" id="statTimeout">–</div>
+            <div class="stat-sub">Recovery/timeout</div>
+            <i class="bx bx-refresh stat-icon"></i>
         </div>
     </div>
     <div class="col-6 col-lg-2 mb-3">
         <div class="waba-stat-card stat-rate">
             <div class="stat-label">Delivery Rate</div>
             <div class="stat-value" id="statRate">–</div>
-            <div class="stat-sub">Persentase delivery</div>
+            <div class="stat-sub">Pesan sampai HP</div>
             <i class="bx bx-trending-up stat-icon"></i>
         </div>
     </div>
@@ -207,10 +202,10 @@
         <div class="overall-progress-fill" id="progressFill" style="width:0%"></div>
     </div>
     <div class="d-flex gap-4 flex-wrap" style="font-size:0.76rem;color:#9ca3af;">
-        <span><span style="color:#F59E0B;font-weight:600;">■</span> Antrian</span>
-        <span><span style="color:#047857;font-weight:600;">■</span> Delivered</span>
-        <span><span style="color:#0284c7;font-weight:600;">■</span> Dibaca</span>
-        <span><span style="color:#EF4444;font-weight:600;">■</span> Gagal</span>
+        <span><span style="color:#16A34A;font-weight:600;">■</span> Delivered</span>
+        <span><span style="color:#2E8DE1;font-weight:600;">■</span> Dibaca</span>
+        <span><span style="color:#DC2626;font-weight:600;">■</span> Gagal</span>
+        <span><span style="color:#9B8EC4;font-weight:600;">■</span> Nyangkut</span>
         <span id="progressSub"></span>
     </div>
 </div>
@@ -292,44 +287,39 @@
             drawCallback: function(settings) {
                 const json = this.api().ajax.json();
                 if (json) {
-                    const total     = json.total     ?? 0;
-                    const sent      = json.sent      ?? 0;
-                    const failed    = json.failed    ?? 0;
-                    const delivered = json.delivered  ?? 0;
-                    const read      = json.read      ?? 0;
-                    const deliveryFailed = json.deliveryFailed ?? 0;
+                    const total          = json.total            ?? 0;
+                    const sent           = json.sent             ?? 0;
+                    const delivered      = json.delivered        ?? 0;
+                    const read           = json.read             ?? 0;
+                    const deliveryFailed = json.deliveryFailed   ?? 0;  // gagal asli Meta
+                    const timeout        = json.deliveryTimeout  ?? 0;  // recovery/nyangkut
 
-                    // Real delivery = delivered + read
-                    const realDelivered = delivered + read;
-                    const realFailed = failed + deliveryFailed;
-                    const deliveryRate = total > 0 ? Math.round(realDelivered / total * 100) : 0;
+                    // Delivery rate = (delivered + read) / total — TIDAK include timeout/gagal
+                    const reached      = delivered + read;
+                    const deliveryRate = total > 0 ? Math.round(reached / total * 100) : 0;
+
+                    // Segmented bar %
+                    const delivPct    = total > 0 ? Math.round(delivered / total * 100) : 0;
+                    const readPct     = total > 0 ? Math.round(read      / total * 100) : 0;
+                    const failPct     = total > 0 ? Math.round(deliveryFailed / total * 100) : 0;
+                    const timeoutPct  = total > 0 ? Math.round(timeout   / total * 100) : 0;
 
                     $('#statTotal').text(total.toLocaleString('id-ID'));
                     $('#statSent').text(sent.toLocaleString('id-ID'));
                     $('#statDelivered').text(delivered.toLocaleString('id-ID'));
                     $('#statRead').text(read.toLocaleString('id-ID'));
-                    $('#statFailed').text(realFailed.toLocaleString('id-ID'));
+                    $('#statFailed').text(deliveryFailed.toLocaleString('id-ID'));
+                    $('#statTimeout').text(timeout.toLocaleString('id-ID'));
+                    $('#statRate').text(deliveryRate + '%');
 
-                    // Show delivery rate (not just sent rate)
-                    const rate = total > 0 ? Math.round(sent / total * 100) : 0;
-                    if (realDelivered > 0) {
-                        $('#statRate').text(Math.round(realDelivered / total * 100) + '%');
-                    } else {
-                        $('#statRate').text(rate + '%');
-                    }
+                    // Segmented progress bar
+                    $('#progressFill').css('width', delivPct + '%');
+                    $('#progressLabel').text(deliveryRate + '%');
+                    $('#progressLabel').css('color', deliveryRate >= 70 ? '#16A34A' : deliveryRate >= 40 ? '#D97706' : '#DC2626');
 
-                    const pct = total > 0 ? Math.min(100, rate) : 0;
-                    $('#progressFill').css('width', pct + '%');
-                    $('#progressLabel').text(pct + '%');
-                    $('#progressLabel').css('color', pct >= 90 ? '#0EA5E9' : pct >= 60 ? '#D97706' : '#DC2626');
-
-                    let sub = sent.toLocaleString('id-ID') + ' masuk antrian dari ' + total.toLocaleString('id-ID') + ' total';
-                    if (realDelivered > 0) {
-                        sub += ' · ' + realDelivered.toLocaleString('id-ID') + ' delivered';
-                    }
-                    if (realFailed > 0) {
-                        sub += ' · ' + realFailed.toLocaleString('id-ID') + ' gagal';
-                    }
+                    let sub = reached.toLocaleString('id-ID') + ' sampai HP dari ' + total.toLocaleString('id-ID') + ' total';
+                    if (deliveryFailed > 0) sub += ' · ' + deliveryFailed.toLocaleString('id-ID') + ' gagal asli';
+                    if (timeout > 0)        sub += ' · ' + timeout.toLocaleString('id-ID') + ' nyangkut';
                     $('#progressSub').text(sub);
                 }
             }

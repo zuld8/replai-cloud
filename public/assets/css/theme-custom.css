@@ -809,3 +809,24 @@ body, .app-content { font-size: 0.875rem; }
 .bc-action-view:hover   { background: #DCFCE7; color: #166534; }
 .bc-action-delete { background: #FFF5F5; color: #DC2626; }
 .bc-action-delete:hover { background: #FEECEC; color: #DC2626; }
+
+/* ═══════════════════════════════════════════════════════════════
+   WA-tick badges — konvensi centang WhatsApp untuk status penerima
+   ═══════════════════════════════════════════════════════════════ */
+.bc-tick {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 2px 9px; border-radius: 6px; line-height: 1.5;
+    white-space: nowrap;
+}
+/* ✓ Terkirim / Dikirim — abu netral */
+.bc-tick-sent      { background: #F1F5F9; color: #64748B; }
+/* ✓✓ Delivered — abu gelap */
+.bc-tick-delivered { background: #F1F5F9; color: #475569; }
+/* ✓✓ Dibaca — BIRU (centang biru WA) */
+.bc-tick-read      { background: #EAF3FC; color: #1B5FA6; }
+/* ✕ Gagal (asli Meta error code numerik) — MERAH */
+.bc-tick-failed    { background: #FEECEC; color: #B91C1C; }
+/* ⟳ Nyangkut (recovery/timeout) — UNGU lembut */
+.bc-tick-timeout   { background: #EDE9FE; color: #5B3FB0; }
+/* ◌ Antrian / default — muted */
+.bc-tick-muted     { background: #F8FAFC; color: #94A3B8; }
