@@ -139,14 +139,99 @@
 .fw-700 { font-weight: 700; }
 .fw-800 { font-weight: 800; }
 .dt-loading { color: #0EA5E9; font-weight: 500; }
+
+/* ── waba-hero (brand gradient, replaces page-hero) ── */
+.waba-hero {
+    background: linear-gradient(135deg, #2E8DE1 0%, #5B8EE0 50%, #6D5DD3 100%);
+    border-radius: 14px;
+    padding: 1.1rem 1.5rem;
+    color: white;
+    margin-bottom: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.waba-hero-left  { display: flex; align-items: center; gap: 0.75rem; }
+.waba-hero-right { display: flex; align-items: center; gap: 0.75rem; }
+.waba-hero-icon  {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; color: white; flex-shrink: 0;
+}
+.waba-hero-title { font-size: 1rem; font-weight: 700; color: white; margin-bottom: 2px; }
+.waba-hero-sub   { font-size: 0.78rem; color: rgba(255,255,255,0.8); }
+
+/* ── Account Selector Button ── */
+.account-selector-btn {
+    display: flex; align-items: center; gap: 0.6rem;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.3) !important;
+    border-radius: 10px !important;
+    padding: 0.45rem 0.85rem !important;
+    cursor: pointer; color: white;
+    transition: background 0.2s;
+    font-size: 0.85rem !important;
+    min-width: 160px;
+}
+.account-selector-btn:hover { background: rgba(255,255,255,0.25); }
+.account-selector-icon  { font-size: 1.15rem; color: rgba(255,255,255,0.9); }
+.account-selector-info  { display: flex; flex-direction: column; text-align: left; }
+.account-selector-name  { font-weight: 700; font-size: 0.84rem; color: white; line-height: 1.2; }
+.account-selector-phone { font-size: 0.7rem; color: rgba(255,255,255,0.7); }
+.account-selector-chevron { color: rgba(255,255,255,0.7); font-size: 1rem; margin-left: 4px; }
+
+/* ── Account Option (dropdown items) ── */
+.account-option-icon {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #2E8DE1, #6D5DD3);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1rem; flex-shrink: 0;
+}
+.account-option-info { flex: 1; min-width: 0; }
+.account-option-name  { font-weight: 600; font-size: 0.85rem; color: #1e293b; }
+.account-option-phone { font-size: 0.72rem; color: #6b7280; }
+.account-option-badge {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 99px;
+    background: #dcfce7; color: #15803d;
+    margin-left: auto; flex-shrink: 0; white-space: nowrap;
+}
+
+/* ── Stat icon wrap ── */
+.stat-icon-wrap {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem; flex-shrink: 0; margin-bottom: 8px;
+}
+
+/* ── Stat card brand compact style ── */
+.stat-cards, .stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; }
+@media(max-width:768px){ .stat-cards, .stat-row { grid-template-columns: repeat(2,1fr); } }
+.stat-card {
+    background: #fff; border: 0.5px solid #E4EAF2;
+    border-radius: 10px; box-shadow: 0 1px 3px rgba(16,42,74,0.06);
+    padding: 0.85rem 1rem; display: flex; flex-direction: column;
+}
+.stat-val { font-size: 1.4rem; font-weight: 700; color: #1E2A4A; }
+.stat-lbl { font-size: 0.68rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ── Broadcast card ── */
+.broadcast-card { border: 0.5px solid #E4EAF2 !important; border-radius: 10px !important; box-shadow: 0 1px 3px rgba(16,42,74,0.06) !important; }
+.broadcast-card .card-header { background: #F2F8FE !important; padding: 0.7rem 1rem !important; border-bottom: 0.5px solid #E4EAF2 !important; }
+
+/* ── Filter buttons compact ── */
+.btn[onclick*="setFilter"] { font-size: 0.78rem !important; padding: 0.25rem 0.75rem !important; }
 </style>
 @endsection
 
 @section('content')
 <div class="page-header">
     <div class="page-leftheader">
-        <div class="page-title">Template WhatsApp Business API</div>
-        <ol class="breadcrumb">
+        <ol class="breadcrumb" style="margin-bottom:0.5rem;">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></li>
             <li class="breadcrumb-item active">Template WhatsApp Business API</li>
         </ol>
@@ -201,30 +286,30 @@
 </div>
 
 {{-- Stats Cards --}}
-<div class="stat-row mb-4">
+<div class="stat-cards mb-4">
     <div class="stat-card">
-        <div class="stat-icon-wrap" style="background:rgba(255,255,255,0.15)"><i class="bx bx-layout"></i></div>
+        <div class="stat-icon-wrap" style="background:rgba(46,141,225,0.10);color:#2E8DE1"><i class="bx bx-layout"></i></div>
         <div>
             <div class="stat-val" id="sumTotal">–</div>
             <div class="stat-lbl">Total Template</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon-wrap" style="background:rgba(255,255,255,0.15)"><i class="bx bx-check-circle"></i></div>
+        <div class="stat-icon-wrap" style="background:rgba(22,163,74,0.10);color:#16A34A"><i class="bx bx-check-circle"></i></div>
         <div>
             <div class="stat-val" id="sumApproved">–</div>
             <div class="stat-lbl">Disetujui</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon-wrap" style="background:rgba(255,255,255,0.15)"><i class="bx bx-time"></i></div>
+        <div class="stat-icon-wrap" style="background:rgba(217,119,6,0.10);color:#D97706"><i class="bx bx-time"></i></div>
         <div>
             <div class="stat-val" id="sumPending">–</div>
             <div class="stat-lbl">Menunggu</div>
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon-wrap" style="background:rgba(255,255,255,0.15)"><i class="bx bx-calendar"></i></div>
+        <div class="stat-icon-wrap" style="background:rgba(220,38,38,0.10);color:#DC2626"><i class="bx bx-calendar"></i></div>
         <div>
             <div class="stat-val" id="sumRejected">–</div>
             <div class="stat-lbl">Ditolak</div>
