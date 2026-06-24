@@ -4,13 +4,15 @@
 <link rel="stylesheet" href="{{asset('assets/libs/datatable/css/dataTables.bootstrap5.min.css')}}">
 <link rel="stylesheet" href="{{asset('assets/libs/datatable/css/responsive.bootstrap.min.css')}}">
 <style>
-/* ============================================
-   WABA Broadcast Detail - Premium Design
-   ============================================ */
+/* ══════════════════════════════════════════
+   Detail Broadcast — Donut Summary Card
+   ══════════════════════════════════════════ */
+
+/* Header */
 .waba-detail-header {
     background: #fff; border: 0.5px solid #E4EAF2;
     border-radius: 10px; box-shadow: 0 1px 3px rgba(16,42,74,0.06);
-    padding: 11px 16px; margin-bottom: 12px;
+    padding: 11px 16px; margin-bottom: 10px;
     display: flex; align-items: center; gap: 12px;
 }
 .waba-detail-icon {
@@ -22,102 +24,63 @@
 .waba-detail-header h4 { font-size: 13px; font-weight: 600; color: #1E2A4A; margin: 0; }
 .waba-detail-header p  { font-size: 11px; color: #64748B; margin: 2px 0 0; }
 
-/* Stat cards */
-/* bc-summary: 1 hero metric + breakdown grid */
-.bc-summary {
-    display: flex; background: #fff;
-    border: 0.5px solid #E4EAF2; border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(16,42,74,0.06); overflow: hidden;
-    margin-bottom: 12px;
-}
-.bc-summary-hero {
-    padding: 14px 20px; border-right: 0.5px solid #E4EAF2;
-    min-width: 150px; display: flex; flex-direction: column;
-    justify-content: center; gap: 1px; flex-shrink: 0;
-}
-.bc-summary-hero .lbl {
-    font-size: 9.5px; color: #64748B; text-transform: uppercase;
-    letter-spacing: .5px; font-weight: 600;
-}
-.bc-summary-hero .val {
-    font-size: 32px; font-weight: 700; color: #16A34A;
-    line-height: 1; margin: 3px 0 2px;
-}
-.bc-summary-hero .val.rate-mid  { color: #D97706; }
-.bc-summary-hero .val.rate-low  { color: #DC2626; }
-.bc-summary-hero .sub { font-size: 10px; color: #94A3B8; }
-.bc-summary-grid {
-    flex: 1; display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 1px; background: #F1F5F9;
-}
-.bc-summary-grid > div {
-    background: #fff; padding: 10px 14px;
-    font-size: 11px; color: #64748B; line-height: 1.3;
-}
-.bc-summary-grid b {
-    display: block; font-size: 17px; font-weight: 600;
-    color: #1E2A4A; margin-top: 1px;
-}
-.bc-dot { margin-right: 3px; }
-@media (max-width: 768px) {
-    .bc-summary { flex-direction: column; }
-    .bc-summary-hero { border-right: none; border-bottom: 0.5px solid #E4EAF2; }
-    .bc-summary-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* Progress bar overall */
-.overall-progress-wrap {
+/* Donut summary card */
+.bc-donut-card {
     background: #fff; border: 0.5px solid #E4EAF2;
-    border-radius: 10px; padding: 11px 16px;
-    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(16,42,74,0.06);
+    border-radius: 10px; box-shadow: 0 1px 3px rgba(16,42,74,0.06);
+    padding: 14px 18px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 20px;
 }
-.overall-progress-bar {
-    height: 8px; border-radius: 5px;
-    background: #EEF2F7; overflow: hidden;
-    margin: 8px 0; display: flex;
+.bc-donut-wrap { flex-shrink: 0; width: 160px; }
+.bc-donut-legend { flex: 1; }
+.bc-legend-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0; column-gap: 20px;
 }
-.overall-progress-fill {
-    height: 100%; border-radius: 0;
-    background: #16A34A; transition: width 0.8s ease;
+.bc-legend-row {
+    display: flex; align-items: baseline;
+    justify-content: space-between;
+    padding: 5px 0; border-bottom: 0.5px solid #F1F5F9;
+    font-size: 12px; color: #64748B;
 }
-.overall-progress-read  { height: 100%; background: #2E8DE1; }
-.overall-progress-fail  { height: 100%; background: #DC2626; }
-.overall-progress-timeout { height: 100%; background: #9B8EC4; }
+.bc-legend-row:last-child { border-bottom: none; }
+.bc-legend-row .lbl { display: flex; align-items: center; gap: 5px; }
+.bc-legend-row .num { font-size: 15px; font-weight: 600; color: #1E2A4A; }
+.bc-legend-row.is-total .lbl { font-weight: 600; color: #1E2A4A; }
+.bc-legend-row.is-total .num { font-size: 16px; color: #1B5FA6; }
+.bc-legend-sub {
+    font-size: 10px; color: #94A3B8; margin-top: 8px; padding-top: 8px;
+    border-top: 0.5px solid #F1F5F9;
+}
+.bc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+    .bc-donut-card { flex-direction: column; align-items: flex-start; }
+    .bc-donut-wrap { width: 100%; }
+    .bc-legend-grid { grid-template-columns: 1fr 1fr; }
+}
 
 /* Table card */
 .table-card {
-    border-radius: 14px;
-    border: none;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    overflow: hidden;
+    border-radius: 10px; border: 0.5px solid #E4EAF2 !important;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06); overflow: hidden;
 }
 .table-card .card-header {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-    border-bottom: 1px solid #e5e7eb;
-    padding: 1rem 1.5rem;
+    background: #F5F8FC !important; border-bottom: 0.5px solid #E4EAF2 !important;
+    padding: 9px 14px !important;
 }
-.table-card .card-header .card-title { font-weight: 700; font-size: 0.95rem; color: #1e293b; }
 
 #resultBlash thead th {
-    background: #f8fafc;
-    color: #374151;
-    font-size: 0.76rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-bottom: 2px solid #e5e7eb;
-    padding: 0.85rem 1rem;
+    background: #F5F8FC; color: #374151;
+    font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    border-bottom: 1px solid #E4EAF2; padding: 8px 12px;
 }
 #resultBlash tbody td {
-    padding: 0.75rem 1rem;
-    vertical-align: middle;
-    font-size: 0.87rem;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 8px 12px; vertical-align: middle;
+    font-size: 13px; border-bottom: 1px solid #F1F5F9;
 }
-#resultBlash tbody tr:hover td { background: #fafafa; }
-
-.badge.bg-success-transparent { background: rgba(16,185,129,0.12) !important; }
-.badge.bg-danger-transparent  { background: rgba(239,68,68,0.12)  !important; }
+#resultBlash tbody tr:hover td { background: #FAFCFF; }
 </style>
 @endsection
 
@@ -154,43 +117,45 @@
     </div>
 </div>
 
-{{-- Summary Card: 1 hero metric + 6-grid rincian --}}
-<div class="bc-summary" id="statCards">
-    {{-- Hero: Delivery Rate --}}
-    <div class="bc-summary-hero">
-        <div class="lbl">Delivery Rate</div>
-        <div class="val" id="statRate">–</div>
-        <div class="sub" id="statRateSub">– / – sampai HP</div>
+{{-- ═══ Donut Summary Card ═══ --}}
+<div class="bc-donut-card" id="statCards">
+    {{-- Donut chart --}}
+    <div class="bc-donut-wrap">
+        <div id="donutChart"></div>
     </div>
-    {{-- Grid: 6 metrik rincian --}}
-    <div class="bc-summary-grid">
-        <div><span class="bc-dot" style="color:#94A3B8">●</span> Terkirim<b id="statSent">–</b></div>
-        <div><span class="bc-dot" style="color:#16A34A">●</span> Delivered<b id="statDelivered">–</b></div>
-        <div><span class="bc-dot" style="color:#2E8DE1">●</span> Dibaca<b id="statRead">–</b></div>
-        <div><span class="bc-dot" style="color:#DC2626">●</span> Gagal asli<b id="statFailed">–</b></div>
-        <div><span class="bc-dot" style="color:#5B3FB0">●</span> Nyangkut<b id="statTimeout">–</b></div>
-        <div><span class="bc-dot" style="color:#CBD5E1">●</span> Menunggu<b id="statPending">–</b></div>
+    {{-- Legend angka --}}
+    <div class="bc-donut-legend">
+        <div class="bc-legend-grid">
+            <div class="bc-legend-row">
+                <span class="lbl"><span class="bc-dot" style="background:#16A34A"></span>Delivered</span>
+                <span class="num" id="statDelivered">–</span>
+            </div>
+            <div class="bc-legend-row">
+                <span class="lbl"><span class="bc-dot" style="background:#2E8DE1"></span>Dibaca</span>
+                <span class="num" id="statRead">–</span>
+            </div>
+            <div class="bc-legend-row">
+                <span class="lbl"><span class="bc-dot" style="background:#DC2626"></span>Gagal asli</span>
+                <span class="num" id="statFailed">–</span>
+            </div>
+            <div class="bc-legend-row">
+                <span class="lbl"><span class="bc-dot" style="background:#9B8EC4"></span>Nyangkut</span>
+                <span class="num" id="statTimeout">–</span>
+            </div>
+            <div class="bc-legend-row">
+                <span class="lbl"><span class="bc-dot" style="background:#E2E8F0"></span>Menunggu</span>
+                <span class="num" id="statPending">–</span>
+            </div>
+            <div class="bc-legend-row is-total">
+                <span class="lbl">Total</span>
+                <span class="num" id="statTotal">–</span>
+            </div>
+        </div>
+        <div class="bc-legend-sub" id="legendSub">–</div>
     </div>
 </div>
 
 
-{{-- Overall Progress --}}
-<div class="overall-progress-wrap mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <span class="fw-600" style="font-size:12px;color:#1E2A4A;">Progress Pengiriman</span>
-        <span id="progressLabel" style="font-size:12px;font-weight:600;color:#16A34A;">–</span>
-    </div>
-    <div class="overall-progress-bar">
-        <div class="overall-progress-fill" id="progressFill" style="width:0%"></div>
-    </div>
-    <div class="d-flex gap-4 flex-wrap" style="font-size:0.76rem;color:#9ca3af;">
-        <span><span style="color:#16A34A;font-weight:600;">■</span> Delivered</span>
-        <span><span style="color:#2E8DE1;font-weight:600;">■</span> Dibaca</span>
-        <span><span style="color:#DC2626;font-weight:600;">■</span> Gagal</span>
-        <span><span style="color:#9B8EC4;font-weight:600;">■</span> Nyangkut</span>
-        <span id="progressSub"></span>
-    </div>
-</div>
 
 {{-- Detail DataTable --}}
 <div class="card table-card">
@@ -275,47 +240,66 @@
                     const sent           = json.sent             ?? 0;
                     const delivered      = json.delivered        ?? 0;
                     const read           = json.read             ?? 0;
-                    const deliveryFailed = json.deliveryFailed   ?? 0;  // gagal asli Meta
-                    const timeout        = json.deliveryTimeout  ?? 0;  // recovery/nyangkut
+                    const deliveryFailed = json.deliveryFailed   ?? 0;
+                    const timeout        = json.deliveryTimeout  ?? 0;
+                    const pending        = Math.max(0, total - delivered - read - deliveryFailed - timeout);
+                    const reached        = delivered + read;
+                    const deliveryRate   = total > 0 ? Math.round(reached / total * 100) : 0;
 
-                    // Delivery rate = (delivered + read) / total — TIDAK include timeout/gagal
-                    const reached      = delivered + read;
-                    const deliveryRate = total > 0 ? Math.round(reached / total * 100) : 0;
-
-                    // Segmented bar %
-                    const delivPct    = total > 0 ? Math.round(delivered / total * 100) : 0;
-                    const readPct     = total > 0 ? Math.round(read      / total * 100) : 0;
-                    const failPct     = total > 0 ? Math.round(deliveryFailed / total * 100) : 0;
-                    const timeoutPct  = total > 0 ? Math.round(timeout   / total * 100) : 0;
-
-                    const pending = total - sent - delivered - read - deliveryFailed - timeout;
-
-                    // Hero: Delivery Rate + warna responsif
-                    const rateEl = $('#statRate');
-                    rateEl.text(deliveryRate + '%');
-                    rateEl.removeClass('rate-mid rate-low');
-                    if (deliveryRate < 40)      rateEl.addClass('rate-low');
-                    else if (deliveryRate < 70) rateEl.addClass('rate-mid');
-
-                    $('#statRateSub').text(reached.toLocaleString('id-ID') + ' / ' + total.toLocaleString('id-ID') + ' sampai HP');
-
-                    // Grid rincian
-                    $('#statSent').text(sent.toLocaleString('id-ID'));
+                    // Legend angka
+                    $('#statTotal').text(total.toLocaleString('id-ID'));
                     $('#statDelivered').text(delivered.toLocaleString('id-ID'));
                     $('#statRead').text(read.toLocaleString('id-ID'));
                     $('#statFailed').text(deliveryFailed.toLocaleString('id-ID'));
                     $('#statTimeout').text(timeout.toLocaleString('id-ID'));
-                    $('#statPending').text(Math.max(0, pending).toLocaleString('id-ID'));
+                    $('#statPending').text(pending.toLocaleString('id-ID'));
+                    $('#legendSub').text(sent.toLocaleString('id-ID') + ' terkirim ke Meta · ' + reached.toLocaleString('id-ID') + ' sampai HP');
 
-                    // Segmented progress bar
-                    $('#progressFill').css('width', delivPct + '%');
-                    $('#progressLabel').text(deliveryRate + '%');
-                    $('#progressLabel').css('color', deliveryRate >= 70 ? '#16A34A' : deliveryRate >= 40 ? '#D97706' : '#DC2626');
+                    // Donut chart — update atau init
+                    const rateColor = deliveryRate >= 70 ? '#16A34A' : deliveryRate >= 40 ? '#D97706' : '#DC2626';
+                    const safeDelivered = delivered || 0;
+                    const safeRead      = read      || 0;
+                    const safeFailed    = deliveryFailed || 0;
+                    const safeTimeout   = timeout   || 0;
+                    const safePending   = pending   || 0;
+                    // Ensure at least 1 for empty chart
+                    const totalSafe = safeDelivered + safeRead + safeFailed + safeTimeout + safePending;
+                    const series = totalSafe > 0
+                        ? [safeDelivered, safeRead, safeFailed, safeTimeout, safePending]
+                        : [0, 0, 0, 0, 1];
 
-                    let sub = reached.toLocaleString('id-ID') + ' sampai HP dari ' + total.toLocaleString('id-ID') + ' total';
-                    if (deliveryFailed > 0) sub += ' · ' + deliveryFailed.toLocaleString('id-ID') + ' gagal asli';
-                    if (timeout > 0)        sub += ' · ' + timeout.toLocaleString('id-ID') + ' nyangkut';
-                    $('#progressSub').text(sub);
+                    if (window.donutChart) {
+                        window.donutChart.updateOptions({
+                            series: series,
+                            plotOptions: { pie: { donut: { labels: { show: true,
+                                value: { show: false },
+                                total: { show: true, label: deliveryRate + '%', formatter: () => 'sampai HP',
+                                    color: rateColor, fontSize: '22px', fontWeight: '700' }
+                            }}}}
+                        });
+                    } else {
+                        window.donutChart = new ApexCharts(document.querySelector('#donutChart'), {
+                            series: series,
+                            labels: ['Delivered','Dibaca','Gagal asli','Nyangkut','Menunggu'],
+                            colors: ['#16A34A','#2E8DE1','#DC2626','#9B8EC4','#E2E8F0'],
+                            chart: { type: 'donut', height: 160, sparkline: { enabled: false },
+                                     animations: { enabled: true, speed: 600 }, toolbar: { show: false } },
+                            legend: { show: false },
+                            dataLabels: { enabled: false },
+                            stroke: { width: 0 },
+                            plotOptions: { pie: { donut: { size: '68%', labels: { show: true,
+                                name: { show: true, fontSize: '11px', color: '#64748B', offsetY: 14 },
+                                value: { show: false },
+                                total: { show: true,
+                                    label: deliveryRate + '%',
+                                    formatter: () => 'sampai HP',
+                                    color: rateColor, fontSize: '22px', fontWeight: '700'
+                                }
+                            }}}},
+                            tooltip: { y: { formatter: (v) => v.toLocaleString('id-ID') + ' orang' } }
+                        });
+                        window.donutChart.render();
+                    }
                 }
             }
         });
