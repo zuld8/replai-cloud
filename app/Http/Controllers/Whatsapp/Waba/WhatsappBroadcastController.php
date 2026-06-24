@@ -390,12 +390,24 @@ class WhatsappBroadcastController extends Controller
                     return '<span class="text-muted">-</span>';
                 }
 
-                // Recovery/timeout: plain text, bukan JSON Meta (tidak dimulai '{')
+                // Recovery/timeout: plain text, bukan JSON Meta — terjemahkan ke Indonesia
                 $rCheck = (str_starts_with(ltrim($error), '{')) ? @json_decode($error, true) : null;
                 if (!is_array($rCheck)) {
+                    $translations = [
+                        'Auto-resolved'       => 'Status tertunda, direset otomatis',
+                        'Marked as completed' => 'Ditandai selesai oleh sistem',
+                        'Reset from stuck'    => 'Status tertunda, direset otomatis',
+                        'BATCH_INCOMPLETE'    => 'Pengiriman tidak lengkap — coba ulang',
+                        'Limit Pengiriman'    => 'Batas pengiriman harian habis',
+                        'not retryable'       => 'Status akhir, tidak dapat diulang',
+                    ];
+                    $msg = substr($error, 0, 100);
+                    foreach ($translations as $needle => $label) {
+                        if (str_contains($msg, $needle)) { $msg = $label; break; }
+                    }
                     return '<span class="text-muted" style="font-size:11px;font-style:italic;">'
-                         . '<i class="bx bx-info-circle me-1"></i>'
-                         . e(substr($error, 0, 80)) . '</span>';
+                         . '<i class="bx bx-refresh me-1"></i>'
+                         . e($msg) . '</span>';
                 }
 
                 $r = $rCheck;
