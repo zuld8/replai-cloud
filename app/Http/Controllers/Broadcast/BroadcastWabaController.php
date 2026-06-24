@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Broadcast;
 use App\Http\Controllers\Controller;
 use App\Models\MetaAccount;
 use Illuminate\Http\Request;
+use App\Services\Broadcast\BroadcastStatsService;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -101,84 +102,26 @@ class BroadcastWabaController extends Controller
                     <small class="text-secondary">' . $dt->format('H:i') . ' WIB</small>
                 </div>';
             })
-            ->addColumn('stats_col', function ($row) {
-                $total  = (int) $row->total_recipients;
-                $sent   = (int) $row->total_sent;
-                $failed = (int) ($row->total_failed ?? 0);
-                $delivered = (int) ($row->total_delivered ?? 0);
-                $read   = (int) ($row->total_read ?? 0);
-                $deliveryFailed = (int) ($row->total_delivery_failed ?? 0);
-
-                if ($total === 0) {
-                    return '<span class="badge bg-secondary-transparent text-secondary rounded-pill px-3" style="background:rgba(100,116,139,0.12)!important;">
-                        <i class="bx bx-time me-1"></i>Menunggu
-                    </span>';
-                }
-
-                // Use delivery stats for more accurate percentage
-                $realDelivered = $delivered + $read;
-                $realFailed = $failed + $deliveryFailed;
-                $pct = round($sent / $total * 100);
-                $deliveryPct = $total > 0 ? round($realDelivered / $total * 100) : 0;
-
-                // Use DB status field as primary source of truth
-                $dbStatus = $row->status ?? '';
-                if ($dbStatus === 'partial_success') {
-                    $color = '#d97706'; $label = 'Sebagian'; $icon = 'bxs-error-circle'; $bg = 'rgba(245,158,11,0.15)'; $tc = '#d97706';
-                } elseif ($dbStatus === 'failed') {
-                    $color = '#dc2626'; $label = 'Gagal';    $icon = 'bx-x-circle';      $bg = 'rgba(239,68,68,0.12)';  $tc = '#dc2626';
-                } elseif ($dbStatus === 'success') {
-                    $color = '#059669'; $label = 'Selesai';  $icon = 'bx-check-circle';  $bg = 'rgba(16,185,129,0.12)'; $tc = '#059669';
-                } elseif ($dbStatus === 'processing') {
-                    $color = '#0284c7'; $label = 'Proses';   $icon = 'bx-loader-alt';    $bg = 'rgba(2,132,199,0.12)';  $tc = '#0284c7';
-                } elseif ($realFailed > 0 && $realFailed > $realDelivered) {
-                    $color = '#dc2626'; $label = 'Gagal';    $icon = 'bx-x-circle';     $bg = 'rgba(239,68,68,0.12)';   $tc = '#dc2626';
-                } elseif ($pct >= 100 && $deliveryPct >= 50) {
-                    $color = '#059669'; $label = 'Selesai';  $icon = 'bx-check-circle'; $bg = 'rgba(16,185,129,0.12)'; $tc = '#059669';
-                } elseif ($pct >= 50) {
-                    $color = '#d97706'; $label = 'Sebagian'; $icon = 'bxs-hourglass';   $bg = 'rgba(245,158,11,0.12)';  $tc = '#d97706';
-                } else {
-                    $color = '#dc2626'; $label = 'Gagal';    $icon = 'bx-x-circle';     $bg = 'rgba(239,68,68,0.12)';   $tc = '#dc2626';
-                }
-
-                $barFill = min(100, $pct);
-
-                // Show delivery detail
-                $deliveryInfo = '';
-                if ($realDelivered > 0 || $realFailed > 0) {
-                    $parts = [];
-                    if ($delivered > 0) $parts[] = $delivered . ' delivered';
-                    if ($read > 0) $parts[] = $read . ' dibaca';
-                    if ($deliveryFailed > 0) $parts[] = $deliveryFailed . ' gagal';
-                    $deliveryInfo = '<small class="text-muted" style="font-size:0.65rem;">' . implode(' · ', $parts) . '</small>';
-                }
-
-                return '<div class="d-flex flex-column gap-1">
-                    <span class="badge rounded-pill px-2 py-1" style="background:' . $bg . ';color:' . $tc . ';font-size:0.72rem;">
-                        <i class="bx ' . $icon . ' me-1"></i>' . $label . ' ' . $pct . '%
-                    </span>
-                    <small class="text-muted" style="font-size:0.7rem;">' . number_format($sent) . '/' . number_format($total) . ' terkirim</small>
-                    ' . $deliveryInfo . '
-                    <div style="height:4px;border-radius:2px;background:#e5e7eb;overflow:hidden;">
-                        <div style="height:100%;width:' . $barFill . '%;background:' . $color . ';border-radius:2px;transition:width 0.4s;"></div>
-                    </div>
-                </div>';
+            ->addColumn('stats_col', function (\$row) {
+                // Gunakan BroadcastStatsService — satu sumber kebenaran
+                \$failed = (int)(\$row->total_failed ?? 0) + (int)(\$row->total_delivery_failed ?? 0);
+                return BroadcastStatsService::renderStatsCol(
+                    (int) \$row->total_recipients,
+                    (int) (\$row->total_delivered ?? 0),
+                    (int) (\$row->total_read ?? 0),
+                    \$failed,
+                    (string) (\$row->status ?? '')
+                );
             })
             ->addColumn('action_col', function ($row) use ($meta) {
                 $editUrl   = route('waba.broadcast.update', [$meta->id, $row->id]);
                 $detailUrl = route('waba.broadcast.detail', [$meta->id, $row->id]);
                 $deleteUrl = route('blash.delete', $row->id);
-                return '<div class="d-flex gap-1">
-                    <a href="' . $editUrl . '" class="btn btn-sm btn-outline-warning btn-icon" title="Edit">
-                        <i class="bx bx-pencil"></i>
-                    </a>
-                    <a href="' . $detailUrl . '" class="btn btn-sm btn-outline-info btn-icon" title="Detail">
-                        <i class="bx bx-detail"></i>
-                    </a>
-                    <a href="' . $deleteUrl . '" class="btn btn-sm btn-outline-danger btn-icon deletebutton" title="Hapus">
-                        <i class="bx bx-trash"></i>
-                    </a>
-                </div>';
+                return '<div class="d-flex gap-1">'
+                     . '<a href="' . $editUrl   . '" class="bc-action-btn bc-action-edit"   title="Edit"><i class="bx bx-pencil"></i></a>'
+                     . '<a href="' . $detailUrl . '" class="bc-action-btn bc-action-view"   title="Detail"><i class="bx bx-detail"></i></a>'
+                     . '<a href="' . $deleteUrl . '" class="bc-action-btn bc-action-delete deletebutton" title="Hapus"><i class="bx bx-trash"></i></a>'
+                     . '</div>';
             })
             ->rawColumns(['title_col', 'schedule_col', 'stats_col', 'action_col'])
             ->with([

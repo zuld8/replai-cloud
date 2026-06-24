@@ -770,3 +770,42 @@ body, .app-content { font-size: 0.875rem; }
 .waba-badge-limited  { background: #FEF3C7; color: #854F0B; }
 .waba-badge-red      { background: #FEECEC; color: #B91C1C; }
 .waba-badge-muted    { background: #F1F5F9; color: #64748B; }
+
+/* ════════════════════════════════════════════════════
+   Broadcast WABA — Status Column (dipakai 2 halaman)
+   ════════════════════════════════════════════════════ */
+.bc-status { min-width: 160px; }
+.bc-status-head {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 4px;
+}
+.bc-rate { font-size: 10px; color: #64748B; font-weight: 500; }
+.bc-bar {
+    height: 7px; background: #EEF2F7;
+    border-radius: 4px; overflow: hidden;
+    display: flex; margin-bottom: 3px;
+}
+.bc-nums { font-size: 10px; color: #94A3B8; line-height: 1.4; }
+.bc-badge {
+    display: inline-block; font-size: 10px;
+    font-weight: 600; padding: 2px 8px;
+    border-radius: 6px; line-height: 1.4;
+}
+.bc-selesai  { background: #DCFCE7; color: #166534; }
+.bc-berjalan { background: #EAF3FC; color: #1B5FA6; }
+.bc-gagal    { background: #FEECEC; color: #B91C1C; }
+.bc-menunggu { background: #F1F5F9; color: #64748B; }
+
+/* Broadcast action chips */
+.bc-action-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 7px;
+    border: 0.5px solid #E4EAF2; font-size: 13px;
+    cursor: pointer; transition: all 0.15s; text-decoration: none;
+}
+.bc-action-edit   { background: #F2F8FE; color: #1B5FA6; }
+.bc-action-edit:hover   { background: #EAF3FC; color: #1B5FA6; }
+.bc-action-view   { background: #F0FDF4; color: #166534; }
+.bc-action-view:hover   { background: #DCFCE7; color: #166534; }
+.bc-action-delete { background: #FFF5F5; color: #DC2626; }
+.bc-action-delete:hover { background: #FEECEC; color: #DC2626; }

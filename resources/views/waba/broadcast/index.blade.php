@@ -45,15 +45,15 @@
 
 /* Table card */
 .broadcast-card {
-    border-radius: 16px;
-    border: none;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    border: 0.5px solid #E4EAF2 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06) !important;
     overflow: hidden;
 }
 .broadcast-card .card-header {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-    border-bottom: 1px solid #e5e7eb;
-    padding: 1rem 1.5rem;
+    background: #F5F8FC !important;
+    border-bottom: 0.5px solid #E4EAF2 !important;
+    padding: 9px 14px !important;
 }
 
 /* DataTable overrides */
@@ -168,20 +168,11 @@
                             <small class="text-muted ms-2">Terbaru di atas</small>
                         </div>
                         <div class="d-flex gap-2" id="filterBtns">
-                            <button class="btn btn-sm btn-light rounded-pill active px-3"
-                                    onclick="setFilter(null,this)">Semua</button>
-                            <button class="btn btn-sm btn-light rounded-pill px-3"
-                                    onclick="setFilter('done',this)"
-                                    style="color:#0EA5E9">✅ Selesai</button>
-                            <button class="btn btn-sm btn-light rounded-pill px-3"
-                                    onclick="setFilter('pending',this)"
-                                    style="color:#9ca3af">⏳ Menunggu</button>
-                            <button class="btn btn-sm btn-light rounded-pill px-3"
-                                    onclick="setFilter('partial_success',this)"
-                                    style="color:#d97706">⚠️ Sebagian</button>
-                            <button class="btn btn-sm btn-light rounded-pill px-3"
-                                    onclick="setFilter('failed',this)"
-                                    style="color:#dc2626">❌ Gagal</button>
+                            <button class="bc-filter-btn active" onclick="setFilter(null,this)">Semua</button>
+                            <button class="bc-filter-btn" onclick="setFilter('done',this)">✓ Selesai</button>
+                            <button class="bc-filter-btn" onclick="setFilter('pending',this)">⏳ Menunggu</button>
+                            <button class="bc-filter-btn" onclick="setFilter('partial_success',this)">⚠ Sebagian</button>
+                            <button class="bc-filter-btn" onclick="setFilter('failed',this)">✕ Gagal</button>
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -190,9 +181,9 @@
                                 <thead>
                                     <tr>
                                         <th style="width:5%">#</th>
-                                        <th>Judul Broadcast</th>
+                                        <th>Nama Kampanye</th>
                                         <th>Jadwal</th>
-                                        <th>Kategori Kontak</th>
+                                        <th>Kategori</th>
                                         <th>Template</th>
                                         <th>Status Pengiriman</th>
                                         <th style="width:120px">Aksi</th>
@@ -256,7 +247,7 @@ const dtTable = $('#broadcastTable').DataTable({
         { data: 'schedule_col', name: 'schedule_col', orderable: true  },
         { data: 'category_name',name: 'category_name',orderable: false },
         { data: 'template_name',name: 'template_name',orderable: false },
-        { data: 'status_col',   name: 'status_col',   orderable: false },
+        { data: 'stats_col',    name: 'stats_col',     orderable: false },
         { data: 'action_col',   name: 'action_col',   orderable: false },
     ],
     drawCallback: function(settings) {
@@ -270,7 +261,7 @@ const dtTable = $('#broadcastTable').DataTable({
 
 function setFilter(f, btn) {
     currentFilter = f;
-    $('.btn[onclick*="setFilter"]').removeClass('active');
+    $('.bc-filter-btn').removeClass('active');
     $(btn).addClass('active');
     dtTable.ajax.reload();
 }

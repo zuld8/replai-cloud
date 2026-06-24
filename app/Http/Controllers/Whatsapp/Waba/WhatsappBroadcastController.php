@@ -11,6 +11,7 @@ use App\Observers\Blash\BlashWhatsappObserver;
 use App\Observers\WhatsappOfficial\WhatsappBroadcastObserver;
 use App\Observers\WhatsappOfficial\WhatsappOfficialServiceObserver;
 use App\Observers\WhatsappOfficial\WhatsappTemplateServiceObserver;
+use App\Services\Broadcast\BroadcastStatsService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
@@ -75,8 +76,9 @@ class WhatsappBroadcastController extends Controller
                 'bw.stat_total as total_recipients',
                 'bw.stat_sent as total_sent',
                 'bw.stat_delivered as total_delivered',
-                'bw.stat_delivery_failed as total_failed',
-                'bw.stat_read as total_queued',
+                'bw.stat_failed as total_failed',
+                'bw.stat_delivery_failed as total_delivery_failed',
+                'bw.stat_read as total_read',  // stat_read = DIBACA (bukan antrian)
             ])
             ->orderBy('bw.created_at', 'desc');
 
@@ -109,94 +111,28 @@ class WhatsappBroadcastController extends Controller
                     <small class="text-secondary">' . $dt->format('H:i') . ' WIB</small>
                 </div>';
             })
-            ->addColumn('status_col', function ($row) {
-                $status    = $row->status;
-                $total     = (int) $row->total_recipients;
-                $sent      = (int) $row->total_sent;
-                $delivered = (int) $row->total_delivered;
-                $read      = (int) $row->total_queued;  // stat_read mapped as total_queued
-                $failed    = (int) $row->total_failed;
-
-                // ── Menunggu: belum ada penerima ──────────────────────────────
-                if ($total === 0) {
-                    return '<span class="badge bg-secondary-transparent text-secondary rounded-pill px-3">
-                        <i class="bx bx-time me-1"></i>Menunggu
-                    </span>';
-                }
-
-                $pct          = round($sent / $total * 100);
-                // Delivery rate = (delivered + read) / total — sama dengan halaman detail
-                $deliveryRate = $total > 0 ? round(($delivered + $read) / $total * 100) : 0;
-                $sentFull     = number_format($sent);
-                $totalFull    = number_format($total);
-                $delivFull    = number_format($delivered + $read);
-                $failFull     = number_format($failed);
-                $subtext      = $sentFull . '/' . $totalFull . ' terkirim &middot; ' . $delivFull . ' delivered+dibaca &middot; ' . $failFull . ' gagal';
-
-                // ── Gagal total ────────────────────────────────────────────────
-                if ($status === 'failed') {
-                    return '<div class="d-flex flex-column gap-1">
-                        <span class="badge bg-danger-transparent text-danger rounded-pill px-3">
-                            <i class="bx bx-x-circle me-1"></i>Gagal
-                        </span>
-                        <small class="text-muted" style="font-size:0.7rem;">0/' . $totalFull . ' terkirim</small>
-                    </div>';
-                }
-
-                // ── Sedang proses ──────────────────────────────────────────────
-                if ($status === 'processing') {
-                    return '<div class="d-flex flex-column gap-1">
-                        <span class="badge bg-info-transparent text-info rounded-pill px-3">
-                            <i class="bx bx-loader-alt bx-spin me-1"></i>Proses ' . $pct . '%
-                        </span>
-                        <small class="text-muted" style="font-size:0.7rem;">' . $sentFull . '/' . $totalFull . ' terkirim</small>
-                    </div>';
-                }
-
-                // ── Selesai: warna berdasarkan delivery rate ───────────────────
-                // ≥80% → Hijau  |  60–79% → Biru  |  40–59% → Orange  |  <40% → Merah
-                if ($deliveryRate >= 80) {
-                    $badgeClass = 'bg-success-transparent text-success';
-                    $icon       = 'bx-check-double';
-                    $label      = 'Selesai Baik';
-                } elseif ($deliveryRate >= 60) {
-                    $badgeClass = 'bg-primary-transparent text-primary';
-                    $icon       = 'bx-check-circle';
-                    $label      = 'Selesai';
-                } elseif ($deliveryRate >= 40) {
-                    $badgeClass = 'bg-warning-transparent text-warning';
-                    $icon       = 'bx-check-circle';
-                    $label      = 'Parsial';
-                } else {
-                    $badgeClass = 'bg-danger-transparent text-danger';
-                    $icon       = 'bx-error-circle';
-                    $label      = 'Perlu Perhatian';
-                }
-
-                return '<div class="d-flex flex-column gap-1">
-                    <span class="badge ' . $badgeClass . ' rounded-pill px-3">
-                        <i class="bx ' . $icon . ' me-1"></i>' . $label . ' (' . $deliveryRate . '% delivery rate)
-                    </span>
-                    <small class="text-muted" style="font-size:0.7rem;">' . $subtext . '</small>
-                </div>';
+            ->addColumn('stats_col', function (\$row) {
+                // BroadcastStatsService — satu sumber kebenaran (sama dgn /app/broadcast/waba)
+                \$failed = (int)(\$row->total_failed ?? 0) + (int)(\$row->total_delivery_failed ?? 0);
+                return BroadcastStatsService::renderStatsCol(
+                    (int) \$row->total_recipients,
+                    (int) (\$row->total_delivered ?? 0),
+                    (int) (\$row->total_read ?? 0),      // stat_read = DIBACA
+                    \$failed,
+                    (string) (\$row->status ?? '')
+                );
             })
             ->addColumn('action_col', function ($row) use ($meta) {
                 $editUrl   = route('waba.broadcast.update', [$meta->id, $row->id]);
                 $detailUrl = route('waba.broadcast.detail', [$meta->id, $row->id]);
                 $deleteUrl = route('blash.delete', $row->id);
-                return '<div class="d-flex gap-1">
-                    <a href="' . $editUrl . '" class="btn btn-sm btn-outline-warning btn-icon" title="Edit">
-                        <i class="bx bx-pencil"></i>
-                    </a>
-                    <a href="' . $detailUrl . '" class="btn btn-sm btn-outline-info btn-icon" title="Detail">
-                        <i class="bx bx-detail"></i>
-                    </a>
-                    <a href="' . $deleteUrl . '" class="btn btn-sm btn-outline-danger btn-icon deletebutton" title="Hapus">
-                        <i class="bx bx-trash"></i>
-                    </a>
-                </div>';
+                return '<div class="d-flex gap-1">'
+                     . '<a href="' . $editUrl   . '" class="bc-action-btn bc-action-edit"   title="Edit"><i class="bx bx-pencil"></i></a>'
+                     . '<a href="' . $detailUrl . '" class="bc-action-btn bc-action-view"   title="Detail"><i class="bx bx-detail"></i></a>'
+                     . '<a href="' . $deleteUrl . '" class="bc-action-btn bc-action-delete deletebutton" title="Hapus"><i class="bx bx-trash"></i></a>'
+                     . '</div>';
             })
-            ->rawColumns(['title_col', 'schedule_col', 'status_col', 'action_col'])
+            ->rawColumns(['title_col', 'schedule_col', 'stats_col', 'action_col'])
             ->make(true);
     }
 
