@@ -215,9 +215,11 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <div class="card-title mb-0">Detail Penerima</div>
         <div class="d-flex gap-2" id="filterBadges">
-            <button class="btn btn-sm btn-light rounded-pill active" onclick="filterTable(null, this)">Semua</button>
-            <button class="btn btn-sm btn-light rounded-pill" onclick="filterTable('yes', this)" style="color:#0EA5E9;">✅ Antrian</button>
-            <button class="btn btn-sm btn-light rounded-pill" onclick="filterTable('no', this)"  style="color:#DC2626;">❌ Gagal</button>
+            <button class="bc-filter-btn active" onclick="filterTable(null, this)">Semua</button>
+            <button class="bc-filter-btn" onclick="filterTable('delivered', this)">✓✓ Delivered</button>
+            <button class="bc-filter-btn" onclick="filterTable('read', this)">✓✓ Dibaca</button>
+            <button class="bc-filter-btn" onclick="filterTable('failed_real', this)" style="color:#B91C1C">✕ Gagal</button>
+            <button class="bc-filter-btn" onclick="filterTable('timeout', this)" style="color:#5B3FB0">⟳ Nyangkut</button>
         </div>
     </div>
     <div class="card-body p-0">
