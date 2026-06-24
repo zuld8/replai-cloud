@@ -201,6 +201,14 @@ class WabaCallbackController extends Controller
                 return response()->json(['status' => 'ok']);
             }
 
+            // ── Handle smb_message_echoes (WA Hybrid / Coexistence detection) ──
+            // Meta ONLY sends this event for COEXISTENCE accounts (WA Business App + API).
+            // Paling tahan banting: tidak bergantung nilai platform_type dari GET endpoint.
+            if ($this->hasSmbMessageEchoes($data)) {
+                $this->processSmbMessageEchoes($data, $settings);
+                return response()->json(['status' => 'ok']);
+            }
+
             // ── Handle incoming messages ──
             if (!$this->validateCallbackStructure($data)) {
                 return response()->json(['status' => 'ok']);
@@ -236,6 +244,69 @@ class WabaCallbackController extends Controller
                 'url'   => $request->url(),
             ]);
             return response()->json(['status' => 'ok', 'handled' => false], 200);
+        }
+    }
+
+    /**
+     * Check if webhook payload is an smb_message_echoes event (Coexistence/Hybrid indicator).
+     * Meta ONLY sends this field for phone numbers in COEXISTENCE mode.
+     */
+    private function hasSmbMessageEchoes(array $data): bool
+    {
+        // Check all changes, not just [0] — Meta may batch multiple fields
+        $changes = $data['entry'][0]['changes'] ?? [];
+        foreach ($changes as $change) {
+            if (($change['field'] ?? '') === 'smb_message_echoes') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Process smb_message_echoes event — mark device as is_coexistence = true.
+     * Meta sends this ONLY for COEXISTENCE (WA Hybrid) accounts.
+     * More reliable than platform_type GET field which varies by API version.
+     */
+    private function processSmbMessageEchoes(array $data, Setting $settings): void
+    {
+        try {
+            $changes = $data['entry'][0]['changes'] ?? [];
+            foreach ($changes as $change) {
+                if (($change['field'] ?? '') !== 'smb_message_echoes') continue;
+
+                $phoneNumberId = $change['value']['metadata']['phone_number_id'] ?? null;
+                $displayPhone  = $change['value']['metadata']['display_phone_number'] ?? '';
+                $phoneNumber   = preg_replace('/[\\s\\-\\+]/', '', $displayPhone);
+
+                $device = null;
+                if ($phoneNumberId) {
+                    $device = WhatsappKeyAccount::whereRaw(
+                        "JSON_EXTRACT(meta_data, '$.whatsapp.phone_number_id') = ?",
+                        [$phoneNumberId]
+                    )->where('business_id', $settings->id)->first();
+                }
+                if (!$device && $phoneNumber) {
+                    $device = WhatsappKeyAccount::where('phone', $phoneNumber)
+                        ->where('business_id', $settings->id)->first();
+                }
+
+                if ($device) {
+                    $m = json_decode($device->meta_data, true) ?? [];
+                    if (empty($m['whatsapp']['is_coexistence'])) {
+                        $m['whatsapp']['is_coexistence'] = true;
+                        $device->meta_data = json_encode($m);
+                        $device->save();
+                        Log::info('WA Hybrid detected via smb_message_echoes', [
+                            'device_id'      => $device->id,
+                            'phone'          => $device->phone,
+                            'phone_number_id' => $phoneNumberId,
+                        ]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('smb_message_echoes handler error: ' . $e->getMessage());
         }
     }
 

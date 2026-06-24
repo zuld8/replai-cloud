@@ -274,6 +274,9 @@
         $firstDevice    = $account->devices->first();
         $metaWa         = json_decode($firstDevice?->meta_data ?? '{}', true);
         $platformType   = $metaWa['whatsapp']['platform_type'] ?? null;
+        // is_coexistence = true jika smb_message_echoes pernah diterima (paling reliable)
+        // ATAU platform_type === 'COEXISTENCE' dari Meta GET endpoint
+        $isCoexistence  = !empty($metaWa['whatsapp']['is_coexistence']) || $platformType === 'COEXISTENCE';
         $displayPhone   = $metaWa['whatsapp']['display_phone_number'] ?? '';
         $reviewStatus   = $detailBusiness['healt_status']['data']['account_review_status'] ?? '-';
         $qualityRating  = strtoupper($metaWa['whatsapp']['quality_rating'] ?? '');
@@ -329,7 +332,7 @@
                 <div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;">
 
                     {{-- Platform type badge (FIXED: pakai platform_type, bukan account_mode) --}}
-                    @if($platformType === 'COEXISTENCE')
+                    @if($isCoexistence)
                         <span class="waba-badge waba-badge-hybrid" title="WA Business App + API sekaligus">🔀 WA Hybrid</span>
                     @else
                         <span class="waba-badge waba-badge-api" title="API Only mode">⚡ API Only</span>
