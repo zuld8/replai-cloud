@@ -154,65 +154,25 @@
     </div>
 </div>
 
-{{-- Summary Stat Cards --}}
-<div class="row mb-4" id="statCards">
-    <div class="col-6 col-lg-2 mb-3">
-        <div class="waba-stat-card stat-total">
-            <div class="stat-label">Total Penerima</div>
-            <div class="stat-value" id="statTotal">–</div>
-            <div class="stat-sub">Semua kontak</div>
-            <i class="bx bx-group stat-icon"></i>
-        </div>
+{{-- Summary Card: 1 hero metric + 6-grid rincian --}}
+<div class="bc-summary" id="statCards">
+    {{-- Hero: Delivery Rate --}}
+    <div class="bc-summary-hero">
+        <div class="lbl">Delivery Rate</div>
+        <div class="val" id="statRate">–</div>
+        <div class="sub" id="statRateSub">– / – sampai HP</div>
     </div>
-    <div class="col-6 col-lg-2 mb-3">
-        <div class="waba-stat-card">
-            <div class="stat-label">Terkirim</div>
-            <div class="stat-value" id="statSent">–</div>
-            <div class="stat-sub">Masuk antrian Meta</div>
-            <i class="bx bx-check stat-icon" style="color:#64748B"></i>
-        </div>
-    </div>
-    <div class="col-6 col-lg-2 mb-3">
-        <div class="waba-stat-card" style="background:#047857;color:#fff;">
-            <div class="stat-label">Delivered</div>
-            <div class="stat-value" id="statDelivered">–</div>
-            <div class="stat-sub">Sampai ke HP</div>
-            <i class="bx bx-check-double stat-icon"></i>
-        </div>
-    </div>
-    <div class="col-6 col-lg-2 mb-3">
-        <div class="waba-stat-card" style="background:#0284c7;color:#fff;">
-            <div class="stat-label">Dibaca</div>
-            <div class="stat-value" id="statRead">–</div>
-            <div class="stat-sub">Pesan dibuka</div>
-            <i class="bx bx-show stat-icon"></i>
-        </div>
-    </div>
-    <div class="col-6 col-lg-2 mb-3">
-        <div class="waba-stat-card stat-failed">
-            <div class="stat-label">Gagal Asli</div>
-            <div class="stat-value" id="statFailed">–</div>
-            <div class="stat-sub">Error code Meta</div>
-            <i class="bx bx-x-circle stat-icon"></i>
-        </div>
-    </div>
-    <div class="col-6 col-lg-2 mb-3">
-        <div class="waba-stat-card stat-timeout">
-            <div class="stat-label">Nyangkut</div>
-            <div class="stat-value" id="statTimeout">–</div>
-            <div class="stat-sub">Recovery/timeout</div>
-            <i class="bx bx-refresh stat-icon"></i>
-        </div>
-    </div>
-    <div class="col-6 col-lg-2 mb-3">
-        <div class="waba-stat-card stat-rate">
-            <div class="stat-label">Delivery Rate</div>
-            <div class="stat-value" id="statRate">–</div>
-            <div class="stat-sub">Pesan sampai HP</div>
-            <i class="bx bx-trending-up stat-icon"></i>
-        </div>
+    {{-- Grid: 6 metrik rincian --}}
+    <div class="bc-summary-grid">
+        <div><span class="bc-dot" style="color:#94A3B8">●</span> Terkirim<b id="statSent">–</b></div>
+        <div><span class="bc-dot" style="color:#16A34A">●</span> Delivered<b id="statDelivered">–</b></div>
+        <div><span class="bc-dot" style="color:#2E8DE1">●</span> Dibaca<b id="statRead">–</b></div>
+        <div><span class="bc-dot" style="color:#DC2626">●</span> Gagal asli<b id="statFailed">–</b></div>
+        <div><span class="bc-dot" style="color:#5B3FB0">●</span> Nyangkut<b id="statTimeout">–</b></div>
+        <div><span class="bc-dot" style="color:#CBD5E1">●</span> Menunggu<b id="statPending">–</b></div>
     </div>
 </div>
+
 
 {{-- Overall Progress --}}
 <div class="overall-progress-wrap mb-4">
