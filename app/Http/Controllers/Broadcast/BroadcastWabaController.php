@@ -102,15 +102,14 @@ class BroadcastWabaController extends Controller
                     <small class="text-secondary">' . $dt->format('H:i') . ' WIB</small>
                 </div>';
             })
-            ->addColumn('stats_col', function (\$row) {
-                // Gunakan BroadcastStatsService — satu sumber kebenaran
-                \$failed = (int)(\$row->total_failed ?? 0) + (int)(\$row->total_delivery_failed ?? 0);
+            ->addColumn('stats_col', function ($row) {
+                $failed = (int)($row->total_failed ?? 0) + (int)($row->total_delivery_failed ?? 0);
                 return BroadcastStatsService::renderStatsCol(
-                    (int) \$row->total_recipients,
-                    (int) (\$row->total_delivered ?? 0),
-                    (int) (\$row->total_read ?? 0),
-                    \$failed,
-                    (string) (\$row->status ?? '')
+                    (int) $row->total_recipients,
+                    (int) ($row->total_delivered ?? 0),
+                    (int) ($row->total_read ?? 0),
+                    $failed,
+                    (string) ($row->status ?? '')
                 );
             })
             ->addColumn('action_col', function ($row) use ($meta) {
