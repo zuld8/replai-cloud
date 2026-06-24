@@ -3,6 +3,9 @@
 namespace App\Observers\Master;
 
 use App\Models\Master\Label;
+use App\Models\Store\Store;
+use App\Models\ChatBot\HistoryChat;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class LabelObserver
@@ -41,7 +44,25 @@ class LabelObserver
 
     public function deleteData(Label $label)
     {
-        $label->delete();
+        DB::transaction(function () use ($label) {
+            // 1. Lepas label dari store (kontak) yang memakainya
+            Store::where('label_id', $label->id)
+                ->update(['label_id' => null]);
+
+            // 2. Bersihkan label dari JSON history.label di semua percakapan
+            //    (Label disimpan sebagai array objek {id,name,color} di kolom JSON)
+            HistoryChat::whereJsonContains('label', ['id' => $label->id])
+                ->get()
+                ->each(function ($h) use ($label) {
+                    $arr = collect(json_decode($h->label ?? '[]', true) ?: [])
+                        ->reject(fn($l) => (is_array($l) ? ($l['id'] ?? null) : $l) == $label->id)
+                        ->values();
+                    $h->update(['label' => $arr->toJson()]);
+                });
+
+            // 3. Hapus label
+            $label->delete();
+        });
     }
 
 

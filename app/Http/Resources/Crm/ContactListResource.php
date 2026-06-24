@@ -21,7 +21,7 @@ class ContactListResource extends JsonResource
             if ($msgDate->isToday()) {
                 $date = $msgDate->format('H:i');
             } else {
-                $date = $msgDate->format('n/j/y h:i A');
+                $date = $msgDate->format('d/m/y H:i');
             }
         }
 
@@ -66,7 +66,7 @@ class ContactListResource extends JsonResource
                 'time'          => $this->last_message
                     ? ($this->last_message->created_at->isToday()
                         ? $this->last_message->created_at->format('H:i')
-                        : $this->last_message->created_at->format('n/j/y h:i A'))
+                        : $this->last_message->created_at->format('d/m/y H:i'))
                     : '',
                 'date'          => $date,
             ),

@@ -45,10 +45,8 @@ class Category extends Model
             }
         });
 
-        // Cascade delete: when category is deleted, nullify or delete its contacts
-        static::deleting(function ($model) {
-            $model->store()->delete();
-        });
+        // NOTE: Saat kategori dihapus, kontak di-nullify (bukan dihapus).
+        // Penanganan dilakukan di CategoryObserver::deleteData() via DB::transaction.
     }
 
     public function store()

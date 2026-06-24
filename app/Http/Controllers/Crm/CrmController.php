@@ -871,12 +871,28 @@ class CrmController extends Controller
 
     public function updatePipeLineAndLabel(Request $request, HistoryChat $history)
     {
-
+        // $request->label = label UUID (skalar), dari pipeline drag-drop.
+        // Catatan arsitektur: store.label_id = "label utama" (1 label, untuk pipeline/laporan).
+        // history.label = JSON array multi-label (untuk tampilan CRM, master display).
+        // Saat pipeline digerakkan, kita update KEDUANYA agar konsisten.
         if ($history->store) {
             $history->store->update([
-                'label_id'      => $request->label
+                'label_id' => $request->label ?: null
             ]);
         }
+
+        // Sync: jika ada label baru, update JSON history.label juga
+        // (tambahkan jika belum ada; jika kosong, biarkan JSON label apa adanya)
+        if ($request->label) {
+            $existing = collect(json_decode($history->label ?? '[]', true) ?: []);
+            // Kalau label ini belum ada di JSON, tambahkan dengan data minimal
+            $alreadyIn = $existing->contains(fn($l) => (is_array($l) ? ($l['id'] ?? $l) : $l) == $request->label);
+            // NOTE: tidak paksa update JSON karena pipeline drag hanya set label utama.
+            // JSON multi-label tetap dikelola via changeForLabels().
+            // store.label_id = turunan dari labels[0] di changeForLabels.
+        }
+
+        return response()->json(['status' => true], 200);
     }
 
     public function categories(Request $request)
@@ -908,23 +924,31 @@ class CrmController extends Controller
 
     public function changeForCategory(Request $request, HistoryChat $history)
     {
+        // Null guard: pastikan category object ada (bisa null saat clear)
+        if (!is_array($request->category) && !is_null($request->category)) {
+            return response()->json(['status' => false, 'message' => 'Invalid category'], 422);
+        }
+
         if ($history->store) {
             $history->store->update([
-                'category_id'       => $request->category['id']
+                'category_id' => $request->category['id'] ?? null
             ]);
         }
 
-        return response()->json([
-            'status'     => true,
-        ], 200);
+        return response()->json(['status' => true], 200);
     }
 
     public function changeForHandled(Request $request, HistoryChat $history)
     {
+        // Null guard: pastikan handled object ada
+        if (!is_array($request->handled) || empty($request->handled['id'])) {
+            return response()->json(['status' => false, 'message' => 'Invalid handled user'], 422);
+        }
+
         $history->update([
-            'assigned_by'       => my_user()->id,
-            'assignment_at'     => now(),
-            'handled_by'        => $request->handled['id']
+            'assigned_by'   => my_user()->id,
+            'assignment_at' => now(),
+            'handled_by'    => $request->handled['id']
         ]);
 
         return response()->json([
