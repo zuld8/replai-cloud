@@ -4,201 +4,171 @@
 <link rel="stylesheet" href="{{asset('assets/libs/datatable/css/dataTables.bootstrap5.min.css')}}">
 <link rel="stylesheet" href="{{asset('assets/libs/datatable/css/responsive.bootstrap.min.css')}}">
 <style>
-/* =============================================
-   WABA Broadcast - Main Menu Page
-   ============================================= */
+/* ── Broadcast WABA — Brand-aligned compact style ───────────── */
+
+/* 1. Hero: putih ringan + icon chip hijau */
 .page-hero {
-    background: linear-gradient(135deg, #022c22 0%, #064e3b 40%, #065f46 75%, #047857 100%);
-    border-radius: 18px;
-    padding: 1.6rem 2rem;
-    color: white !important;
-    margin-bottom: 1.5rem;
+    background: #fff;
+    border: 0.5px solid #E4EAF2;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06);
+    padding: 11px 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
-    position: relative;
-    overflow: visible;
-    box-shadow: 0 6px 24px rgba(4, 120, 87, 0.3), 0 2px 8px rgba(0,0,0,0.15);
+    gap: 10px;
+    margin-bottom: 12px;
 }
-/* Decorative subtle radial glow — CSS only, zero perf cost */
-.page-hero::before {
-    content: '';
-    position: absolute;
-    top: -60%;
-    right: -10%;
-    width: 380px;
-    height: 380px;
-    background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 65%);
-    border-radius: 50%;
-    pointer-events: none;
+.bc-hero-left { display:flex; align-items:center; gap:10px; }
+.bc-hero-icon {
+    width:34px; height:34px; border-radius:9px;
+    background:#DCFCE7; color:#15803D;
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px; flex-shrink:0;
 }
-/* Subtle grid pattern overlay — pure CSS */
-.page-hero::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 32px 32px;
-    border-radius: 18px;
-    pointer-events: none;
-}
-.page-hero > * { position: relative; z-index: 1; }
-.page-hero h2 {
-    font-size: 1.45rem;
-    font-weight: 800;
-    margin: 0;
-    color: #ffffff !important;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    letter-spacing: -0.01em;
-}
-.page-hero h2 i { color: #6ee7b7 !important; margin-right: 0.5rem; }
-.page-hero p  {
-    margin: 0.3rem 0 0;
-    opacity: 0.82;
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.85) !important;
-}
+.bc-hero-title { font-size:14px; font-weight:600; color:#1E2A4A; margin:0; line-height:1.3; }
+.bc-hero-sub   { font-size:11px; color:#64748B; margin:1px 0 0; }
 
-/* Account Selector */
+/* 2. Account Selector — compact on white bg */
 .waba-account-selector {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: rgba(255,255,255,0.12);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 12px;
-    padding: 0.6rem 1rem;
-    cursor: pointer;
-    transition: background 0.2s;
+    display: flex; align-items: center; gap: 8px;
+    background: #F2F8FE; border: 0.5px solid #E4EAF2;
+    border-radius: 8px; padding: 6px 11px;
+    cursor: pointer; transition: background 0.15s;
+    position: relative;
 }
-.waba-account-selector:hover { background: rgba(255,255,255,0.2); }
+.waba-account-selector:hover { background: #E6F1FB; }
 .waba-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: linear-gradient(135deg, #34d399, #38BDF8);
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #25D366; color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; color: white; flex-shrink: 0;
+    font-size: 13px; flex-shrink: 0;
 }
-.waba-account-name { font-weight: 700; font-size: 0.88rem; color: white; }
-.waba-account-phone { font-size: 0.75rem; color: rgba(255,255,255,0.7); }
-.waba-account-selector .chevron { color: rgba(255,255,255,0.7); font-size: 1rem; }
+.waba-account-name  { font-size: 12px; font-weight: 600; color: #1E2A4A; }
+.waba-account-phone { font-size: 11px; color: #64748B; }
+.waba-account-selector .chevron { color: #64748B; font-size: 14px; }
 
-/* Account Dropdown */
+/* 3. Account Dropdown */
 .account-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    min-width: 280px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    border: 1px solid #e5e7eb;
-    z-index: 999;
-    overflow: hidden;
-    display: none;
+    position: absolute; top: calc(100% + 6px); right: 0;
+    min-width: 260px; background: #fff;
+    border-radius: 10px; box-shadow: 0 6px 24px rgba(16,42,74,0.12);
+    border: 0.5px solid #E4EAF2; z-index: 999;
+    overflow: hidden; display: none;
 }
-.account-dropdown.open { display: block; animation: fadeIn 0.15s ease; }
-@keyframes fadeIn { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
+.account-dropdown.open { display: block; animation: bcFadeIn 0.14s ease; }
+@keyframes bcFadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 .account-dropdown-header {
-    padding: 0.75rem 1rem;
-    background: #f8fafc;
-    border-bottom: 1px solid #e5e7eb;
-    font-weight: 700;
-    font-size: 0.78rem;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    padding: 7px 12px; background: #F5F8FC;
+    border-bottom: 0.5px solid #E4EAF2;
+    font-size: 10px; font-weight: 700; color: #64748B;
+    text-transform: uppercase; letter-spacing: .04em;
 }
 .account-option {
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: pointer;
-    transition: background 0.1s;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 9px 12px; display: flex; align-items: center; gap: 10px;
+    cursor: pointer; transition: background 0.1s;
+    border-bottom: 0.5px solid #F1F5F9;
 }
 .account-option:last-child { border-bottom: none; }
-.account-option:hover { background: #f0fdf4; }
-.account-option.active { background: #ecfdf5; }
+.account-option:hover { background: #EAF3FC; }
+.account-option.active { background: #F0FDF4; }
 .account-option .opt-avatar {
-    width: 38px; height: 38px; border-radius: 50%;
-    background: linear-gradient(135deg, #34d399, #38BDF8);
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #25D366; color: #fff;
     display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 1rem; flex-shrink: 0;
+    font-size: 14px; flex-shrink: 0;
 }
-.account-option .opt-name { font-weight: 600; font-size: 0.88rem; color: #1e293b; }
-.account-option .opt-phone { font-size: 0.75rem; color: #6b7280; }
+.account-option .opt-name  { font-weight: 600; font-size: 12px; color: #1E2A4A; }
+.account-option .opt-phone { font-size: 11px; color: #64748B; }
 .account-option .opt-status {
-    margin-left: auto;
-    font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
-    padding: 2px 8px; border-radius: 99px;
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 6px;
 }
-.opt-status.active  { background: #dcfce7; color: #15803d; }
-.opt-status.inactive{ background: #fee2e2; color: #dc2626; }
+.opt-status.active   { background: #DCFCE7; color: #166534; }
+.opt-status.inactive { background: #FEECEC; color: #DC2626; }
 
-/* Stats cards */
-.stat-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.25rem; }
+/* 4. Stat cards — brand chip icon + compact */
+.stat-cards {
+    display: grid; grid-template-columns: repeat(4,1fr);
+    gap: 9px; margin-bottom: 12px;
+}
 @media(max-width:768px){ .stat-cards { grid-template-columns: repeat(2,1fr); } }
 .stat-card {
-    background: #ffffff;
-    border-radius: 14px;
-    padding: 1rem 1.25rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
-    border: 1px solid rgba(226,232,240,0.8);
-    display: flex; align-items: center; gap: 0.875rem;
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    background: #fff; border: 0.5px solid #E4EAF2;
+    border-radius: 10px; padding: 11px 13px;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06);
+    transition: box-shadow 0.18s ease, transform 0.15s ease;
+    display: flex; align-items: center; gap: 11px;
 }
-.stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-}
+.stat-card:hover { box-shadow: 0 4px 12px rgba(16,42,74,0.10); transform: translateY(-1px); }
 .stat-icon {
-    width: 46px; height: 46px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
-    flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
 }
-.stat-val {
-    font-size: 1.6rem; font-weight: 800; line-height: 1;
-    background: linear-gradient(135deg, #1e293b, #374151);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-.stat-lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-top: 3px; }
+.stat-val { font-size: 20px; font-weight: 700; color: #1E2A4A; line-height: 1; }
+.stat-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: .04em; color: #64748B; margin-top: 2px; }
 
-/* Table */
+/* 5. Table card */
 .broadcast-card {
-    border-radius: 18px; border: 1px solid rgba(226,232,240,0.6);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03);
+    border: 0.5px solid #E4EAF2 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 3px rgba(16,42,74,0.06) !important;
     overflow: hidden;
 }
 .broadcast-card .card-header {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-    border-bottom: 1px solid #e5e7eb;
-    padding: 1rem 1.5rem;
+    background: #F5F8FC !important;
+    border-bottom: 0.5px solid #E4EAF2 !important;
+    padding: 9px 14px !important;
 }
 #broadcastTable thead th {
-    background: #f8fafc; color: #475569; font-size: 0.72rem;
-    font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-    border-bottom: 2px solid #e2e8f0; padding: 0.9rem 1rem; white-space: nowrap;
+    background: #F5F8FC; color: #64748B;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em;
+    border-bottom: 0.5px solid #E4EAF2;
+    padding: 8px 10px; white-space: nowrap;
 }
-#broadcastTable tbody td { padding: 0.85rem 1rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
-#broadcastTable tbody tr:hover td { background: linear-gradient(90deg, #f0fdf4, #fafcff); }
-.badge.bg-success-transparent  { background: rgba(16,185,129,0.12) !important; }
-.badge.bg-warning-transparent   { background: rgba(245,158,11,0.12) !important; }
-.badge.bg-danger-transparent    { background: rgba(239,68,68,0.12) !important; }
-.badge.bg-secondary-transparent { background: rgba(100,116,139,0.12) !important; }
-.btn-icon.btn-sm { width: 32px; height: 32px; padding: 0; }
+#broadcastTable tbody td {
+    padding: 8px 10px; vertical-align: middle;
+    border-bottom: 0.5px solid #F1F5F9; font-size: 13px;
+}
+#broadcastTable tbody tr:hover td { background: #F8FBFF; }
+
+/* 6. Filter tab buttons */
+.bc-filter-btn {
+    font-size: 11px; padding: 4px 13px; border-radius: 7px;
+    border: 0.5px solid #E4EAF2; background: #F1F5F9;
+    color: #475569; cursor: pointer; transition: all 0.15s;
+    font-weight: 500;
+}
+.bc-filter-btn:hover { background: #EAF3FC; color: #2E8DE1; border-color: #2E8DE1; }
+.bc-filter-btn.active { background: #2E8DE1; color: #fff; border-color: #2E8DE1; }
+
+/* 7. Action chips */
+.bc-action-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 7px;
+    border: 0.5px solid #E4EAF2; font-size: 13px;
+    cursor: pointer; transition: all 0.15s; text-decoration: none;
+}
+.bc-action-edit   { background: #F2F8FE; color: #1B5FA6; }
+.bc-action-edit:hover   { background: #EAF3FC; color: #1B5FA6; }
+.bc-action-view   { background: #F0FDF4; color: #166534; }
+.bc-action-view:hover   { background: #DCFCE7; color: #166534; }
+.bc-action-delete { background: #FFF5F5; color: #DC2626; }
+.bc-action-delete:hover { background: #FEECEC; color: #DC2626; }
+
+/* misc */
 .fw-600 { font-weight: 600; }
 .fw-700 { font-weight: 700; }
-.fw-800 { font-weight: 800; }
-.dt-loading { color: #0EA5E9; font-weight: 500; }
+.dt-loading { color: #2E8DE1; font-weight: 500; }
+.badge.bg-success-transparent  { background: #DCFCE7 !important; color: #166534 !important; }
+.badge.bg-warning-transparent  { background: #FEF3C7 !important; color: #854F0B !important; }
+.badge.bg-danger-transparent   { background: #FEECEC !important; color: #DC2626 !important; }
+.badge.bg-secondary-transparent{ background: #F1F5F9 !important; color: #475569 !important; }
+</style>
 </style>
 @endsection
 
@@ -210,11 +180,14 @@
 
 @section('content')
 
-{{-- Page Hero --}}
+{{-- Page Hero — putih ringan, WA aksen chip hijau --}}
 <div class="page-hero">
-    <div>
-        <h2><i class="bx bx-broadcast me-2"></i>Broadcast WhatsApp Business API</h2>
-        <p>Kelola kampanye broadcast WABA Anda dari satu tempat</p>
+    <div class="bc-hero-left">
+        <div class="bc-hero-icon"><i class="bx bxl-whatsapp"></i></div>
+        <div>
+            <div class="bc-hero-title">Broadcast WhatsApp Business API</div>
+            <div class="bc-hero-sub">Kelola kampanye broadcast WABA Anda dari satu tempat</div>
+        </div>
     </div>
     {{-- WABA Account Selector --}}
     <div style="position:relative;" id="accountSelectorWrapper">
@@ -249,10 +222,10 @@
     </div>
 </div>
 
-{{-- Stats Cards --}}
+{{-- Stats Cards — 4 kolom, icon chip brand --}}
 <div class="stat-cards">
     <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(30,41,59,0.08);color:#1e293b">
+        <div class="stat-icon" style="background:#EAF3FC;color:#1B5FA6">
             <i class="bx bx-broadcast"></i></div>
         <div>
             <div class="stat-val" id="sumTotal">–</div>
@@ -260,7 +233,7 @@
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(5,150,105,0.1);color:#0EA5E9">
+        <div class="stat-icon" style="background:#DCFCE7;color:#166534">
             <i class="bx bx-check-circle"></i></div>
         <div>
             <div class="stat-val" id="sumDone">–</div>
@@ -268,7 +241,7 @@
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:#d97706">
+        <div class="stat-icon" style="background:#FEF3C7;color:#854F0B">
             <i class="bx bxs-hourglass"></i></div>
         <div>
             <div class="stat-val" id="sumPending">–</div>
@@ -276,7 +249,7 @@
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(79,70,229,0.1);color:#4f46e5">
+        <div class="stat-icon" style="background:#F1ECFE;color:#5B3FB0">
             <i class="bx bx-calendar"></i></div>
         <div>
             <div class="stat-val" id="sumMonth">–</div>
@@ -298,14 +271,12 @@
                     <small class="text-muted ms-2">Terbaru di atas</small>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-success rounded-pill active px-3 fw-600"
+                    <button class="bc-filter-btn active"
                             onclick="setFilter(null,this)">Semua</button>
-                    <button class="btn btn-sm btn-light rounded-pill px-3"
-                            onclick="setFilter('done',this)"
-                            style="color:#0EA5E9">✅ Selesai</button>
-                    <button class="btn btn-sm btn-light rounded-pill px-3"
-                            onclick="setFilter('pending',this)"
-                            style="color:#9ca3af">⏳ Menunggu</button>
+                    <button class="bc-filter-btn"
+                            onclick="setFilter('done',this)">✓ Selesai</button>
+                    <button class="bc-filter-btn"
+                            onclick="setFilter('pending',this)">⏳ Menunggu</button>
                 </div>
             </div>
             <div class="card-body p-3">
@@ -448,8 +419,8 @@ $(document).on('click', function(e) {
 
 function setFilter(f, btn) {
     currentFilter = f;
-    $('.btn[onclick*="setFilter"]').removeClass('active btn-success').addClass('btn-light').css('color','');
-    $(btn).removeClass('btn-light').addClass('active btn-success').css('color','');
+    $('.bc-filter-btn').removeClass('active');
+    $(btn).addClass('active');
     if (dtTable) dtTable.ajax.reload();
 }
 
