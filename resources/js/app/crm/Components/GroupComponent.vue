@@ -96,13 +96,12 @@
                      :class="{ active: $route.params.chatid === list.id, unread: list.not_read > 0 }"
                      @click="selectChat(list)">
 
-                    <!-- AVATAR -->
+                    <!-- AVATAR: foto orang / defaultUserIcon; logo channel di badge kecil saja -->
                     <div class="ci-avatar">
-                        <img v-if="list.photo && !list.photo.includes('default') && !list.photo.includes('user.png')"
-                             :src="list.photo" class="ci-img" @error="$event.target.src=defaultUserIcon"/>
-                        <div v-else class="ci-fallback" :style="{background:getChannelColor(list.from)}">
-                            <i :class="getChannelIcon(list.from)"></i>
-                        </div>
+                        <img :src="(list.photo && !list.photo.includes('default') && !list.photo.includes('user.png'))
+                                    ? list.photo : defaultUserIcon"
+                             class="ci-img"
+                             @error="$event.target.src=defaultUserIcon"/>
                         <span class="ci-badge" :class="`ci-badge--${list.from}`">
                             <i :class="getChannelIcon(list.from)"></i>
                         </span>
@@ -150,7 +149,7 @@
                         <!-- BARIS AKUN PENUH: nama akun kanan + ⋯ selalu tampil -->
                         <div class="ci-acctrow" v-if="list.device || list.telegram || list.livechat || list.instagram">
                             <span class="ci-dev" :title="list.device||list.telegram||list.livechat||list.instagram">
-                                <i class="bx bx-map-pin"></i>{{ list.device||list.telegram||list.livechat||list.instagram }}
+                                <i :class="getChannelIcon(list.from)"></i>{{ list.device||list.telegram||list.livechat||list.instagram }}
                             </span>
                             <div class="chat-dropdown" @click.stop>
                                 <button class="ci-dots"
