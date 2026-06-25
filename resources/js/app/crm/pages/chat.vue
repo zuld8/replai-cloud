@@ -239,25 +239,15 @@
                                     <div v-if="msg.buttons && msg.buttons.length" class="msg-tbtns">
                                         <a v-for="(b, bi) in msg.buttons" :key="bi" class="msg-tbtn"
                                            :href="b.type === 'url' ? b.url : null"
-                                           :target="b.type === 'url' ? '_blank' : null">
+                                           :target="b.type === 'url' ? '_blank' : null"
+                                           @click="b.type !== 'url' ? $event.preventDefault() : null">
                                             <i :class="b.type === 'url' ? 'bx bx-link-external' : 'bx bx-reply'"></i>
                                             {{ b.text }}
                                         </a>
                                     </div>
 
                                     <!-- Message Time -->
-                                    <div                         <!-- Template buttons -->
-                        <div v-if="msg.buttons && msg.buttons.length" class="msg-tbtns">
-                            <a v-for="(b, bi) in msg.buttons" :key="bi" class="msg-tbtn"
-                               :href="b.type === 'url' ? b.url : null"
-                               :target="b.type === 'url' ? '_blank' : null"
-                               @click="b.type !== 'url' ? $event.preventDefault() : null">
-                                <i :class="b.type === 'url' ? 'bx bx-link-external' : 'bx bx-reply'"></i>
-                                {{ b.text }}
-                            </a>
-                        </div>
-
-                        class="message-time">
+                                    <div class="message-time">
                                         {{ msg.datetime.time }}
                                         <i class="bx bx-check-double" v-if="msg.sent_by === 'system'"></i>
                                     </div>
