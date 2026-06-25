@@ -120,121 +120,126 @@
                         </span>
                     </div>
 
-                    <div class="chat-body">
-                        <div class="chat-main">
-                            <!-- Kolom tengah: nama+chip / preview -->
-                            <div class="chat-center">
-                                <div class="chat-name-row">
-                                    <span class="chat-name">{{ truncateName(list.name, 20) }}</span>
-                                    <template v-if="list.from === 'waba' && list.last_inbound_at">
-                                        <span v-if="getWabaSessionStatus(list.last_inbound_at)"
-                                              class="waba-session-chip"
-                                              :class="'waba-session--' + getWabaSessionStatus(list.last_inbound_at).status"
-                                              :title="getWabaSessionStatus(list.last_inbound_at).status === 'expired' ? 'Sesi 24 jam habis' : 'Sesi aktif'">
-                                            <i :class="getWabaSessionStatus(list.last_inbound_at).status === 'expired' ? 'bx bx-lock-alt' : 'bx bx-time'"></i>
-                                            {{ getWabaSessionStatus(list.last_inbound_at).label }}
-                                        </span>
-                                    </template>
-                                </div>
-                                <div class="chat-preview">
-                                    <i v-if="list.media_type === 'image'" class='bx bx-image-alt me-1'></i>
-                                    <i v-if="list.media_type === 'video'" class='bx bx-video me-1'></i>
-                                    <i v-if="list.media_type === 'audio'" class='bx bx-microphone me-1'></i>
-                                    <i v-if="isDocumentType(list.media_type)" class='bx bx-file me-1'></i>
-                                    {{ truncateText(list.last_message.message, 32) }}
-                                </div>
-                            </div>
-
-                            <!-- Kolom kanan: unread+waktu / status / device+⋯ -->
-                            <div class="chat-right">
-                                <div class="cr-top">
-                                    <span class="badge-unread" v-if="list.not_read > 0">{{ list.not_read }}</span>
-                                    <span class="chat-time">{{ list.last_message.time || list.last_message.date }}</span>
-                                </div>
-                                <span class="badge-status" :class="{
-                                    'status-open':   list.status === 'open',
-                                    'status-solved': list.status === 'resolved',
-                                    'status-block':  list.status === 'block'
-                                }">{{ getStatusText(list.status) }}</span>
-                                <div class="cr-bottom">
-                                    <span class="device-label"
-                                          v-if="list.device || list.telegram || list.livechat || list.instagram"
-                                          :title="list.device || list.telegram || list.livechat || list.instagram">
-                                        <i :class="getChannelIcon(list.from)"></i>
-                                        {{ list.device || list.telegram || list.livechat || list.instagram }}
+                    <div class="chat-info">
+                        <div class="chat-header-row">
+                            <div class="chat-name-wrap">
+                                <div class="chat-name">{{ truncateName(list.name, 20) }}</div>
+                                <!-- Chip sesi 24 jam — HANYA untuk WABA -->
+                                <template v-if="list.from === 'waba' && list.last_inbound_at">
+                                    <span v-if="getWabaSessionStatus(list.last_inbound_at)"
+                                          class="waba-session-chip"
+                                          :class="'waba-session--' + getWabaSessionStatus(list.last_inbound_at).status"
+                                          :title="getWabaSessionStatus(list.last_inbound_at).status === 'expired' ? 'Sesi 24 jam habis — hanya bisa kirim template' : 'Sesi 24 jam aktif'">
+                                        <i :class="getWabaSessionStatus(list.last_inbound_at).status === 'expired' ? 'bx bx-lock-alt' : 'bx bx-time'"></i>
+                                        {{ getWabaSessionStatus(list.last_inbound_at).label }}
                                     </span>
-                                    <!-- ⋯ mendatar di cr-bottom -->
-                                    <div class="chat-dropdown" @click.stop>
-                                        <button class="dropdown-toggle-btn"
-                                                :class="{ active: activeDropdown === list.id }"
-                                                @click="toggleDropdown(list.id)">
-                                            <i class='bx bx-dots-horizontal-rounded'></i>
-                                        </button>
-                                        <div class="dropdown-menu-chat" :class="{ show: activeDropdown === list.id }">
-                                            <div class="dropdown-item-chat" @click="togglePin(list)">
-                                                <i :class="list.is_pinned ? 'bx bxs-pin pin-active' : 'bx bx-pin'"></i>
-                                                <span>{{ list.is_pinned ? 'Lepas Sematan' : 'Sematkan' }}</span>
-                                            </div>
-                                            <div class="dropdown-item-chat" @click="resolveChat(list)">
-                                                <i :class="list.status === 'resolved' ? 'bx bx-refresh c-resolve' : 'bx bx-check-circle c-resolve'"></i>
-                                                <span>{{ list.status === 'resolved' ? 'Buka Kembali' : 'Selesaikan' }}</span>
-                                            </div>
-                                            <div class="dropdown-item-chat" @click="openAssignModal(list)">
-                                                <i class="bx bx-user-plus c-assign"></i>
-                                                <span>Tugaskan Agen</span>
-                                            </div>
-                                            <div class="dropdown-item-chat" @click="openLabelModal(list)">
-                                                <i class="bx bx-label c-label"></i>
-                                                <span>Label</span>
-                                            </div>
-                                            <div class="dropdown-item-chat" @click="list.not_read > 0 ? markRead(list) : markUnread(list)">
-                                                <i :class="list.not_read > 0 ? 'bx bx-envelope-open' : 'bx bx-envelope'"></i>
-                                                <span>{{ list.not_read > 0 ? 'Tandai Dibaca' : 'Tandai Belum Dibaca' }}</span>
-                                            </div>
-                                            <div class="dropdown-divider-line"></div>
-                                            <div class="dropdown-item-chat has-submenu"
-                                                 @mouseenter="showSubMenu = list.id"
-                                                 @mouseleave="showSubMenu = null">
-                                                <i class="bx bx-dots-horizontal-rounded"></i>
-                                                <span>Lainnya</span>
-                                                <i class="bx bx-chevron-right submenu-arrow"></i>
-                                                <div class="dropdown-submenu" v-show="showSubMenu === list.id">
-                                                    <div class="dropdown-item-chat" @click.stop="toggleArchive(list)">
-                                                        <i :class="list.is_archived ? 'bx bx-archive-out c-archive' : 'bx bx-archive-in c-archive'"></i>
-                                                        <span>{{ list.is_archived ? 'Keluarkan Arsip' : 'Arsip' }}</span>
-                                                    </div>
-                                                    <div class="dropdown-item-chat" @click.stop="blockChat(list)">
-                                                        <i class="bx bx-block c-block"></i>
-                                                        <span>{{ list.status === 'block' ? 'Buka Blokir' : 'Blokir' }}</span>
-                                                    </div>
-                                                    <div class="dropdown-item-chat" @click.stop="confirmAction('clear', list.id)">
-                                                        <i class="bx bx-eraser c-clear"></i>
-                                                        <span>Hapus Riwayat Chat</span>
-                                                    </div>
-                                                    <div class="dropdown-item-chat c-danger" @click.stop="confirmAction('delete', list.id)">
-                                                        <i class="bx bx-trash"></i>
-                                                        <span>Hapus Percakapan</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                </template>
+                            </div>
+                            <div class="chat-header-right">
+                                <span class="badge-unread" v-if="list.not_read > 0">{{ list.not_read }}</span>
+                                <span class="chat-time">{{ list.last_message.time || list.last_message.date }}</span>
                             </div>
                         </div>
 
-                        <!-- Strip label full-width: maks 2 + "+N" -->
+
+
+                        <div class="chat-preview-row">
+                            <div class="chat-preview">
+                                <i v-if="list.media_type === 'image'" class='bx bx-image-alt me-1'></i>
+                                <i v-if="list.media_type === 'video'" class='bx bx-video me-1'></i>
+                                <i v-if="list.media_type === 'audio'" class='bx bx-microphone me-1'></i>
+                                <i v-if="isDocumentType(list.media_type)" class='bx bx-file me-1'></i>
+                                {{ truncateText(list.last_message.message, 30) }}
+                            </div>
+                            <span class="badge-status" :class="{
+                                'status-open': list.status === 'open',
+                                'status-solved': list.status === 'resolved',
+                                'status-block': list.status === 'block'
+                            }">
+                                {{ getStatusText(list.status) }}
+                            </span>
+                        </div>
+
+                        <!-- WABA / Device Name — right-aligned with logo -->
+                        <div class="chat-device-row" v-if="list.device || list.telegram || list.livechat || list.instagram">
+                            <span class="device-logo">
+                                <i :class="getChannelIcon(list.from)"></i>
+                            </span>
+                            <span class="device-label">{{ list.device || list.telegram || list.livechat || list.instagram }}</span>
+                        </div>
+
+                        <!-- Label Chips (colored badges) -->
                         <div class="chat-label-row" v-if="list.labels && list.labels.length">
-                            <span v-for="lbl in list.labels.slice(0, 2)" :key="lbl.id"
-                                  class="chat-label-chip"
-                                  :style="{ backgroundColor: (lbl.color || '#888888') + '22', color: lbl.color || '#888888' }">
-                                <i class="bx bx-purchase-tag"></i> {{ lbl.name }}
-                            </span>
-                            <span v-if="list.labels.length > 2"
-                                  class="chat-label-more"
-                                  @click.stop="openLabelModal(list)">
-                                +{{ list.labels.length - 2 }}
-                            </span>
+                            <span
+                                v-for="lbl in list.labels"
+                                :key="lbl.id"
+                                class="chat-label-chip"
+                                :style="{
+                                    backgroundColor: (lbl.color || '#888888') + '22',
+                                    color: lbl.color || '#888888',
+                                    borderColor: (lbl.color || '#888888') + '66'
+                                }"
+                            >{{ lbl.name }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Menu (3 dots) -->
+                    <div class="chat-dropdown" @click.stop>
+                        <button class="dropdown-toggle-btn" @click="toggleDropdown(list.id)">
+                            <i class='bx bx-dots-vertical'></i>
+                        </button>
+                        <div class="dropdown-menu-chat" :class="{ show: activeDropdown === list.id }">
+
+                            <!-- Primary actions -->
+                            <div class="dropdown-item-chat" @click="togglePin(list)">
+                                <i :class="list.is_pinned ? 'bx bxs-pin pin-active' : 'bx bx-pin'"></i>
+                                <span>{{ list.is_pinned ? 'Unpin' : 'Pin' }}</span>
+                            </div>
+                            <div class="dropdown-item-chat" @click="resolveChat(list)">
+                                <i :class="list.status === 'resolved' ? 'bx bx-refresh c-resolve' : 'bx bx-check-circle c-resolve'"></i>
+                                <span>{{ list.status === 'resolved' ? 'Buka Kembali' : 'Selesaikan' }}</span>
+                            </div>
+                            <div class="dropdown-item-chat" @click="openAssignModal(list)">
+                                <i class="bx bx-user-plus c-assign"></i>
+                                <span>Assign Agent</span>
+                            </div>
+                            <div class="dropdown-item-chat" @click="openLabelModal(list)">
+                                <i class="bx bx-label c-label"></i>
+                                <span>Label</span>
+                            </div>
+                            <div class="dropdown-item-chat" @click="list.not_read > 0 ? markRead(list) : markUnread(list)">
+                                <i :class="list.not_read > 0 ? 'bx bx-envelope-open' : 'bx bx-envelope'"></i>
+                                <span>{{ list.not_read > 0 ? 'Tandai Dibaca' : 'Tandai Belum Dibaca' }}</span>
+                            </div>
+
+                            <!-- Lainnya submenu -->
+                            <div class="dropdown-divider-line"></div>
+                            <div class="dropdown-item-chat has-submenu"
+                                 @mouseenter="showSubMenu = list.id"
+                                 @mouseleave="showSubMenu = null">
+                                <i class="bx bx-dots-horizontal-rounded"></i>
+                                <span>Lainnya</span>
+                                <i class="bx bx-chevron-right submenu-arrow"></i>
+                                <div class="dropdown-submenu" v-show="showSubMenu === list.id">
+                                    <div class="dropdown-item-chat" @click.stop="toggleArchive(list)">
+                                        <i :class="list.is_archived ? 'bx bx-archive-out c-archive' : 'bx bx-archive-in c-archive'"></i>
+                                        <span>{{ list.is_archived ? 'Keluarkan Arsip' : 'Arsip' }}</span>
+                                    </div>
+                                    <div class="dropdown-item-chat" @click.stop="blockChat(list)">
+                                        <i class="bx bx-block c-block"></i>
+                                        <span>{{ list.status === 'block' ? 'Unblock' : 'Block User' }}</span>
+                                    </div>
+                                    <div class="dropdown-item-chat" @click.stop="confirmAction('clear', list.id)">
+                                        <i class="bx bx-eraser c-clear"></i>
+                                        <span>Hapus Riwayat Chat</span>
+                                    </div>
+                                    <div class="dropdown-item-chat c-danger" @click.stop="confirmAction('delete', list.id)">
+                                        <i class="bx bx-trash"></i>
+                                        <span>Hapus Percakapan</span>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
