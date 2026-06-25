@@ -1009,6 +1009,18 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                     $image = $blast->parent->file != null ? $this->analyzeImage($blast->parent->file) : $image;
                 }
 
+                // Extract buttons from broadcast template
+                $templateButtons = null;
+                if (!empty($templateDetails['buttons']) && is_array($templateDetails['buttons'])) {
+                    $templateButtons = json_encode(array_map(function($b) {
+                        return [
+                            'type' => $b['type'] ?? 'quick_reply',
+                            'text' => $b['text'] ?? ($b['title'] ?? ''),
+                            'url'  => $b['url'] ?? null,
+                        ];
+                    }, $templateDetails['buttons']));
+                }
+
                 $history->details()->create([
                     'file_path' => $image['path'],
                     'file_type' => $image['type'],

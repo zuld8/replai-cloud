@@ -76,6 +76,8 @@ class ContactDetailResource extends JsonResource
                 'resolved_at'       => $this->resolved_at != null ? $this->resolved_at->format('Y-m-d H:i') : '',
                 'created_at'        => $this->created_at->format('Y-m-d H:i')
             ),
+            'last_inbound_at'    => $this->from === 'waba' && $this->last_inbound_at
+                ? \Carbon\Carbon::parse($this->last_inbound_at)->toIso8601String() : null,
             'lead_source'        => $this->lead_source,
             'lead_source_detail' => $this->lead_source_detail
                 ? json_decode($this->lead_source_detail, true) : null,

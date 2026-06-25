@@ -20,6 +20,22 @@
                          :src="detail.lead_source_detail.media_url"
                          class="lead-banner-thumb"
                          @error="$event.target.style.display='none'" />
+
+                <!-- WABA 24-jam session banner -->
+                <div v-if="detail.from === 'waba'" class="session-banner-24"
+                     :class="isSessionActive ? 'session-active' : 'session-expired'">
+                    <i class="bx" :class="isSessionActive ? 'bx-check-circle' : 'bx-time-five'"></i>
+                    <span v-if="isSessionActive">
+                        Sesi 24 jam aktif · sisa {{ sessionRemaining }}
+                    </span>
+                    <span v-else>
+                        Sesi tutup · hanya bisa kirim template
+                    </span>
+                    <button v-if="!isSessionActive" class="btn-open-template-banner"
+                            @click="openTemplatePanel">
+                        Pilih Template
+                    </button>
+                </div>
                 </div>
                 <div class="controls">
                     <button class="btn-control d-lg-none" @click="$emit('toggle-left-sidebar')">
@@ -27,12 +43,12 @@
                     </button>
                     <button class="btn-control" @click="changeTakeOver(!detail.takeover)">
                         <i class="bx bx-bot"></i>
-                        <span class="d-none d-sm-inline">{{ $t('chat.bot_' + (detail.takeover ? 'off' : 'on')) }}</span>
+                        <span class="d-none d-sm-inline">{{ detail.takeover ? 'Bot Nonaktif' : 'Bot Aktif' }}</span>
                     </button>
                     <select class="status-select" v-model="detail.status" @change="changeStatus">
-                        <option value="open">{{ $t('status.open') }}</option>
-                        <option value="resolved">{{ $t('status.resolved') }}</option>
-                        <option value="block">{{ $t('status.block') }}</option>
+                        <option value="open">Terbuka</option>
+                        <option value="resolved">Selesai</option>
+                        <option value="block">Blokir</option>
                     </select>
                     <button class="btn-control d-none d-lg-inline" @click="toggleRightSidebar">
                         <i class="bx bx-menu"></i>
@@ -50,7 +66,7 @@
                 <div v-for="(msg, index) in filteredMessages" :key="msg.id" :id="'msg-' + msg.id">
 
                     <div v-if="shouldShowDateSeparator(index)" class="date-separator">
-                        {{ formatDateSeparator(msg.datetime.date) }}
+                        {{ formatDateSeparator(msg.datetime.date_id || msg.datetime.date) }}
                     </div>
 
                     <div v-if="msg.media_type !== 'reaction' && msg.media_type !== 'revoked'" class="message" :class="msg.sent_by === 'system' ? 'sent' : 'received'">
@@ -207,7 +223,18 @@
                                     </div>
 
                                     <!-- Message Time -->
-                                    <div class="message-time">
+                                    <div                         <!-- Template buttons -->
+                        <div v-if="msg.buttons && msg.buttons.length" class="msg-tbtns">
+                            <a v-for="(b, bi) in msg.buttons" :key="bi" class="msg-tbtn"
+                               :href="b.type === 'url' ? b.url : null"
+                               :target="b.type === 'url' ? '_blank' : null"
+                               @click="b.type !== 'url' ? $event.preventDefault() : null">
+                                <i :class="b.type === 'url' ? 'bx bx-link-external' : 'bx bx-reply'"></i>
+                                {{ b.text }}
+                            </a>
+                        </div>
+
+                        class="message-time">
                                         {{ msg.datetime.time }}
                                         <i class="bx bx-check-double" v-if="msg.sent_by === 'system'"></i>
                                     </div>
@@ -2580,6 +2607,7 @@ export default {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
+    background: #F0F4F8; /* brand light blue-gray, no WA doodle */
 }
 
 .reply-bar {
@@ -3857,5 +3885,23 @@ export default {
 .lead-banner-headline { font-weight:400; opacity:.85; }
 .lead-banner-thumb { width:24px; height:24px; border-radius:4px; object-fit:cover;
                      flex-shrink:0; margin-left:auto; }
+
+
+/* ── WABA 24h session banner ─────────────────────────── */
+.session-banner-24 {
+    display: flex; align-items: center; gap: 8px; padding: 6px 16px;
+    font-size: 11.5px; font-weight: 600;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+    flex-shrink: 0;
+}
+.session-active  { background: #ECFDF5; color: #065F46; }
+.session-expired { background: #FFFBEB; color: #92400E; }
+.session-banner-24 i { font-size: 14px; }
+.btn-open-template-banner {
+    margin-left: auto; background: #1E6F5C; color: #fff;
+    border: none; border-radius: 6px; padding: 3px 10px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+}
+.btn-open-template-banner:hover { background: #155a4a; }
 
 </style>
