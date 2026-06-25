@@ -280,26 +280,39 @@ class HomeController extends Controller
     public function leadByLabel(Request $request)
     {
         $businessId = my_business();
-        $cacheKey = "label_leads_{$businessId}";
+        $cacheKey   = "label_leads_{$businessId}";
 
         $cached = \Cache::get($cacheKey);
         if ($cached) return response()->json($cached);
 
+        // 1 query instead of N (one per label) — pull all label JSON, count in PHP
+        $allLabelJson = \App\Models\ChatBot\HistoryChat::where('business_id', $businessId)
+            ->whereNotNull('label')
+            ->where('label', '!=', '[]')
+            ->where('label', '!=', 'null')
+            ->pluck('label');
+
+        $counts = [];
+        foreach ($allLabelJson as $raw) {
+            $items = is_array($raw) ? $raw : (json_decode($raw, true) ?? []);
+            foreach ($items as $item) {
+                $id = $item['id'] ?? null;
+                if ($id) $counts[$id] = ($counts[$id] ?? 0) + 1;
+            }
+        }
+
         $labels = Label::select('id', 'name', 'color')
             ->get()
-            ->map(function ($label) {
-                $count = \App\Models\ChatBot\HistoryChat::whereJsonContains('label', ['id' => $label->id])->count();
-                return [
-                    'label' => $label->name,
-                    'data'  => $count,
-                    'color' => $label->color ?? '#0EA5E9'
-                ];
-            })
+            ->map(fn($label) => [
+                'label' => $label->name,
+                'data'  => $counts[$label->id] ?? 0,
+                'color' => $label->color ?? '#0EA5E9',
+            ])
             ->filter(fn($item) => $item['data'] > 0)
             ->values();
 
         $result = ['labels' => $labels];
-        \Cache::put($cacheKey, $result, 300);
+        \Cache::put($cacheKey, $result, 1800); // 30 min — label data rarely changes
 
         return response()->json($result, 200);
     }
