@@ -2385,7 +2385,7 @@ export default {
 .ci-body{flex:1;min-width:0;}
 .ci-main{display:flex;gap:8px;align-items:flex-start;}
 .ci-center{flex:1;min-width:0;overflow:hidden;}
-.ci-name-row{display:flex;align-items:flex-start;gap:5px;min-width:0;}
+.ci-name-row{display:flex;align-items:flex-start;gap:5px;flex-wrap:wrap;}
 .ci-name{font-size:13px;font-weight:500;color:#1E2A4A;word-break:break-word;line-height:1.35;}
 
 /* WABA 24h chip */
