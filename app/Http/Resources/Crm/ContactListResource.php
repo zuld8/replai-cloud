@@ -44,6 +44,11 @@ class ContactListResource extends JsonResource
 
         return [
             'id'            => $this->id,
+            // WABA 24h session chip — waktu pesan terakhir (ISO format)
+            // Vue pakai ini untuk hitung sisa 24 jam. Kalau bukan WABA = null.
+            'last_message_at' => $this->from === 'waba'
+                ? optional($this->last_message)->created_at?->toIso8601String()
+                : null,
             'name'          => $this->name ?? $this->from_number,
             'status'        => $this->status,
             'from'          => $this->from,

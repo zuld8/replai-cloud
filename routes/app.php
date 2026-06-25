@@ -139,7 +139,6 @@ Route::middleware('package_active')->group(function () {
             Route::get('subdistricts', [ComponentController::class, 'subdistricts']);
             Route::get('categories', [ComponentController::class, 'categories']);
             Route::get('categories/count', [ComponentController::class, 'categoryCount']);
-            Route::get('devices', [ComponentController::class, 'devices']);
             Route::get('templates', [ComponentController::class, 'templates']);
             Route::get('devices', [ControllersComponentController::class, 'getDevice']);
         });

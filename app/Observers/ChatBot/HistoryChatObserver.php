@@ -55,7 +55,11 @@ class HistoryChatObserver
             })
             ->when($request->from, fn($q) => $q->where('from', $request->from))
             ->when($request->device_id, fn($q) => $q->where('device_id', $request->device_id))
-            ->when($request->waba_id, fn($q) => $q->where('whatsapp_waba_id', $request->waba_id))
+            ->when($request->waba_id,      fn($q) => $q->where('whatsapp_waba_id', $request->waba_id))
+            ->when($request->telegram_id,  fn($q) => $q->where('telegram_id',      $request->telegram_id))
+            ->when($request->instagram_id, fn($q) => $q->where('instagram_id',     $request->instagram_id))
+            ->when($request->messenger_id, fn($q) => $q->where('messanger_id',     $request->messenger_id))
+            ->when($request->livechat_id,  fn($q) => $q->where('livechat_id',      $request->livechat_id))
             ->when($request->resolvedby, fn($q) => $q->where('resolved_by_id', $request->resolvedby))
             ->when($request->handled || $request->tab == 'assignment', function ($q) use ($request, $userId) {
                 $handledId = $request->handled ?? $userId;

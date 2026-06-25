@@ -50,7 +50,7 @@
                 <select class="device-select" v-model="platform_devices" @change="onDeviceChange">
                     <option :value="null">{{ $t('sidebar.all_device') }}</option>
                     <option v-for="device in deviceList" :key="device.id" :value="device">
-                        {{ device.name }} - {{ device.phone }}
+                        [{{ device.type }}] {{ device.name }}{{ device.phone ? ' · ' + device.phone : '' }}
                     </option>
                 </select>
             </div>
@@ -62,19 +62,19 @@
                 </button>
                 <button class="tab-assignment" :class="{ active: activeAssignmentTab === 'unread' }"
                     @click="switchAssignmentTab('unread')" title="Belum di baca">
-                    <span>Unread</span>
+                    <span>Belum dibaca</span>
                 </button>
                 <button class="tab-assignment" :class="{ active: activeAssignmentTab === 'assignment' }"
                     @click="switchAssignmentTab('assignment')" title="Percakapan yang diambil alih Agent">
-                    <span>Assigned</span>
+                    <span>Ditugaskan</span>
                 </button>
                 <button class="tab-assignment" :class="{ active: activeAssignmentTab === 'unassignment' }"
                     @click="switchAssignmentTab('unassignment')" title="Percakapan yang belum di-assign">
-                    <span>Unassigned</span>
+                    <span>Belum ditugaskan</span>
                 </button>
                 <button class="tab-assignment" :class="{ active: activeAssignmentTab === 'block' }"
                     @click="switchAssignmentTab('block')" title="Percakapan yang diblokir">
-                    <span>Blok</span>
+                    <span>Diblokir</span>
                 </button>
             </div>
 
@@ -116,7 +116,19 @@
 
                     <div class="chat-info">
                         <div class="chat-header-row">
-                            <div class="chat-name">{{ truncateName(list.name, 20) }}</div>
+                            <div class="chat-name-wrap">
+                                <div class="chat-name">{{ truncateName(list.name, 20) }}</div>
+                                <!-- Chip sesi 24 jam — HANYA untuk WABA -->
+                                <template v-if="list.from === 'waba' && list.last_message_at">
+                                    <span v-if="getWabaSessionStatus(list.last_message_at)"
+                                          class="waba-session-chip"
+                                          :class="'waba-session--' + getWabaSessionStatus(list.last_message_at).status"
+                                          :title="getWabaSessionStatus(list.last_message_at).status === 'expired' ? 'Sesi 24 jam habis — hanya bisa kirim template' : 'Sesi 24 jam aktif'">
+                                        <i :class="getWabaSessionStatus(list.last_message_at).status === 'expired' ? 'bx bx-lock-alt' : 'bx bx-time'"></i>
+                                        {{ getWabaSessionStatus(list.last_message_at).label }}
+                                    </span>
+                                </template>
+                            </div>
                             <div class="chat-header-right">
                                 <span class="badge-unread" v-if="list.not_read > 0">{{ list.not_read }}</span>
                                 <span class="chat-time">{{ list.last_message.time || list.last_message.date }}</span>
@@ -561,7 +573,7 @@ export default {
         return {
             merchantId: null,
             music: rintone,
-            platform_devices: {},
+            platform_devices: null, // null = "Semua Perangkat" (default)
             attribute: {
                 name: "",
                 icon: "",
@@ -590,8 +602,12 @@ export default {
                 tab: "",
                 handled: "",
                 assignment_status: "",
-                device_id: null,
-                waba_id: null,
+                device_id: null,       // WhatsApp Unofficial
+                waba_id: null,         // WhatsApp Business (WABA)
+                telegram_id: null,     // Telegram
+                instagram_id: null,    // Instagram
+                messenger_id: null,    // Messenger
+                livechat_id: null,     // Live Chat
             },
             labelList: [],
             chats: {
@@ -639,18 +655,43 @@ export default {
     methods: {
         ...mapActions(["saving_contacts"]),
 
-        onDeviceChange() {
-            // Reset device filters
-            this.filter.device_id = null;
-            this.filter.waba_id = null;
 
-            // Set based on selected device
-            if (this.platform_devices && this.platform_devices.id) {
-                if (this.platform_devices.from === 'unofficial') {
-                    this.filter.device_id = this.platform_devices.id;
-                } else if (this.platform_devices.from === 'waba') {
-                    this.filter.waba_id = this.platform_devices.id;
-                }
+        /**
+         * Hitung status sesi 24 jam WABA berdasarkan last_message_at.
+         * Returns: { status: 'active'|'warning'|'expired', label: '14j'|'1j 20m'|'Tutup', hours: number }
+         */
+        getWabaSessionStatus(lastMessageAt) {
+            if (!lastMessageAt) return null;
+            const last = new Date(lastMessageAt);
+            const now  = new Date();
+            const expiry = new Date(last.getTime() + 24 * 60 * 60 * 1000);
+            const diffMs = expiry - now;
+            if (diffMs <= 0) return { status: 'expired', label: 'Tutup', hours: 0 };
+            const diffH = Math.floor(diffMs / 3600000);
+            const diffM = Math.floor((diffMs % 3600000) / 60000);
+            const label = diffH > 0 ? `${diffH}j${diffM > 0 ? ' ' + diffM + 'm' : ''}` : `${diffM}m`;
+            if (diffMs <= 2 * 3600000) return { status: 'warning', label, hours: diffH };
+            return { status: 'active', label, hours: diffH };
+        },
+
+        onDeviceChange() {
+            // Reset SEMUA device filter dulu
+            this.filter.device_id    = null; // WA Unofficial
+            this.filter.waba_id      = null; // WA Business
+            this.filter.telegram_id  = null;
+            this.filter.instagram_id = null;
+            this.filter.messenger_id = null;
+            this.filter.livechat_id  = null;
+
+            // Set filter sesuai channel device yang dipilih
+            const d = this.platform_devices;
+            if (d && d.id) {
+                if      (d.from === 'unofficial') this.filter.device_id    = d.id;
+                else if (d.from === 'waba')       this.filter.waba_id      = d.id;
+                else if (d.from === 'telegram')   this.filter.telegram_id  = d.id;
+                else if (d.from === 'instagram')  this.filter.instagram_id = d.id;
+                else if (d.from === 'messanger')  this.filter.messenger_id = d.id;
+                else if (d.from === 'livechat')   this.filter.livechat_id  = d.id;
             }
 
             this.searchData();
@@ -2706,6 +2747,18 @@ export default {
     }
 }
 
+
+/* WABA 24h session chip */
+.chat-name-wrap { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1; }
+.chat-name-wrap .chat-name { min-width: 0; }
+.waba-session-chip {
+    display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;
+    font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 10px;
+    white-space: nowrap;
+}
+.waba-session--active  { background: #DCFCE7; color: #15803D; }
+.waba-session--warning { background: #FEF3C7; color: #B45309; }
+.waba-session--expired { background: #FEECEC; color: #B91C1C; }
 </style>
 
 <style>
