@@ -140,81 +140,81 @@
                                 </div>
                             </div>
 
-                            <!-- Kolom kanan -->
+                            <!-- Kolom kanan: unread+waktu / status -->
                             <div class="ci-right">
                                 <div class="ci-top">
                                     <span class="ci-unread" v-if="list.not_read > 0">{{ list.not_read }}</span>
                                     <span class="ci-time">{{ list.last_message.time || list.last_message.date }}</span>
                                 </div>
                                 <span class="ci-status" :class="`st-${list.status}`">{{ getStatusText(list.status) }}</span>
-                                <div class="ci-acct">
-                                    <span class="ci-dev"
-                                          v-if="list.device || list.telegram || list.livechat || list.instagram"
-                                          :title="list.device||list.telegram||list.livechat||list.instagram">
-                                        <i :class="getChannelIcon(list.from)"></i>
-                                        {{ list.device||list.telegram||list.livechat||list.instagram }}
-                                    </span>
-                                    <div class="chat-dropdown" @click.stop>
-                                        <button class="ci-dots"
-                                                :class="{active: activeDropdown === list.id}"
-                                                @click="toggleDropdown(list.id)">
-                                            <i class="bx bx-dots-horizontal-rounded"></i>
-                                        </button>
-                                        <div class="dropdown-menu-chat" :class="{show: activeDropdown === list.id}">
-                                            <div class="dropdown-item-chat" @click="togglePin(list)">
-                                                <i :class="list.is_pinned ? 'bx bxs-pin pin-active' : 'bx bx-pin'"></i>
-                                                <span>{{ list.is_pinned ? 'Lepas Sematan' : 'Sematkan' }}</span>
+                            </div>
+
+                        </div>
+
+                        <!-- Device + ⋯ baris penuh (nama akun komplit) -->
+                        <div class="ci-acct" v-if="list.device || list.telegram || list.livechat || list.instagram">
+                            <span class="ci-dev" :title="list.device||list.telegram||list.livechat||list.instagram">
+                                <i :class="getChannelIcon(list.from)"></i>
+                                {{ list.device||list.telegram||list.livechat||list.instagram }}
+                            </span>
+                            <div class="chat-dropdown" @click.stop>
+                                <button class="ci-dots"
+                                        :class="{active: activeDropdown === list.id}"
+                                        @click="toggleDropdown(list.id)">
+                                    <i class="bx bx-dots-horizontal-rounded"></i>
+                                </button>
+                                <div class="dropdown-menu-chat" :class="{show: activeDropdown === list.id}">
+                                    <div class="dropdown-item-chat" @click="togglePin(list)">
+                                        <i :class="list.is_pinned ? 'bx bxs-pin pin-active' : 'bx bx-pin'"></i>
+                                        <span>{{ list.is_pinned ? 'Lepas Sematan' : 'Sematkan' }}</span>
+                                    </div>
+                                    <div class="dropdown-item-chat" @click="resolveChat(list)">
+                                        <i :class="list.status === 'resolved' ? 'bx bx-refresh c-resolve' : 'bx bx-check-circle c-resolve'"></i>
+                                        <span>{{ list.status === 'resolved' ? 'Buka Kembali' : 'Selesaikan' }}</span>
+                                    </div>
+                                    <div class="dropdown-item-chat" @click="openAssignModal(list)">
+                                        <i class="bx bx-user-plus c-assign"></i>
+                                        <span>Tugaskan Agen</span>
+                                    </div>
+                                    <div class="dropdown-item-chat" @click="openLabelModal(list)">
+                                        <i class="bx bx-label c-label"></i>
+                                        <span>Label</span>
+                                    </div>
+                                    <div class="dropdown-item-chat" @click="list.not_read > 0 ? markRead(list) : markUnread(list)">
+                                        <i :class="list.not_read > 0 ? 'bx bx-envelope-open' : 'bx bx-envelope'"></i>
+                                        <span>{{ list.not_read > 0 ? 'Tandai Dibaca' : 'Tandai Belum Dibaca' }}</span>
+                                    </div>
+                                    <div class="dropdown-divider-line"></div>
+                                    <div class="dropdown-item-chat has-submenu"
+                                         @mouseenter="showSubMenu = list.id"
+                                         @mouseleave="showSubMenu = null">
+                                        <i class="bx bx-dots-horizontal-rounded"></i>
+                                        <span>Lainnya</span>
+                                        <i class="bx bx-chevron-right submenu-arrow"></i>
+                                        <div class="dropdown-submenu" v-show="showSubMenu === list.id">
+                                            <div class="dropdown-item-chat" @click.stop="toggleArchive(list)">
+                                                <i :class="list.is_archived ? 'bx bx-archive-out c-archive' : 'bx bx-archive-in c-archive'"></i>
+                                                <span>{{ list.is_archived ? 'Keluarkan Arsip' : 'Arsip' }}</span>
                                             </div>
-                                            <div class="dropdown-item-chat" @click="resolveChat(list)">
-                                                <i :class="list.status === 'resolved' ? 'bx bx-refresh c-resolve' : 'bx bx-check-circle c-resolve'"></i>
-                                                <span>{{ list.status === 'resolved' ? 'Buka Kembali' : 'Selesaikan' }}</span>
+                                            <div class="dropdown-item-chat" @click.stop="blockChat(list)">
+                                                <i class="bx bx-block c-block"></i>
+                                                <span>{{ list.status === 'block' ? 'Buka Blokir' : 'Blokir' }}</span>
                                             </div>
-                                            <div class="dropdown-item-chat" @click="openAssignModal(list)">
-                                                <i class="bx bx-user-plus c-assign"></i>
-                                                <span>Tugaskan Agen</span>
+                                            <div class="dropdown-item-chat" @click.stop="confirmAction('clear', list.id)">
+                                                <i class="bx bx-eraser c-clear"></i>
+                                                <span>Hapus Riwayat Chat</span>
                                             </div>
-                                            <div class="dropdown-item-chat" @click="openLabelModal(list)">
-                                                <i class="bx bx-label c-label"></i>
-                                                <span>Label</span>
-                                            </div>
-                                            <div class="dropdown-item-chat" @click="list.not_read > 0 ? markRead(list) : markUnread(list)">
-                                                <i :class="list.not_read > 0 ? 'bx bx-envelope-open' : 'bx bx-envelope'"></i>
-                                                <span>{{ list.not_read > 0 ? 'Tandai Dibaca' : 'Tandai Belum Dibaca' }}</span>
-                                            </div>
-                                            <div class="dropdown-divider-line"></div>
-                                            <div class="dropdown-item-chat has-submenu"
-                                                 @mouseenter="showSubMenu = list.id"
-                                                 @mouseleave="showSubMenu = null">
-                                                <i class="bx bx-dots-horizontal-rounded"></i>
-                                                <span>Lainnya</span>
-                                                <i class="bx bx-chevron-right submenu-arrow"></i>
-                                                <div class="dropdown-submenu" v-show="showSubMenu === list.id">
-                                                    <div class="dropdown-item-chat" @click.stop="toggleArchive(list)">
-                                                        <i :class="list.is_archived ? 'bx bx-archive-out c-archive' : 'bx bx-archive-in c-archive'"></i>
-                                                        <span>{{ list.is_archived ? 'Keluarkan Arsip' : 'Arsip' }}</span>
-                                                    </div>
-                                                    <div class="dropdown-item-chat" @click.stop="blockChat(list)">
-                                                        <i class="bx bx-block c-block"></i>
-                                                        <span>{{ list.status === 'block' ? 'Buka Blokir' : 'Blokir' }}</span>
-                                                    </div>
-                                                    <div class="dropdown-item-chat" @click.stop="confirmAction('clear', list.id)">
-                                                        <i class="bx bx-eraser c-clear"></i>
-                                                        <span>Hapus Riwayat Chat</span>
-                                                    </div>
-                                                    <div class="dropdown-item-chat c-danger" @click.stop="confirmAction('delete', list.id)">
-                                                        <i class="bx bx-trash"></i>
-                                                        <span>Hapus Percakapan</span>
-                                                    </div>
-                                                </div>
+                                            <div class="dropdown-item-chat c-danger" @click.stop="confirmAction('delete', list.id)">
+                                                <i class="bx bx-trash"></i>
+                                                <span>Hapus Percakapan</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
 
-                        <!-- strip label: maks 2 + "+N" -->
+                                                <!-- strip label: maks 2 + "+N" -->
                         <div class="ci-labels" v-if="list.labels && list.labels.length">
                             <span v-for="lbl in list.labels.slice(0,2)" :key="lbl.id"
                                   class="ci-chip"
@@ -1700,9 +1700,9 @@ export default {
 }
 
 /* ===== Chat Items ===== */
-.chat-items-container {
+.chat-items-container{
     background-color: #fff;
-}
+overflow:visible;}
 
 /* Avatar dengan Photo (untuk WhatsApp) */
 .instagram-photo-direct {
@@ -2400,7 +2400,7 @@ export default {
 .ci-preview i{font-size:11px;color:#94A3B8;margin-right:2px;}
 
 /* Kolom kanan */
-.ci-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;max-width:110px;min-width:70px;}
+.ci-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
 .ci-top{display:flex;align-items:center;gap:4px;}
 .ci-time{font-size:10px;color:#94A3B8;white-space:nowrap;}
 .ci-unread{font-size:9px;background:#16A34A;color:#fff;min-width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0 3px;font-weight:600;}
@@ -2408,8 +2408,8 @@ export default {
 .st-open{background:#FEF3C7;color:#B45309;}
 .st-resolved{background:#DCFCE7;color:#15803D;}
 .st-block{background:#FEECEC;color:#B91C1C;}
-.ci-acct{display:flex;align-items:center;gap:4px;max-width:110px;}
-.ci-dev{font-size:9px;color:#94A3B8;display:inline-flex;align-items:center;gap:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;}
+.ci-acct{display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
+.ci-dev{font-size:9px;color:#94A3B8;display:inline-flex;align-items:center;gap:3px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ci-dev i{font-size:11px;flex-shrink:0;}
 
 /* ⋯ button */
