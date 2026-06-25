@@ -303,6 +303,45 @@ class WabaCallbackController extends Controller
                             'phone_number_id' => $phoneNumberId,
                         ]);
                     }
+
+                    // Save outbound echo messages to CRM timeline
+                    $echoMessages = $change['value']['messages'] ?? [];
+                    foreach ($echoMessages as $echoMsg) {
+                        try {
+                            $mid  = $echoMsg['id'] ?? null;
+                            $from = $echoMsg['to']   ?? ($echoMsg['from'] ?? null); // 'to' = pelanggan
+                            $text = $echoMsg['text']['body']
+                                ?? $echoMsg['text']['preview_url']
+                                ?? null;
+
+                            if (!$mid || !$from) continue;
+
+                            // Dedup: already saved via CRM send
+                            if (\App\Models\ChatBot\HistoryChatDetail::where('messageid', $mid)->exists()) continue;
+
+                            $history = \App\Models\ChatBot\HistoryChat::where('device_id', $device->id)
+                                ->where(function ($q) use ($from) {
+                                    $q->where('from_number', $from)
+                                      ->orWhere('jid_number', $from);
+                                })
+                                ->latest()
+                                ->first();
+
+                            if (!$history) continue;
+
+                            $history->details()->create([
+                                'from'            => 'device',
+                                'source'          => 'echo_waba',
+                                'messageid'       => $mid,
+                                'message'         => $text,
+                                'type'            => 'text',
+                                'history_chat_id' => $history->id,
+                                'is_read'         => 'yes',
+                            ]);
+                        } catch (\Throwable $echoErr) {
+                            Log::warning('WABA echo save error: ' . $echoErr->getMessage());
+                        }
+                    }
                 }
             }
         } catch (\Throwable $e) {

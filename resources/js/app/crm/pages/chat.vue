@@ -1098,11 +1098,31 @@ export default {
     methods: {
 
         originLabel(source) {
-            const labels = { notification: 'Notifikasi', broadcast: 'Broadcast', bot: 'Bot AI', agent: 'Agen', system: 'Sistem' };
+            const labels = {
+                notification: 'Notifikasi',
+                broadcast:    'Broadcast',
+                bot:          'Bot AI',
+                agent:        'Agen',
+                system:       'Sistem',
+                echo_wa:      'Dibalas di WA (HP)',
+                echo_ig:      'Dibalas di Instagram',
+                echo_fb:      'Dibalas di Fanpage',
+                echo_waba:    'Dibalas di WA Hybrid',
+            };
             return labels[source] || 'Sistem';
         },
         originIcon(source) {
-            const icons = { notification: 'bx bx-bell', broadcast: 'bx bxs-megaphone', bot: 'bx bx-bot', agent: 'bx bx-user', system: 'bx bx-cog' };
+            const icons = {
+                notification: 'bx bx-bell',
+                broadcast:    'bx bxs-megaphone',
+                bot:          'bx bx-bot',
+                agent:        'bx bx-user',
+                system:       'bx bx-cog',
+                echo_wa:      'bx bxl-whatsapp',
+                echo_ig:      'bx bxl-instagram',
+                echo_fb:      'bx bxl-facebook',
+                echo_waba:    'bx bxl-whatsapp',
+            };
             return icons[source] || 'bx bx-cog';
         },
 
@@ -3785,5 +3805,16 @@ export default {
 .msg-tbtn:hover { opacity: .8; }
 .msg-tbtn + .msg-tbtn { border-top: 1px solid rgba(255, 255, 255, .1); }
 .msg-tbtn i { font-size: 14px; }
+
+
+/* ── Echo chip (dibalas dari luar CRM) ─────────────────── */
+.origin-echo_wa,
+.origin-echo_ig,
+.origin-echo_fb,
+.origin-echo_waba {
+    background: #EAF3FC;
+    color: #1B5FA6;
+    font-style: italic;
+}
 
 </style>

@@ -1762,6 +1762,7 @@ class WhatsappCallbackController extends Controller
                     'type'                  => $messageType,
                     'history_chat_id'       => $history->id,
                     'from'                  => 'device',
+                    'source'                => 'echo_wa',
                     'is_read'               => 'yes',
                     'message'               => $message,
                     'remotejid'             => $request->from,

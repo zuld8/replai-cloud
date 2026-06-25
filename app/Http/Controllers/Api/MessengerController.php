@@ -133,7 +133,8 @@ class MessengerController extends Controller
                         continue;
                     }
 
-                    if (isset($messaging['message']['is_echo']) && $messaging['message']['is_echo'] === true) { 
+                    if (isset($messaging['message']['is_echo']) && $messaging['message']['is_echo'] === true) {
+                        $this->processEchoMessage($messaging, $entry['id'], 'echo_fb');
                         continue;
                     }
 
@@ -1656,4 +1657,56 @@ class MessengerController extends Controller
                 return 'msg-document';
         }
     }
+    /**
+     * Process echo message (sent from outside CRM — e.g. Fanpage direct reply)
+     */
+    private function processEchoMessage(array $messaging, string $pageId, string $source): void
+    {
+        try {
+            $mid = $messaging['message']['mid'] ?? $messaging['message']['id'] ?? null;
+            if (!$mid) return;
+
+            if (\App\Models\ChatBot\HistoryChatDetail::where('messageid', $mid)->exists()) return;
+
+            $messengerAccount = \App\Models\MessengerAccount::where('page_id', $pageId)
+                ->where('status', 'active')
+                ->first();
+            if (!$messengerAccount) return;
+
+            // In echo: sender = page, recipient = user
+            $recipientId = $messaging['recipient']['id'] ?? null;
+            $senderId    = $messaging['sender']['id'] ?? null;
+            $userId = $recipientId ?? $senderId;
+            if (!$userId) return;
+
+            $histories = \App\Models\ChatBot\HistoryChat::where('device_id', $messengerAccount->id)
+                ->where('from_number', $userId)
+                ->latest()
+                ->first();
+            if (!$histories) return;
+
+            $messageContent = $this->parseMessageContent($messaging['message'] ?? $messaging);
+            $mediaInfo = $this->handleMediaDownload($messengerAccount, $messageContent, $messageContent['messageType'] ?? '');
+
+            $histories->details()->create([
+                'from'           => 'device',
+                'source'         => $source,
+                'messageid'      => $mid,
+                'message'        => $messageContent['message'] ?? null,
+                'file_path'      => $mediaInfo['path'] ?? null,
+                'file_type'      => $mediaInfo['type'] ?? null,
+                'file_size'      => $mediaInfo['size'] ?? null,
+                'type'           => $mediaInfo['message_type'] ?? 'text',
+                'history_chat_id'=> $histories->id,
+                'is_read'        => 'yes',
+            ]);
+
+            if ($histories->takeover == 'no') {
+                $histories->update(['takeover' => 'yes']);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Echo FB save error: ' . $e->getMessage());
+        }
+    }
+
 }

@@ -124,7 +124,8 @@ class InstagramController extends Controller
                         continue;
                     }
 
-                    if (isset($messaging['message']['is_echo']) && $messaging['message']['is_echo'] === true) { 
+                    if (isset($messaging['message']['is_echo']) && $messaging['message']['is_echo'] === true) {
+                        $this->processEchoMessage($messaging, $entry['id'], 'echo_ig');
                         continue;
                     }
 
@@ -1642,4 +1643,61 @@ class InstagramController extends Controller
                 return 'ig-document';
         }
     }
+    /**
+     * Process echo message (sent from outside CRM — e.g. direct IG app reply)
+     * Saves as from='device', source='echo_ig' for CRM visibility.
+     */
+    private function processEchoMessage(array $messaging, string $pageId, string $source): void
+    {
+        try {
+            $mid = $messaging['message']['mid'] ?? $messaging['message']['id'] ?? null;
+            if (!$mid) return;
+
+            // Dedup: if already saved (sent via CRM), skip
+            if (\App\Models\ChatBot\HistoryChatDetail::where('messageid', $mid)->exists()) return;
+
+            $instagramAccount = \App\Models\InstagramAccount::where('instagram_id', $pageId)
+                ->orWhere('page_id', $pageId)
+                ->where('status', 'active')
+                ->first();
+            if (!$instagramAccount) return;
+
+            // recipient = the other party (pelanggan) in echo
+            $recipientId = $messaging['recipient']['id'] ?? null;
+            $senderId    = $messaging['sender']['id'] ?? null;
+            // In echo: sender = page, recipient = user
+            $userId = $recipientId ?? $senderId;
+            if (!$userId) return;
+
+            $histories = \App\Models\ChatBot\HistoryChat::where('device_id', $instagramAccount->id)
+                ->where('from_number', $userId)
+                ->latest()
+                ->first();
+            if (!$histories) return;
+
+            $messageContent = $this->parseMessageContent($messaging['message'] ?? $messaging);
+            $mediaInfo = $this->handleMediaDownload($instagramAccount, $messageContent, $messageContent['messageType'] ?? '');
+
+            $histories->details()->create([
+                'from'           => 'device',
+                'source'         => $source,
+                'messageid'      => $mid,
+                'message'        => $messageContent['message'] ?? null,
+                'file_path'      => $mediaInfo['path'] ?? null,
+                'file_type'      => $mediaInfo['type'] ?? null,
+                'file_size'      => $mediaInfo['size'] ?? null,
+                'type'           => $mediaInfo['message_type'] ?? 'text',
+                'history_chat_id'=> $histories->id,
+                'is_read'        => 'yes',
+            ]);
+
+            // Auto-pause bot
+            if ($histories->takeover == 'no') {
+                $histories->update(['takeover' => 'yes']);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Echo IG save error: ' . $e->getMessage());
+        }
+    }
+
 }
