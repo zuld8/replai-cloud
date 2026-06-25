@@ -218,7 +218,8 @@ class HistoryChatObserver
             'is_read'               => $type == 'device' ? 'yes' : 'no',
             'reply_to'              => $replyData['reply_to'] ?? null,
             'reply_text'            => $replyData['reply_text'] ?? null,
-            'original_name'         => $originalName
+            'original_name'         => $originalName,
+            'source'                => $type == 'device' ? 'agent' : 'system',
         ]);
     }
 

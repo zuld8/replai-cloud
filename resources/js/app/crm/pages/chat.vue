@@ -62,14 +62,15 @@
                             <div class="message" :class="msg.sent_by === 'system' ? 'sent' : 'received'">
                                 <!-- Message Bubble -->
                                 <div class="message-bubble">
-                                    <!-- Sender Info (untuk pesan dari system/admin) -->
-                                    <div class="message-sender-info" v-if="msg.sent_by === 'system'">
-                                        <span class="sender-name">{{ msg.sent_by_name || msg.user?.name }}</span>
-                                        <span class="sender-separator">•</span>
-                                        <span class="sender-date">{{ msg.datetime.date }}</span>
+                                    <!-- Origin chip (outbound) / date (inbound) -->
+                                    <div class="msg-origin-row" v-if="msg.sent_by === 'system'">
+                                        <span class="msg-origin" :class="`origin-${msg.source || 'system'}`">
+                                            <i :class="originIcon(msg.source)"></i>
+                                            {{ msg.source === 'agent' ? (msg.sent_by_name || 'Agen') : originLabel(msg.source) }}
+                                        </span>
+                                        <span class="msg-origin-date">· {{ msg.datetime.date_id || msg.datetime.date }}</span>
                                     </div>
-
-                                    <div class="message-sender-info" v-else> 
+                                    <div class="message-sender-info" v-else>
                                         <span class="sender-date">{{ msg.datetime.date }}</span>
                                     </div>
 
@@ -178,6 +179,16 @@
                                          class="msg-type-indicator msg-unknown">
                                         <i class="bx bx-question-mark"></i>
                                         <span>{{ msg.media_type || 'Pesan kosong' }}</span>
+                                    </div>
+
+                                    <!-- Template Buttons -->
+                                    <div v-if="msg.buttons && msg.buttons.length" class="msg-tbtns">
+                                        <a v-for="(b, bi) in msg.buttons" :key="bi" class="msg-tbtn"
+                                           :href="b.type === 'url' ? b.url : null"
+                                           :target="b.type === 'url' ? '_blank' : null">
+                                            <i :class="b.type === 'url' ? 'bx bx-link-external' : 'bx bx-reply'"></i>
+                                            {{ b.text }}
+                                        </a>
                                     </div>
 
                                     <!-- Message Time -->
@@ -2339,6 +2350,8 @@ export default {
                     message: data.message,
                     sent_by: data.sent_by || 'user',
                     sent_by_name: data.sent_by_name,
+                    source: data.source || 'system',
+                    buttons: data.buttons || [],
                     media_type: data.media_type,
                     media_url: data.media_url,
                     media_size: data.media_size,
@@ -3708,5 +3721,60 @@ export default {
         padding: 4px 6px;
     }
 }
+
+
+/* ── Origin chip (asal pesan outbound) ─────────────────── */
+.msg-origin-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+.msg-origin {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.origin-notification { background: #E0F2F1; color: #0F6E56; }
+.origin-broadcast    { background: #FEF3C7; color: #B45309; }
+.origin-bot          { background: #F1ECFE; color: #5B3FB0; }
+.origin-agent        { background: #EAF3FC; color: #1B5FA6; }
+.origin-system       { background: #F1F5F9; color: #64748B; }
+.msg-origin i        { font-size: 11px; }
+.msg-origin-date     { font-size: 10px; color: #94A3B8; }
+
+/* ── Bubble max-width (desktop tidak full-width) ──────── */
+.message.sent .message-bubble  { max-width: 440px; }
+@media (max-width: 768px) {
+    .message.sent .message-bubble { max-width: 85%; }
+}
+
+/* ── Template buttons ────────────────────────────────── */
+.msg-tbtns {
+    border-top: 1px solid rgba(255, 255, 255, .15);
+    margin-top: 8px;
+}
+.msg-tbtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #9FE3C8;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity .15s;
+}
+.msg-tbtn:hover { opacity: .8; }
+.msg-tbtn + .msg-tbtn { border-top: 1px solid rgba(255, 255, 255, .1); }
+.msg-tbtn i { font-size: 14px; }
 
 </style>

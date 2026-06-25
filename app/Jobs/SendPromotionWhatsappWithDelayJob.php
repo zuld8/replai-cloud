@@ -505,6 +505,14 @@ class SendPromotionWhatsappWithDelayJob implements ShouldQueue
                     $image              = $blast->parent->file != null ? $this->analyzeImage($blast->parent->file) : $image;
                 }
 
+                // Extract buttons from template for CRM display
+                $templateButtons = null;
+                if (isset($templateDetails['buttons']) && is_array($templateDetails['buttons'])) {
+                    $templateButtons = json_encode(array_map(function($b) {
+                        return ['type' => $b['type'] ?? 'quick_reply', 'text' => $b['text'] ?? ($b['title'] ?? '')];
+                    }, $templateDetails['buttons']));
+                }
+
                 $history->details()->create([
                     'file_path' => $image['path'],
                     'file_type' => $image['type'],
@@ -514,6 +522,7 @@ class SendPromotionWhatsappWithDelayJob implements ShouldQueue
                     'is_read'           => 'yes',
                     'from' => 'device',
                     'source'            => 'broadcast',
+                    'buttons'           => $templateButtons,
                     'message' => $text,
                 ]);
             }
