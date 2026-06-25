@@ -65,9 +65,7 @@
 
             /* Delete previous instance */
             if (nanoPickr) {
-    if (typeof Pickr !== 'undefined') {
                 nanoPickr.destroyAndRemove();
-    }
             }
 
             /* Apply active class */
@@ -76,18 +74,14 @@
             }
 
             /* Create fresh instance */
-    if (typeof Pickr !== 'undefined') {
             nanoPickr = new Pickr(Object.assign({
-    }
                 el,
                 theme,
                 default: '#8e54e9'
             }, config));
 
             /* Set events */
-    if (typeof Pickr !== 'undefined') {
             nanoPickr.on('changestop', (source, instance) => {
-    }
                 let color = instance.getColor().toRGBA();
                 let html = document.querySelector('html');
                 html.style.setProperty('--primary-rgb', `${Math.floor(color[0])}, ${Math.floor(color[1])}, ${Math.floor(color[2])}`);
@@ -148,9 +142,7 @@
             }
 
             /* Create fresh instance */
-    if (typeof Pickr !== 'undefined') {
             nanoPickr1 = new Pickr(Object.assign({
-    }
                 el,
                 theme,
                 default: '#8e54e9'
