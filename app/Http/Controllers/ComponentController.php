@@ -87,5 +87,5 @@ class ComponentController extends Controller
         }
 
         return response()->json($data);
-    }}
+    }
 }

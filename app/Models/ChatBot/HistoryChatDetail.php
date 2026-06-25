@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Facades\DB;
 
 class HistoryChatDetail extends Model
 {
@@ -54,12 +55,16 @@ class HistoryChatDetail extends Model
         });
 
         static::created(function ($model) {
-            // Increment unread_count on parent history_chat when a USER message arrives
-            // This counter is used for badge display in CRM contact list
-            // Reset happens in CrmController when agent opens/reads the chat
+            // Saat pesan masuk dari pelanggan (from='user'):
+            // 1. Increment unread_count (badge di CRM sidebar)
+            // 2. Update last_inbound_at (untuk chip sesi 24 jam WABA)
+            // Keduanya dalam 1 query untuk efisiensi.
             if ($model->from === 'user' && $model->history_chat_id) {
                 \App\Models\ChatBot\HistoryChat::where('id', $model->history_chat_id)
-                    ->increment('unread_count');
+                    ->update([
+                        'unread_count'    => \Illuminate\Support\Facades\DB::raw('unread_count + 1'),
+                        'last_inbound_at' => now(),  // reset 24h session window WABA
+                    ]);
             }
         });
     }

@@ -119,13 +119,13 @@
                             <div class="chat-name-wrap">
                                 <div class="chat-name">{{ truncateName(list.name, 20) }}</div>
                                 <!-- Chip sesi 24 jam — HANYA untuk WABA -->
-                                <template v-if="list.from === 'waba' && list.last_message_at">
-                                    <span v-if="getWabaSessionStatus(list.last_message_at)"
+                                <template v-if="list.from === 'waba' && list.last_inbound_at">
+                                    <span v-if="getWabaSessionStatus(list.last_inbound_at)"
                                           class="waba-session-chip"
-                                          :class="'waba-session--' + getWabaSessionStatus(list.last_message_at).status"
-                                          :title="getWabaSessionStatus(list.last_message_at).status === 'expired' ? 'Sesi 24 jam habis — hanya bisa kirim template' : 'Sesi 24 jam aktif'">
-                                        <i :class="getWabaSessionStatus(list.last_message_at).status === 'expired' ? 'bx bx-lock-alt' : 'bx bx-time'"></i>
-                                        {{ getWabaSessionStatus(list.last_message_at).label }}
+                                          :class="'waba-session--' + getWabaSessionStatus(list.last_inbound_at).status"
+                                          :title="getWabaSessionStatus(list.last_inbound_at).status === 'expired' ? 'Sesi 24 jam habis — hanya bisa kirim template' : 'Sesi 24 jam aktif'">
+                                        <i :class="getWabaSessionStatus(list.last_inbound_at).status === 'expired' ? 'bx bx-lock-alt' : 'bx bx-time'"></i>
+                                        {{ getWabaSessionStatus(list.last_inbound_at).label }}
                                     </span>
                                 </template>
                             </div>
@@ -1661,7 +1661,7 @@ export default {
     justify-content: center;
     gap: 8px;
     padding: 8px 12px;
-    background-color: #005C4B;
+    background-color: #2E8DE1;
     color: white;
     border: none;
     border-radius: 8px;
@@ -1672,9 +1672,9 @@ export default {
 }
 
 .btn-new-chat:hover {
-    background-color: #059669;
+    background-color: #1B6FB8;
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 8px rgba(46, 141, 225, 0.3);
 }
 
 .btn-new-chat i {
