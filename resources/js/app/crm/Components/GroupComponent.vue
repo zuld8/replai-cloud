@@ -92,7 +92,7 @@
 
             <!-- Chat Items -->
             <div class="chat-items-container">
-                <div class="chat-item" v-for="(list, index) in chats.list" :key="index"
+                <div class="chat-item" v-for="list in chats.list" :key="list.id"
                      :class="{ active: $route.params.chatid === list.id, unread: list.not_read > 0 }"
                      @click="selectChat(list)">
 
@@ -599,7 +599,7 @@ export default {
                 list: [],
                 totalchats: 0,
                 page: 1,
-                limit: 10,
+                limit: 25,
                 hasMoreChats: true,
             },
             modalContactsPage: 1,
