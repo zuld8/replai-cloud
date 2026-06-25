@@ -48,7 +48,7 @@
                         <small v-if="loadingCount" class="text-muted mt-1 d-block" style="font-size:11px;">
                             <span class="spinner-border spinner-border-sm" style="width:10px;height:10px;"></span> Menghitung...
                         </small>
-                        <small v-else-if="categoryCount !== null" class="mt-1 d-block" style="font-size:11px;color:#16a34a;">
+                        <small v-else-if="categoryCount !== null" class="mt-1 d-block" style="font-size:11px;color:#16A34A;font-weight:500;">
                             <i class="ti ti-users" style="font-size:12px;"></i> {{ categoryCount.toLocaleString('id-ID') }} kontak tertarget
                         </small>
                     </div>
@@ -62,7 +62,7 @@
                             </option>
                         </select>
                         <small v-if="selectedTemplateName" class="mt-1 d-block" style="font-size:11px;">
-                            <span class="badge bg-label-success">{{ selectedTemplateCategory || 'Template' }}</span>
+                            <span class="badge" style="background:#FEF3C7;color:#854F0B;font-weight:600;border-radius:6px;padding:2px 8px;">{{ selectedTemplateCategory || 'Template' }}</span>
                         </small>
                     </div>
 
@@ -80,15 +80,15 @@
                                 <span class="text-danger ms-1">*</span>
                             </label>
                             <span v-if="form.metadata.header.format == 'IMAGE'"
-                                class="badge" style="background:#e8f0fe;color:#1d6fb8;font-size:11px;">
+                                class="badge" style="background:#EAF3FC;color:#1B5FA6;font-size:11px;">
                                 <i class="ti ti-photo me-1"></i>JPG, PNG &bull; Maks 5 MB
                             </span>
                             <span v-if="form.metadata.header.format == 'VIDEO'"
-                                class="badge" style="background:#f3e8ff;color:#7c3aed;font-size:11px;">
+                                class="badge" style="background:#F1ECFE;color:#5B3FB0;font-size:11px;">
                                 <i class="ti ti-video me-1"></i>MP4, 3GP &bull; Maks 16 MB
                             </span>
                             <span v-if="form.metadata.header.format == 'DOCUMENT'"
-                                class="badge" style="background:#fff3e0;color:#d4820a;font-size:11px;">
+                                class="badge" style="background:#FEF3C7;color:#B45309;font-size:11px;">
                                 <i class="ti ti-file-type-pdf me-1"></i>PDF &bull; Maks 100 MB
                             </span>
                         </div>
@@ -174,7 +174,7 @@
                                 <div class="waba-sender-name">{{ device.name || 'Nomor WABA' }}</div>
                                 <div class="waba-sender-phone">+{{ device.phone }}</div>
                             </div>
-                            <span class="badge bg-success-subtle text-success">Aktif</span>
+                            <span class="badge" style="background:#DCFCE7;color:#16A34A;font-weight:600;border:1px solid #C9EAD7;border-radius:6px;padding:3px 9px;">Aktif</span>
                         </div>
                         <!-- If multiple devices: show select -->
                         <select v-if="devices.length > 1" class="form-control mt-2" v-model="selectedDeviceId" @change="onDeviceChange">
@@ -194,17 +194,17 @@
                                 <i class="ti ti-bolt me-1"></i>Kirim Sekarang
                             </button>
                             <button type="button"
-                                :class="['toggle-btn', sendMode === 'schedule' ? 'active' : '']"
+                                :class="['toggle-btn', 'schedule-btn', sendMode === 'schedule' ? 'active' : '']"
                                 @click="setSendMode('schedule')">
                                 <i class="ti ti-calendar-event me-1"></i>Jadwalkan
                             </button>
                         </div>
                         <div v-if="sendMode === 'schedule'">
                             <input class="form-control" v-model="form.schedule" type="datetime-local" required />
-                            <small class="text-muted" style="font-size:11px;">WIB (UTC+7)</small>
+                            <small style="font-size:11px;color:#94A3B8;">WIB (UTC+7)</small>
                         </div>
                         <div v-else class="text-muted" style="font-size:12px;padding:6px 0;">
-                            <i class="ti ti-check me-1 text-success"></i>Broadcast akan masuk antrian segera setelah dikonfirmasi.
+                            <i class="ti ti-check me-1" style="color:#16A34A;"></i>Broadcast akan masuk antrian segera setelah dikonfirmasi.
                         </div>
                     </div>
 
@@ -212,8 +212,8 @@
                     <div class="col-12 mb-3">
                         <div class="advanced-toggle" @click="advancedOpen = !advancedOpen">
                             <i :class="['ti', advancedOpen ? 'ti-chevron-down' : 'ti-chevron-right', 'me-1']" style="font-size:13px;"></i>
-                            <span style="font-size:13px;color:#6c757d;">Pengaturan lanjutan</span>
-                            <span style="font-size:11px;color:#adb5bd;margin-left:6px;">(jeda antar pesan — opsional, biasanya gak perlu utk WABA)</span>
+                            <span style="font-size:13px;color:#64748B;">Pengaturan lanjutan</span>
+                            <span style="font-size:11px;color:#94A3B8;margin-left:6px;">(jeda antar pesan — opsional, biasanya gak perlu utk WABA)</span>
                         </div>
                         <div v-show="advancedOpen" class="advanced-panel mt-2">
                             <div class="row">
@@ -233,7 +233,7 @@
                                     <small class="text-muted" style="font-size:10px;">rest_sending = jeda antar batch</small>
                                 </div>
                             </div>
-                            <small class="text-muted" style="font-size:11px;">
+                            <small style="font-size:11px;color:#94A3B8;">
                                 <i class="ti ti-info-circle me-1"></i>
                                 Contoh: jeda 30 dtk · istirahat 5 menit setiap 100 pesan. WABA jarang perlu ini — Meta sudah atur rate limit.
                             </small>
@@ -357,7 +357,7 @@
         <!-- ═══ FOOTER: Kirim Tes + Mulai Broadcast ═══ -->
         <div class="card-footer d-flex justify-content-between align-items-center">
             <div>
-                <small class="text-muted" style="font-size:11px;">
+                <small style="font-size:11px;color:#94A3B8;">
                     Versi WABA-native: "Dikirim dari" auto-pilih nomor WABA &bull; Throttle disembunyikan di Pengaturan lanjutan.
                 </small>
             </div>
@@ -391,103 +391,209 @@
 </template>
 
 <style scoped>
+/* ══════════════════════════════════════════
+   BRAND PALETTE
+   Primary  : #2E8DE1  soft #EAF3FC  dark #1B5FA6
+   Success  : #16A34A  soft #DCFCE7
+   Amber    : #B45309  soft #FEF3C7
+   Danger   : #DC2626  soft #FEECEC
+   Navy txt : #1E2A4A  muted #64748B  border #E4EAF2
+   Page bg  : #F5F8FC  WA-green #25D366 (unchanged)
+══════════════════════════════════════════ */
+
+/* ── Global input focus ring ── */
+.form-control:focus,
+.form-select:focus {
+    border-color: #2E8DE1 !important;
+    box-shadow: 0 0 0 3px rgba(46,141,225,0.15) !important;
+    outline: none;
+}
+.form-control,
+.form-select {
+    border-color: #E4EAF2;
+    border-radius: 7px;
+    color: #1E2A4A;
+}
+
 /* ── Section headers ── */
 .section-header {
     display: flex;
     align-items: center;
     gap: 10px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #e9ecef;
+    border-bottom: 2px solid #EEF2F7;
 }
 .section-num {
     width: 26px; height: 26px;
-    background: #206bc4; color: #fff;
+    background: #2E8DE1;           /* brand primary — was #206bc4 */
+    color: #fff;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; font-weight: 700; flex-shrink: 0;
 }
 .section-title {
-    font-weight: 600; font-size: 14px; color: #2c3e50; letter-spacing: 0.3px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1E2A4A;
+    letter-spacing: 0.3px;
 }
 
 /* ── Upload drop zone ── */
 .upload-drop-zone {
-    border: 2px dashed #dee2e6;
-    border-radius: 10px;
+    border: 2px dashed #E4EAF2;    /* was #dee2e6 */
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     min-height: 85px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fafafa;
+    background: #F5F8FC;           /* was #fafafa */
     user-select: none;
 }
-.upload-drop-zone:hover { border-color: #206bc4; background: rgba(32,107,196,0.04); }
-.upload-drop-zone--dragging { border-color: #206bc4; background: rgba(32,107,196,0.08); transform: scale(1.01); }
-.upload-drop-zone--success { border-color: #2fb344; background: rgba(47,179,68,0.05); border-style: solid; }
-.upload-drop-zone--error { border-color: #d63939; background: rgba(214,57,57,0.04); }
+.upload-drop-zone:hover {
+    border-color: #2E8DE1;
+    background: #EAF3FC;           /* brand soft blue */
+}
+.upload-drop-zone--dragging {
+    border-color: #2E8DE1;
+    background: rgba(46,141,225,0.08);
+    transform: scale(1.01);
+}
+.upload-drop-zone--success {
+    border-color: #16A34A;
+    background: #DCFCE7;           /* brand soft green */
+    border-style: solid;
+}
+.upload-drop-zone--error {
+    border-color: #DC2626;
+    background: #FEECEC;           /* brand soft red */
+}
 
 /* ── WABA sender card ── */
 .waba-sender-card {
     display: flex; align-items: center; gap: 12px;
     padding: 10px 14px;
-    background: #f0fdf4; border: 1px solid #bbf7d0;
+    background: #F0FBF4;           /* subtle green bg */
+    border: 1.5px solid #C9EAD7;  /* soft green border */
     border-radius: 10px;
 }
 .waba-sender-icon {
     width: 38px; height: 38px; border-radius: 50%;
-    background: #25D366; color: #fff;
+    background: #25D366;           /* WA green — UNCHANGED */
+    color: #fff;
     display: flex; align-items: center; justify-content: center;
     font-size: 18px; flex-shrink: 0;
 }
-.waba-sender-name { font-weight: 600; font-size: 13px; color: #1a3c2a; }
-.waba-sender-phone { font-size: 12px; color: #4b7c5e; }
+.waba-sender-name {
+    font-weight: 600; font-size: 13px;
+    color: #1E2A4A;                /* navy */
+}
+.waba-sender-phone {
+    font-size: 12px;
+    color: #64748B;                /* muted */
+}
 
-/* ── Send mode toggle ── */
+/* ── Send-mode toggle ── */
 .send-mode-toggle {
     display: flex; gap: 8px;
 }
 .toggle-btn {
     padding: 7px 16px; border-radius: 8px;
-    border: 1.5px solid #dee2e6; background: #fff;
-    color: #6c757d; font-size: 13px; cursor: pointer;
+    border: 1.5px solid #E4EAF2;  /* brand border */
+    background: #fff;
+    color: #64748B;                /* muted text */
+    font-size: 13px; cursor: pointer;
     transition: all 0.15s ease;
 }
-.toggle-btn:hover { border-color: #206bc4; color: #206bc4; }
-.toggle-btn.active { background: #206bc4; border-color: #206bc4; color: #fff; font-weight: 600; }
+.toggle-btn:hover {
+    border-color: #2E8DE1;
+    color: #2E8DE1;
+}
+.toggle-btn.active {
+    background: #2E8DE1;           /* brand primary */
+    border-color: #2E8DE1;
+    color: #fff;
+    font-weight: 600;
+}
+/* "Jadwalkan" selected state → soft blue highlight */
+.toggle-btn.active.schedule-btn {
+    background: #EAF3FC;
+    color: #1B5FA6;
+    border-color: #2E8DE1;
+}
 
-/* ── Advanced panel ── */
+/* ── Advanced (lanjutan) panel ── */
 .advanced-toggle {
     display: flex; align-items: center;
     cursor: pointer; padding: 6px 0;
 }
-.advanced-toggle:hover span { color: #495057 !important; }
+.advanced-toggle:hover span {
+    color: #1E2A4A !important;
+}
 .advanced-panel {
-    background: #f8f9fa; border-radius: 8px;
-    padding: 12px 14px; border: 1px solid #e9ecef;
+    background: #F5F8FC;           /* page bg — was #f8f9fa */
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1px solid #E4EAF2;    /* brand border */
 }
 
 /* ── Confirmation modal ── */
 .modal-overlay {
     position: fixed; inset: 0; z-index: 9999;
-    background: rgba(0,0,0,0.5);
+    background: rgba(30,42,74,0.45);  /* navy overlay */
     display: flex; align-items: center; justify-content: center;
 }
 .modal-box {
     background: #fff; border-radius: 16px;
     padding: 32px 28px; max-width: 420px; width: 90%;
-    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(30,42,74,0.18);
 }
 .modal-icon {
     width: 60px; height: 60px; border-radius: 50%;
-    background: #dbeafe; color: #206bc4;
+    background: #EAF3FC;           /* brand soft blue */
+    color: #2E8DE1;                /* brand primary */
     display: flex; align-items: center; justify-content: center;
     font-size: 26px; margin: 0 auto 16px;
 }
-.modal-box h5 { font-weight: 700; margin-bottom: 8px; }
-.modal-box p { color: #6c757d; font-size: 14px; margin-bottom: 20px; }
-.modal-actions { display: flex; gap: 10px; justify-content: center; }
+.modal-box h5 {
+    font-weight: 700;
+    color: #1E2A4A;
+    margin-bottom: 8px;
+}
+.modal-box p {
+    color: #64748B;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+.modal-actions {
+    display: flex; gap: 10px; justify-content: center;
+}
+
+/* ── Disabled "Lengkapi Form" button: abu, bukan biru ── */
+.btn-primary:disabled,
+.btn-primary.disabled,
+.btn-primary[disabled] {
+    background-color: #E4EAF2 !important;
+    border-color: #E4EAF2 !important;
+    color: #94A3B8 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
+
+/* ── Primary button (active) ── */
+.btn-primary {
+    background-color: #2E8DE1;
+    border-color: #2E8DE1;
+}
+.btn-primary:hover:not(:disabled) {
+    background-color: #1B6FB8;
+    border-color: #1B6FB8;
+}
+.btn-primary:focus {
+    box-shadow: 0 0 0 3px rgba(46,141,225,0.25);
+}
 </style>
 
 <script>
