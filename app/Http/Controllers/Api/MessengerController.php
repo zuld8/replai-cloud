@@ -171,6 +171,21 @@ class MessengerController extends Controller
             }
 
             // Parse message data
+            // Extract referral BEFORE parsing
+            $fbLeadSource = null; $fbLeadDetail = null;
+            $fbRef = $messaging['referral'] ?? ($messaging['postback']['referral'] ?? null);
+            Log::info('FB referral payload', ['ref' => $fbRef]);
+            if ($fbRef) {
+                $fbLeadSource = ($fbRef['source'] ?? '') === 'ADS' ? 'ad' : 'link';
+                $fbLeadDetail = [
+                    'headline'  => $fbRef['ads_context_data']['ad_title'] ?? ($fbRef['ref'] ?? null),
+                    'media_url' => $fbRef['ads_context_data']['photo_url'] ?? null,
+                    'ad_id'     => $fbRef['ad_id'] ?? null,
+                    'ref'       => $fbRef['ref'] ?? null,
+                    'channel'   => 'messanger',
+                ];
+            }
+
             $messageData = $this->parseMessageData($messaging);
             if (!$messageData) {
                 return false;
@@ -182,6 +197,12 @@ class MessengerController extends Controller
             DB::transaction(function () use ($messageData, $messengerAccount, $senderInfo) {
                 // Get or create chat history (no HTTP calls inside — senderInfo already fetched)
                 $histories = $this->getOrCreateHistory($messageData, $messengerAccount, $senderInfo);
+                if ($histories && !$histories->lead_source && $fbLeadSource) {
+                    $histories->update([
+                        'lead_source'        => $fbLeadSource,
+                        'lead_source_detail' => json_encode($fbLeadDetail),
+                    ]);
+                }
                 if (!$histories) {
                     return false;
                 }

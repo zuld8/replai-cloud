@@ -166,6 +166,28 @@ class InstagramController extends Controller
                 return false;
             }
 
+            // Extract referral / story reply BEFORE parsing (raw $messaging payload)
+            $igLeadSource = null; $igLeadDetail = null;
+            $igRef = $messaging['referral'] ?? null;
+            Log::info('IG referral payload', ['ref' => $igRef, 'reply_to' => $messaging['message']['reply_to'] ?? null]);
+            if ($igRef) {
+                $igLeadSource = 'ad';
+                $igLeadDetail = [
+                    'headline'  => $igRef['ads_context_data']['ad_title'] ?? null,
+                    'media_url' => $igRef['ads_context_data']['photo_url'] ?? null,
+                    'ad_id'     => $igRef['ad_id'] ?? null,
+                    'ref'       => $igRef['ref'] ?? null,
+                    'channel'   => 'instagram',
+                ];
+            } elseif (!empty($messaging['message']['reply_to']['story'])) {
+                $igLeadSource = 'story';
+                $igLeadDetail = [
+                    'story_id'  => $messaging['message']['reply_to']['story']['id'] ?? null,
+                    'media_url' => $messaging['message']['reply_to']['story']['url'] ?? null,
+                    'channel'   => 'instagram',
+                ];
+            }
+
             $messageData = $this->parseMessageData($messaging);
             if (!$messageData) {
                 return false;
@@ -177,6 +199,13 @@ class InstagramController extends Controller
             DB::transaction(function () use ($messageData, $instagramAccount, $senderInfo) {
                 // Get or create chat history (no HTTP calls here — senderInfo pre-fetched)
                 $histories = $this->getOrCreateHistory($messageData, $instagramAccount, $senderInfo);
+                // Save lead source on new/untagged chats
+                if ($histories && !$histories->lead_source && $igLeadSource) {
+                    $histories->update([
+                        'lead_source'        => $igLeadSource,
+                        'lead_source_detail' => json_encode($igLeadDetail),
+                    ]);
+                }
                 if (!$histories) {
                     return false;
                 }

@@ -147,6 +147,15 @@
                         </div>
 
                         <!-- BARIS AKUN PENUH: nama akun kanan + ⋯ selalu tampil -->
+                        <!-- Lead attribution chip -->
+                        <span v-if="list.lead_source && list.lead_source !== 'organic'"
+                              class="ci-chip lead-chip"
+                              :class="`lead-source-${list.lead_source}`"
+                              :title="leadChipLabel(list.lead_source)">
+                            <i :class="leadChipIcon(list.lead_source)"></i>
+                            {{ leadChipLabel(list.lead_source) }}
+                        </span>
+
                         <div class="ci-acctrow" v-if="list.device || list.telegram || list.livechat || list.instagram">
                             <span class="ci-dev" :title="list.device||list.telegram||list.livechat||list.instagram">
                                 <i :class="getChannelIcon(list.from)"></i>{{ list.device||list.telegram||list.livechat||list.instagram }}
@@ -2436,6 +2445,17 @@ overflow:visible;}
 /* Dropdown visible */
 .chat-items-container{overflow:visible;}
 .dropdown-menu-chat{z-index:200;}
+
+
+/* ── Lead attribution chips ──────────────────────────── */
+.lead-chip { font-size:9px; padding:2px 6px; border-radius:5px; display:inline-flex;
+             align-items:center; gap:3px; flex-shrink:0; white-space:nowrap;
+             font-weight:600; margin-bottom:3px; }
+.lead-source-ad    { background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; }
+.lead-source-story { background:#FCE7F3; color:#9D174D; border:1px solid #FBCFE8; }
+.lead-source-post  { background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; }
+.lead-source-link  { background:#F0FDF4; color:#166534; border:1px solid #BBF7D0; }
+.lead-chip i { font-size:10px; flex-shrink:0; }
 
 </style>
 

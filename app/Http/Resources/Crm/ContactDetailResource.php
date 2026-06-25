@@ -75,7 +75,10 @@ class ContactDetailResource extends JsonResource
                 'assignment_at'     => $this->assignment_at != null ? $this->assignment_at->format('Y-m-d H:i') : '',
                 'resolved_at'       => $this->resolved_at != null ? $this->resolved_at->format('Y-m-d H:i') : '',
                 'created_at'        => $this->created_at->format('Y-m-d H:i')
-            )
+            ),
+            'lead_source'        => $this->lead_source,
+            'lead_source_detail' => $this->lead_source_detail
+                ? json_decode($this->lead_source_detail, true) : null,
         ];
     }
 }

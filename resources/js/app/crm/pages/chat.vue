@@ -6,6 +6,21 @@
             <!-- Chat Header -->
             <div class="chat-header-main">
                 <span class="name">{{ detail.name }}</span>
+                <!-- Lead attribution banner -->
+                <div v-if="detail.lead_source && detail.lead_source !== 'organic'"
+                     class="lead-banner"
+                     :class="`lead-banner-${detail.lead_source}`"
+                     @click="detail.lead_source_detail?.source_url && window.open(detail.lead_source_detail.source_url,'_blank')">
+                    <i :class="leadBannerIcon(detail.lead_source)"></i>
+                    <span class="lead-banner-label">Lead {{ leadBannerLabel(detail.lead_source) }}</span>
+                    <span v-if="detail.lead_source_detail?.headline" class="lead-banner-headline">
+                        · {{ detail.lead_source_detail.headline }}
+                    </span>
+                    <img v-if="detail.lead_source_detail?.media_url"
+                         :src="detail.lead_source_detail.media_url"
+                         class="lead-banner-thumb"
+                         @error="$event.target.style.display='none'" />
+                </div>
                 <div class="controls">
                     <button class="btn-control d-lg-none" @click="$emit('toggle-left-sidebar')">
                         <i class="bx bx-menu"></i>
@@ -1097,6 +1112,14 @@ export default {
     },
     methods: {
 
+        leadBannerLabel(s) {
+            const m = { ad:'dari Iklan', story:'Balas Story', post:'dari Postingan', link:'via Link' };
+            return m[s] || '';
+        },
+        leadBannerIcon(s) {
+            const m = { ad:'bx bxs-megaphone', story:'bx bxl-instagram', post:'bx bx-image', link:'bx bx-link' };
+            return m[s] || 'bx bx-tag';
+        },
         originLabel(source) {
             const labels = {
                 notification: 'Notifikasi',
@@ -3816,5 +3839,23 @@ export default {
     color: #1B5FA6;
     font-style: italic;
 }
+
+
+/* ── Lead attribution banner ─────────────────────────── */
+.lead-banner {
+    display:flex; align-items:center; gap:6px; padding:5px 12px;
+    font-size:11px; font-weight:600; cursor:pointer;
+    border-bottom:1px solid rgba(0,0,0,.06);
+    transition:opacity .15s;
+}
+.lead-banner:hover { opacity:.8; }
+.lead-banner-ad    { background:#FFFBEB; color:#92400E; }
+.lead-banner-story { background:#FDF2F8; color:#9D174D; }
+.lead-banner-post  { background:#EFF6FF; color:#1E40AF; }
+.lead-banner-link  { background:#F0FDF4; color:#166534; }
+.lead-banner i     { font-size:13px; flex-shrink:0; }
+.lead-banner-headline { font-weight:400; opacity:.85; }
+.lead-banner-thumb { width:24px; height:24px; border-radius:4px; object-fit:cover;
+                     flex-shrink:0; margin-left:auto; }
 
 </style>

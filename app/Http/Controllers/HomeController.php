@@ -604,4 +604,35 @@ class HomeController extends Controller
         return response()->json($result);
     }
 
+
+    public function leadReport(Request $request)
+    {
+        $businessId = my_business();
+        $cacheKey   = "lead_report_{$businessId}";
+
+        $cached = \Cache::get($cacheKey);
+        if ($cached) return response()->json($cached);
+
+        // GROUP BY ad headline (JSON extract) — 1 query for all ads
+        $rows = \App\Models\ChatBot\HistoryChat::where('business_id', $businessId)
+            ->whereNotNull('lead_source')
+            ->selectRaw("
+                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(lead_source_detail, '$.headline')), lead_source) as headline,
+                lead_source,
+                COUNT(*) as total
+            ")
+            ->groupByRaw("JSON_EXTRACT(lead_source_detail, '$.headline'), lead_source")
+            ->orderByDesc('total')
+            ->get();
+
+        $organic = \App\Models\ChatBot\HistoryChat::where('business_id', $businessId)
+            ->whereNull('lead_source')
+            ->count();
+
+        $result = ['rows' => $rows, 'organic' => $organic];
+        \Cache::put($cacheKey, $result, 1800); // 30 min cache
+
+        return response()->json($result, 200);
+    }
+
 }

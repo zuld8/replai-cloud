@@ -462,6 +462,30 @@ class WabaCallbackController extends Controller
                     // Update chat status
                     $this->updateChatStatus($histories);
 
+                    // Lead attribution — capture CTWA referral (first message only)
+                    if (!$histories->lead_source) {
+                        $ref = $messageData['rawMessage']['referral'] ?? null;
+                        Log::info('WABA referral payload', [
+                            'ref'    => $ref,
+                            'msg_id' => $messageData['messageId'] ?? null,
+                        ]);
+                        if ($ref) {
+                            $histories->update([
+                                'lead_source'        => in_array($ref['source_type'] ?? '', ['ad','post'])
+                                    ? $ref['source_type'] : 'ad',
+                                'lead_source_detail' => json_encode([
+                                    'headline'    => $ref['headline'] ?? null,
+                                    'body'        => $ref['body'] ?? null,
+                                    'source_url'  => $ref['source_url'] ?? null,
+                                    'media_url'   => $ref['image_url'] ?? ($ref['video_url'] ?? null),
+                                    'ad_id'       => $ref['ctwa_clid'] ?? null,
+                                    'source_type' => $ref['source_type'] ?? null,
+                                    'channel'     => 'waba',
+                                ]),
+                            ]);
+                        }
+                    }
+
                     // Save user message
                     $userMessage = $this->saveUserMessage($histories, $messageData, $messageContent, $mediaInfo);
 
