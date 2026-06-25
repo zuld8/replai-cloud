@@ -2380,7 +2380,7 @@ overflow:visible;}
    ══════════════════════════════════════════════════ */
 
 /* Container */
-.chat-item{display:flex;gap:10px;padding:10px 11px;border-bottom:.5px solid #F1F5F9;cursor:pointer;align-items:flex-start;transition:background .15s;position:relative;}
+.chat-item{display:flex;gap:10px;padding:10px 11px;border-bottom:1px solid #E4EAF2;cursor:pointer;align-items:flex-start;transition:background .15s;position:relative;}
 .chat-item:hover{background:#FAFCFF;}
 .chat-item.active{background:#F7FBFF;border-left:2px solid #2E8DE1;padding-left:9px;}
 
@@ -2432,7 +2432,8 @@ overflow:visible;}
 .ci-dev i{flex-shrink:0;font-size:11px;margin-top:1px;}
 
 /* ⋯ button: SELALU tampil (bukan hover-only) */
-.ci-dots{flex-shrink:0;width:26px;height:18px;border-radius:6px;background:#fff;border:.5px solid #D7E0EC;color:#64748B;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:all .15s;}
+.ci-dots{flex-shrink:0;width:28px;height:20px;border-radius:6px;background:#EEF2F7;border:.5px solid #D7E0EC;color:#475569;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:all .15s;}
+.ci-dots i{font-size:14px;}
 .ci-dots.active,.ci-dots:hover{background:#2E8DE1;border-color:#2E8DE1;color:#fff;}
 
 /* Label strip: kiri, baris sendiri */
