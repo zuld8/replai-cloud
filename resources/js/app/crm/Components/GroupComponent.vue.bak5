@@ -2384,9 +2384,9 @@ export default {
 /* Body */
 .ci-body{flex:1;min-width:0;}
 .ci-main{display:flex;gap:8px;align-items:flex-start;}
-.ci-center{flex:1;min-width:0;overflow:hidden;}
-.ci-name-row{display:flex;align-items:flex-start;gap:5px;flex-wrap:wrap;}
-.ci-name{font-size:13px;font-weight:500;color:#1E2A4A;word-break:break-word;line-height:1.35;}
+.ci-center{flex:1;min-width:0;}
+.ci-name-row{display:flex;align-items:center;gap:6px;min-width:0;}
+.ci-name{font-size:13px;font-weight:500;color:#1E2A4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
 
 /* WABA 24h chip */
 .ci-24h{display:inline-flex;align-items:center;gap:2px;font-size:9px;padding:1px 5px;border-radius:9px;font-weight:600;flex-shrink:0;white-space:nowrap;}
