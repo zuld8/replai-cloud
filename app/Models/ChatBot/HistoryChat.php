@@ -98,7 +98,9 @@ class HistoryChat extends Model
         return [
             'expire_date'       => 'date',
             'assignment_at'     => 'date',
-            'resolved_at'       => 'date'
+            'resolved_at'       => 'date',
+            'last_inbound_at'   => 'datetime',  // ← wajib: biar bisa ->toIso8601String()
+            'last_message_at'   => 'datetime',  // konsistensi
         ];
     }
 

@@ -48,7 +48,9 @@ class ContactListResource extends JsonResource
             // Diset HANYA saat from='user' di HistoryChatDetail hook → akurat untuk window 24 jam
             // Beda dari last_message_at yang mencakup semua arah (pakai last_message_at buat urutan/waktu)
             'last_inbound_at' => $this->from === 'waba'
-                ? ($this->last_inbound_at ? $this->last_inbound_at->toIso8601String() : null)
+                ? ($this->last_inbound_at
+                    ? \Carbon\Carbon::parse($this->last_inbound_at)->toIso8601String()
+                    : null)
                 : null,
             // WABA 24h session chip — waktu pesan terakhir (ISO format)
             // Vue pakai ini untuk hitung sisa 24 jam. Kalau bukan WABA = null.
