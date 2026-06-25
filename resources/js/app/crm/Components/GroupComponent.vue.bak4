@@ -93,74 +93,84 @@
             <!-- Chat Items -->
             <div class="chat-items-container">
                 <div class="chat-item" v-for="(list, index) in chats.list" :key="index"
-                     :class="{ active: $route.params.chatid === list.id, unread: list.not_read > 0 }"
-                     @click="selectChat(list)">
-
-                    <!-- AVATAR -->
-                    <div class="ci-avatar">
-                        <img v-if="list.from==='whatsapp'||list.from==='waba'||(list.photo && !list.photo.includes('default')&&!list.photo.includes('user.png'))"
-                             :src="list.photo || defaultUserIcon" class="ci-img"
-                             @error="$event.target.src=defaultUserIcon"/>
-                        <div v-else class="ci-fallback" :style="{background:getChannelColor(list.from)}">
+                    :class="{ active: $route.params.chatid === list.id, unread: list.not_read > 0 }" @click="selectChat(list)">
+                    <!-- Avatar with Platform Badge in corner -->
+                    <div class="chat-avatar-outer">
+                        <!-- WhatsApp/WABA: always show photo (real or default person icon) -->
+                        <div v-if="list.from === 'whatsapp' || list.from === 'waba'"
+                             class="chat-avatar-badge">
+                            <img :src="list.photo || defaultUserIcon" :alt="list.name"
+                                 class="avatar-img-round"
+                                 @error="$event.target.src = defaultUserIcon" />
+                        </div>
+                        <!-- Other platforms with real profile photo -->
+                        <div v-else-if="list.photo && !list.photo.includes('user.png') && !list.photo.includes('default')"
+                             class="chat-avatar-badge">
+                            <img :src="list.photo" :alt="list.name"
+                                 class="avatar-img-round"
+                                 @error="$event.target.style.opacity='0'" />
+                        </div>
+                        <!-- No photo: colored circle with platform icon -->
+                        <div v-else class="chat-avatar" :style="{ backgroundColor: getChannelColor(list.from) }">
                             <i :class="getChannelIcon(list.from)"></i>
                         </div>
-                        <span class="ci-badge" :class="`ci-badge--${list.from}`">
+                        <!-- Platform badge ALWAYS shows in bottom-right corner -->
+                        <span class="ch-badge" :class="`ch-badge--${list.from}`">
                             <i :class="getChannelIcon(list.from)"></i>
                         </span>
                     </div>
 
-                    <!-- BODY -->
-                    <div class="ci-body">
-                        <div class="ci-main">
-
-                            <!-- Kolom tengah -->
-                            <div class="ci-center">
-                                <div class="ci-name-row">
-                                    <span class="ci-name">{{ list.name }}</span>
-                                    <!-- Chip sesi 24 jam WABA -->
+                    <div class="chat-body">
+                        <div class="chat-main">
+                            <!-- Kolom tengah: nama+chip / preview -->
+                            <div class="chat-center">
+                                <div class="chat-name-row">
+                                    <span class="chat-name">{{ truncateName(list.name, 20) }}</span>
                                     <template v-if="list.from === 'waba' && list.last_inbound_at">
                                         <span v-if="getWabaSessionStatus(list.last_inbound_at)"
-                                              class="ci-24h"
-                                              :class="{
-                                                  'active': getWabaSessionStatus(list.last_inbound_at).status === 'active',
-                                                  'soon':   getWabaSessionStatus(list.last_inbound_at).status === 'warning',
-                                                  'closed': getWabaSessionStatus(list.last_inbound_at).status === 'expired'
-                                              }">
+                                              class="waba-session-chip"
+                                              :class="'waba-session--' + getWabaSessionStatus(list.last_inbound_at).status"
+                                              :title="getWabaSessionStatus(list.last_inbound_at).status === 'expired' ? 'Sesi 24 jam habis' : 'Sesi aktif'">
                                             <i :class="getWabaSessionStatus(list.last_inbound_at).status === 'expired' ? 'bx bx-lock-alt' : 'bx bx-time'"></i>
                                             {{ getWabaSessionStatus(list.last_inbound_at).label }}
                                         </span>
                                     </template>
                                 </div>
-                                <div class="ci-preview">
-                                    <i v-if="list.media_type==='image'" class="bx bx-image-alt"></i>
-                                    <i v-else-if="list.media_type==='video'" class="bx bx-video"></i>
-                                    <i v-else-if="list.media_type==='audio'" class="bx bx-microphone"></i>
-                                    <i v-else-if="isDocumentType(list.media_type)" class="bx bx-file"></i>
+                                <div class="chat-preview">
+                                    <i v-if="list.media_type === 'image'" class='bx bx-image-alt me-1'></i>
+                                    <i v-if="list.media_type === 'video'" class='bx bx-video me-1'></i>
+                                    <i v-if="list.media_type === 'audio'" class='bx bx-microphone me-1'></i>
+                                    <i v-if="isDocumentType(list.media_type)" class='bx bx-file me-1'></i>
                                     {{ truncateText(list.last_message.message, 32) }}
                                 </div>
                             </div>
 
-                            <!-- Kolom kanan -->
-                            <div class="ci-right">
-                                <div class="ci-top">
-                                    <span class="ci-unread" v-if="list.not_read > 0">{{ list.not_read }}</span>
-                                    <span class="ci-time">{{ list.last_message.time || list.last_message.date }}</span>
+                            <!-- Kolom kanan: unread+waktu / status / device+⋯ -->
+                            <div class="chat-right">
+                                <div class="cr-top">
+                                    <span class="badge-unread" v-if="list.not_read > 0">{{ list.not_read }}</span>
+                                    <span class="chat-time">{{ list.last_message.time || list.last_message.date }}</span>
                                 </div>
-                                <span class="ci-status" :class="`st-${list.status}`">{{ getStatusText(list.status) }}</span>
-                                <div class="ci-acct">
-                                    <span class="ci-dev"
+                                <span class="badge-status" :class="{
+                                    'status-open':   list.status === 'open',
+                                    'status-solved': list.status === 'resolved',
+                                    'status-block':  list.status === 'block'
+                                }">{{ getStatusText(list.status) }}</span>
+                                <div class="cr-bottom">
+                                    <span class="device-label"
                                           v-if="list.device || list.telegram || list.livechat || list.instagram"
-                                          :title="list.device||list.telegram||list.livechat||list.instagram">
+                                          :title="list.device || list.telegram || list.livechat || list.instagram">
                                         <i :class="getChannelIcon(list.from)"></i>
-                                        {{ list.device||list.telegram||list.livechat||list.instagram }}
+                                        {{ list.device || list.telegram || list.livechat || list.instagram }}
                                     </span>
+                                    <!-- ⋯ mendatar di cr-bottom -->
                                     <div class="chat-dropdown" @click.stop>
-                                        <button class="ci-dots"
-                                                :class="{active: activeDropdown === list.id}"
+                                        <button class="dropdown-toggle-btn"
+                                                :class="{ active: activeDropdown === list.id }"
                                                 @click="toggleDropdown(list.id)">
-                                            <i class="bx bx-dots-horizontal-rounded"></i>
+                                            <i class='bx bx-dots-horizontal-rounded'></i>
                                         </button>
-                                        <div class="dropdown-menu-chat" :class="{show: activeDropdown === list.id}">
+                                        <div class="dropdown-menu-chat" :class="{ show: activeDropdown === list.id }">
                                             <div class="dropdown-item-chat" @click="togglePin(list)">
                                                 <i :class="list.is_pinned ? 'bx bxs-pin pin-active' : 'bx bx-pin'"></i>
                                                 <span>{{ list.is_pinned ? 'Lepas Sematan' : 'Sematkan' }}</span>
@@ -211,22 +221,22 @@
                                     </div>
                                 </div>
                             </div>
-
                         </div>
 
-                        <!-- strip label: maks 2 + "+N" -->
-                        <div class="ci-labels" v-if="list.labels && list.labels.length">
-                            <span v-for="lbl in list.labels.slice(0,2)" :key="lbl.id"
-                                  class="ci-chip"
-                                  :style="{background:(lbl.color||'#888')+'1f', color:lbl.color||'#475569'}">
-                                <i class="bx bx-purchase-tag"></i>{{ lbl.name }}
+                        <!-- Strip label full-width: maks 2 + "+N" -->
+                        <div class="chat-label-row" v-if="list.labels && list.labels.length">
+                            <span v-for="lbl in list.labels.slice(0, 2)" :key="lbl.id"
+                                  class="chat-label-chip"
+                                  :style="{ backgroundColor: (lbl.color || '#888888') + '22', color: lbl.color || '#888888' }">
+                                <i class="bx bx-purchase-tag"></i> {{ lbl.name }}
                             </span>
                             <span v-if="list.labels.length > 2"
-                                  class="ci-more"
-                                  @click.stop="openLabelModal(list)">+{{ list.labels.length - 2 }}</span>
+                                  class="chat-label-more"
+                                  @click.stop="openLabelModal(list)">
+                                +{{ list.labels.length - 2 }}
+                            </span>
                         </div>
                     </div>
-
                 </div>
 
                 <!-- Empty State -->
@@ -1704,7 +1714,77 @@ export default {
     background-color: #fff;
 }
 
+.chat-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+}
+
+.chat-item:hover {
+    background-color: #f9fafb;
+}
+
+.chat-item.active {
+    background-color: #eff6ff;
+    border-left: 3px solid #3b82f6;
+}
+
 /* Avatar dengan Photo (untuk WhatsApp) */
+.chat-avatar-messenger {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.chat-avatar-messenger .messenger-icon-bg {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0084ff, #00b2ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+.chat-avatar-messenger .messenger-icon-bg i {
+    font-size: 22px;
+    color: #fff;
+}
+.chat-avatar-messenger .messenger-photo {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.chat-avatar-instagram {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-avatar-instagram.has-photo {
+    overflow: visible;
+    background: transparent;
+}
+
 .instagram-photo-direct {
     width: 42px;
     height: 42px;
@@ -1732,6 +1812,21 @@ export default {
     color: white;
     line-height: 1;
 }
+.chat-avatar-photo {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.chat-avatar-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .platform-badge {
     position: absolute;
     bottom: -2px;
@@ -1751,6 +1846,30 @@ export default {
 }
 
 /* Avatar dengan Icon (untuk platform lain) */
+.chat-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.chat-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
 .chat-name {
     font-weight: 600;
     font-size: 14px;
@@ -1758,6 +1877,13 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.chat-time {
+    font-size: 11px;
+    color: #9ca3af;
+    flex-shrink: 0;
+    margin-left: 8px;
 }
 
 /* Chat Badges Row */
@@ -1793,12 +1919,88 @@ export default {
     white-space: nowrap;
 }
 
+.badge-unread {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    background-color: #005C4B;
+    color: white;
+    min-width: 18px;
+    text-align: center;
+}
+
+.chat-preview-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-preview {
+    font-size: 13px;
+    color: #6b7280;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
 .chat-preview i {
     color: #9ca3af;
     flex-shrink: 0;
 }
 
-.badge-status.badge-status.badge-status/* Chat Label */
+.badge-status {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.badge-status.status-open {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.badge-status.status-solved {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.badge-status.status-block {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+/* Chat Label */
+.chat-label-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 3px;
+    padding: 0 2px;
+}
+.chat-label-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+}
 .chat-label {
     font-size: 11px;
     color: #d97706;
@@ -1819,10 +2021,37 @@ export default {
     z-index: 900;
 }
 
+.chat-item:hover .chat-dropdown {
+    opacity: 1;
+    visibility: visible;
+}
+
 /* Keep dropdown visible when menu is open */
 .chat-dropdown:has(.dropdown-menu-chat.show) {
     opacity: 1 !important;
     visibility: visible !important;
+}
+
+.dropdown-toggle-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background-color: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dropdown-toggle-btn:hover {
+    background-color: #e5e7eb;
+}
+
+.dropdown-toggle-btn i {
+    color: #6b7280;
+    font-size: 18px;
 }
 
 .dropdown-menu-chat {
@@ -1999,6 +2228,10 @@ export default {
     }
 
     /* Touch target: hamburger/control buttons >= 44px */
+    .chat-item {
+        min-height: 60px;
+    }
+
     .tab-btn span:last-child {
         display: none;
     }
@@ -2031,6 +2264,16 @@ export default {
 
     .btn-new-chat span {
         display: none;
+    }
+
+    .chat-item {
+        padding: 10px 12px;
+    }
+
+    .chat-avatar,
+    .chat-avatar-photo {
+        width: 38px;
+        height: 38px;
     }
 
     .platform-badge {
@@ -2174,19 +2417,163 @@ export default {
 }
 
 /* 2. Separator between chats */
+.chat-item {
+    border-bottom: 1px solid #f0f0f3;
+}
+.chat-item:last-child {
+    border-bottom: none;
+}
+
 /* 3. Status badge smaller */
+.badge-status {
+    font-size: 9px !important;
+    padding: 1px 6px !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.3px;
+    opacity: 0.85;
+}
+
 /* Header right — badge + time */
-.chat-header-right .chat-header-right /* WABA/Device name row — right-aligned */
+.chat-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.chat-header-right .badge-unread {
+    background: #25d366;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+.chat-header-right .chat-time {
+    font-size: 11px;
+    color: #8b8fa7;
+    white-space: nowrap;
+}
+
+/* WABA/Device name row — right-aligned */
+.chat-device-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 3px;
+    margin-top: 1px;
+    font-size: 10px;
+    color: #b0b3c5;
+    line-height: 1.2;
+}
+.chat-device-row .device-logo {
+    font-size: 10px;
+    color: #a8d8a8;
+}
+.chat-device-row .device-logo i {
+    vertical-align: middle;
+}
+.chat-device-row .device-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+}
+
 /* ================================================================
    Universal Platform Badge System
    Works for BOTH: photo avatars AND colored-circle avatars
    ================================================================ */
 
 /* Outer wrapper - always relative for badge positioning */
-/* Also make the existing /* Platform badge - bottom right corner (works for BOTH photo and circle avatars) */
+.chat-avatar-outer {
+    position: relative;
+    flex-shrink: 0;
+    display: inline-flex;
+}
+
+.chat-avatar-badge {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.chat-avatar-badge .avatar-img-round {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 1.5px solid rgba(0,0,0,0.08);
+    background: #f0f0f0;
+    transition: opacity 0.2s;
+}
+
+/* Also make the existing .chat-avatar work inside .chat-avatar-outer */
+.chat-avatar-outer .chat-avatar {
+    flex-shrink: 0;
+}
+
+/* Platform badge - bottom right corner (works for BOTH photo and circle avatars) */
+.ch-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    color: #fff;
+    z-index: 2;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.ch-badge i { font-size: 9px; line-height: 1; }
+
 /* Platform badge colors */
+.ch-badge--whatsapp,
+.ch-badge--waba     { background: #25D366; }
+.ch-badge--instagram { background: linear-gradient(135deg, #833AB4 0%, #E1306C 60%, #F77737 100%); }
+.ch-badge--messanger { background: #0084FF; }
+.ch-badge--telegram  { background: #229ED9; }
+.ch-badge--livechat  { background: #FF6B35; }
+
+
+
 /* Platform badge - bottom right corner */
+.ch-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    color: #fff;
+    z-index: 2;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.ch-badge i { font-size: 9px; line-height: 1; }
+
 /* Platform badge colors */
+.ch-badge--whatsapp,
+.ch-badge--waba     { background: #25D366; }
+.ch-badge--instagram { background: linear-gradient(135deg, #833AB4 0%, #E1306C 60%, #F77737 100%); }
+.ch-badge--messanger { background: #0084FF; }
+.ch-badge--telegram  { background: #229ED9; }
+.ch-badge--livechat  { background: #FF6B35; }
+
 .crm-fade-enter-active,.crm-fade-leave-active{transition:opacity .2s}.crm-fade-enter-from,.crm-fade-leave-to{opacity:0}
 
 /* ── Context menu icon colors ── */
@@ -2363,70 +2750,16 @@ export default {
 
 
 /* WABA 24h session chip */
+.chat-name-wrap { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1; }
 .chat-name-wrap .chat-name { min-width: 0; }
-
-
-/* ════════════════════════════════════════════
-   Chat Item — ci-* design system (clean)
-   ════════════════════════════════════════════ */
-.chat-item{display:flex;gap:10px;padding:10px 11px;border-bottom:.5px solid #F1F5F9;cursor:pointer;align-items:flex-start;transition:background .15s;position:relative;}
-.chat-item:hover{background:#FAFCFF;}
-.chat-item.active{background:#F7FBFF;border-left:2px solid #2E8DE1;padding-left:9px;}
-.chat-item.unread .ci-name{font-weight:600;}
-
-/* Avatar */
-.ci-avatar{position:relative;flex-shrink:0;width:38px;height:38px;}
-.ci-img{width:38px;height:38px;border-radius:50%;object-fit:cover;}
-.ci-fallback{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;}
-.ci-badge{position:absolute;bottom:-2px;right:-2px;width:16px;height:16px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;background:#25D366;}
-.ci-badge--waba{background:#25D366;}.ci-badge--telegram{background:#229ED9;}.ci-badge--instagram{background:#E1306C;}.ci-badge--messanger{background:#0084FF;}.ci-badge--livechat{background:#64748B;}
-
-/* Body */
-.ci-body{flex:1;min-width:0;}
-.ci-main{display:flex;gap:8px;align-items:flex-start;}
-.ci-center{flex:1;min-width:0;}
-.ci-name-row{display:flex;align-items:center;gap:6px;min-width:0;}
-.ci-name{font-size:13px;font-weight:500;color:#1E2A4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
-
-/* WABA 24h chip */
-.ci-24h{display:inline-flex;align-items:center;gap:2px;font-size:9px;padding:1px 5px;border-radius:9px;font-weight:600;flex-shrink:0;white-space:nowrap;}
-.ci-24h.active{background:#DCFCE7;color:#15803D;}
-.ci-24h.soon{background:#FEF3C7;color:#B45309;}
-.ci-24h.closed{background:#FEECEC;color:#B91C1C;}
-.ci-24h i{font-size:9px;}
-
-/* Preview */
-.ci-preview{font-size:11px;color:#64748B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
-.ci-preview i{font-size:11px;color:#94A3B8;margin-right:2px;}
-
-/* Kolom kanan */
-.ci-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;min-width:62px;}
-.ci-top{display:flex;align-items:center;gap:4px;}
-.ci-time{font-size:10px;color:#94A3B8;white-space:nowrap;}
-.ci-unread{font-size:9px;background:#16A34A;color:#fff;min-width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0 3px;font-weight:600;}
-.ci-status{font-size:9.5px;padding:1px 8px;border-radius:10px;font-weight:500;white-space:nowrap;}
-.st-open{background:#FEF3C7;color:#B45309;}
-.st-resolved{background:#DCFCE7;color:#15803D;}
-.st-block{background:#FEECEC;color:#B91C1C;}
-.ci-acct{display:flex;align-items:center;gap:4px;}
-.ci-dev{font-size:9px;color:#94A3B8;display:inline-flex;align-items:center;gap:2px;max-width:72px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ci-dev i{font-size:11px;flex-shrink:0;}
-
-/* ⋯ button */
-.ci-dots{width:24px;height:18px;border-radius:5px;background:#F8FAFC;border:.5px solid #E4EAF2;color:#94A3B8;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:all .15s;}
-.ci-dots:hover,.ci-dots.active{background:#2E8DE1;border-color:#2E8DE1;color:#fff;}
-
-/* Label strip */
-.ci-labels{display:flex;align-items:center;gap:5px;margin-top:7px;overflow:hidden;flex-wrap:nowrap;}
-.ci-chip{font-size:9.5px;padding:2px 7px;border-radius:5px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0;white-space:nowrap;max-width:105px;overflow:hidden;text-overflow:ellipsis;}
-.ci-chip i{font-size:10px;flex-shrink:0;}
-.ci-more{font-size:9.5px;padding:2px 7px;border-radius:5px;background:#EEF2F7;color:#475569;font-weight:600;flex-shrink:0;cursor:pointer;}
-.ci-more:hover{background:#E2E8F0;}
-
-/* Overflow fix for dropdown */
-.chat-items-container{overflow:visible;}
-.dropdown-menu-chat{z-index:100;}
-
+.waba-session-chip {
+    display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;
+    font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 10px;
+    white-space: nowrap;
+}
+.waba-session--active  { background: #DCFCE7; color: #15803D; }
+.waba-session--warning { background: #FEF3C7; color: #B45309; }
+.waba-session--expired { background: #FEECEC; color: #B91C1C; }
 </style>
 
 <style>
