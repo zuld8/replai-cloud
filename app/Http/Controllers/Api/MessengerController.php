@@ -1679,7 +1679,8 @@ class MessengerController extends Controller
             $userId = $recipientId ?? $senderId;
             if (!$userId) return;
 
-            $histories = \App\Models\ChatBot\HistoryChat::where('device_id', $messengerAccount->id)
+            // Use messanger_id (not device_id) — matches how inbound stores the link
+            $histories = \App\Models\ChatBot\HistoryChat::where('messanger_id', $messengerAccount->id)
                 ->where('from_number', $userId)
                 ->latest()
                 ->first();

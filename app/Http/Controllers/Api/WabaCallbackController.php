@@ -306,10 +306,21 @@ class WabaCallbackController extends Controller
 
                     // Save outbound echo messages to CRM timeline
                     $echoMessages = $change['value']['messages'] ?? [];
+
+                    // Log raw payload first — so we can verify 'from'/'to' field structure
+                    Log::info('WABA smb_message_echoes payload', [
+                        'change_value_keys' => array_keys($change['value'] ?? []),
+                        'messages_count'    => count($echoMessages),
+                        'first_msg_keys'    => !empty($echoMessages) ? array_keys($echoMessages[0]) : [],
+                        'first_msg_sample'  => !empty($echoMessages) ? json_encode($echoMessages[0]) : null,
+                    ]);
+
                     foreach ($echoMessages as $echoMsg) {
                         try {
                             $mid  = $echoMsg['id'] ?? null;
-                            $from = $echoMsg['to']   ?? ($echoMsg['from'] ?? null); // 'to' = pelanggan
+                            // 'to' = nomor pelanggan (tujuan); 'from' mungkin nomor bisnis
+                            // Struktur payload: akan terkonfirmasi dari log di atas
+                            $from = $echoMsg['to'] ?? ($echoMsg['from'] ?? null);
                             $text = $echoMsg['text']['body']
                                 ?? $echoMsg['text']['preview_url']
                                 ?? null;

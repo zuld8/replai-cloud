@@ -1669,7 +1669,8 @@ class InstagramController extends Controller
             $userId = $recipientId ?? $senderId;
             if (!$userId) return;
 
-            $histories = \App\Models\ChatBot\HistoryChat::where('device_id', $instagramAccount->id)
+            // Use instagram_id (not device_id) — matches how inbound stores the link
+            $histories = \App\Models\ChatBot\HistoryChat::where('instagram_id', $instagramAccount->id)
                 ->where('from_number', $userId)
                 ->latest()
                 ->first();
