@@ -196,6 +196,14 @@ class MessangerController extends Controller
                 ], 400);
             }
 
+            // Check Messenger limit before connecting pages
+            if (!$this->messengerService->checkLimit()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Halaman Facebook sudah mencapai batas paket Anda.'
+                ], 422);
+            }
+
             // Process each page
             $connectedCount = 0;
             foreach ($pages as $page) {
@@ -206,6 +214,10 @@ class MessangerController extends Controller
                 $pageData = $this->getPageDetails($page['id'], $page['access_token']);
 
                 if ($pageData) {
+                    // Re-check limit for each page (batch connect may exceed limit mid-way)
+                    if (!$this->messengerService->checkLimit()) {
+                        break; // stop connecting more pages
+                    }
                     $this->messengerService->createData($pageData);
                     
                     // Auto-subscribe page to webhook

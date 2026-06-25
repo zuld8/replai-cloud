@@ -224,9 +224,10 @@ class WhatsappWabaController extends Controller
             'agent'             => 'required|array'
         ]);
 
-        if (!$this->whatsappDeviceObserver->checkLimit()) {
+        // FIX: enforce WABA limit (not device limit) for WABA accounts
+        if (!$this->whatsappOfficialObserver->checkLimit()) {
             return redirect()->back()->with([
-                'gagal' => __('validation.device_limit')
+                'gagal' => 'Akun WhatsApp Business sudah mencapai batas paket Anda.'
             ]);
         }
 
@@ -813,12 +814,13 @@ class WhatsappWabaController extends Controller
         $wabaId        = $request->waba_id;
         $appId         = null;
 
-        $validationCheck = $this->whatsappDeviceObserver->checkLimit();
+        // FIX: enforce WABA limit (not device limit) for WABA accounts
+        $validationCheck = $this->whatsappOfficialObserver->checkLimit();
 
         if ($validationCheck == false) {
             return response()->json([
                 'status'  => false,
-                'message' => __('validation.device_limit')
+                'message' => 'Akun WhatsApp Business sudah mencapai batas paket Anda.'
             ], 422);
         }
 

@@ -203,6 +203,10 @@ class InstagramController extends Controller
                     'access_token' => $longToken,
                 ];
 
+                // Enforce IG account limit before creating
+                if (!$this->instagramService->checkLimit()) {
+                    return redirect()->back()->with(['gagal' => 'Akun Instagram sudah mencapai batas paket Anda.']);
+                }
                 $this->instagramService->createData($accountData);
 
                 // Auto-subscribe this IG account to webhook (messages field)
@@ -241,6 +245,10 @@ class InstagramController extends Controller
                 if (!empty($instagramAccounts)) {
                     $connectedCount = 0;
                     foreach ($instagramAccounts as $igAcct) {
+                        // Enforce IG limit per-account (stop when limit reached)
+                        if (!$this->instagramService->checkLimit()) {
+                            break; // limit reached, stop connecting more accounts
+                        }
                         $this->instagramService->createData($igAcct);
                         $connectedCount++;
 
@@ -310,6 +318,10 @@ class InstagramController extends Controller
         // Store Instagram accounts
         $connectedCount = 0;
         foreach ($instagramAccounts as $igData) {
+            // Enforce IG limit per-account
+            if (!$this->instagramService->checkLimit()) {
+                break;
+            }
             $this->instagramService->createData($igData);
             $connectedCount++;
 
@@ -457,6 +469,10 @@ class InstagramController extends Controller
      */
     private function storeInstagramAccount($igData, $accessToken)
     {
+        // Enforce IG account limit
+        if (!$this->instagramService->checkLimit()) {
+            return; // silently skip — caller should check before bulk-looping
+        }
         $expiresAt = now()->addDays(60);
         $this->instagramService->createData($igData);
     }
