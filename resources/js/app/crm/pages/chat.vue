@@ -1097,6 +1097,15 @@ export default {
     },
     methods: {
 
+        originLabel(source) {
+            const labels = { notification: 'Notifikasi', broadcast: 'Broadcast', bot: 'Bot AI', agent: 'Agen', system: 'Sistem' };
+            return labels[source] || 'Sistem';
+        },
+        originIcon(source) {
+            const icons = { notification: 'bx bx-bell', broadcast: 'bx bxs-megaphone', bot: 'bx bx-bot', agent: 'bx bx-user', system: 'bx bx-cog' };
+            return icons[source] || 'bx bx-cog';
+        },
+
          prefillMessageFromQuery() {
         const queryText = this.$route.query.text;
         
