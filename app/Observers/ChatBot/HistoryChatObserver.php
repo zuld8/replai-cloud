@@ -114,8 +114,8 @@ class HistoryChatObserver
             return $request->name ? $q->where('message', 'like', '%' . $request->name . '%') : '';
         })->where(function ($q) use ($historyId) {
             return $historyId != '' ? $q->where('history_chat_id', $historyId) : '';
-        })->orderBy('created_at', 'asc')
-         ->orderBy('id', 'asc');  // tiebreaker for same-second messages
+        })->orderBy('created_at', 'desc')  // DESC: page 1 = terbaru, match frontend pagination
+         ->orderBy('id', 'desc');          // tiebreaker konsisten
     }
 
     public function getByNumber($type = 'personal', $number, $deviceId = null, $from = 'whatsapp', $liveChat = null, $waba = null, $telegramId = null, $instagramId = null, $messangerId = null)
