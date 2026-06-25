@@ -1802,21 +1802,14 @@ overflow:visible;}
 
 /* Chat Dropdown Menu */
 .chat-dropdown {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s;
+    position: relative;      /* inline dalam .ci-acctrow, bukan ngambang */
+    display: inline-flex;
+    align-items: center;
+    opacity: 1;
+    visibility: visible;
     z-index: 900;
 }
 
-/* Keep dropdown visible when menu is open */
-.chat-dropdown:has(.dropdown-menu-chat.show) {
-    opacity: 1 !important;
-    visibility: visible !important;
-}
 
 .dropdown-menu-chat {
     position: absolute;
@@ -2002,10 +1995,7 @@ overflow:visible;}
         right: 4px;
     }
 
-    .chat-dropdown {
-        opacity: 1;
-        visibility: visible;
-    }
+
 }
 
 @media (max-width: 576px) {
