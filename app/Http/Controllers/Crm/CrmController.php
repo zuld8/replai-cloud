@@ -656,6 +656,7 @@ class CrmController extends Controller
             $details = null;
             if ($request->input('reply_to') != null) {
                 $details = HistoryChatDetail::where('id', $request->input('reply_to'))
+                    ->where('history_chat_id', $history->id)   // IDOR fix: scope to current chat
                     ->first(['messageid', 'remotejid']);
             }
 
@@ -709,6 +710,7 @@ class CrmController extends Controller
             $details = null;
             if ($request->input('reply_to') != null) {
                 $details = HistoryChatDetail::where('id', $request->input('reply_to'))
+                    ->where('history_chat_id', $history->id)   // IDOR fix: scope to current chat
                     ->first(['messageid', 'remotejid']);
             }
 
