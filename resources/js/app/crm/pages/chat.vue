@@ -2495,30 +2495,37 @@ export default {
                 return Object.values(grouped);
             },
         formatDateSeparator(dateStr) {
-            // dateStr format: "08/11/2025"
-            const [day, month, year] = dateStr.split('/');
-            const date = new Date(year, month - 1, day);
+            if (!dateStr) return '';
+            let date;
+            const s = String(dateStr).trim();
 
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-
-            // Reset time untuk perbandingan
-            today.setHours(0, 0, 0, 0);
-            yesterday.setHours(0, 0, 0, 0);
-            date.setHours(0, 0, 0, 0);
-
-            if (date.getTime() === today.getTime()) {
-                return 'Hari Ini';
-            } else if (date.getTime() === yesterday.getTime()) {
-                return 'Kemarin';
+            if (s.includes('/')) {
+                // dd/mm/yyyy (from datetime.date)
+                const [d2, m2, y2] = s.split('/');
+                date = new Date(parseInt(y2), parseInt(m2) - 1, parseInt(d2));
+            } else if (/^\d{4}-/.test(s)) {
+                // ISO 8601: 2026-06-16T... or 2026-06-16
+                date = new Date(s);
+            } else if (/^\d{1,2} /.test(s)) {
+                // "16 Jun 2026" — date_id from isoFormat
+                date = new Date(s);
             } else {
-                return date.toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
-                });
+                date = new Date(s);
             }
+
+            // Guard: don't show "Invalid Date"
+            if (!date || isNaN(date.getTime())) return '';
+
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+            const cmp = new Date(date); cmp.setHours(0, 0, 0, 0);
+
+            if (cmp.getTime() === today.getTime())     return 'Hari Ini';
+            if (cmp.getTime() === yesterday.getTime()) return 'Kemarin';
+
+            return date.toLocaleDateString('id-ID', {
+                day: 'numeric', month: 'long', year: 'numeric'
+            });
         },
     },
 
