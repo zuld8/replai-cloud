@@ -31,6 +31,12 @@ export default {
     watch: {
         showLeftSidebar(val) {
             this.$nextTick(() => this._applySidebar(val));
+        },
+        // Auto-close sidebar when navigating to a chat on mobile
+        '$route'(to) {
+            if (this._isMobile() && to.name === 'chat_room') {
+                this.closeLeftSidebar();
+            }
         }
     },
     methods: {

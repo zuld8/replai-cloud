@@ -38,8 +38,8 @@
                 </div>
                 </div>
                 <div class="controls">
-                    <button class="btn-control d-lg-none" @click="$emit('toggle-left-sidebar')">
-                        <i class="bx bx-menu"></i>
+                    <button class="btn-control btn-back-mobile d-lg-none" @click="$emit('toggle-left-sidebar')" title="Kembali ke daftar chat">
+                        <i class="bx bx-arrow-back"></i>
                     </button>
                     <button class="btn-control" @click="changeTakeOver(!detail.takeover)">
                         <i class="bx bx-bot"></i>
@@ -53,6 +53,29 @@
                     <button class="btn-control d-none d-lg-inline" @click="toggleRightSidebar">
                         <i class="bx bx-menu"></i>
                     </button>
+                    <!-- Mobile burger: show controls in ⋮ dropdown -->
+                    <div class="mobile-header-burger d-lg-none" style="position:relative">
+                        <button class="btn-control" @click="mobileBurgerOpen = !mobileBurgerOpen">
+                            <i class="bx bx-dots-vertical-rounded"></i>
+                        </button>
+                        <div v-if="mobileBurgerOpen" class="mobile-burger-menu" @click.self="mobileBurgerOpen=false">
+                            <div class="burger-item" @click="changeTakeOver(!detail.takeover); mobileBurgerOpen=false">
+                                <i class="bx bx-bot"></i>
+                                {{ detail.takeover ? 'Bot Nonaktif' : 'Bot Aktif' }}
+                            </div>
+                            <div class="burger-item">
+                                <i class="bx bx-transfer-alt"></i>
+                                <select class="burger-status-select" v-model="detail.status" @change="changeStatus; mobileBurgerOpen=false">
+                                    <option value="open">Terbuka</option>
+                                    <option value="resolved">Selesai</option>
+                                    <option value="block">Blokir</option>
+                                </select>
+                            </div>
+                            <div class="burger-item" @click="toggleRightSidebar(); mobileBurgerOpen=false">
+                                <i class="bx bx-user"></i> Lihat Kontak
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -3903,5 +3926,52 @@ export default {
     font-size: 11px; font-weight: 600; cursor: pointer;
 }
 .btn-open-template-banner:hover { background: #155a4a; }
+
+
+/* ── Mobile (@media ≤ 768px) ─────────────────────────── */
+@media (max-width: 768px) {
+    .chat-wrapper {
+        height: 100dvh; /* avoid keyboard covering input on iOS */
+    }
+    .chat-input-area {
+        padding: 8px;
+    }
+    .chat-input {
+        font-size: 16px; /* prevent iOS zoom on focus */
+    }
+    /* Hide desktop controls on mobile */
+    .controls .btn-control:not(.btn-back-mobile) {
+        display: none !important;
+    }
+    .controls .status-select { display: none !important; }
+    /* Session banner compact */
+    .session-banner-24 { font-size: 10px; padding: 4px 10px; }
+    /* Lead banner compact */
+    .lead-banner { font-size: 10px; padding: 4px 10px; }
+}
+
+/* ── Mobile burger menu ──────────────────────────────── */
+.mobile-burger-menu {
+    position: absolute; right: 0; top: 110%; z-index: 999;
+    background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 10px; min-width: 180px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    overflow: hidden;
+}
+.burger-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; font-size: 13px; font-weight: 500;
+    color: #374151; cursor: pointer;
+    transition: background .15s;
+}
+.burger-item:hover { background: #f9fafb; }
+.burger-item + .burger-item { border-top: 1px solid #f3f4f6; }
+.burger-item i { font-size: 16px; color: #6b7280; }
+.burger-status-select {
+    border: none; outline: none; background: transparent;
+    font-size: 13px; font-weight: 500; color: #374151;
+    cursor: pointer; flex: 1;
+}
+.btn-back-mobile { color: #1E6F5C !important; }
 
 </style>
