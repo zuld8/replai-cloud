@@ -13,15 +13,18 @@
 
         <!-- Filter Channel -->
         <div class="channel-filter-section">
-            <select class="channel-select" v-model="filter.from" @change="applyFilter">
-                <option value="">{{ $t('sidebar.all_channel') }}</option>
-                <option value="whatsapp">{{ $t('channel.whatsapp') }}</option>
-                <option value="waba">{{ $t('channel.waba') }}</option>
-                <option value="livechat">{{ $t('channel.livechat') }}</option>
-                <option value="telegram">{{ $t('channel.telegram') }}</option>
-                <option value="instagram">{{ $t('channel.instagram') }}</option>
-                <option value="messanger">{{ $t('channel.messenger') }}</option>
-            </select>
+            <div class="select-icon">
+                <i class="bx bx-globe" style="color:#2E8DE1"></i>
+                <select class="channel-select" v-model="filter.from" @change="applyFilter">
+                    <option value="">{{ $t('sidebar.all_channel') }}</option>
+                    <option value="whatsapp">{{ $t('channel.whatsapp') }}</option>
+                    <option value="waba">{{ $t('channel.waba') }}</option>
+                    <option value="livechat">{{ $t('channel.livechat') }}</option>
+                    <option value="telegram">{{ $t('channel.telegram') }}</option>
+                    <option value="instagram">{{ $t('channel.instagram') }}</option>
+                    <option value="messanger">{{ $t('channel.messenger') }}</option>
+                </select>
+            </div>
         </div>
 
         <!-- Search -->
@@ -47,12 +50,15 @@
 
             <!-- Filter Device -->
             <div class="device-filter-section">
-                <select class="device-select" v-model="platform_devices" @change="onDeviceChange">
-                    <option :value="null">{{ $t('sidebar.all_device') }}</option>
-                    <option v-for="device in deviceList" :key="device.id" :value="device">
-                        [{{ device.type }}] {{ device.name }}{{ device.phone ? ' · ' + device.phone : '' }}
-                    </option>
-                </select>
+                <div class="select-icon">
+                    <i class="bx bx-mobile-alt" style="color:#5B3FB0"></i>
+                    <select class="device-select" v-model="platform_devices" @change="onDeviceChange">
+                        <option :value="null">{{ $t('sidebar.all_device') }}</option>
+                        <option v-for="device in deviceList" :key="device.id" :value="device">
+                            [{{ device.type }}] {{ device.name }}{{ device.phone ? ' · ' + device.phone : '' }}
+                        </option>
+                    </select>
+                </div>
             </div>
 
             <div class="assignment-tabs">
@@ -2858,4 +2864,60 @@ export default {
         max-width: 340px !important;
     }
 }
+
+/* ═══ Chat Item Layout — 2-kolom (chat-body > chat-main > center+right) ═══ */
+.chat-item { display:flex; gap:10px; padding:10px 11px; border-bottom:.5px solid #F1F5F9; cursor:pointer; align-items:flex-start; position:relative; }
+.chat-item:hover { background:#F7FBFF; }
+.chat-item.active { background:#EAF3FC; border-left:3px solid #2E8DE1; padding-left:9px; }
+.chat-item.unread { background:#FAFCFF; }
+
+/* chat-body: mengisi sisa setelah avatar */
+.chat-body { flex:1; min-width:0; }
+.chat-main { display:flex; gap:8px; align-items:flex-start; }
+
+/* Kolom tengah — truncate nama, preview */
+.chat-center { flex:1; min-width:0; }
+.chat-name-row { display:flex; align-items:center; gap:5px; min-width:0; }
+.chat-name { font-size:13px; font-weight:600; color:#1E2A4A; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0; }
+.chat-preview { font-size:11px; color:#64748B; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:3px; }
+
+/* Kolom kanan — lebar tetap, flex column */
+.chat-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; min-width:70px; }
+.cr-top { display:flex; align-items:center; gap:5px; }
+.chat-time { font-size:10px; color:#94A3B8; white-space:nowrap; }
+.cr-bottom { display:flex; align-items:center; gap:4px; }
+.device-label { font-size:9.5px; color:#94A3B8; display:inline-flex; align-items:center; gap:2px; max-width:60px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.device-label i { font-size:11px; flex-shrink:0; }
+
+/* Badge status — pill kecil */
+.badge-status { font-size:9.5px; padding:1px 8px; border-radius:10px; font-weight:500; white-space:nowrap; }
+.status-open   { background:#FEF3C7; color:#B45309; }
+.status-solved { background:#DCFCE7; color:#15803D; }
+.status-block  { background:#FEECEC; color:#B91C1C; }
+
+/* Badge unread */
+.badge-unread { font-size:9px; background:#16A34A; color:#fff; min-width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0 4px; font-weight:600; }
+
+/* Strip label — full width, 1 baris, maks 2 + "+N" */
+.chat-label-row { display:flex; align-items:center; gap:5px; margin-top:6px; overflow:hidden; flex-wrap:nowrap; }
+.chat-label-chip { font-size:9.5px; padding:2px 8px; border-radius:5px; display:inline-flex; align-items:center; gap:3px; flex-shrink:0; white-space:nowrap; max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+.chat-label-chip i { font-size:10px; flex-shrink:0; }
+.chat-label-more { font-size:9.5px; padding:2px 7px; border-radius:5px; background:#EEF2F7; color:#475569; font-weight:600; flex-shrink:0; cursor:pointer; white-space:nowrap; }
+.chat-label-more:hover { background:#E2E8F0; }
+
+/* ⋯ Dropdown — mendatar, di cr-bottom */
+.dropdown-toggle-btn { width:26px; height:18px; border-radius:6px; background:#F8FAFC; border:.5px solid #E4EAF2; color:#94A3B8; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer; transition:all .15s; }
+.dropdown-toggle-btn:hover, .dropdown-toggle-btn.active { background:#2E8DE1; border-color:#2E8DE1; color:#fff; }
+
+/* Select icon wrapper */
+.select-icon { position:relative; }
+.select-icon > i { position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:15px; pointer-events:none; z-index:1; }
+.select-icon .channel-select,
+.select-icon .device-select { padding-left:32px !important; }
+
+/* Chip sesi 24 jam (WABA) — tetap flex-shrink:0 biar nama yang truncate */
+.waba-session-chip { display:inline-flex; align-items:center; gap:2px; flex-shrink:0; font-size:9px; font-weight:600; padding:1px 5px; border-radius:10px; white-space:nowrap; }
+.waba-session--active  { background:#DCFCE7; color:#15803D; }
+.waba-session--warning { background:#FEF3C7; color:#B45309; }
+.waba-session--expired { background:#FEECEC; color:#B91C1C; }
 </style>
