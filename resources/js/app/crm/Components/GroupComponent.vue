@@ -98,9 +98,8 @@
 
                     <!-- AVATAR -->
                     <div class="ci-avatar">
-                        <img v-if="list.from==='whatsapp'||list.from==='waba'||(list.photo && !list.photo.includes('default')&&!list.photo.includes('user.png'))"
-                             :src="list.photo || defaultUserIcon" class="ci-img"
-                             @error="$event.target.src=defaultUserIcon"/>
+                        <img v-if="list.photo && !list.photo.includes('default') && !list.photo.includes('user.png')"
+                             :src="list.photo" class="ci-img" @error="$event.target.src=defaultUserIcon"/>
                         <div v-else class="ci-fallback" :style="{background:getChannelColor(list.from)}">
                             <i :class="getChannelIcon(list.from)"></i>
                         </div>
@@ -112,8 +111,7 @@
                     <!-- BODY -->
                     <div class="ci-body">
                         <div class="ci-main">
-
-                            <!-- Kolom tengah -->
+                            <!-- Tengah: nama + preview -->
                             <div class="ci-center">
                                 <div class="ci-name-row">
                                     <span class="ci-name">{{ list.name }}</span>
@@ -139,8 +137,7 @@
                                     {{ truncateText(list.last_message.message, 32) }}
                                 </div>
                             </div>
-
-                            <!-- Kolom kanan: unread+waktu / status -->
+                            <!-- Kanan: notif+waktu / status saja -->
                             <div class="ci-right">
                                 <div class="ci-top">
                                     <span class="ci-unread" v-if="list.not_read > 0">{{ list.not_read }}</span>
@@ -148,14 +145,12 @@
                                 </div>
                                 <span class="ci-status" :class="`st-${list.status}`">{{ getStatusText(list.status) }}</span>
                             </div>
-
                         </div>
 
-                        <!-- Device + ⋯ baris penuh (nama akun komplit) -->
-                        <div class="ci-acct" v-if="list.device || list.telegram || list.livechat || list.instagram">
+                        <!-- BARIS AKUN PENUH: nama akun kanan + ⋯ selalu tampil -->
+                        <div class="ci-acctrow" v-if="list.device || list.telegram || list.livechat || list.instagram">
                             <span class="ci-dev" :title="list.device||list.telegram||list.livechat||list.instagram">
-                                <i :class="getChannelIcon(list.from)"></i>
-                                {{ list.device||list.telegram||list.livechat||list.instagram }}
+                                <i class="bx bx-map-pin"></i>{{ list.device||list.telegram||list.livechat||list.instagram }}
                             </span>
                             <div class="chat-dropdown" @click.stop>
                                 <button class="ci-dots"
@@ -214,7 +209,7 @@
                             </div>
                         </div>
 
-                                                <!-- strip label: maks 2 + "+N" -->
+                        <!-- BARIS LABEL (kiri) -->
                         <div class="ci-labels" v-if="list.labels && list.labels.length">
                             <span v-for="lbl in list.labels.slice(0,2)" :key="lbl.id"
                                   class="ci-chip"
@@ -228,7 +223,6 @@
                     </div>
 
                 </div>
-
                 <!-- Empty State -->
                 <div v-if="!chats.loader && chats.list.length === 0" class="empty-state">
                     <i class='bx bx-message-square-detail'></i>
@@ -2366,30 +2360,54 @@ overflow:visible;}
 .chat-name-wrap .chat-name { min-width: 0; }
 
 
-/* ════════════════════════════════════════════
-   Chat Item — ci-* design system (clean)
-   ════════════════════════════════════════════ */
+
+.ci-24h.soon{background:#FEF3C7;color:#B45309;}
+.ci-24h.closed{background:#FEECEC;color:#B91C1C;}
+/* Preview */
+.ci-preview i{font-size:11px;color:#94A3B8;margin-right:2px;}
+
+/* Kolom kanan */
+.ci-dev i{font-size:11px;flex-shrink:0;}
+
+/* ⋯ button */
+/* Label strip */
+.ci-chip i{font-size:10px;flex-shrink:0;}
+/* Overflow fix for dropdown */
+.chat-items-container{overflow:visible;}
+.dropdown-menu-chat{z-index:100;}
+
+/* ══════════════════════════════════════════════════
+   CRM Chat Item — ci-* FINAL (nama+akun penuh, ⋯ selalu tampil)
+   ══════════════════════════════════════════════════ */
+
+/* Container */
 .chat-item{display:flex;gap:10px;padding:10px 11px;border-bottom:.5px solid #F1F5F9;cursor:pointer;align-items:flex-start;transition:background .15s;position:relative;}
 .chat-item:hover{background:#FAFCFF;}
 .chat-item.active{background:#F7FBFF;border-left:2px solid #2E8DE1;padding-left:9px;}
-.chat-item.unread .ci-name{font-weight:600;}
 
 /* Avatar */
 .ci-avatar{position:relative;flex-shrink:0;width:38px;height:38px;}
 .ci-img{width:38px;height:38px;border-radius:50%;object-fit:cover;}
 .ci-fallback{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;}
 .ci-badge{position:absolute;bottom:-2px;right:-2px;width:16px;height:16px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;background:#25D366;}
-.ci-badge--waba{background:#25D366;}.ci-badge--telegram{background:#229ED9;}.ci-badge--instagram{background:#E1306C;}.ci-badge--messanger{background:#0084FF;}.ci-badge--livechat{background:#64748B;}
+.ci-badge--waba{background:#25D366;}
+.ci-badge--telegram{background:#229ED9;}
+.ci-badge--instagram{background:#E1306C;}
+.ci-badge--messanger{background:#0084FF;}
+.ci-badge--livechat{background:#64748B;}
 
 /* Body */
 .ci-body{flex:1;min-width:0;}
 .ci-main{display:flex;gap:8px;align-items:flex-start;}
-.ci-center{flex:1;min-width:0;overflow:hidden;}
+.ci-center{flex:1;min-width:0;}
+
+/* Nama user: PENUH, maks 2 baris lalu ellipsis */
 .ci-name-row{display:flex;align-items:flex-start;gap:5px;min-width:0;}
-.ci-name{font-size:13px;font-weight:500;color:#1E2A4A;flex:1;min-width:0;white-space:normal;word-break:break-word;line-height:1.35;}
+.ci-name{font-size:12.5px;font-weight:500;color:#1E2A4A;line-height:1.25;flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.chat-item.unread .ci-name{font-weight:600;}
 
 /* WABA 24h chip */
-.ci-24h{display:inline-flex;align-items:center;gap:2px;font-size:9px;padding:1px 5px;border-radius:9px;font-weight:600;flex-shrink:0;white-space:nowrap;}
+.ci-24h{display:inline-flex;align-items:center;gap:2px;font-size:9px;padding:1px 5px;border-radius:9px;font-weight:600;flex-shrink:0;white-space:nowrap;margin-top:1px;}
 .ci-24h.active{background:#DCFCE7;color:#15803D;}
 .ci-24h.soon{background:#FEF3C7;color:#B45309;}
 .ci-24h.closed{background:#FEECEC;color:#B91C1C;}
@@ -2399,8 +2417,8 @@ overflow:visible;}
 .ci-preview{font-size:11px;color:#64748B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
 .ci-preview i{font-size:11px;color:#94A3B8;margin-right:2px;}
 
-/* Kolom kanan */
-.ci-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+/* Kolom kanan: hanya notif+waktu + status */
+.ci-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;min-width:60px;}
 .ci-top{display:flex;align-items:center;gap:4px;}
 .ci-time{font-size:10px;color:#94A3B8;white-space:nowrap;}
 .ci-unread{font-size:9px;background:#16A34A;color:#fff;min-width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0 3px;font-weight:600;}
@@ -2408,24 +2426,26 @@ overflow:visible;}
 .st-open{background:#FEF3C7;color:#B45309;}
 .st-resolved{background:#DCFCE7;color:#15803D;}
 .st-block{background:#FEECEC;color:#B91C1C;}
-.ci-acct{display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
-.ci-dev{font-size:9px;color:#94A3B8;display:inline-flex;align-items:center;gap:3px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ci-dev i{font-size:11px;flex-shrink:0;}
 
-/* ⋯ button */
-.ci-dots{width:24px;height:18px;border-radius:5px;background:#F8FAFC;border:.5px solid #E4EAF2;color:#94A3B8;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:all .15s;}
-.ci-dots:hover,.ci-dots.active{background:#2E8DE1;border-color:#2E8DE1;color:#fff;}
+/* Baris akun: RATA KANAN, nama akun PENUH, ⋯ selalu tampil */
+.ci-acctrow{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:8px;padding-top:7px;border-top:.5px dashed #E8EEF5;}
+.ci-dev{font-size:10px;color:#94A3B8;display:inline-flex;align-items:flex-start;gap:3px;line-height:1.3;text-align:right;flex:1;min-width:0;white-space:normal;word-break:break-word;}
+.ci-dev i{flex-shrink:0;font-size:11px;margin-top:1px;}
 
-/* Label strip */
+/* ⋯ button: SELALU tampil (bukan hover-only) */
+.ci-dots{flex-shrink:0;width:26px;height:18px;border-radius:6px;background:#fff;border:.5px solid #D7E0EC;color:#64748B;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:all .15s;}
+.ci-dots.active,.ci-dots:hover{background:#2E8DE1;border-color:#2E8DE1;color:#fff;}
+
+/* Label strip: kiri, baris sendiri */
 .ci-labels{display:flex;align-items:center;gap:5px;margin-top:7px;overflow:hidden;flex-wrap:nowrap;}
-.ci-chip{font-size:9.5px;padding:2px 7px;border-radius:5px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0;white-space:nowrap;max-width:105px;overflow:hidden;text-overflow:ellipsis;}
+.ci-chip{font-size:9.5px;padding:2px 7px;border-radius:5px;display:inline-flex;align-items:center;gap:3px;flex-shrink:0;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis;}
 .ci-chip i{font-size:10px;flex-shrink:0;}
 .ci-more{font-size:9.5px;padding:2px 7px;border-radius:5px;background:#EEF2F7;color:#475569;font-weight:600;flex-shrink:0;cursor:pointer;}
 .ci-more:hover{background:#E2E8F0;}
 
-/* Overflow fix for dropdown */
+/* Dropdown visible */
 .chat-items-container{overflow:visible;}
-.dropdown-menu-chat{z-index:100;}
+.dropdown-menu-chat{z-index:200;}
 
 </style>
 
