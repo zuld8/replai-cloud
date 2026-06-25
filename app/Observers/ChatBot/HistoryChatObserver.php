@@ -105,8 +105,6 @@ class HistoryChatObserver
     {
         // FIX 4: Eager load semua relasi yang dibutuhkan MessagestResource
         // Mencegah N+1 query untuk setiap pesan
-        ->orderBy('created_at', 'asc')
-        ->orderBy('id', 'asc')  // tiebreaker: same-second messages
         return HistoryChatDetail::with([
             'reply:id,name',                          // agent yang reply
             'history:id,name,merchant_id',            // parent chat (nama customer)
@@ -116,7 +114,8 @@ class HistoryChatObserver
             return $request->name ? $q->where('message', 'like', '%' . $request->name . '%') : '';
         })->where(function ($q) use ($historyId) {
             return $historyId != '' ? $q->where('history_chat_id', $historyId) : '';
-        })->orderBy('created_at', 'desc');
+        })->orderBy('created_at', 'asc')
+         ->orderBy('id', 'asc');  // tiebreaker for same-second messages
     }
 
     public function getByNumber($type = 'personal', $number, $deviceId = null, $from = 'whatsapp', $liveChat = null, $waba = null, $telegramId = null, $instagramId = null, $messangerId = null)
