@@ -127,6 +127,12 @@ Schedule::command('broadcast:mark-completed')->everyFiveMinutes();
 // Refresh broadcast stat cache daily at 3:30am
 Schedule::command('broadcast:refresh-stats')->everyThirtyMinutes();
 
+// Accurate recompute every hour (mutually-exclusive funnel — more precise than refresh-stats)
+Schedule::command('broadcast:recompute-stats --limit=200')
+    ->hourly()
+    ->withoutOverlapping(20)
+    ->runInBackground();
+
 // Auto-cleanup: remove old failed_jobs (keep only 3 days)
 Schedule::call(function () {
     \Illuminate\Support\Facades\DB::table('failed_jobs')
