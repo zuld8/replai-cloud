@@ -22,6 +22,8 @@ class HistoryChatDetail extends Model
         'from',
         'message',
         'reply_by_id',
+        'source',
+        'buttons',
         'file_path',
         'file_type',
         'file_size',

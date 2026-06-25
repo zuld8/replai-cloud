@@ -38,6 +38,7 @@ class MessagestResource extends JsonResource
             'detail'                => $replyToDetail,
             'datetime'              => array(
                 'date'                  => $this->created_at->format('d/m/Y'),
+                'date_id'               => $this->created_at->locale('id')->isoFormat('D MMM YYYY'),
                 'time'                  => $this->created_at->format('H:i')
             ),
             'user'                  => array(
@@ -52,7 +53,9 @@ class MessagestResource extends JsonResource
             'message'               => $this->message,
             'from'                  => $this->from, // FIX: tambah field 'from' agar frontend bisa cek
             'sent_by'               => $this->from == 'user' ? $this->history_chat_id : 'system',
-            'sent_by_name'          => $this->from == 'user' ? ($this->history->name ?? '') : ($this->reply->name ?? 'system'),
+            'sent_by_name'          => $this->from == 'user' ? ($this->history->name ?? '') : ($this->reply->name ?? null),
+            'source'                => $this->source ?? ($this->reply_by_id ? 'agent' : 'system'),
+            'buttons'               => $this->buttons ? json_decode($this->buttons, true) : [],
             'status'                => 'sent',
             'reply_id'              => $replyId,
             'reply_text'            => $this->reply_text,

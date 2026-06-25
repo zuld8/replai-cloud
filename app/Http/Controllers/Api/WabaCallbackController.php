@@ -1200,6 +1200,7 @@ class WabaCallbackController extends Controller
         $replyMessage = $histories->details()->create([
             'history_chat_id' => $histories->id,
             'from' => 'device',
+            'source'            => 'bot',
             'is_follow_up' => $followUps > 0 ? 'no' : 'yes',
             'message' => $reply['message_text'],
         ]);
@@ -1411,6 +1412,7 @@ class WabaCallbackController extends Controller
                 'file_size' => $mediaInfo['size'],
                 'history_chat_id' => $histories->id,
                 'from' => 'device',
+                'source'            => 'bot',
                 'is_read' => 'yes',
                 'type' => $typeMessage,
                 'is_follow_up' => 'yes',
@@ -1441,6 +1443,7 @@ class WabaCallbackController extends Controller
         $reply = $histories->details()->create([
             'history_chat_id' => $histories->id,
             'from' => 'device',
+            'source'            => 'bot',
             'is_read' => 'yes',
             'is_follow_up' => 'yes',
             'message' => $replyText,
@@ -1461,6 +1464,7 @@ class WabaCallbackController extends Controller
         $reply = $histories->details()->create([
             'history_chat_id' => $histories->id,
             'from' => 'device',
+            'source'            => 'bot',
             'is_read' => 'yes',
             'is_follow_up' => 'yes',
             'message' => $replyText
@@ -1486,6 +1490,7 @@ class WabaCallbackController extends Controller
         $replyMessage = $histories->details()->create([
             'history_chat_id' => $histories->id,
             'from' => 'device',
+            'source'            => 'bot',
             'is_follow_up' => $followUps > 0 ? 'no' : 'yes',
             'message' => $reply['message_text']
         ]);
@@ -2519,6 +2524,7 @@ class WabaCallbackController extends Controller
             $replyMessage = $histories->details()->create([
                 'history_chat_id' => $histories->id,
                 'from'            => 'device',
+                'source'            => 'bot',
                 'message'         => $flow->message_open,
                 'type'            => 'text',
             ]);
@@ -2533,6 +2539,7 @@ class WabaCallbackController extends Controller
                 $replyMessage = $histories->details()->create([
                     'history_chat_id' => $histories->id,
                     'from'            => 'device',
+                    'source'            => 'bot',
                     'message'         => 'QRIS',
                     'file_path'       => $flow->qris_image,
                     'type'            => 'image',
@@ -2572,6 +2579,7 @@ class WabaCallbackController extends Controller
                 $replyMessage = $histories->details()->create([
                     'history_chat_id' => $histories->id,
                     'from'            => 'device',
+                    'source'            => 'bot',
                     'message'         => $bankText,
                     'type'            => 'text',
                 ]);
@@ -2585,6 +2593,7 @@ class WabaCallbackController extends Controller
             $replyMessage = $histories->details()->create([
                 'history_chat_id' => $histories->id,
                 'from'            => 'device',
+                'source'            => 'bot',
                 'message'         => $flow->message_close,
                 'type'            => 'text',
             ]);

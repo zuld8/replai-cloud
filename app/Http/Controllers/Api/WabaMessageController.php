@@ -630,6 +630,7 @@ class WabaMessageController extends Controller
                 'id'              => Str::uuid(),
                 'history_chat_id' => $historyChat->id,
                 'from'            => 'device',
+                'source'            => 'notification',
                 'message'         => $templateBody ?: '[Template: ' . ($template->name ?? 'unknown') . ']',
                 'type'            => 'template',
                 'messageid'       => $metaMsgId,
