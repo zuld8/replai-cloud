@@ -9,6 +9,7 @@ use App\Http\Middleware\LicenseCheck;
 use App\Http\Middleware\PackageActivation;
 use App\Http\Middleware\SetLocaleFromSession;
 use App\Http\Middleware\StarterApp;
+use App\Http\Middleware\ActiveSession;
 use App\Http\Middleware\WebAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -49,7 +50,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'web_access'        => WebAccess::class,
             'starter_app'       => StarterApp::class,
             'license_check'     => LicenseCheck::class,
-            'cors'              => Cors::class
+            'cors'              => Cors::class,
+            'active_session'    => ActiveSession::class
         ]);
     })->withExceptions(function (Exceptions $exceptions) {
         //
