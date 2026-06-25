@@ -534,6 +534,7 @@ export default {
             advancedOpen: false,       // collapsible throttle
             showConfirm: false,        // confirmation modal
             sendingTest: false,        // test message loader
+            testNumber: '',            // remembered test phone number
             selectedDeviceId: null,    // for multi-device dropdown
             // Media upload
             file: null,
@@ -814,18 +815,26 @@ export default {
 
         // ─── Kirim Tes ───────────────────────────────────
         async sendTest() {
-            if (!this.form.template || !this.form.devices || !this.form.devices.length) {
-                this.$showToast('Pilih template dan pastikan nomor WABA sudah tersedia', 'error', 3000);
+            if (!this.form.template) {
+                this.$showToast('Pilih template terlebih dahulu', 'error', 3000);
                 return;
             }
+            // Prompt admin for test phone number
+            const testNumber = window.prompt(
+                'Masukkan nomor HP tujuan tes (format internasional, contoh: 628123456789):',
+                this.testNumber || ''
+            );
+            if (!testNumber || !testNumber.trim()) return; // user cancelled
+
+            this.testNumber  = testNumber.trim(); // remember for next time
             this.sendingTest = true;
             try {
                 const res = await this.$axios.post(`/waba/broadcast/test/${this.type.device}`, {
-                    template: this.form.template,
-                    devices: this.form.devices,
-                    metadata: this.form.metadata,
+                    template:    this.form.template,
+                    test_number: testNumber.trim(),
+                    metadata:    JSON.stringify(this.form.metadata),
                 });
-                this.$showToast(res.data.message || 'Pesan tes terkirim ke nomor admin', 'success', 4000);
+                this.$showToast(res.data.message || 'Pesan tes terkirim!', 'success', 4000);
             } catch (error) {
                 const msg = error.response?.data?.message || 'Gagal mengirim tes';
                 this.$showToast(msg, 'error', 4000);

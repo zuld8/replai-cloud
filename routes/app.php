@@ -751,6 +751,7 @@ Route::middleware('package_active')->group(function () {
             Route::get('create/{meta}', [WhatsappBroadcastController::class, 'create'])->name('waba.broadcast.create');
             Route::post('store/{meta}', [WhatsappBroadcastController::class, 'store']);
             Route::post("edit/{meta}/{blash}", [WhatsappBroadcastController::class, 'edit']);
+            Route::post('test/{meta}', [WhatsappBroadcastController::class, 'sendTest'])->name('waba.broadcast.test');
         });
 
         // Chatbot

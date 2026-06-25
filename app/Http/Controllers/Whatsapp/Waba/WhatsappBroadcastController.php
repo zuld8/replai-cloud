@@ -13,6 +13,7 @@ use App\Observers\WhatsappOfficial\WhatsappOfficialServiceObserver;
 use App\Observers\WhatsappOfficial\WhatsappTemplateServiceObserver;
 use App\Services\Broadcast\BroadcastStatsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 
@@ -448,4 +449,116 @@ class WhatsappBroadcastController extends Controller
             ->with(compact('total', 'sent', 'failed', 'delivered', 'read', 'deliveryFailed', 'deliveryTimeout', 'rate'))
             ->make(true);
     }
+    /*
+    |--------------------------------------------------------------------------
+    | sendTest — Kirim 1 pesan template ke nomor tes (bukan broadcast job)
+    |--------------------------------------------------------------------------
+    */
+    public function sendTest(Request $request, MetaAccount $meta)
+    {
+        $request->validate([
+            'template'    => 'required|string',
+            'test_number' => 'required|string|min:8',
+            'metadata'    => 'nullable',
+        ]);
+
+        try {
+            // 1. Get WABA device for this MetaAccount
+            $device = \App\Models\WhatsappKeyAccount::where('meta_account_id', $meta->id)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$device) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Nomor WABA tidak ditemukan atau tidak aktif.',
+                ], 422);
+            }
+
+            // 2. Get credentials (same pattern as SendPromotionWhatsappBatchJob lines 387-391)
+            $config      = json_decode($device->meta_data, true) ?? [];
+            $phoneId     = $config['whatsapp']['phone_number_id'] ?? null;
+            $accessToken = $meta->access_token;
+
+            if (!$phoneId || !$accessToken) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Kredensial WABA tidak lengkap (phone_number_id / access_token kosong).',
+                ], 422);
+            }
+
+            // 3. Get template name + lang
+            $template = \App\Models\Master\MessageTemplate::where('id', $request->template)
+                ->where('meta_account_id', $meta->id)
+                ->first();
+
+            if (!$template) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Template tidak ditemukan untuk WABA ini.',
+                ], 422);
+            }
+
+            // 4. Parse metadata JSON (same format as broadcast store)
+            $metadata = $request->metadata;
+            if (is_string($metadata)) {
+                $metadata = json_decode($metadata, true);
+            }
+            $metadata = $metadata ?? [];
+
+            // 5. Build template components using existing observer helpers
+            $templateName = strtolower(preg_replace("/[^0-9a-zA-Z]/", "_", $template->name));
+            $components   = [];
+
+            if (!empty($metadata['header']) && !empty($metadata['header']['parameters'])) {
+                $components[] = $this->whatsappTemplateObserver->buildHeaderComponent($metadata, '');
+            }
+            if (!empty($metadata['body']['parameters'])) {
+                $components[] = $this->whatsappTemplateObserver->buildBodyComponent($metadata);
+            }
+            if (!empty($metadata['buttons'])) {
+                $buttonComponents = $this->whatsappTemplateObserver->buildButtonComponent($metadata);
+                foreach ($buttonComponents as $bc) {
+                    $components[] = $bc;
+                }
+            }
+
+            // 6. Build payload & send 1 message via Meta Graph API (NO job, NO blash record)
+            $testPhone  = preg_replace('/[^0-9]/', '', $request->test_number);
+            $apiVersion = config('custom.api_waba_version', 'v18.0');
+            $url        = "https://graph.facebook.com/{$apiVersion}/{$phoneId}/messages";
+
+            $payload = [
+                'messaging_product' => 'whatsapp',
+                'recipient_type'    => 'individual',
+                'to'                => $testPhone,
+                'type'              => 'template',
+                'template'          => [
+                    'name'       => $templateName,
+                    'language'   => ['code' => $template->lang ?? 'id'],
+                    'components' => $components,
+                ],
+            ];
+
+            $response = Http::withToken($accessToken)->post($url, $payload);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'status'  => true,
+                    'message' => 'Pesan tes berhasil dikirim ke +' . $testPhone,
+                ]);
+            }
+
+            $errMsg = $response->json('error.message') ?? $response->body();
+            return response()->json(['status' => false, 'message' => 'Meta API error: ' . $errMsg], 422);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => $e->getMessage(),
+                'line'    => $e->getLine(),
+            ], 422);
+        }
+    }
+
 }
