@@ -2429,7 +2429,7 @@ overflow:visible;}
 
 /* Baris akun: RATA KANAN, nama akun PENUH, ⋯ selalu tampil */
 .ci-acctrow{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:8px;padding-top:7px;border-top:.5px dashed #E8EEF5;}
-.ci-dev{font-size:10px;color:#94A3B8;display:inline-flex;align-items:flex-start;gap:3px;line-height:1.3;text-align:right;flex:1;min-width:0;white-space:normal;word-break:break-word;}
+.ci-dev{font-size:10px;color:#94A3B8;display:inline-flex;align-items:flex-start;gap:3px;line-height:1.3;text-align:right;white-space:normal;word-break:break-word;max-width:calc(100% - 36px);}
 .ci-dev i{flex-shrink:0;font-size:11px;margin-top:1px;}
 
 /* ⋯ button: SELALU tampil (bukan hover-only) */
