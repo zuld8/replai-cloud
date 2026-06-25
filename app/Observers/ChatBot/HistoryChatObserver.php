@@ -105,6 +105,8 @@ class HistoryChatObserver
     {
         // FIX 4: Eager load semua relasi yang dibutuhkan MessagestResource
         // Mencegah N+1 query untuk setiap pesan
+        ->orderBy('created_at', 'asc')
+        ->orderBy('id', 'asc')  // tiebreaker: same-second messages
         return HistoryChatDetail::with([
             'reply:id,name',                          // agent yang reply
             'history:id,name,merchant_id',            // parent chat (nama customer)

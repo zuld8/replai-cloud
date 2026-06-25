@@ -700,7 +700,13 @@ class WabaCallbackController extends Controller
                 $message = '';
                 break;
 
-            case 'interactive':
+            case 'button':
+                    // Quick-reply button response (old template format)
+                    $message = $rawMessage['button']['text'] ?? ($rawMessage['button']['payload'] ?? '[Tombol]');
+                    $type    = 'text';
+                    break;
+
+                case 'interactive':
                 // Handle customer button/list reply & WhatsApp Flow responses
                 $interactiveType = $rawMessage['interactive']['type'] ?? '';
                 if ($interactiveType === 'button_reply') {

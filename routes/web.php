@@ -44,7 +44,7 @@ if ($installed == false) {
     })->name('track.ticket');
 
 Route::get('/home', [HomeController::class, 'index'])->name('home');
-    Route::get('/lead-report', [HomeController::class, 'leadReport']);
+    Route::get('/lead-report', [HomeController::class, 'leadReport'])->middleware('auth');
     Route::get('chats', [HomeController::class, 'chats']);
 
     // Affiliate Referral Tracking (public, no auth needed)
