@@ -355,9 +355,12 @@ class StoreController extends Controller
                 $dupQuery->where('meta_account_id', $importMetaAccountId);
             }
 
-            $existingPhones = array_flip(
-                (clone $dupQuery)->whereNotNull('phone')->pluck('phone')->toArray()
-            );
+            // phone => store_id map (biar bisa update kategori nanti)
+            $existingMap    = (clone $dupQuery)->whereNotNull('phone')->pluck('id', 'phone')->toArray();
+            $existingPhones = $existingMap; // compat alias (isset check)
+            $updateExisting = $request->update_existing_category === 'yes';
+            $updated        = 0;
+            $catUpdates     = []; // store_id => category_id
 
             $existingNames = array_flip(
                 (clone $dupQuery)->whereNull('phone')->pluck('name')->toArray()
@@ -381,9 +384,14 @@ class StoreController extends Controller
                     $catName = strtoupper($d['category'] ?? 'UMUM');
                     $catId   = $existingCats[$catName] ?? null;
 
-                    // Skip duplikat (cek di memory, bukan DB)
-                    if ($phone !== null && isset($existingPhones[$phone])) {
-                        $skipped++;
+                    // Duplikat phone: skip atau update kategori
+                    if ($phone !== null && isset($existingMap[$phone])) {
+                        if ($updateExisting && $catId) {
+                            $catUpdates[$existingMap[$phone]] = $catId; // jadwalkan update
+                            $updated++;
+                        } else {
+                            $skipped++;
+                        }
                         continue;
                     }
                     if ($phone === null && isset($existingNames[$d['name']])) {
@@ -413,7 +421,7 @@ class StoreController extends Controller
                     $inserted++;
 
                     // Update memory set supaya chunk berikutnya tidak duplikat dalam file
-                    if ($phone !== null) $existingPhones[$phone] = true;
+                    if ($phone !== null) { $existingMap[$phone] = $uuid; $existingPhones[$phone] = $uuid; }
                     else $existingNames[$d['name']] = true;
                 }
 
@@ -422,9 +430,22 @@ class StoreController extends Controller
                 }
             }
 
+            // Eksekusi bulk update kategori kontak existing
+            if (!empty($catUpdates)) {
+                $byCat = [];
+                foreach ($catUpdates as $sid => $cid) { $byCat[$cid][] = $sid; }
+                foreach ($byCat as $cid => $ids) {
+                    \App\Models\Store\Store::whereIn('id', $ids)->update([
+                        'category_id' => $cid,
+                        'updated_at'  => now(),
+                    ]);
+                }
+            }
+
             $msg = "✅ Berhasil import {$inserted} kontak.";
-            if ($skipped > 0) $msg .= " Dilewati karena duplikat: {$skipped}.";
-            $msg .= " Total baris valid di file: {$totalRows}.";
+            if ($updated > 0) $msg .= " Kategori diperbarui: {$updated}.";
+            if ($skipped > 0) $msg .= " Dilewati: {$skipped}.";
+            $msg .= " Total baris valid: {$totalRows}.";
 
             return redirect()->back()->with(['flash' => $msg]);
 

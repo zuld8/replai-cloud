@@ -204,6 +204,24 @@
                 </div>
             </div>
 
+            <!-- Opsi duplikat -->
+            <div class="px-4 pb-2">
+                <div style="background:#f8fafc;border:1px solid #e4eaf2;border-radius:10px;padding:12px 14px;">
+                    <label class="form-label fw-semibold mb-1" style="font-size:12px;color:#1E2A4A;">
+                        <i class="bx bx-copy-alt me-1" style="color:#2E8DE1;"></i>
+                        Kalau nomor sudah ada di kontak:
+                    </label>
+                    <select name="update_existing_category" class="form-select form-select-sm" style="font-size:12px;border-radius:7px;">
+                        <option value="no" selected>Lewati (jangan ubah) — default</option>
+                        <option value="yes">Perbarui kategorinya ke kategori di file ini</option>
+                    </select>
+                    <small class="text-muted d-block mt-1" style="font-size:11px;line-height:1.4;">
+                        💡 <b>Perbarui</b> = pindahkan kontak yang sudah ada ke kategori sesuai kolom di file.
+                        Berguna untuk re-kategoriin kontak sebelum broadcast.
+                    </small>
+                </div>
+            </div>
+
             <!-- Footer -->
             <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex justify-content-between align-items-center">
                 <a href="{{asset('assets/xlsx/import_sample.xlsx')}}"
