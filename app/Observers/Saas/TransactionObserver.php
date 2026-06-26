@@ -321,4 +321,36 @@ class TransactionObserver
         $invoiceNumber    = sprintf("%05d", $getTransaction);
         return $invoiceNumber;
     }
+
+    public function createMessage(\App\Models\Setting $business, $request)
+    {
+        $settings            = \App\Models\InternalSetting::first(['tax', 'message_per_price', 'price_message']);
+        $qty                 = (int)($request->qty ?? 1);
+        $pricePerUnit        = (float)$settings->price_message;
+        $msgPerUnit          = (int)$settings->message_per_price;
+        $subtotal            = $pricePerUnit * $qty;
+        $msgCredits          = $msgPerUnit * $qty;
+        $tax                 = (float)$settings->tax;
+        $taxAmount           = $subtotal * ($tax / 100);
+        $finalTotal          = $subtotal + $taxAmount;
+
+        $invoiceNumber       = $this->generateInvoice();
+        $refNo               = 'MSG' . date('Ymd') . '/' . $invoiceNumber;
+
+        return \App\Models\Package\PackageTransaction::create([
+            'invoice'                   => $invoiceNumber,
+            'ref_no'                    => $refNo,
+            'merchant_id'               => $business->merchant_id,
+            'business_id'               => $business->id,
+            'price'                     => $subtotal,
+            'tax'                       => $taxAmount,
+            'other_charge'              => 0,
+            'final_total'               => $finalTotal,
+            'message_limit'             => $msgCredits,
+            'using_message_limit'       => 0,
+            'new_order_message_limit'   => $msgCredits,
+            'status'                    => 'pending',
+            'type'                      => 'message_topup',
+        ]);
+    }
 }

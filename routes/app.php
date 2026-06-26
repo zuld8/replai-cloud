@@ -55,6 +55,7 @@ use App\Http\Controllers\Reports\ConversationReportController;
 use App\Http\Controllers\Reports\LeadPipelineController;
 use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\Starter\MuaBillingController;
+use App\Http\Controllers\Starter\MessageBillingController;
 use App\Http\Controllers\Ticket\TicketController;
 use App\Http\Controllers\Ticket\TicketCategoryController;
 use App\Http\Controllers\Ticket\TicketNoteController;
@@ -819,6 +820,14 @@ Route::middleware('package_active')->group(function () {
         Route::post('pay-store/{transaction}', [MuaBillingController::class, 'payTransaction'])->name('mua.store');
         Route::post('create-token/{transaction}', [MuaBillingController::class, 'createTokenDuitku'])->name('mua.create.token');
         Route::get('delete-transaction/{transaction}', [MuaBillingController::class, 'delete'])->name('mua.delete');
+    });
+    Route::prefix('message-billing')->group(function () {
+        Route::get('/', [MessageBillingController::class, 'index'])->name('message.billing.index');
+        Route::get('detail/{transaction}', [MessageBillingController::class, 'detail'])->name('message.billing.detail');
+        Route::post('store', [MessageBillingController::class, 'createTransaction'])->name('message.billing.create');
+        Route::post('pay-store/{transaction}', [MessageBillingController::class, 'payTransaction'])->name('message.billing.store');
+        Route::post('create-token/{transaction}', [MessageBillingController::class, 'createTokenDuitku'])->name('message.billing.token');
+        Route::get('delete-transaction/{transaction}', [MessageBillingController::class, 'delete'])->name('message.billing.delete');
     });
 
     // Storage Billing

@@ -61,7 +61,9 @@ class InternalSetting extends Model
         'mua_per_price',
         'price_mua',
         'using_mua_limit',
-        'new_order_mua_limit'
+        'new_order_mua_limit',
+        'message_per_price',
+        'price_message'
     ];
 
     /**
