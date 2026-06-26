@@ -71,7 +71,10 @@ class PackageTransaction extends Model
         'new_order_mua_limit',
         'using_mua_limit',
         'max_per_upload',
-        'max_total_rag'
+        'max_total_rag',
+        'message_limit',
+        'using_message_limit',
+        'new_order_message_limit'
     ];
 
     protected $dates = [
@@ -123,6 +126,11 @@ class PackageTransaction extends Model
         }
 
         return 0;
+    }
+    public function getSisaMessageAttribute()
+    {
+        $sisa = (int)$this->message_limit - (int)$this->using_message_limit;
+        return $sisa > 0 ? $sisa : 0;
     }
 
     public function getStorageNameAttribute()

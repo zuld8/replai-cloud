@@ -635,6 +635,41 @@
                                 <span class="formemail-priode-na @if(old('limit_email') == 'yes') d-none @endif" style="color:#94A3B8;font-size:12px;">—</span>
                             </td>
                         </tr>
+
+                        {{-- Kredit Pesan / Broadcast --}}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge" style="background:#EAF3FC;color:#1B5FA6;font-size:11px;"><i class="bx bx-chat"></i></span>
+                                    Kredit Pesan
+                                </div>
+                                <small class="text-muted d-block mt-1">Broadcast WhatsApp massal</small>
+                            </td>
+                            <td>
+                                <select class="form-control msglimit" name="message_limit_option" required>
+                                    <option value="no" @if(old('message_limit_option','no')=='no') selected @endif>Tidak Terbatas</option>
+                                    <option value="yes" @if(old('message_limit_option','no')=='yes') selected @endif>Terbatas</option>
+                                </select>
+                            </td>
+                            <td>
+                                <span class="badge-unlimited formmsg-inf @if(old('message_limit_option','no') == 'yes') d-none @endif">∞</span>
+                                <div class="formmsg @if(old('message_limit_option','no') != 'yes') d-none @endif">
+                                    <div class="input-group input-group-sm">
+                                        <input class="form-control" name="message_limit" value="{{old('message_limit',0)}}" type="number" placeholder="5000">
+                                        <span class="input-group-text">Pesan</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="formmsg-priode @if(old('message_limit_option','no') != 'yes') d-none @endif">
+                                    <select class="form-control" name="message_limit_priode">
+                                        <option value="monthly" @if(old('message_limit_priode','monthly')=='monthly') selected @endif>Bulanan</option>
+                                        <option value="daily" @if(old('message_limit_priode','monthly')=='daily') selected @endif>Harian</option>
+                                        <option value="yearly" @if(old('message_limit_priode','monthly')=='yearly') selected @endif>Tahunan</option>
+                                    </select>
+                                </div>
+                            </td>
+                        </tr>
                         {{-- Scraping Data --}}
                         <tr>
                             <td>

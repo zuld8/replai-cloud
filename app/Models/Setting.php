@@ -144,6 +144,22 @@ class Setting extends Model
     {
         return $this->hasOne(PackageTransaction::class, 'business_id')->where('type', 'mua')->where("status", "success")->where("ai_response", ">", 'using_credit_limit')->orderBy("created_at", "desc");
     }
+    public function package_active_message()
+    {
+        return $this->hasOne(PackageTransaction::class, 'business_id')
+            ->where('type', 'message_topup')
+            ->where('status', 'success')
+            ->where('message_limit', '>', 'using_message_limit')
+            ->orderBy('created_at', 'desc');
+    }
+
+    public function package_transaction_message_pending()
+    {
+        return $this->hasMany(PackageTransaction::class, 'business_id')
+            ->where('type', 'message_topup')
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc');
+    }
 
     public function getTransactionPackagePendingAttribute()
     {

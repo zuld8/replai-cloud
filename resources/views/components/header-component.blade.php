@@ -124,7 +124,7 @@
                           </div>
                           <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
                               <span style="color:#34d399;">●</span>
-                              Blasting <b style="color:#f0fdf4;">WhatsApp</b> massal
+                              <b style="color:#f0fdf4;">AI Training</b> & fine-tuning
                           </div>
                       </div>
                       <div class="ai-tip-row">
@@ -152,6 +152,130 @@
               </div>
               @endif
               <!-- End::header-element AI Credit Donut -->
+              <!-- Start::header-element Kredit Pesan Donut -->
+              @php
+                  try {
+                      $__msgBid = my_business();
+                      $__msgPkg = \Illuminate\Support\Facades\DB::connection('mysql')
+                          ->table('package_transactions')
+                          ->where('business_id', $__msgBid)->where('type','package')
+                          ->where('status','success')->orderBy('created_at','desc')
+                          ->first(['message_limit_option','message_limit','using_message_limit']);
+                      $__msgTopup = \Illuminate\Support\Facades\DB::connection('mysql')
+                          ->table('package_transactions')
+                          ->where('business_id', $__msgBid)->where('type','message_topup')
+                          ->where('status','success')->orderBy('created_at','desc')
+                          ->first(['message_limit','using_message_limit']);
+                      $__msgOption  = $__msgPkg ? ($__msgPkg->message_limit_option ?? 'no') : 'no';
+                      $__msgLimit   = ($__msgPkg ? (int)$__msgPkg->message_limit : 0) + ($__msgTopup ? (int)$__msgTopup->message_limit : 0);
+                      $__msgUsed    = ($__msgPkg ? (int)$__msgPkg->using_message_limit : 0) + ($__msgTopup ? (int)$__msgTopup->using_message_limit : 0);
+                      $__msgPct     = ($__msgOption === 'yes' && $__msgLimit > 0) ? min(100, round($__msgUsed / $__msgLimit * 100, 1)) : 0;
+                      $__msgColor   = $__msgPct > 90 ? '#ef4444' : ($__msgPct > 70 ? '#facc15' : '#38bdf8');
+                      $__hasMsg     = ($__msgPkg !== null);
+                  } catch (\Exception $__me) {
+                      $__hasMsg = false; $__msgPct = 0; $__msgUsed = 0;
+                      $__msgLimit = 0; $__msgOption = 'no'; $__msgColor = '#38bdf8';
+                  }
+              @endphp
+              @if($__hasMsg)
+              <style>
+              .msg-cwrap{position:relative;display:inline-flex;align-items:center;}
+              .msg-ctip{
+                  visibility:hidden;opacity:0;position:absolute;top:calc(100% + 10px);left:50%;
+                  transform:translateX(-50%);background:#1a1a2e;border:1px solid rgba(56,189,248,0.2);
+                  border-radius:10px;padding:14px 16px;min-width:200px;z-index:9999;
+                  box-shadow:0 8px 30px rgba(0,0,0,0.5);transition:opacity 0.2s ease,visibility 0.2s ease;
+                  color:#e2e8f0;font-size:12px;}
+              .msg-ctip::before{content:'';position:absolute;top:-7px;left:50%;transform:translateX(-50%);
+                  border:7px solid transparent;border-bottom-color:#1a1a2e;border-top:none;}
+              .msg-cwrap:hover .msg-ctip{visibility:visible;opacity:1;}
+              .msg-tip-row{display:flex;justify-content:space-between;padding:4px 0;
+                  border-bottom:1px solid rgba(255,255,255,0.06);}
+              .msg-tip-row:last-child{border-bottom:none;}
+              </style>
+              <div class="header-element msg-cwrap" style="margin-left:6px;cursor:default;">
+                  <div style="display:inline-flex;align-items:center;gap:7px;padding:0 4px;">
+                      {{-- Donut --}}
+                      <svg width="46" height="46" viewBox="0 0 36 36" style="flex-shrink:0;">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="4"/>
+                          @if($__msgOption === 'yes' && $__msgLimit > 0)
+                          <circle cx="18" cy="18" r="14" fill="none"
+                              stroke="{{ $__msgColor }}"
+                              stroke-width="4" stroke-linecap="round"
+                              stroke-dasharray="{{ round($__msgPct / 100 * 87.96, 2) }} {{ round(87.96 - $__msgPct / 100 * 87.96, 2) }}"
+                              transform="rotate(-90 18 18)"/>
+                          <text x="18" y="18" text-anchor="middle" dominant-baseline="central"
+                              font-size="9" font-weight="900" fill="#ffffff"
+                              style="letter-spacing:-0.3px;">{{ $__msgPct }}%</text>
+                          @else
+                          <text x="18" y="18" text-anchor="middle" dominant-baseline="central"
+                              font-size="12" font-weight="900" fill="#38bdf8">∞</text>
+                          @endif
+                      </svg>
+                      {{-- Teks --}}
+                      <div style="line-height:1.2;">
+                          <div style="font-size:9px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.6px;text-shadow:0 1px 3px rgba(0,0,0,0.2);display:flex;align-items:center;gap:3px;">
+                              Kredit Pesan
+                              <span style="display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;background:rgba(255,255,255,0.2);border-radius:50%;">
+                                  <i class="bx bx-question-mark" style="font-size:8px;color:white;line-height:1;"></i>
+                              </span>
+                          </div>
+                          <div style="font-size:12.5px;font-weight:800;color:#ffffff;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.2);">
+                              @if($__msgOption === 'yes' && $__msgLimit > 0)
+                                  {{ number_format($__msgUsed) }}<span style="opacity:0.75;font-weight:500;">/{{ number_format($__msgLimit) }}</span>
+                              @else
+                                  <span style="color:#38bdf8;">Tak Terbatas</span>
+                              @endif
+                          </div>
+                      </div>
+                  </div>
+                  {{-- Tooltip --}}
+                  <div class="msg-ctip">
+                      <div style="font-weight:700;font-size:12.5px;color:#38bdf8;margin-bottom:8px;">💬 Kredit Pesan</div>
+                      <div style="color:#94a3b8;font-size:11px;margin-bottom:8px;">Digunakan untuk:</div>
+                      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
+                          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
+                              <span style="color:#38bdf8;">●</span>
+                              Broadcast <b style="color:#f0fdf4;">WhatsApp</b> massal
+                          </div>
+                          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
+                              <span style="color:#38bdf8;">●</span>
+                              Follow-up <b style="color:#f0fdf4;">pesan otomatis</b>
+                          </div>
+                      </div>
+                      <div class="msg-tip-row">
+                          <span style="color:#64748b;">Terpakai</span>
+                          <span style="font-weight:600;">{{ number_format($__msgUsed) }}</span>
+                      </div>
+                      @if($__msgOption === 'yes' && $__msgLimit > 0)
+                      <div class="msg-tip-row">
+                          <span style="color:#64748b;">Total Limit</span>
+                          <span style="font-weight:600;">{{ number_format($__msgLimit) }}</span>
+                      </div>
+                      <div class="msg-tip-row">
+                          <span style="color:#64748b;">Sisa</span>
+                          <span style="font-weight:700;color:#38bdf8;">{{ number_format(max(0,$__msgLimit-$__msgUsed)) }}</span>
+                      </div>
+                      <div style="margin-top:8px;background:rgba(56,189,248,0.08);border-radius:6px;padding:6px 8px;">
+                          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                              <span style="font-size:10px;color:#64748b;">Penggunaan</span>
+                              <span style="font-size:10px;font-weight:700;color:{{ $__msgColor }};">{{ $__msgPct }}%</span>
+                          </div>
+                          <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:4px;overflow:hidden;">
+                              <div style="background:{{ $__msgColor }};width:{{ $__msgPct }}%;height:100%;border-radius:4px;"></div>
+                          </div>
+                      </div>
+                      @else
+                      <div class="msg-tip-row">
+                          <span style="color:#64748b;">Status</span>
+                          <span style="font-weight:700;color:#38bdf8;">Tidak Terbatas ∞</span>
+                      </div>
+                      @endif
+                  </div>
+              </div>
+              @endif
+              <!-- End::header-element Kredit Pesan Donut -->
+
 
               <!-- Start::header-element Storage Donut -->
               @php

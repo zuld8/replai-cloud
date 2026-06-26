@@ -60,7 +60,10 @@ class Package extends Model
         'mua_limit',
         'mua_limit_optin',
         'max_per_upload',
-        'max_total_rag'
+        'max_total_rag',
+        'message_limit_option',
+        'message_limit',
+        'message_limit_priode'
     ];
 
     /**
