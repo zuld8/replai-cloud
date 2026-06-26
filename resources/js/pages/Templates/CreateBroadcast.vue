@@ -734,15 +734,22 @@ export default {
             }
         },
 
+        // Helper: jam WIB sekarang (Intl-based, browser-TZ agnostic)
+        nowWIB() {
+            const f = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Jakarta',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hour12: false
+            }).formatToParts(new Date());
+            const g = t => f.find(p => p.type === t).value;
+            // Returns "YYYY-MM-DDTHH:MM" in WIB — no UTC offset double-count
+            return `${g('year')}-${g('month')}-${g('day')}T${g('hour')}:${g('minute')}`;
+        },
+
         setSendMode(mode) {
             this.sendMode = mode;
             if (mode === 'now') {
-                // Set schedule to now (UTC+7)
-                const now = new Date();
-                now.setSeconds(0, 0);
-                const offset = 7 * 60; // WIB
-                const wib = new Date(now.getTime() + (offset - now.getTimezoneOffset()) * 60000);
-                this.form.schedule = wib.toISOString().slice(0, 16);
+                this.form.schedule = this.nowWIB();
             }
         },
 
