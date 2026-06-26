@@ -73,6 +73,8 @@ class PackageTransaction extends Model
         'max_per_upload',
         'max_total_rag',
         'message_limit',
+        'message_limit_option',
+        'message_limit_priode',
         'using_message_limit',
         'new_order_message_limit'
     ];

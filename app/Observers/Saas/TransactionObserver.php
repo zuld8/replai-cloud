@@ -106,6 +106,9 @@ class TransactionObserver
             'mua_limit_optin'           => $package->mua_limit_optin,
             'max_per_upload'            => $package->max_per_upload,
             'max_total_rag'             => $package->max_total_rag,
+            'message_limit_option'      => $package->message_limit_option ?? 'no',
+            'message_limit'             => $package->message_limit ?? 0,
+            'message_limit_priode'      => $package->message_limit_priode,
         ]);
     }
 
