@@ -654,7 +654,7 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
 
         // Load package_active directly using business_id to avoid partial-select issues
         $businessId = $blast->store->business_id ?? $settings->id ?? null;
-        $transaction = $businessId ? \App\Models\PackageTransaction::where('business_id', $businessId)
+        $transaction = $businessId ? \App\Models\Package\PackageTransaction::where('business_id', $businessId)
             ->where('type', 'package')
             ->where('status', 'success')
             ->where(function($q) { $q->where('expire_date', '>=', now())->orWhere('days_option', 'unlimited'); })
