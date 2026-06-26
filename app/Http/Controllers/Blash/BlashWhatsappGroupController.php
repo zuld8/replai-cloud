@@ -136,16 +136,23 @@ class BlashWhatsappGroupController extends Controller
         $business       = Setting::find(my_business());
 
         if (($business->merchant ?? null) != null) {
-            $topupLimit     = $business->package_active_topup->sisa_credit ?? 0;
-            $packageCredit  = $business->package_active->sisa_credit ?? 0;
-            $totalCredit    = ($topupLimit + $packageCredit);
+            $pkg            = $business->package_active;
+            $topup          = $business->package_active_message;
+            // UNLIMITED guard
+            if ($pkg && ($pkg->message_limit_option ?? 'no') === 'no') {
+                $totalCredit = PHP_INT_MAX; // unlimited
+            } else {
+                $totalCredit = ($pkg ? ($pkg->sisa_message ?? 0) : 0)
+                             + ($topup ? ($topup->sisa_message ?? 0) : 0);
+            }
+            $packageCredit  = $totalCredit; // alias for condition below
 
             $stores         = WhatsappGroup::where(function ($q) use ($request) {
                 $q->whereIn('device_id', $request->devices);
             })->orderBy('name', 'asc')->count();
 
             if ($totalCredit < $stores) {
-                return redirect()->back()->with(['gagal'    => 'Maaf, Kredit limit anda tidak mencukupi, silahkan isi ulang saldo kredit anda']);
+                return redirect()->back()->with(['gagal' => 'Kredit Pesan tidak cukup — silakan top-up Kredit Pesan.']);
             }
         }
 
@@ -181,16 +188,23 @@ class BlashWhatsappGroupController extends Controller
         $business       = $blash->business;
 
         if (($business->merchant ?? null) != null) {
-            $topupLimit     = $business->package_active_topup->sisa_credit ?? 0;
-            $packageCredit  = $business->package_active->sisa_credit ?? 0;
-            $totalCredit    = ($topupLimit + $packageCredit);
+            $pkg            = $business->package_active;
+            $topup          = $business->package_active_message;
+            // UNLIMITED guard
+            if ($pkg && ($pkg->message_limit_option ?? 'no') === 'no') {
+                $totalCredit = PHP_INT_MAX; // unlimited
+            } else {
+                $totalCredit = ($pkg ? ($pkg->sisa_message ?? 0) : 0)
+                             + ($topup ? ($topup->sisa_message ?? 0) : 0);
+            }
+            $packageCredit  = $totalCredit; // alias for condition below
 
             $stores         = WhatsappGroup::where(function ($q) use ($request) {
                 $q->whereIn('device_id', $request->devices);
             })->orderBy('name', 'asc')->count();
 
             if ($totalCredit < $stores) {
-                return redirect()->back()->with(['gagal'    => 'Maaf, Kredit limit anda tidak mencukupi, silahkan isi ulang saldo kredit anda']);
+                return redirect()->back()->with(['gagal' => 'Kredit Pesan tidak cukup — silakan top-up Kredit Pesan.']);
             }
         }
 

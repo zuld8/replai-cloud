@@ -138,23 +138,25 @@ class SendWhatsappGroupJob implements ShouldQueue
 
             $business       = $this->blast->parent->business;
             if (($business->merchant ?? null) != null) {
-                $topupLimit     = $business->package_active_topup->sisa_credit ?? 0;
-                $packageCredit  = $business->package_active->sisa_credit ?? 0;
-                $totalLimit     = ($topupLimit + $packageCredit);
-                $usageCredit    = 1;
+                $pkg   = $business->package_active;
+                $topup = $business->package_active_message;
 
-                if ($totalLimit < $usageCredit) {
-                    $status  = false;
-                    $messageVariable['message']     = 'Credit Token Anda tidak mencukupi';
+                // 1) UNLIMITED guard
+                if (!$pkg || ($pkg->message_limit_option ?? 'no') === 'no') {
+                    // unlimited — jangan potong, lanjut kirim
                 } else {
-                    if ($packageCredit > 0) {
-                        $business->package_active->update([
-                            'using_credit_limit'        => $business->package_active->using_credit_limit + $usageCredit
-                        ]);
+                    // 2) Cek sisa Kredit Pesan
+                    $sisa = ($pkg->sisa_message ?? 0) + ($topup ? ($topup->sisa_message ?? 0) : 0);
+                    if ($sisa < 1) {
+                        $status = false;
+                        $messageVariable['message'] = 'Kredit Pesan tidak cukup — silakan top-up Kredit Pesan.';
                     } else {
-                        $business->package_active_topup->update([
-                            'using_credit_limit'        => $business->package_active_topup->using_credit_limit + $usageCredit
-                        ]);
+                        // 3) Deduct
+                        if (($pkg->sisa_message ?? 0) > 0) {
+                            $pkg->increment('using_message_limit', 1);
+                        } elseif ($topup) {
+                            $topup->increment('using_message_limit', 1);
+                        }
                     }
                 }
             }

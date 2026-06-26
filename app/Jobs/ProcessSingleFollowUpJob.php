@@ -570,7 +570,33 @@ class ProcessSingleFollowUpJob implements ShouldQueue
 
         try {
             $whatsappService = new WhatsappServiceObserver();
-            $result = $whatsappService->sendMessage(
+            // Q1: Cek + deduct Kredit Pesan untuk follow-up STATIS (exact='yes')
+            if (isset($followUpData) && ($followUpData->exact ?? '') === 'yes') {
+                try {
+                    $__fuBiz = \App\Models\Setting::where('id', $this->chatData->merchant_id ?? null)->first();
+                    if ($__fuBiz && $__fuBiz->merchant) {
+                        $__fuPkg   = $__fuBiz->package_active;
+                        $__fuTopup = $__fuBiz->package_active_message;
+                        if (!$__fuPkg || ($__fuPkg->message_limit_option ?? 'no') !== 'no') {
+                            // Terbatas — cek sisa
+                            $__fuSisa = ($__fuPkg ? ($__fuPkg->sisa_message ?? 0) : 0)
+                                      + ($__fuTopup ? ($__fuTopup->sisa_message ?? 0) : 0);
+                            if ($__fuSisa < 1) {
+                                \Illuminate\Support\Facades\Log::info(
+                                    'FollowUp statis dibatalkan: Kredit Pesan habis',
+                                    ['merchant' => $this->chatData->merchant_id]
+                                );
+                                return; // batalkan kirim
+                            }
+                            // Deduct setelah send (pakai flag untuk deduct post-send)
+                            $__fuShouldDeduct = true;
+                            $__fuPkgRef       = $__fuPkg;
+                            $__fuTopupRef     = $__fuTopup;
+                        }
+                    }
+                } catch (\Throwable $__fue) {}
+            }
+                        $result = $whatsappService->sendMessage(
                 $this->chatData->from_number,
                 $this->chatData->device_id,
                 $response,
@@ -579,6 +605,16 @@ class ProcessSingleFollowUpJob implements ShouldQueue
                 null,
                 false
             );
+            // Deduct Kredit Pesan setelah send berhasil (followup statis)
+            if (!empty($__fuShouldDeduct) && $result) {
+                try {
+                    if ($__fuPkgRef && ($__fuPkgRef->sisa_message ?? 0) > 0) {
+                        $__fuPkgRef->increment('using_message_limit', 1);
+                    } elseif (isset($__fuTopupRef) && $__fuTopupRef) {
+                        $__fuTopupRef->increment('using_message_limit', 1);
+                    }
+                } catch (\Throwable $__fue2) {}
+            }
 
             
         } catch (\Exception $e) {

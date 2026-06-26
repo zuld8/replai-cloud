@@ -351,20 +351,26 @@ class SendPromotionWhatsappWithDelayJob implements ShouldQueue
             return true; // Skip validation if no merchant
         }
 
-        $topupLimit = $business->package_active_topup->sisa_credit ?? 0;
-        $packageCredit = $business->package_active->sisa_credit ?? 0;
-        $totalLimit = ($topupLimit + $packageCredit);
-        $usageCredit = 1;
+        $pkg   = $business->package_active;
+        $topup = $business->package_active_message;
 
-        if ($totalLimit < $usageCredit) {
+        // 1) UNLIMITED guard
+        if ($pkg && ($pkg->message_limit_option ?? 'no') === 'no') {
+            return true;
+        }
+
+        // 2) Cek sisa Kredit Pesan
+        $sisa = ($pkg ? ($pkg->sisa_message ?? 0) : 0)
+              + ($topup ? ($topup->sisa_message ?? 0) : 0);
+        if ($sisa < 1) {
             return false;
         }
 
-        // Deduct credit
-        if ($packageCredit > 0) {
-            $business->package_active->increment('using_credit_limit', $usageCredit);
-        } else {
-            $business->package_active_topup->increment('using_credit_limit', $usageCredit);
+        // 3) Deduct
+        if ($pkg && ($pkg->sisa_message ?? 0) > 0) {
+            $pkg->increment('using_message_limit', 1);
+        } elseif ($topup) {
+            $topup->increment('using_message_limit', 1);
         }
 
         return true;

@@ -814,46 +814,39 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
     }
 
     /**
-     * Validate credit availability
+     * Validate & deduct Kredit Pesan (message credit pool).
+     * Pattern: unlimited guard → cek sisa → deduct atomic.
      */
     private function validateCredit(BlashDetail $blast): bool
     {
         $business = $blast->parent->business;
         if (!$business || !$business->merchant) {
-            return true;
+            return true; // no merchant = dev/demo, allow
         }
 
-        // PRE-FIX #1: transaction + pessimistic lock prevents race condition
-        // when concurrent requests all read stale credit simultaneously
         return \Illuminate\Support\Facades\DB::transaction(function () use ($business) {
-            // Fresh read from DB with row-level lock (SELECT ... FOR UPDATE)
-            $packageActive = null;
-            $packageTopup  = null;
+            $pkg   = $business->package_active()->lockForUpdate()->first()
+                     ?? $business->package_active;
+            $topup = $business->package_active_message()->lockForUpdate()->first()
+                     ?? $business->package_active_message;
 
-            try {
-                // FIX: use correct snake_case method names (package_active, not packageActive)
-                $packageActive = $business->package_active()->lockForUpdate()->first();
-                $packageTopup  = $business->package_active_topup()->lockForUpdate()->first();
-            } catch (\Throwable $e) {
-                // Fallback: use loaded relations (less safe but won't break)
-                $packageActive = $business->package_active;
-                $packageTopup  = $business->package_active_topup;
+            // 1) UNLIMITED guard — WAJIB
+            if ($pkg && ($pkg->message_limit_option ?? 'no') === 'no') {
+                return true; // unlimited → lolos tanpa potong
             }
 
-            $topupLimit    = $packageTopup  ? ($packageTopup->sisa_credit  ?? 0) : 0;
-            $packageCredit = $packageActive ? ($packageActive->sisa_credit ?? 0) : 0;
-            $totalLimit    = $topupLimit + $packageCredit;
-            $usageCredit   = 1;
-
-            if ($totalLimit < $usageCredit) {
-                return false;
+            // 2) Terbatas → cek sisa
+            $sisa = ($pkg ? ($pkg->sisa_message ?? 0) : 0)
+                  + ($topup ? ($topup->sisa_message ?? 0) : 0);
+            if ($sisa < 1) {
+                return false; // Kredit Pesan habis
             }
 
-            // Deduct credit (atomic UPDATE — safe)
-            if ($packageCredit > 0 && $packageActive) {
-                $packageActive->increment('using_credit_limit', $usageCredit);
-            } elseif ($packageTopup) {
-                $packageTopup->increment('using_credit_limit', $usageCredit);
+            // 3) Deduct 1 (langganan dulu, lalu topup)
+            if ($pkg && ($pkg->sisa_message ?? 0) > 0) {
+                $pkg->increment('using_message_limit', 1);
+            } elseif ($topup) {
+                $topup->increment('using_message_limit', 1);
             }
 
             return true;
