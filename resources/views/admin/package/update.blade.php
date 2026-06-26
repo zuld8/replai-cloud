@@ -200,7 +200,7 @@
                     <div class="pkg-chip">
                         <i class="bx bx-car" style="color:#2E8DE1;font-size:16px;"></i>
                         <label>Integrasi Ongkir</label>
-                        <select class="form-control" name="ongkir" style="width:auto;">
+                        <select class="form-control" name="cek_ongkir" style="width:auto;">
                             <option value="no" @if(old('ongkir',$package->ongkir)=='no') selected @endif>Nonaktif</option>
                             <option value="yes" @if(old('ongkir',$package->ongkir)=='yes') selected @endif>Aktif</option>
                         </select>
@@ -610,7 +610,7 @@
                                 </div>
                             </td>
                             <td>
-                                <select class="form-control emaillimit" name="limit_email" required>
+                                <select class="form-control emaillimit" name="limit_email_option" required>
                                     <option value="no" @if(old('limit_email',$package->limit_email)=='no') selected @endif>Tidak Terbatas</option>
                                     <option value="yes" @if(old('limit_email',$package->limit_email)=='yes') selected @endif>Terbatas</option>
                                 </select>
@@ -619,7 +619,7 @@
                                 <span class="badge-unlimited formemail-inf @if(old('limit_email',$package->limit_email) == 'yes') d-none @endif">∞</span>
                                 <div class="formemail @if(old('limit_email',$package->limit_email) != 'yes') d-none @endif">
                                     <div class="input-group input-group-sm">
-                                        <input class="form-control" name="email_blast" value="{{old('email_blast',(int)$package->email_blast)}}" type="number" placeholder="3000">
+                                        <input class="form-control" name="email_limit" value="{{old('email_blast',(int)$package->email_blast)}}" type="number" placeholder="3000">
                                         <span class="input-group-text">Email</span>
                                     </div>
                                 </div>
