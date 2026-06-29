@@ -3928,10 +3928,17 @@ export default {
 /* ── Mobile (@media ≤ 768px) ─────────────────────────── */
 @media (max-width: 768px) {
     .chat-wrapper {
-        height: 100dvh; /* avoid keyboard covering input on iOS */
+        /* FIXED: jangan set height:100dvh di sini.
+         * Parent .chat-container sudah calc(100dvh - 3.75rem) untuk navbar.
+         * height:100dvh melebihi parent → overflow:hidden clip input ke bawah layar.
+         * Biarkan flex:1 (dari CSS utama) yang mengatur tinggi. */
+        flex: 1;
+        min-height: 0;
     }
     .chat-input-area {
         padding: 8px;
+        /* Pastikan input selalu kelihatan — tidak ter-shrink */
+        flex-shrink: 0;
     }
     .chat-input {
         font-size: 16px; /* prevent iOS zoom on focus */
