@@ -170,13 +170,19 @@ class WabaCallbackController extends Controller
         // CAPTURE: log raw request before anything
         $rawBody = $request->getContent();
         $bodyDecoded = json_decode($rawBody, true);
-        \Illuminate\Support\Facades\Log::info('WABA_CAPTURE', [
+        $hasMsg  = isset($bodyDecoded['entry'][0]['changes'][0]['value']['messages']);
+        $hasStat = isset($bodyDecoded['entry'][0]['changes'][0]['value']['statuses']);
+        $hasRef  = isset($bodyDecoded['entry'][0]['changes'][0]['value']['messages'][0]['referral']);
+        \Illuminate\Support\Facades\Log::warning('WABA_CAPTURE', [
             'biz' => $settingsId,
             'ip' => $request->ip(),
             'size' => strlen($rawBody),
             'phone' => $bodyDecoded['entry'][0]['changes'][0]['value']['metadata']['display_phone_number'] ?? 'n/a',
-            'has_msg' => isset($bodyDecoded['entry'][0]['changes'][0]['value']['messages']),
-            'has_stat' => isset($bodyDecoded['entry'][0]['changes'][0]['value']['statuses']),
+            'has_msg' => $hasMsg,
+            'has_stat' => $hasStat,
+            'has_ref' => $hasRef,
+            // Log raw body only when message arrives (helps debug missing referral)
+            'raw_msg_keys' => $hasMsg ? array_keys($bodyDecoded['entry'][0]['changes'][0]['value']['messages'][0]) : null,
         ]);
 
         // ✅ Bypass route model binding — fetch manually to avoid global scope + wrap binding in Throwable
@@ -465,9 +471,11 @@ class WabaCallbackController extends Controller
                     // Lead attribution — capture CTWA referral (first message only)
                     if (!$histories->lead_source) {
                         $ref = $messageData['rawMessage']['referral'] ?? null;
-                        Log::info('WABA referral payload', [
+                        Log::warning('WABA referral payload', [
                             'ref'    => $ref,
                             'msg_id' => $messageData['messageId'] ?? null,
+                            'raw_msg_type' => $messageData['rawMessage']['type'] ?? null,
+                            'raw_msg_keys' => array_keys($messageData['rawMessage']),
                         ]);
                         if ($ref) {
                             $histories->update([
