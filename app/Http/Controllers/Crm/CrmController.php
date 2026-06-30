@@ -680,12 +680,21 @@ class CrmController extends Controller
             $messageVariable['wabaid']              = $config['whatsapp']['waba_id'] ?? null;
             $messageVariable['access_token']        = $config['whatsapp']['access_token'] ?? null;
 
+            // Quoted reply: get wamid of the replied-to message to send context to WA
+            $wabaContextMessageId = null;
+            if ($request->input('reply_to') != null) {
+                $replyDetail = HistoryChatDetail::where('id', $request->input('reply_to'))
+                    ->where('history_chat_id', $history->id)
+                    ->first(['messageid']);
+                $wabaContextMessageId = $replyDetail->messageid ?? null;
+            }
+
             if ($image['status'] == true) {
                 $sendMedia                              = $this->whatsappOfficialServiceObserver->uploadMedia($messageVariable['access_token'], asset($message->file_path), $messageType, $messageVariable['phoneid']);
 
                 if ($sendMedia != null) {
                     $sendToMedia = $history->store->phone ?? $history->from_number ?? $history->bsuid;
-                $sendMessage    = $this->whatsappOfficialServiceObserver->sendMediaMessage($sendToMedia, $messageType, $sendMedia, $message->message, ($image['original_name'] ?? basename($message->file_path)), $messageVariable);
+                $sendMessage    = $this->whatsappOfficialServiceObserver->sendMediaMessage($sendToMedia, $messageType, $sendMedia, $message->message, ($image['original_name'] ?? basename($message->file_path)), $messageVariable, $wabaContextMessageId);
                     if ($sendMessage['status'] == 200) {
                         $message->update([
                             'messageid'     => $sendMessage['messageid']
@@ -695,7 +704,7 @@ class CrmController extends Controller
             } else {
 
                 $sendTo = $history->from_number ?? $history->bsuid;
-                $sendMessage    = $this->whatsappOfficialServiceObserver->sendTextMessage($sendTo, $message->message, $messageVariable);
+                $sendMessage    = $this->whatsappOfficialServiceObserver->sendTextMessage($sendTo, $message->message, $messageVariable, $wabaContextMessageId);
 
                 if ($sendMessage['status'] == 200) {
                     $message->update([

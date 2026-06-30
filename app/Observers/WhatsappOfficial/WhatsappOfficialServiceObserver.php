@@ -727,7 +727,7 @@ class WhatsappOfficialServiceObserver
         return $response;
     }
 
-    public function sendTextMessage($phone, $textMessage, $variablesData = [])
+    public function sendTextMessage($phone, $textMessage, $variablesData = [], $contextMessageId = null)
     {
         $url        = "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$variablesData['phoneid']}/messages";
         $headers    = $this->setHeaders($variablesData['access_token']);
@@ -742,6 +742,11 @@ class WhatsappOfficialServiceObserver
                 'body'        => $textMessage
             ],
         ];
+
+        // Quoted reply: include context so WA shows which message is being replied to
+        if ($contextMessageId) {
+            $requestData['context'] = ['message_id' => $contextMessageId];
+        }
 
         $responseObject = $this->sendHttpRequest('POST', $url, $requestData, $headers);
 
@@ -787,7 +792,7 @@ class WhatsappOfficialServiceObserver
         return $result['id'] ?? null;
     }
 
-    public function sendMediaMessage($phone, $mediaType, $mediaId, $caption = null, $fileName = null, $variablesData)
+    public function sendMediaMessage($phone, $mediaType, $mediaId, $caption = null, $fileName = null, $variablesData, $contextMessageId = null)
     {
 
         $url        = "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$variablesData['phoneid']}/messages";
@@ -808,6 +813,11 @@ class WhatsappOfficialServiceObserver
 
         if ($mediaType === 'document' && $fileName) {
             $payload[$mediaType]['filename'] = $fileName;
+        }
+
+        // Quoted reply: include context so WA shows which message is being replied to
+        if ($contextMessageId) {
+            $payload['context'] = ['message_id' => $contextMessageId];
         }
 
         $responseObject = $this->sendHttpRequest('POST', $url, $payload, $headers);
