@@ -648,6 +648,20 @@ export default {
     methods: {
         ...mapActions(["saving_contacts"]),
 
+        // ── Lead attribution helpers ──────────────────────────────────
+        leadChipLabel(s) {
+            const map = { ad: 'Iklan', story: 'Story', post: 'Post', link: 'Link' };
+            return map[s] || s;
+        },
+        leadChipIcon(s) {
+            const map = {
+                ad:    'fas fa-bullhorn',
+                story: 'fas fa-film',
+                post:  'fas fa-thumbs-up',
+                link:  'fas fa-link',
+            };
+            return (map[s] || 'fas fa-tag') + ' lead-chip-icon';
+        },
 
         /**
          * Hitung status sesi 24 jam WABA berdasarkan last_message_at.
