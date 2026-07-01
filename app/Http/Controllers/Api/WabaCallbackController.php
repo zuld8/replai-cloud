@@ -764,7 +764,7 @@ class WabaCallbackController extends Controller
                     ];
                 }
                 $firstName = $contactsList[0]['name'] ?? 'Kontak';
-                $message   = '\u{1F4C7} Kontak: ' . $firstName . (count($contactsList) > 1 ? ' +' . (count($contactsList) - 1) . ' lainnya' : '');
+                $message   = '📇 Kontak: ' . $firstName . (count($contactsList) > 1 ? ' +' . (count($contactsList) - 1) . ' lainnya' : '');
                 $extra     = json_encode(['contacts' => $contactsList], JSON_UNESCAPED_UNICODE);
                 break;
 
@@ -773,7 +773,7 @@ class WabaCallbackController extends Controller
                 $lat  = $rawMessage['location']['latitude']  ?? null;
                 $long = $rawMessage['location']['longitude'] ?? null;
                 $name = $rawMessage['location']['name']    ?? ($rawMessage['location']['address'] ?? 'Lokasi');
-                $message = '\u{1F4CD} Lokasi: ' . $name;
+                $message = '📍 Lokasi: ' . $name;
                 $extra = json_encode([
                     'location' => [
                         'lat'     => $lat,
@@ -785,16 +785,16 @@ class WabaCallbackController extends Controller
                 break;
 
             case 'unsupported':
-                $message = '\u26A0\uFE0F Pesan tidak didukung (mungkin dikirim dari WhatsApp versi lama).';
+                $message = '⚠️ Pesan tidak didukung (mungkin dikirim dari WhatsApp versi lama).';
                 break;
 
             case 'system':
                 // Pesan sistem Meta (mis. user ganti nomor)
-                $message = '\u2139\uFE0F ' . ($rawMessage['system']['body'] ?? 'Pesan sistem');
+                $message = 'ℹ️ ' . ($rawMessage['system']['body'] ?? 'Pesan sistem');
                 break;
 
             default:
-                $message = '\u26A0\uFE0F Pesan tipe "' . $messageType . '" belum didukung.';
+                $message = '⚠️ Pesan tipe "' . $messageType . '" belum didukung.';
                 break;
         }
 
