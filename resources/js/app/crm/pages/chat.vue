@@ -3131,12 +3131,16 @@ export default {
         position: fixed;
         top: 3.75rem;                        /* di bawah navbar global */
         right: 0;
+        left: auto;                          /* jangan expand ke kiri */
         bottom: 0;
         height: calc(100dvh - 3.75rem);
-        width: min(85vw, 360px);             /* drawer — background nongol di kiri */
-        z-index: 1001;                        /* di atas backdrop */
+        width: 78vw;                         /* drawer — area backdrop ~22vw jelas kelihatan */
+        max-width: 380px;
+        z-index: 1001;                       /* di atas backdrop */
         box-shadow: -4px 0 16px rgba(0,0,0,0.15);
         overflow-y: auto;
+        transform: translateX(0);
+        transition: transform 0.25s ease;
     }
 
     .sidebar-right:not(.hidden) {
@@ -3147,7 +3151,8 @@ export default {
 
 @media (max-width: 576px) {
     .sidebar-right {
-        width: 85vw;                         /* tetap drawer di semua mobile */
+        width: 78vw !important;              /* tetap drawer di semua mobile */
+        max-width: 380px !important;
     }
 
     .message-media img,
@@ -4893,11 +4898,13 @@ export default {
     color: #1e293b;
 }
 
-/* Drawer panel full-screen di mobile */
-@media (max-width: 576px) {
-    .sidebar-right:not(.hidden) {
+/* Force fix: ID+class beats any conflicting rule */
+@media (max-width: 992px) {
+    #rightSidebar.sidebar-right {
+        width: 78vw !important;
+        max-width: 380px !important;
         right: 0 !important;
-        box-shadow: -4px 0 16px rgba(0,0,0,0.12);
+        left: auto !important;
     }
 }
 
@@ -4929,9 +4936,10 @@ export default {
 .sidebar-right-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    z-index: 1000;       /* di bawah panel (z-index:1001) */
+    background: rgba(0, 0, 0, 0.55);   /* sedikit lebih gelap → area tap jelas */
+    z-index: 1000;                       /* di bawah panel (z-index:1001) */
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* ─────────────────────────────────────────────────────────── */
