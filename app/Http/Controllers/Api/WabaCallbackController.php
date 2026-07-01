@@ -183,6 +183,8 @@ class WabaCallbackController extends Controller
             'has_ref' => $hasRef,
             // Log raw body only when message arrives (helps debug missing referral)
             'raw_msg_keys' => $hasMsg ? array_keys($bodyDecoded['entry'][0]['changes'][0]['value']['messages'][0]) : null,
+            // Verify username capture: contacts[0] from Meta webhook
+            'contacts' => $bodyDecoded['entry'][0]['changes'][0]['value']['contacts'][0] ?? null,
         ]);
 
         // ✅ Bypass route model binding — fetch manually to avoid global scope + wrap binding in Throwable

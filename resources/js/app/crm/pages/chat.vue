@@ -4100,4 +4100,443 @@ export default {
 }
 .btn-back-mobile { color: #1E6F5C !important; }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REDESIGN: Panel Informasi CRM — brand palette (#2E8DE1 / #5B3FB0 / #25D366)
+   Semua override di sini menang karena berada setelah definisi lama.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── B1. User Profile Header ──────────────────────────────────────────── */
+.user-profile {
+    padding: 20px 16px 16px;
+    text-align: center;
+    border-bottom: 1px solid #E4EAF2;
+    background: #fff;
+}
+
+.user-avatar-large {
+    width: 64px !important;
+    height: 64px !important;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 10px;
+    position: relative;
+    border: 2px solid #E4EAF2;
+}
+
+.user-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.whatsapp-badge {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 20px;
+    height: 20px;
+    background: #25D366;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    border: 2px solid #fff;
+}
+
+.user-name {
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    line-height: 1.4;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 4px;
+}
+
+.user-phone {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px;
+    font-size: 13px !important;
+    color: #64748b !important;
+    margin-top: 2px;
+}
+
+.user-phone .copy-icon {
+    font-size: 14px;
+    color: #94A3B8;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+.user-phone .copy-icon:hover { color: #2E8DE1; }
+
+/* BSUID / Username styles */
+.badge-username {
+    font-size: 10px !important;
+    background: #F1ECFE !important;
+    color: #5B3FB0 !important;
+    padding: 2px 7px !important;
+    border-radius: 10px !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px;
+    vertical-align: middle;
+    border: none;
+}
+
+.user-username {
+    font-size: 12px;
+    color: #5B3FB0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    margin-top: 3px;
+}
+
+.user-phone.muted {
+    color: #94A3B8 !important;
+    font-size: 12px !important;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+}
+
+.user-bsuid {
+    font-size: 11px !important;
+    color: #94A3B8;
+    font-family: monospace;
+    background: #F5F8FC;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-top: 5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    user-select: none;
+    transition: background 0.15s, color 0.15s;
+}
+.user-bsuid:hover { background: #EBF3FD; color: #5B3FB0; }
+
+/* ── B2. Window 24H Card ──────────────────────────────────────────────── */
+.window-status-card {
+    margin: 10px 14px 2px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.window-status {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 9px 12px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    border-radius: 8px;
+}
+
+.window-status.inside {
+    background: #E1F5EE !important;
+    color: #0F6E56 !important;
+}
+
+.window-status.outside {
+    background: #FAECE7 !important;
+    color: #993C1D !important;
+}
+
+.window-status i { font-size: 15px; }
+
+.window-badge {
+    font-size: 10px !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    margin-left: auto;
+}
+
+.badge-inside {
+    background: #0F6E56 !important;
+    color: #fff !important;
+}
+
+.badge-outside {
+    background: #993C1D !important;
+    color: #fff !important;
+}
+
+.window-timer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    padding: 4px 12px 6px;
+    color: #0F6E56;
+}
+
+.window-timer.expired { color: #993C1D; }
+
+/* ── B3. Info Section Rows ────────────────────────────────────────────── */
+.info-section {
+    padding-bottom: 8px;
+}
+
+.info-item {
+    padding: 11px 16px !important;
+    border-top: 0.5px solid #E4EAF2;
+}
+
+.info-label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #94A3B8 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 6px;
+}
+
+.info-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.btn-add {
+    font-size: 12px !important;
+    color: #2E8DE1 !important;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.15s;
+    cursor: pointer;
+}
+.btn-add:hover { color: #185FA5 !important; }
+
+.info-select {
+    width: 100%;
+    font-size: 13px;
+    border: 1px solid #E4EAF2;
+    border-radius: 6px;
+    padding: 6px 10px;
+    background: #fff;
+    color: #374151;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.info-select:focus { border-color: #2E8DE1; box-shadow: none; }
+
+.info-input {
+    width: 100%;
+    font-size: 13px;
+    border: 1px solid #E4EAF2;
+    border-radius: 6px;
+    padding: 6px 10px;
+    background: #fff;
+    color: #374151;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.info-input:focus { border-color: #2E8DE1; box-shadow: none; }
+
+/* Empty states — italic muted, consistent */
+.empty-state-inline {
+    font-size: 12px !important;
+    color: #94A3B8 !important;
+    font-style: italic !important;
+    display: inline-block;
+}
+
+.empty-state {
+    font-size: 12px;
+    color: #94A3B8;
+    font-style: italic;
+}
+
+/* ── B4. Pills — Label / Kategori / Pipeline ──────────────────────────── */
+.tag-container {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-height: 22px;
+    align-items: center;
+}
+
+.tag-item {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    font-size: 12px !important;
+    padding: 3px 9px !important;
+    border-radius: 10px !important;
+    background: #EAF3FC !important;
+    color: #185FA5 !important;
+    font-weight: 500;
+}
+
+.category-tag {
+    background: #EAF3FC !important;
+    color: #185FA5 !important;
+}
+
+.category-tag .remove-tag { color: #185FA5; }
+
+.remove-tag {
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+.remove-tag:hover { opacity: 1; }
+
+/* Pipeline & Stage pills */
+.pipeline-badge {
+    background: #F1ECFE;
+    color: #5B3FB0;
+    border-radius: 10px;
+    padding: 3px 9px;
+    font-size: 12px;
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    font-weight: 500;
+}
+
+.stage-badge {
+    background: #F5F8FC;
+    color: #64748B;
+    border-radius: 10px;
+    padding: 3px 9px;
+    font-size: 12px;
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+}
+
+/* Collaborator row */
+.collaborator-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 3px 0;
+    color: #374151;
+}
+
+.remove-btn {
+    cursor: pointer;
+    color: #94A3B8;
+    font-size: 14px;
+    transition: color 0.15s;
+}
+.remove-btn:hover { color: #DC2626; }
+
+/* ── B5. Device/Channel Card ──────────────────────────────────────────── */
+.device-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: #F9FAFB;
+    border-radius: 8px;
+    border: 0.5px solid #E4EAF2;
+}
+
+.device-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    width: fit-content;
+}
+
+/* Override dark badge-waba with brand green */
+.badge-waba {
+    background: #E1F5EE !important;
+    color: #0F6E56 !important;
+}
+
+.badge-whatsapp {
+    background: #E1F5EE !important;
+    color: #0F6E56 !important;
+}
+
+.badge-instagram { background: #fce4ec; color: #880e4f; }
+.badge-telegram  { background: #e3f2fd; color: #0277bd; }
+.badge-livechat  { background: #ede7f6; color: #4527a0; }
+
+.device-name {
+    font-size: 12px !important;
+    font-weight: 500;
+    color: #64748B !important;
+}
+
+/* ── B6. Detail Data rows + Block button ──────────────────────────────── */
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12px;
+    gap: 8px;
+    padding: 3px 0;
+}
+
+.detail-label {
+    color: #94A3B8;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.detail-value {
+    color: #374151;
+    font-weight: 500;
+    text-align: right;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+/* Block / Unblock full-width buttons */
+.btn.btn-danger.w-100 {
+    background: #DC2626 !important;
+    border-color: #DC2626 !important;
+    border-radius: 8px !important;
+    padding: 10px !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    transition: background 0.15s !important;
+}
+.btn.btn-danger.w-100:hover {
+    background: #B91C1C !important;
+    border-color: #B91C1C !important;
+}
+.btn.btn-info.w-100 {
+    border-radius: 8px !important;
+    padding: 10px !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+}
+
+/* Sidebar header */
+.sidebar-right-header {
+    padding: 14px 16px 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 1px solid #E4EAF2;
+    background: #fff;
+}
+
+/* ──────────────────────────────────────────────────────────────────────── */
 </style>
