@@ -70,16 +70,7 @@
                         </a>
                     </div>
                 </div>
-                <!-- WABA 24-jam session banner — SIBLING, independen dari lead_source -->
-                <div v-if="detail.from === 'waba'" class="session-banner-24"
-                     :class="isInsideWindow ? 'session-active' : 'session-expired'">
-                    <i class="bx" :class="isInsideWindow ? 'bx-check-circle' : 'bx-time-five'"></i>
-                    <span v-if="isInsideWindow">Sesi 24 jam aktif · sisa {{ windowTimeLeft }}</span>
-                    <span v-else>Sesi tutup · hanya bisa kirim template</span>
-                    <button v-if="!isInsideWindow" class="btn-open-template-banner" @click="openTemplatePanel">
-                        Pilih Template
-                    </button>
-                </div>
+                <!-- session-banner-24 dihapus — status sesi sudah tampil di ch-sub (sessionInfo) -->
                 <div class="controls">
                     <!-- ch-back tombol kembali sudah dipindah ke identity block di atas -->
                     <button class="btn-control" @click="changeTakeOver(!detail.takeover)">
@@ -4125,20 +4116,11 @@ export default {
 
 
 /* ── WABA 24h session banner ─────────────────────────── */
-.session-banner-24 {
-    display: flex; align-items: center; gap: 8px; padding: 6px 16px;
-    font-size: 11.5px; font-weight: 600;
-    border-bottom: 1px solid rgba(0,0,0,.06);
-    flex-shrink: 0;
-}
+/* removed: session-banner-24 CSS */
 .session-active  { background: #ECFDF5; color: #065F46; }
 .session-expired { background: #FFFBEB; color: #92400E; }
 .session-banner-24 i { font-size: 14px; }
-.btn-open-template-banner {
-    margin-left: auto; background: #1E6F5C; color: #fff;
-    border: none; border-radius: 6px; padding: 3px 10px;
-    font-size: 11px; font-weight: 600; cursor: pointer;
-}
+/* removed: session-banner-24 CSS */
 .btn-open-template-banner:hover { background: #155a4a; }
 
 
