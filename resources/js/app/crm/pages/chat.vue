@@ -156,7 +156,7 @@
                                             <i :class="originIcon(msg.source)"></i>
                                             {{ msg.source === 'agent' ? (msg.sent_by_name || 'Agen') : originLabel(msg.source) }}
                                         </span>
-                                        <span class="msg-origin-date">· {{ msg.datetime.date_id || msg.datetime.date }}</span>
+                                        <span class="msg-origin-date">· {{ formatShortDate(msg.datetime.date_id || msg.datetime.date) }}</span>
                                     </div>
                                     <div class="message-sender-info" v-else>
                                         <span class="sender-date">{{ msg.datetime.date }}</span>
@@ -189,9 +189,15 @@
 
                                     <!-- Video -->
                                     <div v-if="msg.media_type === 'video' && msg.media_url" class="message-media">
-                                        <video controls>
-                                            <source :src="msg.media_url" type="video/mp4" />
-                                        </video>
+                                        <div class="video-wrapper">
+                                            <video controls>
+                                                <source :src="msg.media_url" type="video/mp4" />
+                                            </video>
+                                            <div class="video-play-overlay"
+                                                 @click="$event.currentTarget.style.display='none'; $event.currentTarget.previousElementSibling.play()">
+                                                <div class="video-play-btn"><i class="bx bx-play"></i></div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div v-else-if="msg.media_type === 'video' && !msg.media_url" class="media-unavailable-wrapper">
                                         <div class="media-unavailable">
@@ -2505,7 +2511,11 @@ export default {
             // Button rendering
             html = html.replace(/🔘 (.+)/g, '<div style="display:flex;align-items:center;gap:6px;margin:3px 0;padding:6px 12px;background:rgba(255,255,255,0.12);border-radius:8px;border:1px solid rgba(255,255,255,0.2)"><i class="bx bx-link-external" style="font-size:14px"></i><span>$1</span></div>');
             // URLs
-            html = html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" style="color:#0ea5e9;text-decoration:underline">$1</a>');
+            html = html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" class="msg-link" style="color:#0ea5e9;text-decoration:underline;word-break:break-all">$1</a>');
+            // WA group links → chip (post-process wrapped anchors)
+            html = html.replace(
+                /<a class="msg-link"[^>]*href="(https?:\/\/chat\.whatsapp\.com\/[^"]+)"[^>]*>[^<]+<\/a>/g,
+                '<a href="$1" target="_blank" class="wa-group-chip"><i class="bx bxl-whatsapp"><\/i> Grup WhatsApp<\/a>');
             // Newlines
             html = html.replace(/\n/g, '<br>');
             return html;
@@ -2702,6 +2712,28 @@ export default {
                 });
                 return Object.values(grouped);
             },
+        formatShortDate(str) {
+            // Safe: replace long Indonesian month names → short, handle dd/mm/yyyy too
+            if (!str) return '';
+            const s = String(str).trim();
+            // Map long → short Indonesian month names
+            const mm = {
+                'Januari':'Jan','Februari':'Feb','Maret':'Mar','April':'Apr',
+                'Mei':'Mei','Juni':'Jun','Juli':'Jul','Agustus':'Agu',
+                'September':'Sep','Oktober':'Okt','November':'Nov','Desember':'Des'
+            };
+            let r = s;
+            for (const [lng, sht] of Object.entries(mm)) r = r.replace(lng, sht);
+            // dd/mm/yyyy → D Mon YYYY
+            const m = r.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m) {
+                try {
+                    const d = new Date(+m[3], +m[2]-1, +m[1]);
+                    if (!isNaN(d)) return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+                } catch(e) {}
+            }
+            return r;
+        },
         formatDateSeparator(dateStr) {
             if (!dateStr) return '';
             let date;
@@ -2732,7 +2764,7 @@ export default {
             if (cmp.getTime() === yesterday.getTime()) return 'Kemarin';
 
             return date.toLocaleDateString('id-ID', {
-                day: 'numeric', month: 'long', year: 'numeric'
+                day: 'numeric', month: 'short', year: 'numeric'
             });
         },
     },
@@ -2834,8 +2866,8 @@ export default {
 .chat-messages {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden;
-    background: #F0F4F8; /* brand light blue-gray, no WA doodle */
+    overflow-x: clip;   /* clip not hidden → allows position:sticky inside */
+    background: #F5F8FC; /* brand light blue-gray, no WA doodle */
 }
 
 .reply-bar {
@@ -4074,7 +4106,6 @@ export default {
 @media (max-width: 576px) {
     .chat-header-main {
         padding: 8px 12px;
-        align-items: flex-start;        /* ensure no top gap on smallest phones */
     }
 
     .status-select {
@@ -4229,18 +4260,14 @@ export default {
     .chat-input {
         font-size: 16px; /* prevent iOS zoom on focus */
     }
-    /* ch-sub: no wrap on mobile → prevent header height blowup */
+    /* ch-sub: no wrap on mobile → chips gak wrap ke baris baru */
     .ch-sub {
         flex-wrap: nowrap;
         overflow: hidden;
     }
-    /* controls: self-center so buttons are vertically centred vs avatar */
+    /* controls: self-center so buttons align nicely */
     .controls {
         align-self: center;
-    }
-    /* ch-back / ch-avatar: small top nudge for optical alignment */
-    .ch-back, .ch-avatar {
-        margin-top: 4px;
     }
 
     /* Hide desktop controls on mobile */
@@ -4724,9 +4751,9 @@ export default {
 
 .chat-header-main {
     display: flex;
-    align-items: flex-start;         /* flex-start: no gap above when ch-sub wraps */
+    align-items: center;
     gap: 10px;
-    padding: 10px 14px;
+    padding: 8px 14px;
     border-bottom: 0.5px solid #E4EAF2;
     background: #fff;
     min-height: 56px;
@@ -5143,4 +5170,110 @@ export default {
 }
 
 /* ─────────────────────────────────────────────────────────── */
+/* ── A1: Message text word-wrap (prevent URLs breaking bubble) ── */
+.message-text {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+.message-text a {
+    overflow-wrap: anywhere;
+    word-break: break-all;
+}
+
+/* ── B1: Date separator — floating pill, sticky while scrolling ── */
+.date-separator {
+    position: sticky;
+    top: 8px;
+    z-index: 5;
+    display: block;
+    width: fit-content;
+    margin: 8px auto;
+    padding: 3px 14px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748B;
+    background: rgba(255,255,255,0.92);
+    border: 0.5px solid #E4EAF2;
+    border-radius: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* ── B2: WA Group link chip ── */
+.wa-group-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 10px;
+    padding: 6px 10px;
+    color: inherit;
+    text-decoration: none !important;
+    font-size: 12px;
+    font-weight: 500;
+    max-width: 100%;
+    word-break: break-word;
+    margin: 2px 0;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.wa-group-chip i { color: #25D366; font-size: 16px; flex-shrink: 0; }
+.wa-group-chip:hover { background: rgba(255,255,255,0.28); }
+/* Received bubbles (light background) */
+.message.received .wa-group-chip {
+    background: #e8f5e9;
+    border-color: #a5d6a7;
+    color: #1b5e20;
+}
+.message.received .wa-group-chip i { color: #25D366; }
+.message.received .wa-group-chip:hover { background: #d0edda; }
+
+/* ── B3: Video play overlay ── */
+.video-wrapper {
+    position: relative;
+    display: inline-block;
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 300px;
+}
+.video-wrapper video {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    border-radius: 8px;
+    background: #000;
+}
+.video-play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.22);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.15s;
+}
+.video-play-overlay:hover { background: rgba(0,0,0,0.35); }
+.video-play-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    pointer-events: none;
+}
+
+
 </style>
