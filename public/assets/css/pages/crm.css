@@ -16,7 +16,7 @@ body {
     display: flex;
     flex-direction: column;
     background-color: #fff;
-    padding-top: 60px; /* = 3.75rem navbar height (matches App.vue calc) */
+    padding-top: 30px; /* 60px_navbar - 30px_container_offset = 30px exact */
 }
 
 .chat-header {
