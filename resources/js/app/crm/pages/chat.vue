@@ -240,6 +240,23 @@
                                         </a>
                                     </div>
 
+                                    <!-- Location Card -->
+                                    <div v-if="msg.media_type === 'location' && parseLocation(msg)" class="location-msg">
+                                        <div class="loc-card">
+                                            <div class="loc-pin"><i class="bx bx-map"></i></div>
+                                            <div class="loc-info">
+                                                <div class="loc-name">{{ parseLocation(msg).name || 'Lokasi dibagikan' }}</div>
+                                                <div class="loc-addr" v-if="parseLocation(msg).address">{{ parseLocation(msg).address }}</div>
+                                                <div class="loc-coords" v-if="parseLocation(msg).lat">
+                                                    {{ parseLocation(msg).lat }}, {{ parseLocation(msg).long }}
+                                                </div>
+                                            </div>
+                                            <a :href="mapsUrl(parseLocation(msg))" target="_blank" class="loc-btn">
+                                                <i class="bx bx-navigation"></i> Buka di Maps
+                                            </a>
+                                        </div>
+                                    </div>
+
                                     <!-- Contact Card (msg.extra.contacts) -->
                                     <div v-if="msg.media_type === 'contacts' && parseContacts(msg)" class="contact-msg">
                                         <div v-for="(c,ci) in parseContacts(msg)" :key="ci" class="contact-card-item">
@@ -260,7 +277,7 @@
                                     </div>
 
                                     <!-- Message Text (teks fallback kontak, atau pesan biasa) -->
-                                    <div class="message-text" v-if="msg.message && msg.media_type !== 'contacts'" v-html="formattedText(msg.message)">
+                                    <div class="message-text" v-if="msg.message && msg.media_type !== 'contacts' && msg.media_type !== 'location'" v-html="formattedText(msg.message)">
                                     </div>
 
                                     <!-- Button Reply (user tapped WA interactive button) -->
@@ -1287,6 +1304,26 @@ export default {
                 const obj = typeof d === 'string' ? JSON.parse(d) : d;
                 return obj.contacts && obj.contacts.length ? obj.contacts : null;
             } catch(e) { return null; }
+        },
+
+        /**
+         * Parse location from msg.extra
+         */
+        parseLocation(msg) {
+            try {
+                const d = msg.extra || msg.extra_data;
+                if (!d) return null;
+                const obj = typeof d === 'string' ? JSON.parse(d) : d;
+                return obj.location || null;
+            } catch(e) { return null; }
+        },
+
+        /**
+         * Google Maps URL from location data
+         */
+        mapsUrl(l) {
+            if (l && l.lat && l.long) return 'https://www.google.com/maps?q=' + l.lat + ',' + l.long;
+            return 'https://www.google.com/maps';
         },
 
         /**
@@ -4998,6 +5035,88 @@ export default {
 .message-wrapper.user .cc-save {
     color: #64748B;
     border-color: #CBD5E1;
+}
+
+/* ─────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════
+   Location Card — pesan lokasi yang dibagi customer
+   ═════════════════════════════════════════════════════════════ */
+
+.location-msg {
+    margin-bottom: 4px;
+    min-width: 220px;
+    max-width: 100%;
+}
+
+.loc-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 9px 11px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.message-wrapper.user .loc-card {
+    background: rgba(0,0,0,0.05);
+    border-color: rgba(0,0,0,0.08);
+}
+
+.loc-pin {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D85A30;
+    font-size: 20px;
+    flex: 0 0 auto;
+}
+
+.loc-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.loc-name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.loc-addr, .loc-coords {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 1px;
+}
+
+.loc-btn {
+    margin-left: auto;
+    font-size: 11px;
+    padding: 5px 9px;
+    border-radius: 6px;
+    background: #fff;
+    color: #185FA5;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    font-weight: 500;
+    flex: 0 0 auto;
+    transition: opacity 0.15s;
+}
+.loc-btn:hover { opacity: 0.8; }
+
+.message-wrapper.user .loc-btn {
+    background: #EAF3FC;
+    color: #185FA5;
 }
 
 /* ─────────────────────────────────────────────────────────── */

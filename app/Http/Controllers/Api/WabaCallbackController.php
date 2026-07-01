@@ -769,11 +769,32 @@ class WabaCallbackController extends Controller
                 break;
 
             case 'location':
-                // Customer shared location
-                $lat  = $rawMessage['location']['latitude'] ?? '';
-                $long = $rawMessage['location']['longitude'] ?? '';
-                $name = $rawMessage['location']['name'] ?? 'Lokasi';
-                $message = '[Lokasi: ' . $name . ' (' . $lat . ',' . $long . ')]';
+                // Customer shared location — parse with extra for map card
+                $lat  = $rawMessage['location']['latitude']  ?? null;
+                $long = $rawMessage['location']['longitude'] ?? null;
+                $name = $rawMessage['location']['name']    ?? ($rawMessage['location']['address'] ?? 'Lokasi');
+                $message = '\u{1F4CD} Lokasi: ' . $name;
+                $extra = json_encode([
+                    'location' => [
+                        'lat'     => $lat,
+                        'long'    => $long,
+                        'name'    => $rawMessage['location']['name']    ?? null,
+                        'address' => $rawMessage['location']['address'] ?? null,
+                    ]
+                ], JSON_UNESCAPED_UNICODE);
+                break;
+
+            case 'unsupported':
+                $message = '\u26A0\uFE0F Pesan tidak didukung (mungkin dikirim dari WhatsApp versi lama).';
+                break;
+
+            case 'system':
+                // Pesan sistem Meta (mis. user ganti nomor)
+                $message = '\u2139\uFE0F ' . ($rawMessage['system']['body'] ?? 'Pesan sistem');
+                break;
+
+            default:
+                $message = '\u26A0\uFE0F Pesan tipe "' . $messageType . '" belum didukung.';
                 break;
         }
 
