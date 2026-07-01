@@ -526,13 +526,26 @@ class InstagramController extends Controller
 
         try {
             // Refresh account data from Instagram API
-            $response = Http::get("{$this->graphApiUrl}/{$this->apiVersion}/{$instagramId}", [
+            // IG-Login (graph.instagram.com) vs FB-Login (graph.facebook.com)
+            // Akun tanpa page_id = IG-Login, wajib pakai graph.instagram.com
+            $syncHost = empty($account->page_id)
+                ? 'https://graph.instagram.com'
+                : $this->graphApiUrl;
+
+            $response = Http::get("{$syncHost}/{$this->apiVersion}/{$instagramId}", [
                 'access_token' => $account->access_token,
                 'fields' => 'id,username,name,profile_picture_url,biography,website,followers_count,follows_count,media_count',
             ]);
 
             if (!$response->successful()) {
-                throw new \Exception('Failed to fetch Instagram data');
+                $errCode = $response->json('error.code') ?? 0;
+                $errMsg  = $response->json('error.message') ?? 'Unknown error';
+                if (in_array($errCode, [190, 102, 464])) {
+                    // Token expired/revoked → tandai akun, minta reconnect
+                    $account->update(['status' => 'expired']);
+                    throw new \Exception("Token Instagram expired (code {$errCode}) — silakan sambung ulang akun.");
+                }
+                throw new \Exception('Failed to fetch Instagram data: ' . $errMsg);
             }
 
             $data = $response->json();

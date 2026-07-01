@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\RefreshInstagramTokens;
 use App\Jobs\BlashWhatsappGroupJob;
 use App\Jobs\FineTunnelStatusCheckJob;
 use App\Jobs\FollowUpJob;
@@ -185,3 +186,10 @@ Schedule::job(new ResetWhatsappDailySendJob)
     ->dailyAt('00:00')
     ->name('reset-daily-send')
     ->withoutOverlapping();
+
+// ── Instagram token auto-refresh ──────────────────────────────────────────
+// Refresh IG-Login tokens setiap hari pukul 03:00 WIB (threshold: sisa <=10 hari)
+Schedule::command(RefreshInstagramTokens::class, ['--days' => 10])
+    ->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->name('instagram:refresh-tokens');
