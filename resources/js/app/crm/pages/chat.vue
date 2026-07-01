@@ -487,51 +487,58 @@
 
                     <!-- Input Controls (when takeover is active) -->
                     <template v-if="detail.takeover">
-                        <div class="plus-menu-container" style="position: relative;">
-                            <button class="input-btn" @click="togglePlusMenu">
-                                <i class="bx bx-plus"></i>
-                            </button>
-                            <div class="plus-menu-dropdown" v-if="showPlusMenu">
-                                <div class="plus-menu-item" @click="openTemplatePanel" v-if="detail.from === 'waba'">
-                                    <i class="bx bx-notepad"></i>
-                                    <span>Template</span>
+                        <div class="composer">
+                            <div class="composer-pill">
+                                <div class="plus-menu-container" style="position: relative;">
+                                    <button class="ci-round plus" @click="togglePlusMenu" aria-label="Tambah">
+                                        <i class="bx bx-plus"></i>
+                                    </button>
+                                    <div class="plus-menu-dropdown" v-if="showPlusMenu">
+                                        <div class="plus-menu-item" @click="openTemplatePanel" v-if="detail.from === 'waba'">
+                                            <i class="bx bx-notepad"></i>
+                                            <span>Template</span>
+                                        </div>
+                                        <div class="plus-menu-item" @click="openQuickReplyFromMenu">
+                                            <i class="bx bx-reply"></i>
+                                            <span>Balasan Cepat</span>
+                                        </div>
+                                        <div class="plus-menu-item" @click="triggerFileFromMenu">
+                                            <i class="bx bx-paperclip"></i>
+                                            <span>Lampirkan File</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="plus-menu-item" @click="openQuickReplyFromMenu">
-                                    <i class="bx bx-reply"></i>
-                                    <span>Quick Reply</span>
-                                </div>
-                                <div class="plus-menu-item" @click="triggerFileFromMenu">
-                                    <i class="bx bx-paperclip"></i>
-                                    <span>Attach File</span>
-                                </div>
+                                <button class="ci-round" @click="toggleEmoji" aria-label="Emoji">
+                                    <i class="bx bx-smile"></i>
+                                </button>
+                                <input type="file" ref="fileInput" style="display: none" @change="handleFileChange"
+                                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+                                <textarea class="chat-input" ref="chatInput" v-model="send.text" @input="onMessageInput"
+                                    @keydown="handleKeyDown" @paste="handlePaste"
+                                    @keydown.arrow-down.prevent="navigateQuickReplies('down')"
+                                    @keydown.arrow-up.prevent="navigateQuickReplies('up')" @keydown.esc="hideQuickReplies"
+                                    :placeholder="'Ketik pesan…  ketik / untuk balasan cepat'"
+                                    rows="1"></textarea>
                             </div>
-                        </div>
-                        <button class="input-btn" @click="toggleEmoji">
-                            <i class="bx bx-smile"></i>
-                        </button>
-                        <input type="file" ref="fileInput" style="display: none" @change="handleFileChange"
-                            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
-                        <textarea class="chat-input" ref="chatInput" v-model="send.text" @input="onMessageInput"
-                            @keydown="handleKeyDown" @paste="handlePaste"
-                            @keydown.arrow-down.prevent="navigateQuickReplies('down')"
-                            @keydown.arrow-up.prevent="navigateQuickReplies('up')" @keydown.esc="hideQuickReplies"
-                            :placeholder="$t('chat.type_message') + ' ' + $t('chat.quick_reply_hint')"
-                            rows="1"></textarea>
 
-                        <button class="input-btn primary" @click="sendMessage" :disabled="send.loader">
-                            <i class="bx bx-send"></i>
-                        </button>
-                        <button class="input-btn success" @click="resolved" v-if="detail.status !== 'resolved'">
-                            <i class="bx bx-check"></i>
-                        </button>
+                            <button class="btn-selesai" @click="resolved" v-if="detail.status !== 'resolved'" title="Selesai">
+                                <i class="bx bx-check"></i> Selesai
+                            </button>
+                            <span class="composer-div" v-if="detail.status !== 'resolved'"></span>
+                            <button class="btn-kirim" @click="sendMessage" :disabled="send.loader" aria-label="Kirim">
+                                <i class="bx bx-send"></i>
+                            </button>
+                        </div>
                     </template>
 
-                    <!-- Takeover Button (when not active) -->
+                    <!-- State bot aktif — input terkunci -->
                     <template v-else>
-                        <button class="btn btn-info w-100" @click="changeTakeOver(true)">
-                            <i class="bx bx-hand-stop me-2"></i>
-                            {{ $t('chat.takeover_conversation') }}
-                        </button>
+                        <div class="takeover-lock">
+                            <span class="tl-text"><i class="bx bx-lock-alt"></i> Bot AI lagi balas otomatis…</span>
+                            <button class="tl-btn" @click="changeTakeOver(true)">
+                                <i class="bx bx-hand"></i> Ambil Alih Percakapan
+                            </button>
+                        </div>
                     </template>
                 </div>
             </div>
@@ -5276,4 +5283,26 @@ export default {
 }
 
 
+
+/* ── Composer redesign (B6) ── */
+.composer{display:flex;align-items:center;gap:8px;padding:8px 10px;width:100%;}
+.composer-pill{flex:1;display:flex;align-items:center;gap:4px;min-width:0;background:#F5F8FC;border:0.5px solid #E4EAF2;border-radius:24px;padding:5px 6px 5px 8px;}
+.ci-round{width:34px;height:34px;border-radius:50%;border:none;background:transparent;display:flex;align-items:center;justify-content:center;color:#64748B;flex:0 0 auto;cursor:pointer;font-size:19px;transition:background .15s;}
+.ci-round:hover{background:#eaeef4;}
+.ci-round.plus{background:#F1ECFE;color:#5B3FB0;}
+.composer .chat-input{flex:1;min-width:0;border:none;background:transparent;outline:none;resize:none;font-size:14px;line-height:1.4;padding:6px 4px;max-height:120px;overflow-y:auto;}
+.btn-selesai{display:inline-flex;align-items:center;gap:5px;height:38px;padding:0 14px;border-radius:20px;background:#DCFCE7;color:#166534;font-size:12px;font-weight:500;border:none;flex:0 0 auto;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
+.btn-selesai:hover{opacity:.85;}
+.btn-selesai i{font-size:15px;}
+.composer-div{width:0.5px;height:24px;background:#E4EAF2;flex:0 0 auto;}
+.btn-kirim{width:40px;height:40px;border-radius:50%;background:#0F6E56;color:#fff;border:none;display:flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer;transition:opacity .15s;}
+.btn-kirim i{font-size:18px;}
+.btn-kirim:disabled{opacity:.5;}
+.btn-kirim:not(:disabled):hover{opacity:.88;}
+.takeover-lock{display:flex;align-items:center;gap:10px;margin:8px 10px;background:#F5F8FC;border:1px dashed #cbd5e1;border-radius:26px;padding:8px 8px 8px 16px;}
+.tl-text{flex:1;display:flex;align-items:center;gap:7px;font-size:13px;color:#94A3B8;}
+.tl-text i{font-size:16px;}
+.tl-btn{display:inline-flex;align-items:center;gap:6px;background:#5B3FB0;color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:500;flex:0 0 auto;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
+.tl-btn:hover{opacity:.88;}
+.tl-btn i{font-size:16px;}
 </style>
