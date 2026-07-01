@@ -502,6 +502,9 @@
     </div>
 
     <!-- Modal File Preview -->
+    <!-- Backdrop panel Informasi (mobile only) — tap untuk nutup -->
+    <div v-if="showRightSidebar" class="sidebar-right-overlay d-lg-none" @click="toggleRightSidebar()"></div>
+
     <div class="sidebar-right" v-if="showRightSidebar" id="rightSidebar">
         <div class="sidebar-right-header">
             {{ $t('info.information') }}
@@ -3044,13 +3047,13 @@ export default {
 
     .sidebar-right {
         position: fixed;
-        right: -320px;
-        top: 3.75rem;                     /* mulai di bawah navbar global */
+        top: 3.75rem;                        /* di bawah navbar global */
+        right: 0;
         bottom: 0;
-        height: calc(100dvh - 3.75rem);   /* sisa tinggi layar */
-        z-index: 1000;
-        transition: right 0.3s ease;
-        width: 320px;
+        height: calc(100dvh - 3.75rem);
+        width: min(85vw, 360px);             /* drawer — background nongol di kiri */
+        z-index: 1001;                        /* di atas backdrop */
+        box-shadow: -4px 0 16px rgba(0,0,0,0.15);
         overflow-y: auto;
     }
 
@@ -3062,12 +3065,7 @@ export default {
 
 @media (max-width: 576px) {
     .sidebar-right {
-        width: 100%;
-        right: -100%;
-    }
-
-    .sidebar-right:not(.hidden) {
-        right: 0;
+        width: 85vw;                         /* tetap drawer di semua mobile */
     }
 
     .message-media img,
@@ -4837,6 +4835,21 @@ export default {
         border-bottom: 0.5px solid #E4EAF2;
         padding: 12px 16px !important;
     }
+}
+
+/* ─────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════
+   Panel Informasi mobile — drawer 85vw + backdrop tap-to-close
+   ═════════════════════════════════════════════════════════════ */
+
+/* Backdrop gelap — cuma mobile (d-lg-none sudah handle display) */
+.sidebar-right-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;       /* di bawah panel (z-index:1001) */
+    cursor: pointer;
 }
 
 /* ─────────────────────────────────────────────────────────── */
