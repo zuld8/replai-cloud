@@ -37,7 +37,8 @@ class HistoryChatDetail extends Model
         'reply_to',
         'reply_text',
         'original_name',
-        'quoted_message'
+        'quoted_message',
+        'extra'
     ];
 
     /**

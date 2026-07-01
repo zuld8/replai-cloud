@@ -240,8 +240,27 @@
                                         </a>
                                     </div>
 
-                                    <!-- Message Text -->
-                                    <div class="message-text" v-if="msg.message" v-html="formattedText(msg.message)">
+                                    <!-- Contact Card (msg.extra.contacts) -->
+                                    <div v-if="msg.media_type === 'contacts' && parseContacts(msg)" class="contact-msg">
+                                        <div v-for="(c,ci) in parseContacts(msg)" :key="ci" class="contact-card-item">
+                                            <div class="cc-avatar"><i class="bx bx-user"></i></div>
+                                            <div class="cc-info">
+                                                <div class="cc-name">{{ c.name }}</div>
+                                                <div class="cc-phone" v-if="c.phone">{{ c.phone }}</div>
+                                            </div>
+                                            <div class="cc-actions" v-if="c.phone">
+                                                <a :href="'https://wa.me/' + c.phone" target="_blank" class="cc-btn cc-chat">
+                                                    <i class="bx bxl-whatsapp"></i> Chat
+                                                </a>
+                                                <button class="cc-btn cc-save" @click="saveSharedContact(c)">
+                                                    <i class="bx bx-user-plus"></i> Simpan
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Message Text (teks fallback kontak, atau pesan biasa) -->
+                                    <div class="message-text" v-if="msg.message && msg.media_type !== 'contacts'" v-html="formattedText(msg.message)">
                                     </div>
 
                                     <!-- Button Reply (user tapped WA interactive button) -->
@@ -1257,6 +1276,32 @@ export default {
         },
     },
     methods: {
+
+        /**
+         * Parse contacts from msg.extra
+         */
+        parseContacts(msg) {
+            try {
+                const d = msg.extra || msg.extra_data;
+                if (!d) return null;
+                const obj = typeof d === 'string' ? JSON.parse(d) : d;
+                return obj.contacts && obj.contacts.length ? obj.contacts : null;
+            } catch(e) { return null; }
+        },
+
+        /**
+         * Save shared contact to CRM
+         */
+        async saveSharedContact(c) {
+            try {
+                await this.$axios.post('/crm/contacts/quick-save', { name: c.name, phone: c.phone });
+                if (this.$toast?.success) this.$toast.success('Kontak ' + c.name + ' disimpan');
+                else alert('Kontak ' + c.name + ' disimpan');
+            } catch(e) {
+                if (this.$toast?.error) this.$toast.error('Gagal simpan kontak');
+                else alert('Gagal simpan kontak: ' + (e?.response?.data?.message || ''));
+            }
+        },
 
         /**
          * Generic window time-left formatter (returns "Xj Ym" or "Ym")
@@ -4850,6 +4895,109 @@ export default {
     background: rgba(0, 0, 0, 0.45);
     z-index: 1000;       /* di bawah panel (z-index:1001) */
     cursor: pointer;
+}
+
+/* ─────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════
+   Contact Card — pesan kontak yang dibagi customer
+   ═════════════════════════════════════════════════════════════ */
+
+.contact-msg {
+    margin-bottom: 4px;
+    min-width: 220px;
+    max-width: 100%;
+}
+
+.contact-card-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 9px 11px;
+    margin-bottom: 5px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Incoming message — adjust background */
+.message-wrapper.user .contact-card-item {
+    background: rgba(0,0,0,0.05);
+    border-color: rgba(0,0,0,0.08);
+}
+
+.cc-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0F6E56;
+    font-size: 18px;
+    flex: 0 0 auto;
+}
+
+.message-wrapper.user .cc-avatar {
+    color: #2E8DE1;
+}
+
+.cc-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cc-name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cc-phone {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 1px;
+}
+
+.cc-actions {
+    display: flex;
+    gap: 5px;
+    flex: 0 0 auto;
+}
+
+.cc-btn {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+}
+.cc-btn:hover { opacity: 0.8; }
+
+.cc-chat {
+    background: #fff;
+    color: #0F6E56;
+    border: none;
+}
+
+.cc-save {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.message-wrapper.user .cc-save {
+    color: #64748B;
+    border-color: #CBD5E1;
 }
 
 /* ─────────────────────────────────────────────────────────── */

@@ -687,6 +687,7 @@ class WabaCallbackController extends Controller
         $messageType = $rawMessage['type'] ?? 'text';
         $message = '';
         $mediaId = null;
+        $extra   = null;
         $mimeType = null;
 
         switch ($messageType) {
@@ -752,9 +753,19 @@ class WabaCallbackController extends Controller
                 break;
 
             case 'contacts':
-                // Customer shared a contact
-                $contactName = $rawMessage['contacts'][0]['name']['formatted_name'] ?? 'Kontak';
-                $message = '[Kontak: ' . $contactName . ']';
+                // Parse all shared contacts with phone numbers
+                $contactsList = [];
+                foreach (($rawMessage['contacts'] ?? []) as $c) {
+                    $phone = $c['phones'][0]['phone'] ?? ($c['phones'][0]['wa_id'] ?? null);
+                    $contactsList[] = [
+                        'name'  => $c['name']['formatted_name'] ?? 'Kontak',
+                        'phone' => $phone ? preg_replace('/[^0-9]/', '', $phone) : null,
+                        'wa_id' => $c['phones'][0]['wa_id'] ?? null,
+                    ];
+                }
+                $firstName = $contactsList[0]['name'] ?? 'Kontak';
+                $message   = '\u{1F4C7} Kontak: ' . $firstName . (count($contactsList) > 1 ? ' +' . (count($contactsList) - 1) . ' lainnya' : '');
+                $extra     = json_encode(['contacts' => $contactsList], JSON_UNESCAPED_UNICODE);
                 break;
 
             case 'location':
@@ -767,10 +778,11 @@ class WabaCallbackController extends Controller
         }
 
         return [
-            'message' => $message,
-            'mediaId' => $mediaId,
-            'mimeType' => $mimeType,
-            'messageType' => $messageType
+            'message'     => $message,
+            'mediaId'     => $mediaId,
+            'mimeType'    => $mimeType,
+            'messageType' => $messageType,
+            'extra'       => $extra ?? null,
         ];
     }
 
@@ -1027,6 +1039,7 @@ class WabaCallbackController extends Controller
             'history_chat_id' => $histories->id,
             'from'            => 'user',
             'message'         => $messageContent['message'],
+            'extra'           => $messageContent['extra'] ?? null,
             'remotejid'       => $messageData['from'],
             'messageid'       => $messageData['messageId'],
             'reply_to'        => $quotedReplyTo,

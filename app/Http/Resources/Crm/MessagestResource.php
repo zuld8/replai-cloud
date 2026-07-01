@@ -56,6 +56,7 @@ class MessagestResource extends JsonResource
             'sent_by_name'          => $this->from == 'user' ? ($this->history->name ?? '') : ($this->reply->name ?? null),
             'source'                => $this->source ?? ($this->reply_by_id ? 'agent' : 'system'),
             'buttons'               => $this->buttons ? json_decode($this->buttons, true) : [],
+            'extra'                 => $this->extra ? json_decode($this->extra, true) : null,
             'status'                => 'sent',
             'reply_id'              => $replyId,
             'reply_text'            => $this->reply_text,
