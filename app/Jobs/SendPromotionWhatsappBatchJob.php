@@ -1032,6 +1032,7 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                     'history_chat_id' => $history->id,
                     'is_read' => 'yes',
                     'from' => 'device',
+                    'source'            => 'broadcast',
                     'message' => $text,
                 ]);
             }
