@@ -5,7 +5,38 @@
         <div class="main-chat">
             <!-- Chat Header -->
             <div class="chat-header-main">
-                <span class="name">{{ detail.name }}</span>
+                <!-- ── 2-baris identity: avatar · nama · chip channel · status sesi ── -->
+                <button class="ch-back d-lg-none" @click="$emit('toggle-left-sidebar')" aria-label="Kembali">
+                    <i class="bx bx-arrow-back"></i>
+                </button>
+                <div class="ch-avatar">
+                    <img v-if="detail.photo" :src="detail.photo" :alt="detail.name" />
+                    <span class="ch-chdot" :style="{background: channelMeta.dot}">
+                        <i :class="channelMeta.icon"></i>
+                    </span>
+                </div>
+                <div class="ch-identity">
+                    <div class="ch-name">
+                        {{ detail.name }}
+                        <span v-if="!detail.phone && detail.bsuid" class="ch-badge-username">
+                            <i class="bx bx-lock-alt"></i> Username
+                        </span>
+                    </div>
+                    <div class="ch-sub">
+                        <span class="ch-chip" :style="{background: channelMeta.bg, color: channelMeta.color}">
+                            <i :class="channelMeta.icon"></i> {{ channelMeta.label }}
+                        </span>
+                        <span v-if="detail.wa_username" class="ch-st" style="color:#5B3FB0;">
+                            <i class="bx bx-at"></i> {{ detail.wa_username }}
+                        </span>
+                        <span class="ch-st" :style="{color: sessionInfo.color}">
+                            <i :class="sessionInfo.icon"></i> {{ sessionInfo.text }}
+                        </span>
+                        <span v-if="sessionInfo.template" class="ch-chip ch-tpl" @click="openTemplatePanel">
+                            <i class="bx bx-note"></i> Kirim template
+                        </span>
+                    </div>
+                </div>
                 <!-- Lead attribution banner -->
                 <div v-if="detail.lead_source && detail.lead_source !== 'organic'"
                      class="lead-banner"
@@ -50,9 +81,7 @@
                     </button>
                 </div>
                 <div class="controls">
-                    <button class="btn-control btn-back-mobile d-lg-none" @click="$emit('toggle-left-sidebar')" title="Kembali ke daftar chat">
-                        <i class="bx bx-arrow-back"></i>
-                    </button>
+                    <!-- ch-back tombol kembali sudah dipindah ke identity block di atas -->
                     <button class="btn-control" @click="changeTakeOver(!detail.takeover)">
                         <i class="bx bx-bot"></i>
                         <span class="d-none d-sm-inline">{{ detail.takeover ? 'Bot Nonaktif' : 'Bot Aktif' }}</span>
@@ -1176,6 +1205,50 @@ export default {
             return days + ' day' + (days > 1 ? 's' : '') + ' ago';
         },
 
+        /**
+         * Chip channel — ikon, warna, label per channel
+         */
+        channelMeta() {
+            const m = {
+                waba:      { label:'WA Business', icon:'bx bxl-whatsapp',   bg:'#E1F5EE', color:'#0F6E56', dot:'#25D366' },
+                whatsapp:  { label:'WA Personal', icon:'bx bxl-whatsapp',   bg:'#E1F5EE', color:'#0F6E56', dot:'#25D366' },
+                instagram: { label:'Instagram',   icon:'bx bxl-instagram',  bg:'#FBEAF0', color:'#993556', dot:'#D4537E' },
+                messanger: { label:'Messenger',   icon:'bx bxl-messenger',  bg:'#E6F1FB', color:'#185FA5', dot:'#0084FF' },
+                telegram:  { label:'Telegram',    icon:'bx bxl-telegram',   bg:'#E6F1FB', color:'#185FA5', dot:'#229ED9' },
+                livechat:  { label:'Live Chat',   icon:'bx bx-message-dots',bg:'#F1EFE8', color:'#64748B', dot:'#64748B' },
+            };
+            return m[this.detail?.from] || m.whatsapp;
+        },
+
+        /**
+         * Status sesi per channel (WABA/IG/Messenger 24h/7d, WA device, dll)
+         */
+        sessionInfo() {
+            const from = this.detail?.from;
+            if (from === 'waba' || from === 'messanger' || from === 'instagram') {
+                const hours = from === 'instagram' ? 168 : 24;
+                const last  = this.detail.last_incoming_at ? new Date(this.detail.last_incoming_at) : null;
+                const inside = last ? (Date.now() - last.getTime()) < hours * 3600 * 1000 : false;
+                if (inside) {
+                    const left = this.windowLeft(last, hours);
+                    return {
+                        text:     from === 'instagram' ? `Bisa balas · ${left}` : `Sesi aktif · sisa ${left}`,
+                        color:    '#0F6E56',
+                        icon:     'bx bx-time',
+                        template: false
+                    };
+                }
+                return { text: 'Sesi tutup', color: '#993C1D', icon: 'bx bx-time-five', template: true };
+            }
+            if (from === 'whatsapp')
+                return { text: this.detail.device ? `Device: ${this.detail.device}` : 'WhatsApp Personal', color: '#64748B', icon: 'bx bx-mobile',   template: false };
+            if (from === 'telegram')
+                return { text: 'Tanpa batas waktu', color: '#64748B', icon: 'bx bx-infinite',  template: false };
+            if (from === 'livechat')
+                return { text: 'Online sekarang',   color: '#0F6E56', icon: 'bxs bxs-circle',  template: false };
+            return { text: '', color: '#64748B', icon: '', template: false };
+        },
+
         filteredMessages() {
             if (!this.message.search) return this.message.list;
             return this.message.list.filter(msg =>
@@ -1184,6 +1257,17 @@ export default {
         },
     },
     methods: {
+
+        /**
+         * Generic window time-left formatter (returns "Xj Ym" or "Ym")
+         */
+        windowLeft(last, hours) {
+            const ms = (last.getTime() + hours * 3600 * 1000) - Date.now();
+            if (ms <= 0) return '0m';
+            const h = Math.floor(ms / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            return h > 0 ? `${h}j ${m}m` : `${m}m`;
+        },
 
         leadBannerLabel(s) {
             const m = { ad:'dari Iklan', story:'Balas Story', post:'dari Postingan', link:'via Link' };
@@ -1373,10 +1457,12 @@ export default {
    */
         getChannelIcon(type) {
             const icons = {
-                whatsapp: 'bx bxl-whatsapp',
-                waba: 'bx bxl-whatsapp',
-                telegram: 'bx bxl-telegram',
-                livechat: 'bx bx-message-dots',
+                whatsapp:  'bx bxl-whatsapp',
+                waba:      'bx bxl-whatsapp',
+                telegram:  'bx bxl-telegram',
+                livechat:  'bx bx-message-dots',
+                instagram: 'bx bxl-instagram',
+                messanger: 'bx bxl-messenger',
             };
             return icons[type] || 'bx bx-message';
         },
@@ -1386,10 +1472,12 @@ export default {
          */
         getChannelName(type) {
             const names = {
-                whatsapp: 'WhatsApp',
-                waba: 'WhatsApp Business API',
-                telegram: 'Telegram',
-                livechat: 'LiveChat',
+                whatsapp:  'WhatsApp',
+                waba:      'WhatsApp Business API',
+                telegram:  'Telegram',
+                livechat:  'LiveChat',
+                instagram: 'Instagram',
+                messanger: 'Messenger',
             };
             return names[type] || type;
         },
@@ -4539,4 +4627,153 @@ export default {
 }
 
 /* ──────────────────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REDESIGN: Chat Header — 2-baris, chip channel, status sesi per channel
+   ═════════════════════════════════════════════════════════════════════ */
+
+.chat-header-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 0.5px solid #E4EAF2;
+    background: #fff;
+    min-height: 56px;
+}
+
+/* Back arrow (mobile only, leftmost) */
+.ch-back {
+    width: 30px;
+    height: 30px;
+    border: 0.5px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748B;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+.ch-back:hover { background: #F1F5F9; }
+
+/* Avatar circle */
+.ch-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    position: relative;
+    flex: 0 0 auto;
+    overflow: visible;
+    background: #EAF3FC;
+}
+
+.ch-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Channel dot (bottom-right of avatar) */
+.ch-chdot {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ch-chdot i {
+    font-size: 8px;
+    color: #fff;
+}
+
+/* Identity block — expands to fill space */
+.ch-identity {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Baris 1 — Nama */
+.ch-name {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #1E2A4A !important;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ch-badge-username {
+    font-size: 10px;
+    background: #F1ECFE;
+    color: #5B3FB0;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* Baris 2 — chip + status */
+.ch-sub {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    flex-wrap: wrap;
+    line-height: 1;
+}
+
+/* Channel chip (tint lembut, Gaya A) */
+.ch-chip {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 500;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* Template chip (merah) */
+.ch-tpl {
+    background: #FEECEC !important;
+    color: #993C1D !important;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.ch-tpl:hover { opacity: 0.8; }
+
+/* Status text kecil */
+.ch-st {
+    font-size: 11px;
+    color: #94A3B8;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+}
+.ch-st i { font-size: 12px; }
+
+/* ── Override: span.name lama (hidden, diganti ch-identity) ── */
+.chat-header-main > span.name { display: none !important; }
+
+/* ─────────────────────────────────────────────────────────── */
 </style>
