@@ -94,9 +94,13 @@
                     <button class="btn-control d-none d-lg-inline" @click="toggleRightSidebar">
                         <i class="bx bx-menu"></i>
                     </button>
+                    <!-- Mobile: tombol Info langsung kelihatan, sekali tap langsung buka panel -->
+                    <button class="btn-control mobile-info-btn d-lg-none" @click="toggleRightSidebar()" aria-label="Info kontak">
+                        <i class="bx bx-info-circle"></i>
+                    </button>
                     <!-- Mobile burger: show controls in ⋮ dropdown -->
                     <div class="mobile-header-burger d-lg-none" style="position:relative">
-                        <button class="btn-control" @click="mobileBurgerOpen = !mobileBurgerOpen">
+                        <button class="btn-control mobile-burger-btn" @click="mobileBurgerOpen = !mobileBurgerOpen">
                             <i class="bx bx-dots-vertical-rounded"></i>
                         </button>
                         <div v-if="mobileBurgerOpen" class="mobile-burger-menu" @click.self="mobileBurgerOpen=false">
@@ -4154,7 +4158,7 @@ export default {
         font-size: 16px; /* prevent iOS zoom on focus */
     }
     /* Hide desktop controls on mobile */
-    .controls .btn-control:not(.btn-back-mobile) {
+    .controls .btn-control:not(.btn-back-mobile):not(.mobile-burger-btn):not(.mobile-info-btn) {
         display: none !important;
     }
     .controls .status-select { display: none !important; }
@@ -4774,6 +4778,62 @@ export default {
 
 /* ── Override: span.name lama (hidden, diganti ch-identity) ── */
 .chat-header-main > span.name { display: none !important; }
+
+/* ─────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIX: Mobile — panel Informasi bisa dibuka + UX info button
+   ═════════════════════════════════════════════════════════════════ */
+
+/* Mobile Info button — biru brand, langsung visible di header */
+.mobile-info-btn {
+    color: #2E8DE1 !important;
+    background: #EAF3FC !important;
+    border: 0.5px solid #BFDBFE !important;
+}
+.mobile-info-btn:hover {
+    background: #DBEAFE !important;
+}
+.mobile-info-btn i {
+    font-size: 18px;
+}
+
+/* Mobile ⋮ burger — pastikan selalu muncul di mobile */
+.mobile-burger-btn {
+    display: flex !important;
+}
+
+/* Sidebar-right-header — flex row, teks + tombol tutup */
+.sidebar-right-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+/* Tombol tutup (✕) di panel Informasi mobile */
+.sidebar-close {
+    border: none;
+    background: transparent;
+    font-size: 20px;
+    color: #64748B;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+}
+.sidebar-close:hover {
+    background: #F1F5F9;
+    color: #1e293b;
+}
+
+/* Drawer panel full-screen di mobile */
+@media (max-width: 576px) {
+    .sidebar-right:not(.hidden) {
+        right: 0 !important;
+        box-shadow: -4px 0 16px rgba(0,0,0,0.12);
+    }
+}
 
 /* ─────────────────────────────────────────────────────────── */
 </style>
