@@ -107,9 +107,7 @@
                                     <option value="block">Blokir</option>
                                 </select>
                             </div>
-                            <div class="burger-item" @click="toggleRightSidebar(); mobileBurgerOpen=false">
-                                <i class="bx bx-user"></i> Lihat Kontak
-                            </div>
+                            <!-- Lihat Kontak dihapus dari ⋮ — tombol ℹ️ langsung di header mobile sudah cukup -->
                         </div>
                     </div>
                 </div>
@@ -1059,6 +1057,7 @@ export default {
                 sending: false,
             },
             showRightSidebar: false,
+                mobileBurgerOpen: false, // reactive flag for mobile ⋮ dropdown
             showAddCollaborator: false,
             showAddCategory: false,
             showAddLabel: false,
