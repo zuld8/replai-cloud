@@ -127,6 +127,14 @@
                                             {{ getWabaSessionStatus(list.last_inbound_at).label }}
                                         </span>
                                     </template>
+                                    <!-- Lead chip — sebelah jam aktif (Bug2 fix) -->
+                                    <span v-if="list.lead_source && list.lead_source !== 'organic'"
+                                          class="ci-chip lead-chip ci-lead-inline"
+                                          :class="`lead-source-${list.lead_source}`"
+                                          :title="leadChipLabel(list.lead_source)">
+                                        <i :class="leadChipIcon(list.lead_source)"></i>
+                                        {{ leadChipLabel(list.lead_source) }}
+                                    </span>
                                 </div>
                                 <div class="ci-preview">
                                     <i v-if="list.media_type==='image'" class="bx bx-image-alt"></i>
@@ -147,14 +155,6 @@
                         </div>
 
                         <!-- BARIS AKUN PENUH: nama akun kanan + ⋯ selalu tampil -->
-                        <!-- Lead attribution chip -->
-                        <span v-if="list.lead_source && list.lead_source !== 'organic'"
-                              class="ci-chip lead-chip"
-                              :class="`lead-source-${list.lead_source}`"
-                              :title="leadChipLabel(list.lead_source)">
-                            <i :class="leadChipIcon(list.lead_source)"></i>
-                            {{ leadChipLabel(list.lead_source) }}
-                        </span>
 
                         <div class="ci-acctrow" v-if="list.device || list.telegram || list.livechat || list.instagram">
                             <span class="ci-dev" :title="list.device||list.telegram||list.livechat||list.instagram">

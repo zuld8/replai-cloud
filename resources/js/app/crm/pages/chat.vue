@@ -20,22 +20,34 @@
                          :src="detail.lead_source_detail.media_url"
                          class="lead-banner-thumb"
                          @error="$event.target.style.display='none'" />
-
-                <!-- WABA 24-jam session banner -->
+                </div>
+                <!-- ── Ad context card — shows when lead_source_detail has source_url or headline ── -->
+                <div v-if="detail.lead_source_detail && (detail.lead_source_detail.source_url || detail.lead_source_detail.headline)"
+                     class="ad-context-card">
+                    <div class="ad-context-head"><i class="bx bxs-megaphone"></i> Datang dari iklan</div>
+                    <img v-if="detail.lead_source_detail.media_url"
+                         :src="detail.lead_source_detail.media_url"
+                         class="ad-context-thumb"
+                         @error="$event.target.style.display='none'" />
+                    <div class="ad-context-body">
+                        <div v-if="detail.lead_source_detail.headline" class="ad-context-title">{{ detail.lead_source_detail.headline }}</div>
+                        <div v-if="detail.lead_source_detail.body" class="ad-context-text">{{ detail.lead_source_detail.body }}</div>
+                        <a v-if="detail.lead_source_detail.source_url"
+                           :href="detail.lead_source_detail.source_url"
+                           target="_blank" class="ad-context-link">
+                            Lihat iklan <i class="bx bx-link-external"></i>
+                        </a>
+                    </div>
+                </div>
+                <!-- WABA 24-jam session banner — SIBLING, independen dari lead_source -->
                 <div v-if="detail.from === 'waba'" class="session-banner-24"
-                     :class="isSessionActive ? 'session-active' : 'session-expired'">
-                    <i class="bx" :class="isSessionActive ? 'bx-check-circle' : 'bx-time-five'"></i>
-                    <span v-if="isSessionActive">
-                        Sesi 24 jam aktif · sisa {{ sessionRemaining }}
-                    </span>
-                    <span v-else>
-                        Sesi tutup · hanya bisa kirim template
-                    </span>
-                    <button v-if="!isSessionActive" class="btn-open-template-banner"
-                            @click="openTemplatePanel">
+                     :class="isInsideWindow ? 'session-active' : 'session-expired'">
+                    <i class="bx" :class="isInsideWindow ? 'bx-check-circle' : 'bx-time-five'"></i>
+                    <span v-if="isInsideWindow">Sesi 24 jam aktif · sisa {{ windowTimeLeft }}</span>
+                    <span v-else>Sesi tutup · hanya bisa kirim template</span>
+                    <button v-if="!isInsideWindow" class="btn-open-template-banner" @click="openTemplatePanel">
                         Pilih Template
                     </button>
-                </div>
                 </div>
                 <div class="controls">
                     <button class="btn-control btn-back-mobile d-lg-none" @click="$emit('toggle-left-sidebar')" title="Kembali ke daftar chat">
@@ -3890,6 +3902,40 @@ export default {
 
 
 /* ── Lead attribution banner ─────────────────────────── */
+/* ─── Ad context card ──────────────────────────────────────────── */
+.ad-context-card {
+    margin: 8px 16px;
+    border: 1px solid #FDE68A;
+    border-radius: 10px;
+    background: #FFFBEB;
+    overflow: hidden;
+    font-size: 12px;
+}
+.ad-context-head {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #92400E;
+    background: #FEF3C7;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.ad-context-thumb {
+    width: 100%;
+    max-height: 120px;
+    object-fit: cover;
+    display: block;
+}
+.ad-context-body { padding: 8px 12px; }
+.ad-context-title { font-weight: 600; color: #1a1a1a; margin-bottom: 3px; }
+.ad-context-text  { color: #555; margin-bottom: 5px; font-size: 11.5px; line-height: 1.4; }
+.ad-context-link  {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: #D97706; font-size: 11px; font-weight: 600; text-decoration: none;
+}
+.ad-context-link:hover { text-decoration: underline; }
+
 .lead-banner {
     display:flex; align-items:center; gap:6px; padding:5px 12px;
     font-size:11px; font-weight:600; cursor:pointer;
