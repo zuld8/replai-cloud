@@ -16,7 +16,7 @@ body {
     display: flex;
     flex-direction: column;
     background-color: #fff;
-    padding-top: 0; /* was 70px — layout already positions container below navbar */
+    padding-top: 60px; /* = 3.75rem navbar height (matches App.vue calc) */
 }
 
 .chat-header {
