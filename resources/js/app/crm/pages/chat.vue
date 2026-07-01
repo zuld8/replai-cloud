@@ -4074,6 +4074,7 @@ export default {
 @media (max-width: 576px) {
     .chat-header-main {
         padding: 8px 12px;
+        align-items: flex-start;        /* ensure no top gap on smallest phones */
     }
 
     .status-select {
@@ -4228,6 +4229,20 @@ export default {
     .chat-input {
         font-size: 16px; /* prevent iOS zoom on focus */
     }
+    /* ch-sub: no wrap on mobile → prevent header height blowup */
+    .ch-sub {
+        flex-wrap: nowrap;
+        overflow: hidden;
+    }
+    /* controls: self-center so buttons are vertically centred vs avatar */
+    .controls {
+        align-self: center;
+    }
+    /* ch-back / ch-avatar: small top nudge for optical alignment */
+    .ch-back, .ch-avatar {
+        margin-top: 4px;
+    }
+
     /* Hide desktop controls on mobile */
     .controls .btn-control:not(.btn-back-mobile):not(.mobile-burger-btn):not(.mobile-info-btn) {
         display: none !important;
@@ -4709,9 +4724,9 @@ export default {
 
 .chat-header-main {
     display: flex;
-    align-items: center;
+    align-items: flex-start;         /* flex-start: no gap above when ch-sub wraps */
     gap: 10px;
-    padding: 8px 14px;
+    padding: 10px 14px;
     border-bottom: 0.5px solid #E4EAF2;
     background: #fff;
     min-height: 56px;
