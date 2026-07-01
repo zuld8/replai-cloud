@@ -445,6 +445,17 @@ class WabaCallbackController extends Controller
                         return false;
                     }
 
+                    // Backfill bsuid/wa_username ke linked Store biar tampil di /app/stores
+                    if ($histories->store_id) {
+                        $storeUpd = array_filter([
+                            'bsuid'       => $messageData['bsuid'] ?? null,
+                            'wa_username' => $messageData['wa_username'] ?? null,
+                        ]);
+                        if (!empty($storeUpd)) {
+                            \App\Models\Store\Store::where('id', $histories->store_id)->update($storeUpd);
+                        }
+                    }
+
                     // Check if chat is blocked
                     if ($histories->status === 'block') {
                         return true;

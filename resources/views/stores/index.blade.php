@@ -324,14 +324,21 @@ $categories = \App\Models\Master\Category::select('id', 'name')->orderBy('name')
                     }
                 },
                 {
-                    data: 'name',
-                    name: 'name'
+                    data: 'identity',
+                    name: 'name',
+                    orderable: true,
                 },
                 {
                     data: 'phone',
                     name: 'phone',
                     render: function(data, type, row) {
-                        if (!data) return '';
+                        if (!data) {
+                            if (row.wa_username)
+                                return `<span class="text-muted"><i class="bx bx-lock-alt"></i> @${row.wa_username}</span>`;
+                            if (row.bsuid)
+                                return `<span class="text-muted"><i class="bx bx-lock-alt"></i> Nomor disembunyikan</span>`;
+                            return '';
+                        }
                         const phone = data.replace(/\D/g, '');
                         return `<a href="https://wa.me/${phone}" class="wa-link" target="_blank">${data}</a>`;
                     }

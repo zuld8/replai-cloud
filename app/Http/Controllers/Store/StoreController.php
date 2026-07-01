@@ -84,10 +84,23 @@ class StoreController extends Controller
                     $html = '<a class="text-info" href="' . route('stores') . '?district=' . $row->district_id . '"> ' . ($row->district->name ?? '') . ' </a>';
                     return $html;
                 })->addColumn('identity', function ($row) {
-                    return '<div class="d-flex align-items-center"> 
+                    // Sub-label: @username (IG-style) atau email
+                    $sub = !empty($row->wa_username)
+                        ? '<i class="bx bx-at" style="font-size:11px"></i>' . e($row->wa_username)
+                        : e($row->email ?? '');
+
+                    // Badge "Username" untuk kontak tanpa nomor HP (BSUID-only)
+                    $privacyBadge = (empty($row->phone) && !empty($row->bsuid))
+                        ? ' <span style="display:inline-flex;align-items:center;gap:2px;font-size:10px;'
+                          . 'padding:1px 5px;border-radius:9px;border:1px solid #dee2e6;'
+                          . 'color:#6c757d;background:#f8f9fa;">'
+                          . '<i class="bx bx-lock-alt" style="font-size:10px"></i>&nbsp;Username</span>'
+                        : '';
+
+                    return '<div class="d-flex align-items-center">
                                 <div class="d-flex flex-column">
-                                  <span class="fw-semibold lh-1">' . $row->name . '</span>
-                                  <small class="text-muted">' . $row->email . '</small>
+                                  <span class="fw-semibold lh-1">' . e($row->name) . $privacyBadge . '</span>
+                                  <small class="text-muted">' . $sub . '</small>
                                 </div>
                               </div>';
                 })->addColumn('ai_agent', function ($row) {

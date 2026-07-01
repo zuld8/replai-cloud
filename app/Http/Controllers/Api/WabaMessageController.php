@@ -566,7 +566,16 @@ class WabaMessageController extends Controller
                     'status'      => 'no',
                     'prospek'     => 'pending',
                     'position'    => 0,
+                    'bsuid'       => $request->bsuid ?? null,
+                    'wa_username' => $request->wa_username ?? null,
                 ]);
+            } elseif ($store && ($request->bsuid || $request->wa_username)) {
+                // Backfill bsuid/username ke store yang sudah ada
+                $upd = array_filter([
+                    'bsuid'       => $request->bsuid ?? null,
+                    'wa_username' => $request->wa_username ?? null,
+                ]);
+                if ($upd) $store->update($upd);
             }
 
             // Find or create history_chats record for this contact
