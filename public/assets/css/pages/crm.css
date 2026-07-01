@@ -16,7 +16,7 @@ body {
     display: flex;
     flex-direction: column;
     background-color: #fff;
-    padding-top: 60px; /* desktop: full navbar height (3.75rem) */
+    padding-top: 65px; /* desktop: navbar + 5px breathing room */
 }
 /* Mobile: parent layout already offsets 30px below navbar → only 30px needed */
 @media (max-width: 992px) {
