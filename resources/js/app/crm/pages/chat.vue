@@ -516,6 +516,9 @@
     <div class="sidebar-right" v-if="showRightSidebar" id="rightSidebar">
         <div class="sidebar-right-header">
             {{ $t('info.information') }}
+            <button class="sidebar-close d-lg-none" @click="toggleRightSidebar()" aria-label="Tutup">
+                <i class="bx bx-x"></i>
+            </button>
         </div>
 
         <!-- User Profile -->
