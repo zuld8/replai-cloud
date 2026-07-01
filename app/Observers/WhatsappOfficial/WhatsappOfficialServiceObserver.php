@@ -761,7 +761,7 @@ class WhatsappOfficialServiceObserver
                 'preview_url' => false, // true jika kamu ingin link otomatis jadi preview
                 'body'        => $textMessage
             ],
-        ];
+        ], $recipient);
 
         // Quoted reply: include context so WA shows which message is being replied to
         if ($contextMessageId) {
@@ -822,7 +822,7 @@ class WhatsappOfficialServiceObserver
             $mediaType => [
                 'id' => $mediaId,
             ]
-        ];
+        ]);
 
         if ($caption && in_array($mediaType, ['image', 'video', 'document'])) {
             $payload[$mediaType]['caption'] = $caption;
