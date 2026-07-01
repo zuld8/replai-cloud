@@ -304,7 +304,7 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
-    background-image: url('../../img/chat-bg.jpg');
+    background-image: none; /* doodle removed 2026-07-01 */
 }
 
 .date-separator {
