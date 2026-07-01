@@ -106,6 +106,7 @@ return [
         'add_category'  => 'Tambah Kategori',
         'select_category'   => 'Pilih Kategori',
         'no_category'   => 'Belum ada kategori',
+        'no_label'      => 'Belum ada label',
         'device_channel'   => 'Device/Channel',
         'change_device' => 'Ganti Device',
         'channel_type'  => 'Tipe Channel',

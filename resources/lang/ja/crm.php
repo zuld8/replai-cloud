@@ -101,6 +101,7 @@ return [
         'resolved_at' => '解決日時',
         'block_user' => 'このユーザーをブロック',
         'unblock_user' => 'ブロック解除',
+        'no_label'     => 'ラベルなし',
     ],
 
     // Quick Reply

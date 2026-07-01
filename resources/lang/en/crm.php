@@ -105,6 +105,7 @@ return [
         'add_category'      => 'Add Category',
         'select_category'   => 'Select Category',
         'no_category'       => 'No category yet',
+        'no_label'          => 'No label yet',
         'device_channel'    => 'Device/Channel',
         'change_device'     => 'Change Device',
         'channel_type'      => 'Channel Type',
