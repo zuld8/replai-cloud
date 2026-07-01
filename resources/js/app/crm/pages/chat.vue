@@ -508,7 +508,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button class="ci-round" @click="toggleEmoji" aria-label="Emoji">
+                                <button class="ci-round emoji-btn" @click="toggleEmoji" type="button" aria-label="Emoji">
                                     <i class="bx bx-smile"></i>
                                 </button>
                                 <input type="file" ref="fileInput" style="display: none" @change="handleFileChange"
@@ -522,7 +522,7 @@
                             </div>
 
                             <button class="btn-selesai" @click="resolved" v-if="detail.status !== 'resolved'" title="Selesai">
-                                <i class="bx bx-check"></i> Selesai
+                                <i class="bx bx-check"></i><span class="btn-selesai-txt"> Selesai</span>
                             </button>
                             <span class="composer-div" v-if="detail.status !== 'resolved'"></span>
                             <button class="btn-kirim" @click="sendMessage" :disabled="send.loader" aria-label="Kirim">
@@ -5305,4 +5305,15 @@ export default {
 .tl-btn{display:inline-flex;align-items:center;gap:6px;background:#5B3FB0;color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:500;flex:0 0 auto;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
 .tl-btn:hover{opacity:.88;}
 .tl-btn i{font-size:16px;}
+/* ── Mobile composer fix (≤768px) ── */
+@media (max-width: 768px) {
+  .composer { gap: 5px; padding: 6px 8px; }
+  .composer-pill { padding: 4px 6px 4px 8px; }
+  .emoji-btn { display: none; }
+  .composer-div { display: none; }
+  .btn-selesai { padding: 0; width: 36px; height: 36px; border-radius: 50%; justify-content: center; gap: 0; }
+  .btn-selesai-txt { display: none; }
+  .btn-kirim { width: 38px; height: 38px; }
+  .composer .chat-input { font-size: 16px; }
+}
 </style>
