@@ -699,6 +699,26 @@ class WhatsappOfficialServiceObserver
         return $responseObject;
     }
 
+    /**
+     * Build WABA send-to field.
+     * - Phone (all-digit) → ['to' => phone]
+     * - BSUID (non-digit, e.g. ID.12345) → ['recipient' => bsuid]
+     * - Explicit $bsuid with no phone → ['recipient' => bsuid]
+     * Meta: kirim ke 'to' jika ada nomor (prioritas), 'recipient' jika cuma BSUID.
+     */
+    protected function wabaRecipient(?string $phone, ?string $bsuid = null): array
+    {
+        $clean = preg_replace('/[^0-9]/', '', $phone ?? '');
+        if (!empty($clean)) {
+            // Valid phone number (all digits after strip) → use 'to'
+            return ['to' => $clean];
+        }
+        // phone is empty or non-numeric → check explicit bsuid, then phone-as-bsuid
+        if (!empty($bsuid))  return ['recipient' => $bsuid];
+        if (!empty($phone))  return ['recipient' => $phone];  // phone was actually BSUID string
+        throw new \RuntimeException('Kontak WABA tanpa nomor & tanpa BSUID — tidak bisa dikirim');
+    }
+
     public function sendTemplateMessage(Store $store, $templateContent, $variablesData = [])
     {
         $url = "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$variablesData['phoneid']}/messages";
@@ -707,7 +727,7 @@ class WhatsappOfficialServiceObserver
 
         $requestData['messaging_product']   = 'whatsapp';
         $requestData['recipient_type']      = 'individual';
-        $requestData['to']                  = $store->phone;
+        $requestData += $this->wabaRecipient($store->phone ?? null, $store->bsuid ?? null);
         $requestData['type']                = 'template';
         $requestData['template']            = $templateContent;
 
@@ -732,10 +752,10 @@ class WhatsappOfficialServiceObserver
         $url        = "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$variablesData['phoneid']}/messages";
         $headers    = $this->setHeaders($variablesData['access_token']);
 
-        $requestData = [
+        $recipient   = $this->wabaRecipient($phone);
+        $requestData = array_merge([
             'messaging_product' => 'whatsapp',
             'recipient_type'    => 'individual',
-            'to'                => $phone,
             'type'              => 'text',
             'text'              => [
                 'preview_url' => false, // true jika kamu ingin link otomatis jadi preview
@@ -798,10 +818,7 @@ class WhatsappOfficialServiceObserver
         $url        = "https://graph.facebook.com/" . config('custom.api_waba_version') . "/{$variablesData['phoneid']}/messages";
         $headers    = $this->setHeaders($variablesData['access_token']);
 
-        $payload = [
-            'messaging_product' => 'whatsapp',
-            'to' => $phone,
-            'type' => $mediaType,
+        $payload = array_merge(['messaging_product' => 'whatsapp', 'type' => $mediaType], $this->wabaRecipient($phone), [
             $mediaType => [
                 'id' => $mediaId,
             ]

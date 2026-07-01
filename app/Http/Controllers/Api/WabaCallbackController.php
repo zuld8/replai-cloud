@@ -399,18 +399,19 @@ class WabaCallbackController extends Controller
         $detailCallback = $data['entry'][0]['changes'][0]['value']['messages'][0];
         $detailContact = $data['entry'][0]['changes'][0]['value']['contacts'][0];
 
-        // BSUID Support (Meta rollout March–June 2026)
-        // When user enables phone privacy, wa_id may be a BSUID (non-numeric)
-        $rawWaId    = $detailContact['wa_id'] ?? ($detailCallback['from'] ?? null);
-        $bsuid      = null;
-        $waUsername = $detailContact['username'] ?? null;
-        $fromPhone  = $rawWaId;
+        // BSUID Support (Meta rollout 2026)
+        // Meta kirim: wa_id = nomor (bisa null jika disembunyikan), user_id = BSUID (SELALU ada sejak Mar 2026)
+        $waId       = $detailContact['wa_id'] ?? null;           // nomor HP (bisa null)
+        $bsuid      = $detailContact['user_id'] ?? null;         // BSUID — field baru Meta, SELALU ada
+        $waUsername = $detailContact['username'] ?? null;        // @handle publik user
 
-        // Detect BSUID: phone numbers are all digits, BSUIDs are alphanumeric
-        if ($rawWaId && !ctype_digit((string) $rawWaId)) {
-            $bsuid     = $rawWaId;
-            $fromPhone = null;
+        // Fallback format lama: kalau user_id kosong tapi wa_id non-digit → itu BSUID
+        if (!$bsuid && $waId && !ctype_digit((string) $waId)) {
+            $bsuid = $waId;
+            $waId  = null;
         }
+        // fromPhone hanya kalau wa_id memang angka murni
+        $fromPhone = ($waId && ctype_digit((string) $waId)) ? $waId : null;
 
         return [
             'messageId'   => $detailCallback['id'],

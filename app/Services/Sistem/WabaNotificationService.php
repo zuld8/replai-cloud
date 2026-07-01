@@ -32,7 +32,7 @@ class WabaNotificationService
      * @param  WhatsappKeyAccount  $wabaDevice  WABA device to use
      * @return bool
      */
-    public function sendText(string $toPhone, string $message, WhatsappKeyAccount $wabaDevice): bool
+    public function sendText(string $toPhone, string $message, WhatsappKeyAccount $wabaDevice, ?string $bsuid = null): bool
     {
         try {
             $meta = $wabaDevice->metaAccount;
@@ -50,21 +50,28 @@ class WabaNotificationService
                 return false;
             }
 
-            // Normalize phone number
-            $toPhone = preg_replace('/[^0-9]/', '', $toPhone);
-            if (str_starts_with($toPhone, '0')) {
-                $toPhone = '62' . substr($toPhone, 1);
+            // Build recipient field: phone → 'to', BSUID → 'recipient'
+            $cleanPhone = preg_replace('/[^0-9]/', '', $toPhone);
+            if ($cleanPhone && str_starts_with($cleanPhone, '0')) {
+                $cleanPhone = '62' . substr($cleanPhone, 1);
+            }
+            if (!empty($cleanPhone)) {
+                $recipientField = ['to' => $cleanPhone];
+            } elseif (!empty($bsuid)) {
+                $recipientField = ['recipient' => $bsuid];
+            } else {
+                Log::warning("[WabaNotif] No phone or BSUID — skipping");
+                return false;
             }
 
             $response = Http::withToken($token)
                 ->timeout(15)
-                ->post("https://graph.facebook.com/{$this->apiVersion}/{$phoneId}/messages", [
+                ->post("https://graph.facebook.com/{$this->apiVersion}/{$phoneId}/messages", array_merge([
                     'messaging_product' => 'whatsapp',
                     'recipient_type'    => 'individual',
-                    'to'               => $toPhone,
                     'type'             => 'text',
                     'text'             => ['body' => $message, 'preview_url' => false],
-                ]);
+                ], $recipientField));
 
             if ($response->successful()) {
                 Log::info("[WabaNotif] Sent to {$toPhone} via {$wabaDevice->phone}");

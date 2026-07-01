@@ -371,7 +371,12 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                 }
 
                 $phone = $blast->phone ?? '';
-                if (empty($phone)) { $this->handleNoPhone($blast, ['message' => ''], $log); $errorCount++; continue; }
+                $recipientBsuid = $blast->bsuid ?? $blast->store->bsuid ?? null;
+                // Allow BSUID-only contacts (no phone but has BSUID) — use recipient instead of to
+                if (empty($phone) && empty($recipientBsuid)) {
+                    $this->handleNoPhone($blast, ['message' => ''], $log);
+                    $errorCount++; continue;
+                }
 
                 // Guard: skip if template is missing/invalid
                 if (empty($cachedTemplate) || empty($cachedTemplate['name']) || $cachedTemplate['name'] === '_') {
@@ -405,13 +410,18 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                     'account'  => $effectiveAccount,
                     'url'      => "https://graph.facebook.com/{$apiVersion}/{$phoneId}/messages",
                     'headers'  => $observer->setHeaders($accessToken),
-                    'payload'  => [
+                    'payload'  => array_merge([
                         'messaging_product' => 'whatsapp',
                         'recipient_type'    => 'individual',
-                        'to'                => $blast->store->phone,
-                        'type'              => 'template',
-                        'template'          => $cachedTemplate,
-                    ],
+                    ], (function() use ($blast, $phone, $recipientBsuid) {
+                        $clean = preg_replace('/[^0-9]/', '', $phone ?? '');
+                        if (!empty($clean))        return ['to'        => $clean];
+                        if (!empty($recipientBsuid)) return ['recipient' => $recipientBsuid];
+                        return ['to' => $blast->store->phone]; // fallback
+                    })(), [
+                        'type'     => 'template',
+                        'template' => $cachedTemplate,
+                    ]),
                 ];
             } catch (\Throwable $e) {
                 FacadesLog::error("Concurrent PASS1 error {$blastId}: " . $e->getMessage());
