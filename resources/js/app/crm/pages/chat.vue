@@ -3045,11 +3045,13 @@ export default {
     .sidebar-right {
         position: fixed;
         right: -320px;
-        top: 0;
+        top: 3.75rem;                     /* mulai di bawah navbar global */
         bottom: 0;
+        height: calc(100dvh - 3.75rem);   /* sisa tinggi layar */
         z-index: 1000;
         transition: right 0.3s ease;
         width: 320px;
+        overflow-y: auto;
     }
 
     .sidebar-right:not(.hidden) {
@@ -4816,6 +4818,24 @@ export default {
     .sidebar-right:not(.hidden) {
         right: 0 !important;
         box-shadow: -4px 0 16px rgba(0,0,0,0.12);
+    }
+}
+
+/* ─────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════
+   FIX: Panel Informasi mobile — ✕ tidak tertimpa navbar
+   ═════════════════════════════════════════════════════════════ */
+
+/* Header panel sticky — tetap kelihatan saat scroll */
+@media (max-width: 992px) {
+    .sidebar-right-header {
+        position: sticky !important;
+        top: 0;
+        background: #fff !important;
+        z-index: 2;
+        border-bottom: 0.5px solid #E4EAF2;
+        padding: 12px 16px !important;
     }
 }
 
