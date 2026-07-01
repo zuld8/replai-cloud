@@ -993,10 +993,11 @@ class WabaCallbackController extends Controller
      */
     private function saveUserMessage($histories, array $messageData, array $messageContent, array $mediaInfo): mixed
     {
-        // Update stores
-        $stores = $this->storeObserver->checkByNumber($histories->from_number, $histories->business_id);
+        // Update stores — cari by nomor dulu, fallback ke BSUID (dedupe kontak username)
+        $stores = $this->storeObserver->checkByNumber($histories->from_number, $histories->business_id)
+               ?? $this->storeObserver->checkByBsuid($histories->bsuid, $histories->business_id);
         if (!$stores) {
-            $stores =  $this->storeObserver->createByHistory($histories);
+            $stores = $this->storeObserver->createByHistory($histories);
         }
 
         if (empty($histories->store_id)) {

@@ -493,10 +493,28 @@
                     <i class="bx bxl-whatsapp"></i>
                 </div>
             </div>
-            <div class="user-name">{{ detail.name }}</div>
-            <div class="user-phone">
+            <div class="user-name">
+                {{ detail.name }}
+                <span v-if="!detail.phone && detail.bsuid" class="badge-username">
+                    <i class="bx bx-lock-alt"></i> Username
+                </span>
+            </div>
+            <!-- Phone: tampil kalau ada; kalau tidak ada tampil "disembunyikan" -->
+            <div class="user-phone" v-if="detail.phone">
                 <span>{{ detail.phone }}</span>
                 <i class="bx bx-copy copy-icon" @click="copyPhone"></i>
+            </div>
+            <div class="user-phone muted" v-else>
+                <i class="bx bx-lock-alt"></i> Nomor disembunyikan
+            </div>
+            <!-- @username (WA username handle) -->
+            <div class="user-username" v-if="detail.wa_username">
+                <i class="bx bx-at"></i> {{ detail.wa_username }}
+            </div>
+            <!-- BSUID copyable (support/debug — hanya kontak BSUID-only) -->
+            <div class="user-bsuid" v-if="!detail.phone && detail.bsuid" @click="copyBsuid" title="Salin BSUID">
+                BSUID: {{ detail.bsuid && detail.bsuid.length > 16 ? detail.bsuid.slice(0,16) + '…' : detail.bsuid }}
+                <i class="bx bx-copy"></i>
             </div>
         </div>
 
@@ -563,6 +581,9 @@
                     <span v-for="label in detail.label" :key="label.id" class="tag-item">
                         {{ label.name }}
                         <i class="bx bx-x remove-tag" @click="removeLabel(label.id)"></i>
+                    </span>
+                    <span v-if="!detail.label || detail.label.length === 0" class="empty-state-inline">
+                        {{ $t('info.no_label') || 'Belum ada label' }}
                     </span>
                 </div>
                 <select v-if="showAddLabel" class="info-select mt-2" @change="selectLabel" v-model="info_label.form">
@@ -647,7 +668,7 @@
                     </a>
                 </div>
                 <div class="tag-container">
-                    <span v-if="detail.category" class="tag-item category-tag">
+                    <span v-if="detail.category && detail.category.id" class="tag-item category-tag">
                         {{ detail.category.name }}
                         <i class="bx bx-x remove-tag" @click="removeCategory"></i>
                     </span>
@@ -678,7 +699,7 @@
                         <span>{{ getChannelName(detail.from) }}</span>
                     </div>
                     <div class="device-name">
-                        {{ detail.device || detail.livechat || 'No Device' }}
+                        {{ detail.device || detail.livechat || (detail.from === 'waba' ? 'Nomor WABA aktif' : 'Belum ada device') }}
                     </div>
                 </div>
             </div>
@@ -2099,6 +2120,11 @@ export default {
             );
         },
 
+        copyBsuid() {
+            navigator.clipboard.writeText(this.detail.bsuid || '');
+            this.$showToast(`BSUID disalin`, 'info', 3000);
+        },
+
         // === UI Helpers ===
         toggleActionMenu(msgId) {
             this.activeDropdownId = this.activeDropdownId === msgId ? null : msgId;
@@ -3122,6 +3148,56 @@ export default {
     font-size: 14px;
     font-weight: 500;
     color: #374151;
+}
+
+/* ── BSUID / Username Identity Styles ─────────────────────── */
+.badge-username {
+    font-size: 10px;
+    background: #F1ECFE;
+    color: #5B3FB0;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+    font-weight: 500;
+    vertical-align: middle;
+}
+
+.user-username {
+    font-size: 12px;
+    color: #5B3FB0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    margin-top: 2px;
+}
+
+.user-phone.muted {
+    color: #94A3B8;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+}
+
+.user-bsuid {
+    font-size: 11px;
+    color: #94A3B8;
+    font-family: monospace;
+    background: #F5F8FC;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-top: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    user-select: none;
+}
+.user-bsuid:hover {
+    background: #EBF3FD;
+    color: #5B3FB0;
 }
 
 /* Modal Form Styling */

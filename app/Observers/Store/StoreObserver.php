@@ -83,13 +83,24 @@ class StoreObserver
     public function createByHistory(HistoryChat $history)
     {
         return Store::create([
-            'name'              => $history->name,
-            'phone'             => $history->from_number,
-            'business_id'       => $history->business_id,
-            'merchant_id'       => $history->merchant_id,
-            'jid_number'        => $history->jid_number,
-            'metadata'          => $history->metadata
+            'name'        => $history->name,
+            'phone'       => $history->from_number,
+            'bsuid'       => $history->bsuid,         // + BSUID (username contact)
+            'wa_username' => $history->wa_username,   // + @handle username
+            'business_id' => $history->business_id,
+            'merchant_id' => $history->merchant_id,
+            'jid_number'  => $history->jid_number,
+            'metadata'    => $history->metadata,
         ]);
+    }
+
+    /**
+     * Cari Store berdasarkan BSUID (dedupe kontak username yang nomor disembunyikan).
+     */
+    public function checkByBsuid($bsuid, $businessId)
+    {
+        if (empty($bsuid)) return null;
+        return Store::where('business_id', $businessId)->where('bsuid', $bsuid)->first(['id']);
     }
 
     public function deleteData(Store $store)
