@@ -915,3 +915,31 @@ html body .app-sidebar .side-menu__item.active .badge { color: #fff !important; 
 .app-sidebar .slide__category .category-name {
     font-size: 10px; font-weight: 600; letter-spacing: .4px; color: #B4B8C2;
 }
+
+/* Fix: ic-* active → icon + bg putih (compound selector beats ic-* alone) */
+.app-sidebar .slide.ic-blue.active   .side-menu__icon,
+.app-sidebar .slide.ic-ai.active     .side-menu__icon,
+.app-sidebar .slide.ic-amber.active  .side-menu__icon,
+.app-sidebar .slide.ic-green.active  .side-menu__icon,
+.app-sidebar .slide.ic-gray.active   .side-menu__icon,
+/* has-sub: active juga ada di <li> langsung */
+.app-sidebar .slide.has-sub.ic-blue.active  .side-menu__icon,
+.app-sidebar .slide.has-sub.ic-ai.active    .side-menu__icon,
+.app-sidebar .slide.has-sub.ic-amber.active .side-menu__icon,
+.app-sidebar .slide.has-sub.ic-green.active .side-menu__icon,
+.app-sidebar .slide.has-sub.ic-gray.active  .side-menu__icon {
+    background: #2E8DE1 !important;
+    color: #fff !important;
+}
+.app-sidebar .slide.ic-blue.active   .side-menu__icon i,
+.app-sidebar .slide.ic-ai.active     .side-menu__icon i,
+.app-sidebar .slide.ic-amber.active  .side-menu__icon i,
+.app-sidebar .slide.ic-green.active  .side-menu__icon i,
+.app-sidebar .slide.ic-gray.active   .side-menu__icon i,
+.app-sidebar .slide.has-sub.ic-blue.active  .side-menu__icon i,
+.app-sidebar .slide.has-sub.ic-ai.active    .side-menu__icon i,
+.app-sidebar .slide.has-sub.ic-amber.active .side-menu__icon i,
+.app-sidebar .slide.has-sub.ic-green.active .side-menu__icon i,
+.app-sidebar .slide.has-sub.ic-gray.active  .side-menu__icon i {
+    color: #fff !important;
+}
