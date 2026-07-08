@@ -2523,7 +2523,8 @@ export default {
             html = html.replace(
                 /<a class="msg-link"[^>]*href="(https?:\/\/chat\.whatsapp\.com\/[^"]+)"[^>]*>[^<]+<\/a>/g,
                 '<a href="$1" target="_blank" class="wa-group-chip"><i class="bx bxl-whatsapp"><\/i> Grup WhatsApp<\/a>');
-            // Newlines
+            // Newlines — collapse 3+ blank lines to max 1 blank (prevent double-spacing)
+            html = html.replace(/\n{3,}/g, '\n\n');
             html = html.replace(/\n/g, '<br>');
             return html;
         },
@@ -5181,7 +5182,7 @@ export default {
 .message-text {
     overflow-wrap: anywhere;
     word-break: break-word;
-    white-space: pre-wrap;
+    white-space: normal;
 }
 .message-text a {
     overflow-wrap: anywhere;
