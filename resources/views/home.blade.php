@@ -74,8 +74,8 @@
 
 /* Top stat cards */
 .dash-top-card { text-decoration: none !important; }
-.dash-top-card .card { border-radius: 10px !important; min-height: 78px !important; border: none !important; outline: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; background-color: #fff !important; overflow: hidden !important; }
-.dash-top-card .card-body { padding: 0.55rem 0.7rem !important; }
+.dash-top-card .card { border-radius: 10px !important; height: 104px !important; min-height: 104px !important; border: none !important; outline: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; background-color: #fff !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }
+.dash-top-card .card-body { padding: 0.5rem 0.7rem !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; flex: 1 !important; width: 100%; }
 .dash-top-card img { width: 30px !important; height: 30px !important; object-fit: contain; filter: none; }
 .dash-top-card h3 { font-size: 1.15rem !important; font-weight: 700 !important; color: var(--rp-navy) !important; margin-top: 2px; }
 .dash-top-card h6 { font-size: 0.7rem !important; font-weight: 500 !important; color: var(--rp-muted) !important; }
@@ -113,7 +113,7 @@
 .dash-chart-card .card-subtitle { font-size: 0.76rem; color: var(--rp-muted); }
 
 /* Label / donut card */
-.dash-label-card .card { border-radius: 10px; min-height: 200px; border: 0.5px solid var(--rp-border); }
+.dash-label-card .card { border-radius: 10px; height: 420px !important; min-height: 420px !important; border: 0.5px solid var(--rp-border); display: flex !important; flex-direction: column !important; }
 .dash-label-card .card-header {
     background: #fff !important;
     border-bottom: 1px solid var(--rp-border) !important;
@@ -162,26 +162,26 @@
     transition: border-color 0.15s;
 }
 .chart-selector:hover, .chart-selector:focus { outline: none; border-color: var(--rp-primary); }
-.chart-body { padding: 12px 10px 6px; min-height: 185px; }
+.chart-body { padding: 12px 10px 6px; flex: 1 1 auto !important; min-height: 0 !important; height: auto !important; display: flex !important; align-items: center !important; justify-content: center !important; position: relative; }
 .chart-card-wrap {
     background: #fff; border-radius: 10px;
     box-shadow: none; border: 0.5px solid var(--rp-border); overflow: hidden;
 }
 .card:has(#chartViewSelector) { border-radius: 10px; border: 0.5px solid var(--rp-border); box-shadow: none; overflow: hidden; }
 .card:has(#chartViewSelector) > .card-header { background: #fff; border-bottom: 1px solid var(--rp-border); padding: 10px 16px; }
-.card:has(#chartViewSelector) > .card-body { padding: 12px 10px 6px; }
+.card:has(#chartViewSelector) > .card-body { padding: 12px 10px 6px; flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; }
 
 @media (max-width: 768px) {
     .dash-greeting { padding: 0.7rem 0.9rem !important; }
     .dash-greeting h4 { font-size: 0.92rem !important; }
     .dash-top-card img { width: 30px !important; height: 30px !important; }
     .dash-top-card h3 { font-size: 0.95rem !important; }
-    .dash-top-card .card { min-height: 78px !important; }
+    .dash-top-card .card { height: 104px !important; min-height: 104px !important; }
 }
 
 /* ── Equalize platform + stat card heights ── */
-.dash-top-card { display: flex; align-items: stretch; }
-.dash-top-card .card { height: 100%; min-height: 88px; }
+.dash-top-card { display: flex !important; align-items: stretch !important; }
+/* height fixed di atas (104px) — tidak perlu ulang */
 .dash-platform-card .card-body {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -809,6 +809,10 @@ body { background: #F5F8FC !important; }
 /* ── Compact empty state ─────────────────────────────────── */
 #broadcastEmpty { padding: 1.25rem !important; }
 #broadcastEmpty i { font-size: 2rem !important; }
+
+.dash-label-card .card-body { flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; }
+
+.chart-body canvas { max-height: 320px !important; width: 100% !important; }
 </style>
 
 <script>
