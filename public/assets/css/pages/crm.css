@@ -12,16 +12,18 @@ body {
 }
 
 .chat-container {
-    height: 100vh;
+    /* height diatur JS (fitChatHeight) — berapapun tinggi navbar */
+    height: auto;
     display: flex;
     flex-direction: column;
     background-color: #fff;
-    padding-top: 68px; /* desktop: navbar exact */
+    padding-top: 0;         /* offset diatur JS, bukan CSS */
+    overflow: hidden;       /* halaman tidak scroll */
 }
 /* Mobile: parent layout already offsets 30px below navbar → only 30px needed */
 @media (max-width: 992px) {
     .chat-container {
-        padding-top: 30px;
+        padding-top: 0; /* JS handles this on mobile too */
     }
 }
 

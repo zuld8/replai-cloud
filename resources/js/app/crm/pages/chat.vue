@@ -2474,6 +2474,16 @@ export default {
             this.templatePanel.sending = false;
         },
 
+        /* ── Auto-fit chat container height (JS) ──
+         * Ukur navbar OTOMATIS, berapapun tingginya → input selalu keliatan. */
+        fitChatHeight() {
+            const nav = document.querySelector('.app-header');
+            const cc  = document.querySelector('.chat-container');
+            if (!cc) return;
+            const top = nav ? nav.getBoundingClientRect().bottom : 0;
+            cc.style.height = (window.innerHeight - top) + 'px';
+        },
+
         toggleEmoji() {
             this.showEmojiPicker = !this.showEmojiPicker;
         },
@@ -2783,6 +2793,11 @@ export default {
                 this.$forceUpdate();
             }, 60000);
 
+            // Auto-fit: ukur navbar sekarang + setelah render + resize
+            this.$nextTick(this.fitChatHeight);
+            window.addEventListener('resize', this.fitChatHeight);
+            setTimeout(this.fitChatHeight, 300);
+
         this.getInformation();
         this.getUsers();
         this.getLabels();
@@ -2814,6 +2829,9 @@ export default {
 
         // Proper cleanup
         this.cleanupSocketListeners();
+
+        // Auto-fit cleanup
+        window.removeEventListener('resize', this.fitChatHeight);
     },
 
     watch: {
@@ -5317,5 +5335,33 @@ export default {
   .btn-selesai-txt { display: none; }
   .btn-kirim { width: 38px; height: 38px; }
   .composer .chat-input { font-size: 16px; }
+}
+
+/* ══════════════════════════════════════════════════════
+   AUTO-FIT LAYOUT — JS sets .chat-container height
+   CSS hanya enforce flex chain; tinggi dari inline style
+   ══════════════════════════════════════════════════════ */
+.chat-container {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;    /* halaman tidak scroll */
+    padding-top: 0 !important;      /* offset diatur JS */
+    /* height diatur JS: cc.style.height = ... */
+}
+.chat-wrapper,
+.main-chat {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+.chat-messages {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+}
+.chat-input-area {
+    flex-shrink: 0 !important;
+    position: relative !important;  /* emoji picker anchor */
 }
 </style>
