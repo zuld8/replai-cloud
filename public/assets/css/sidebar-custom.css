@@ -587,17 +587,17 @@ html:not([data-toggled])
 /* ── FINAL FIX: .main-sidebar-loggedin fixed compact height ─────────────── */
 .main-sidebar-loggedin,
 .app-sidebar .main-sidebar-loggedin {
-    height: 105px !important;
+    height: auto !important;
     min-height: 0 !important;
-    max-height: 105px !important;
+    max-height: none !important;
     overflow: hidden !important;
 }
 @media (min-width: 992px) {
     .main-sidebar-loggedin,
     .app-sidebar .main-sidebar-loggedin {
-        height: 105px !important;
+        height: auto !important;
         min-height: 0 !important;
-        max-height: 105px !important;
+        max-height: none !important;
         flex-shrink: 0 !important;
         overflow: hidden !important;
     }

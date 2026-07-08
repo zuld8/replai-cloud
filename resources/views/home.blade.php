@@ -178,6 +178,19 @@
     .dash-top-card h3 { font-size: 0.95rem !important; }
     .dash-top-card .card { min-height: 78px !important; }
 }
+
+/* ── Equalize platform + stat card heights ── */
+.dash-top-card { display: flex; align-items: stretch; }
+.dash-top-card .card { height: 100%; min-height: 88px; }
+.dash-platform-card .card-body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+}
+.dash-stat-card { min-height: 88px; }
+.dash-stat-card .card-body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+}
 </style>
 
 <div class="dashboard-enhanced">
