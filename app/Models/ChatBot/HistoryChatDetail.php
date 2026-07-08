@@ -38,7 +38,11 @@ class HistoryChatDetail extends Model
         'reply_text',
         'original_name',
         'quoted_message',
-        'extra'
+        'extra',
+        'msg_category',
+        'billable',
+        'pricing_model',
+        'conversation_id',
     ];
 
     /**

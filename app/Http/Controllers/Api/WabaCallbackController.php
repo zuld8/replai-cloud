@@ -2478,6 +2478,31 @@ class WabaCallbackController extends Controller
 
                     Log::warning("WABA message failed: {$wamid}", ['error' => $errorInfo]);
                 }
+
+                // --- PRICING CAPTURE (capture-only, zero-risk — P1) ---
+                $pricing = $statusUpdate['pricing'] ?? null;
+                if ($pricing) {
+                    $pricingPatch = [
+                        'msg_category'    => $pricing['category'] ?? ($statusUpdate['conversation']['origin']['type'] ?? null),
+                        'billable'        => array_key_exists('billable', $pricing) ? (bool) $pricing['billable'] : null,
+                        'pricing_model'   => $pricing['pricing_model'] ?? null,
+                        'conversation_id' => $statusUpdate['conversation']['id'] ?? null,
+                    ];
+                    // Isi HANYA kalau belum keisi (pricing bisa datang 2x dari Meta)
+                    DB::table('blash_details')
+                        ->where('wamid', $wamid)
+                        ->whereNull('msg_category')
+                        ->update($pricingPatch);
+                    \App\Models\ChatBot\HistoryChatDetail::where('messageid', $wamid)
+                        ->whereNull('msg_category')
+                        ->update($pricingPatch);
+                    \Log::info('WABA_PRICING', [
+                        'wamid'   => $wamid,
+                        'status'  => $status,
+                        'pricing' => $pricing,
+                        'conv'    => $statusUpdate['conversation'] ?? null,
+                    ]);
+                }
             }
         } catch (\Throwable $e) {
             Log::error('Error processing WABA status update: ' . $e->getMessage());

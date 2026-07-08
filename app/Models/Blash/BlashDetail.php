@@ -34,7 +34,11 @@ class BlashDetail extends Model
         'sending',
         'text',
         'device_id',
-        'whatsapp_group_id'
+        'whatsapp_group_id',
+        'msg_category',
+        'billable',
+        'pricing_model',
+        'conversation_id',
     ];
 
 
