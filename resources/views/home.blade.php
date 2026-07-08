@@ -73,8 +73,8 @@
 .dash-greeting p  { opacity: 0.88 !important; font-size: 0.78rem !important; margin-bottom: 0; }
 
 /* Top stat cards */
-.dash-top-card { text-decoration: none !important; }
-.dash-top-card .card { border-radius: 10px !important; height: 104px !important; min-height: 104px !important; border: none !important; outline: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; background-color: #fff !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }
+.dash-top-card { text-decoration: none !important; height: 104px !important; max-height: 104px !important; overflow: hidden !important; }
+.dash-top-card .card { border-radius: 10px !important; height: 104px !important; max-height: 104px !important; min-height: unset !important; border: none !important; outline: none !important; box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important; background-color: #fff !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }
 .dash-top-card .card-body { padding: 0.5rem 0.7rem !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; flex: 1 !important; width: 100%; }
 .dash-top-card img { width: 30px !important; height: 30px !important; object-fit: contain; filter: none; }
 .dash-top-card h3 { font-size: 1.15rem !important; font-weight: 700 !important; color: var(--rp-navy) !important; margin-top: 2px; }
@@ -131,7 +131,7 @@
 .dash-log-item:hover { background: var(--rp-primary-soft) !important; border-color: #BFDBFE !important; }
 
 /* Platform cards */
-.dash-platform-card { border-radius: 10px !important; }
+.dash-platform-card { border-radius: 10px !important; height: 104px !important; max-height: 104px !important; overflow: hidden !important; }
 .dash-platform-icon {
     width: 40px; height: 40px;
     border-radius: 10px;
@@ -176,12 +176,11 @@
     .dash-greeting h4 { font-size: 0.92rem !important; }
     .dash-top-card img { width: 30px !important; height: 30px !important; }
     .dash-top-card h3 { font-size: 0.95rem !important; }
-    .dash-top-card .card { height: 104px !important; min-height: 104px !important; }
+    .dash-top-card .card { height: 104px !important; max-height: 104px !important; min-height: unset !important; }
 }
 
 /* ── Equalize platform + stat card heights ── */
-.dash-top-card { display: flex !important; align-items: stretch !important; }
-/* height fixed di atas (104px) — tidak perlu ulang */
+/* Semua card 104px fixed — kolom di-constrain biar gak stretch beda */
 .dash-platform-card .card-body {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
