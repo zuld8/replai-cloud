@@ -2883,6 +2883,7 @@ export default {
 }
 
 .chat-input-area {
+    position: relative;
     flex-shrink: 0;
     background-color: #fff;
     border-top: 1px solid #e5e7eb;
@@ -3206,7 +3207,7 @@ export default {
     bottom: 80px;
     /* Fixed dari 6% */
     left: 10px;
-    z-index: 1000;
+    z-index: 3000;
     background: white;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);

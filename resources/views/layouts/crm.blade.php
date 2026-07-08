@@ -37,6 +37,7 @@
     <link href="{{asset('assets/css/styles.css')}}" rel="stylesheet">
     <!-- Replai Sidebar Custom -->
     <link href="{{asset('assets/css/sidebar-custom.css')}}" rel="stylesheet">
+    <link href="{{cache_asset('assets/css/theme-custom.css')}}" rel="stylesheet">
 
     <!-- Icons Css -->
     <link href="{{asset('assets/css/icons.css')}}" rel="stylesheet">
