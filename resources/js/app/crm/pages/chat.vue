@@ -508,7 +508,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button class="ci-round emoji-btn" @click="toggleEmoji" type="button" aria-label="Emoji">
+                                <button class="ci-round emoji-btn" @click.stop="toggleEmoji" type="button" aria-label="Emoji">
                                     <i class="bx bx-smile"></i>
                                 </button>
                                 <input type="file" ref="fileInput" style="display: none" @change="handleFileChange"
@@ -544,7 +544,7 @@
             </div>
 
             <!-- Emoji Picker -->
-            <div class="emoji-picker-wrapper" v-if="showEmojiPicker">
+            <div class="emoji-picker-wrapper" v-if="showEmojiPicker" @click.stop>
                 <Picker :data="emojiIndex" set="twitter" @select="showEmoji" />
             </div>
         </div>
@@ -2485,9 +2485,7 @@ export default {
         },
 
         toggleEmoji() {
-            console.log('[Emoji] toggleEmoji clicked, was:', this.showEmojiPicker);
             this.showEmojiPicker = !this.showEmojiPicker;
-            console.log('[Emoji] showEmojiPicker now:', this.showEmojiPicker);
         },
 
         insertEmoji(emoji) {
@@ -2819,7 +2817,7 @@ export default {
             if (!e.target.closest('.message-actions')) {
                 this.activeDropdownId = null;
             }
-            if (!e.target.closest('.emoji-picker') && !e.target.closest('.input-btn') && !e.target.closest('.plus-menu-container')) {
+            if (!e.target.closest('.emoji-picker') && !e.target.closest('.emoji-picker-wrapper') && !e.target.closest('.emoji-btn') && !e.target.closest('.input-btn') && !e.target.closest('.plus-menu-container')) {
                 this.showPlusMenu = false;
                 this.showEmojiPicker = false;
             }
