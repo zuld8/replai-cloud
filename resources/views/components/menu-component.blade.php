@@ -159,7 +159,7 @@
 
                 <!-- DASHBOARD SECTION -->
 
-<li class="slide {{ request()->is('app') ? 'active' : '' }}">
+<li class="slide ic-blue {{ request()->is('app') ? 'active' : '' }}">
                     <a href="{{ route('index') }}" class="side-menu__item {{ request()->is('app') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-home'></i>
@@ -172,7 +172,7 @@
                 <li class="slide__category"><span class="category-name">CHAT & INBOX</span></li>
 
 <!-- CRM Chat -->
-                <li class="slide {{ request()->is('app/crm*') ? 'active' : '' }}">
+                <li class="slide ic-blue {{ request()->is('app/crm*') ? 'active' : '' }}">
                     <a href="{{ route('crm') }}" class="side-menu__item {{ request()->is('app/crm*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-chat'></i>
@@ -186,7 +186,7 @@
                 </li>
 
 <!-- OTOMASI SECTION -->
-                <li class="slide has-sub {{ request()->is('app/auto-reply/chatbot*') || request()->is('app/auto-reply/finetunnel*') || request()->is('app/auto-reply/flow*') ? 'active open' : '' }}">
+                <li class="slide has-sub ic-ai {{ request()->is('app/auto-reply/chatbot*') || request()->is('app/auto-reply/finetunnel*') || request()->is('app/auto-reply/flow*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/auto-reply/chatbot*') || request()->is('app/auto-reply/finetunnel*') || request()->is('app/auto-reply/flow*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-bot'></i>
@@ -218,7 +218,7 @@
                 </li>
 
 <!-- Human Agent -->
-                <li class="slide {{ request()->is('app/users*') ? 'active' : '' }}">
+                <li class="slide ic-blue {{ request()->is('app/users*') ? 'active' : '' }}">
                     <a href="{{ route('users') }}" class="side-menu__item {{ request()->is('app/users*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-user-circle'></i>
@@ -228,7 +228,7 @@
                 </li>
 
 <!-- Ticket -->
-                <li class="slide {{ request()->is('app/tickets*') ? 'active' : '' }}">
+                <li class="slide ic-blue {{ request()->is('app/tickets*') ? 'active' : '' }}">
                     <a href="{{ route('tickets') }}" class="side-menu__item {{ request()->is('app/tickets*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-support'></i>
@@ -241,7 +241,7 @@
                 <li class="slide__category"><span class="category-name">{{__('sidebar.marketing_promotion')}}</span></li>
 
 <!-- Broadcast -->
-                <li class="slide has-sub {{ request()->is('app/blash*') || request()->is('app/blash-group*') || request()->is('app/blash-email*') || request()->is('app/broadcast-followups*') || request()->is('app/broadcast/waba*') ? 'active open' : '' }}">
+                <li class="slide has-sub ic-amber {{ request()->is('app/blash*') || request()->is('app/blash-group*') || request()->is('app/blash-email*') || request()->is('app/broadcast-followups*') || request()->is('app/broadcast/waba*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/blash*') || request()->is('app/blash-group*') || request()->is('app/blash-email*') || request()->is('app/broadcast-followups*') || request()->is('app/broadcast/waba*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-broadcast'></i>
@@ -275,7 +275,7 @@
                 </li>
 
 <!-- Master Template -->
-                <li class="slide has-sub {{ request()->is('app/master/templates*') || request()->is('app/master/email-template*') || request()->is('app/template-waba*') || request()->is('app/waba/templates*') ? 'active open' : '' }}">
+                <li class="slide has-sub ic-amber {{ request()->is('app/master/templates*') || request()->is('app/master/email-template*') || request()->is('app/template-waba*') || request()->is('app/waba/templates*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/master/templates*') || request()->is('app/master/email-template*') || request()->is('app/template-waba*') || request()->is('app/waba/templates*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-layout'></i>
@@ -306,7 +306,7 @@
                 </li>
 
 <!-- Contact Scraping -->
-                <li class="slide has-sub {{ request()->is('app/scrapping*') || request()->is('app/group-scrapping*') || request()->is('app/contact-scrapping*') || request()->is('app/groups*') ? 'active open' : '' }}">
+                <li class="slide has-sub ic-amber {{ request()->is('app/scrapping*') || request()->is('app/group-scrapping*') || request()->is('app/contact-scrapping*') || request()->is('app/groups*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/scrapping*') || request()->is('app/group-scrapping*') || request()->is('app/contact-scrapping*') || request()->is('app/groups*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-search-alt'></i>
@@ -345,7 +345,7 @@
                 <li class="slide__category"><span class="category-name">{{__('sidebar.platform_connection')}}</span></li>
 
 <!-- Platform Connections -->
-                <li class="slide has-sub {{ request()->is('app/device*') || request()->is('app/telegram*') || request()->is('app/facebook*') || request()->is('app/instagram*') || request()->is('app/telegrams*') || request()->is('app/waba*') || request()->is('app/messenger*') || request()->is('app/livechats*') ? 'active open' : '' }}">
+                <li class="slide has-sub ic-green {{ request()->is('app/device*') || request()->is('app/telegram*') || request()->is('app/facebook*') || request()->is('app/instagram*') || request()->is('app/telegrams*') || request()->is('app/waba*') || request()->is('app/messenger*') || request()->is('app/livechats*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/device*') || request()->is('app/telegram*') || request()->is('app/facebook*') || request()->is('app/instagram*') || request()->is('app/telegrams*') || request()->is('app/waba*') || request()->is('app/messenger*') || request()->is('app/livechats*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-devices'></i>
@@ -394,7 +394,7 @@
                 <li class="slide__category"><span class="category-name">MASTER DATA</span></li>
 
 <!-- 1. Contact Database -->
-                <li class="slide has-sub {{ request()->is('app/stores*') || request()->is('app/master/categories*') || request()->is('app/master/labels*') || request()->is('app/kanban*') ? 'active open' : '' }}">
+                <li class="slide has-sub ic-green {{ request()->is('app/stores*') || request()->is('app/master/categories*') || request()->is('app/master/labels*') || request()->is('app/kanban*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/stores*') || request()->is('app/master/categories*') || request()->is('app/master/labels*') || request()->is('app/kanban*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-data'></i>
@@ -430,7 +430,7 @@
                 </li>
 
                 <!-- Media Manager -->
-                <li class="slide {{ request()->is('app/master/media-manager*') ? 'active' : '' }}">
+                <li class="slide ic-green {{ request()->is('app/master/media-manager*') ? 'active' : '' }}">
                     <a href="{{ route('folders') }}" class="side-menu__item {{ request()->is('app/master/media-manager*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-folder'></i>
@@ -442,7 +442,7 @@
 {{-- HIDDEN: Region Data (sidebar disabled) --}}
 {{--
                 <!-- 3. Wilayah -->
-                <li class="slide has-sub {{ request()->is('app/master/directory/provinces*') || request()->is('app/master/directory/cities*') || request()->is('app/master/directory/districts*') || request()->is('app/master/directory/subdistricts*') ? 'active open' : '' }}">
+                <li class="slide has-sub ic-green {{ request()->is('app/master/directory/provinces*') || request()->is('app/master/directory/cities*') || request()->is('app/master/directory/districts*') || request()->is('app/master/directory/subdistricts*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/master/directory/provinces*') || request()->is('app/master/directory/cities*') || request()->is('app/master/directory/districts*') || request()->is('app/master/directory/subdistricts*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-map-alt'></i>
@@ -481,7 +481,7 @@
 <!-- LAPORAN SECTION -->
                 <li class="slide__category"><span class="category-name">{{__('sidebar.reports_analytics')}}</span></li>
 <!-- Logs & Reports -->
-                <li class="slide has-sub {{ request()->is('app/logs*') || request()->is('app/reports*') ? 'active open' : '' }}">
+                <li class="slide has-sub ic-green {{ request()->is('app/logs*') || request()->is('app/reports*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/logs*') || request()->is('app/reports*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-bar-chart-alt-2'></i>
@@ -531,7 +531,7 @@
                 <li class="slide__category"><span class="category-name">{{__('sidebar.account_settings')}}</span></li>
 
                 <!-- Role Permission -->
-                <li class="slide {{ request()->is('app/master/roles*') ? 'active' : '' }}">
+                <li class="slide ic-gray {{ request()->is('app/master/roles*') ? 'active' : '' }}">
                     <a href="{{ route('roles.index') }}" class="side-menu__item {{ request()->is('app/master/roles*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-lock'></i>
@@ -540,7 +540,7 @@
                     </a>
                 </li>
 
-                <li class="slide {{ request()->is('app/settings*') ? 'active' : '' }}">
+                <li class="slide ic-gray {{ request()->is('app/settings*') ? 'active' : '' }}">
                     <a href="{{ route('setting') }}" class="side-menu__item {{ request()->is('app/settings*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-cog'></i>
@@ -549,7 +549,7 @@
                     </a>
                 </li>
 
-                <li class="slide has-sub {{ request()->is('app/billing*') || request()->is('app/mua*') || request()->is('app/storage*') ? 'active open' : '' }}">
+                <li class="slide has-sub ic-gray {{ request()->is('app/billing*') || request()->is('app/mua*') || request()->is('app/storage*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/billing*') || request()->is('app/mua*') || request()->is('app/storage*') ? 'active' : '' }}">
                         <span class="side-menu__icon">
                             <i class='bx bx-wallet'></i>

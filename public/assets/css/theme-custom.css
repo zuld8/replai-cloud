@@ -840,3 +840,55 @@ body, .app-content { font-size: 0.875rem; }
 }
 .bc-filter-btn:hover { background: #E2E8F0; color: #1E2A4A; }
 .bc-filter-btn.active { background: #EAF3FC; color: #1B5FA6; font-weight: 600; }
+
+
+/* ══════════════════════════════════════════════════════
+   Sidebar: active item readable + icon chips (brand palette)
+   Replai.id — 2026-07-08
+   ══════════════════════════════════════════════════════ */
+
+/* 1. Fix: teks item aktif navy (override template white) */
+.app-sidebar .side-menu__item.active,
+.app-sidebar .side-menu__item.active .side-menu__label {
+    color: #1E2A4A !important;
+    font-weight: 600;
+}
+.app-sidebar .side-menu__item.active {
+    background: #EAF3FC !important;
+    border-radius: 10px;
+    position: relative;
+}
+.app-sidebar .side-menu__item.active::before {
+    content: ''; position: absolute; left: 0; top: 7px; bottom: 7px;
+    width: 3px; border-radius: 0 3px 3px 0; background: #2E8DE1;
+}
+/* badge (897) tetap kebaca */
+.app-sidebar .side-menu__item.active .badge { color: #fff !important; }
+
+/* 2. Icon chip base */
+.app-sidebar .side-menu__icon {
+    width: 30px !important; height: 30px !important;
+    border-radius: 9px !important;
+    display: inline-flex !important; align-items: center; justify-content: center;
+    background: #F1F5F9; color: #64748B;
+    font-size: 17px; transition: all .15s;
+}
+.app-sidebar .side-menu__icon i { font-size: 17px; }
+
+/* warna per section */
+.app-sidebar .ic-blue  .side-menu__icon { background: #EAF3FC !important; color: #2E8DE1 !important; }
+.app-sidebar .ic-ai    .side-menu__icon { background: #F1ECFE !important; color: #5B3FB0 !important; }
+.app-sidebar .ic-amber .side-menu__icon { background: #FEF3C7 !important; color: #D97706 !important; }
+.app-sidebar .ic-green .side-menu__icon { background: #DCFCE7 !important; color: #16A34A !important; }
+.app-sidebar .ic-gray  .side-menu__icon { background: #F1F5F9 !important; color: #64748B !important; }
+
+/* item aktif → chip biru solid */
+.app-sidebar .side-menu__item.active .side-menu__icon {
+    background: #2E8DE1 !important;
+    color: #fff !important;
+}
+
+/* 3. Section header typography */
+.app-sidebar .slide__category .category-name {
+    font-size: 10px; font-weight: 600; letter-spacing: .4px; color: #B4B8C2;
+}
