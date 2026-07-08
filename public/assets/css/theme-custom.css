@@ -944,11 +944,3 @@ html body .app-sidebar .side-menu__item.active .badge { color: #fff !important; 
     color: #fff !important;
 }
 
-/* Fix: sidebar profile card kepotong — override fixed 105px height */
-.main-sidebar-loggedin,
-.app-sidebar .main-sidebar-loggedin {
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-    padding: 10px 12px 4px !important;
-}
