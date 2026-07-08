@@ -342,7 +342,7 @@
                 </li>
 
                 <!-- PLATFORM & KONEKSI SECTION -->
-                <li class="slide__category"><span class="category-name">{{__('sidebar.platform_connection')}}</span></li>
+                <li class="slide__category"><span class="category-name">PLATFORM & DATA</span></li>
 
 <!-- Platform Connections -->
                 <li class="slide has-sub ic-green {{ request()->is('app/device*') || request()->is('app/telegram*') || request()->is('app/facebook*') || request()->is('app/instagram*') || request()->is('app/telegrams*') || request()->is('app/waba*') || request()->is('app/messenger*') || request()->is('app/livechats*') ? 'active open' : '' }}">
@@ -391,7 +391,6 @@
                 </li>
 
                 <!-- MASTER DATA SECTION -->
-                <li class="slide__category"><span class="category-name">MASTER DATA</span></li>
 
 <!-- 1. Contact Database -->
                 <li class="slide has-sub ic-green {{ request()->is('app/stores*') || request()->is('app/master/categories*') || request()->is('app/master/labels*') || request()->is('app/kanban*') ? 'active open' : '' }}">
@@ -479,7 +478,7 @@
 --}}
 
 <!-- LAPORAN SECTION -->
-                <li class="slide__category"><span class="category-name">{{__('sidebar.reports_analytics')}}</span></li>
+                
 <!-- Logs & Reports -->
                 <li class="slide has-sub ic-green {{ request()->is('app/logs*') || request()->is('app/reports*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);" class="side-menu__item {{ request()->is('app/logs*') || request()->is('app/reports*') ? 'active' : '' }}">
