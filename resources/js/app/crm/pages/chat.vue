@@ -5336,7 +5336,16 @@ export default {
 @media (max-width: 768px) {
   .composer { gap: 5px; padding: 6px 8px; }
   .composer-pill { padding: 4px 6px 4px 8px; }
-  .emoji-btn { display: none; }
+  .emoji-btn { display: flex; } /* tampilkan emoji di mobile */
+  /* Mobile: picker pakai fixed agar tidak kepotong overflow */
+  .emoji-picker-wrapper {
+      position: fixed !important;
+      bottom: 70px !important;
+      left: 4px !important;
+      right: 4px !important;
+      width: auto !important;
+      max-width: 340px !important;
+  }
   .composer-div { display: none; }
   .btn-selesai { padding: 0; width: 36px; height: 36px; border-radius: 50%; justify-content: center; gap: 0; }
   .btn-selesai-txt { display: none; }
