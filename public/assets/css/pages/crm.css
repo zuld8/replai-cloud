@@ -12,18 +12,18 @@ body {
 }
 
 .chat-container {
-    /* height diatur JS (fitChatHeight) — berapapun tinggi navbar */
-    height: auto;
+    height: calc(100dvh - 64px) !important;  /* 64px = navbar terukur DevTools */
     display: flex;
     flex-direction: column;
     background-color: #fff;
-    padding-top: 0;         /* offset diatur JS, bukan CSS */
-    overflow: hidden;       /* halaman tidak scroll */
+    padding-top: 0 !important;
+    overflow: hidden !important;
 }
 /* Mobile: parent layout already offsets 30px below navbar → only 30px needed */
 @media (max-width: 992px) {
     .chat-container {
-        padding-top: 0; /* JS handles this on mobile too */
+        height: calc(100dvh - 64px) !important; /* same on mobile */
+        padding-top: 0 !important;
     }
 }
 
@@ -1125,3 +1125,8 @@ body {
     font-size: 9px !important;
     color: white !important;
 }
+
+/* Flex chain: pesan scroll internal + input pinned */
+.chat-body, .chat-wrapper, .main-chat { min-height: 0 !important; }
+.chat-messages { flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important; }
+.chat-input-area { flex-shrink: 0 !important; }

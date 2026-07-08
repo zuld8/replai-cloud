@@ -2485,7 +2485,9 @@ export default {
         },
 
         toggleEmoji() {
+            console.log('[Emoji] toggleEmoji clicked, was:', this.showEmojiPicker);
             this.showEmojiPicker = !this.showEmojiPicker;
+            console.log('[Emoji] showEmojiPicker now:', this.showEmojiPicker);
         },
 
         insertEmoji(emoji) {
