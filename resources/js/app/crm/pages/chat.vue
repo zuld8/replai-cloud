@@ -2872,7 +2872,8 @@ export default {
 }
 
 .chat-messages {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;          /* WAJIB: tanpa ini flex child gak nyusut → page overflow */
     overflow-y: auto;
     overflow-x: clip;   /* clip not hidden → allows position:sticky inside */
     background: #F5F8FC; /* brand light blue-gray, no WA doodle */
@@ -3203,9 +3204,8 @@ export default {
 }
 
 .emoji-picker-wrapper {
-    position: absolute;
+    position: fixed;        /* fixed = bypass overflow:hidden ancestor */
     bottom: 80px;
-    /* Fixed dari 6% */
     left: 10px;
     z-index: 3000;
     background: white;
