@@ -844,26 +844,49 @@ body, .app-content { font-size: 0.875rem; }
 
 /* ══════════════════════════════════════════════════════
    Sidebar: active item readable + icon chips (brand palette)
-   Replai.id — 2026-07-08
+   Replai.id — 2026-07-08 (rev2: high-specificity)
    ══════════════════════════════════════════════════════ */
 
-/* 1. Fix: teks item aktif navy (override template white) */
-.app-sidebar .side-menu__item.active,
-.app-sidebar .side-menu__item.active .side-menu__label {
+/* 1. Fix: teks aktif navy — specificity > template [data-menu-styles] rule */
+html body [data-menu-styles] .app-sidebar .side-menu__item.active,
+html body [data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__label,
+html body .app-sidebar .main-menu .slide .side-menu__item.active,
+html body .app-sidebar .main-menu .slide .side-menu__item.active .side-menu__label {
     color: #1E2A4A !important;
-    font-weight: 600;
+    font-weight: 600 !important;
 }
-.app-sidebar .side-menu__item.active {
+html body [data-menu-styles] .app-sidebar .side-menu__item.active {
     background: #EAF3FC !important;
-    border-radius: 10px;
-    position: relative;
+    border-radius: 10px !important;
+    border-inline-start: 0 !important;
+    box-shadow: none !important;
+    position: relative !important;
 }
-.app-sidebar .side-menu__item.active::before {
-    content: ''; position: absolute; left: 0; top: 7px; bottom: 7px;
-    width: 3px; border-radius: 0 3px 3px 0; background: #2E8DE1;
+/* Ambil alih ::before template → 1 bar biru, bukan dobel */
+html body [data-menu-styles] .app-sidebar .side-menu__item.active::before {
+    content: '' !important;
+    position: absolute !important;
+    inset-inline-start: 0 !important; inset-inline-end: auto !important;
+    inset-block: 7px !important;
+    width: 3px !important; height: auto !important;
+    border: 0 !important;
+    background: #2E8DE1 !important;
+    border-radius: 0 3px 3px 0 !important;
+}
+/* matiin ::after (indikator kedua template) */
+html body [data-menu-styles] .app-sidebar .side-menu__item.active::after {
+    content: none !important; display: none !important;
+}
+/* ikon aktif: chip biru solid */
+html body [data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__icon {
+    background: #2E8DE1 !important;
+}
+html body [data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__icon,
+html body [data-menu-styles] .app-sidebar .side-menu__item.active .side-menu__icon i {
+    color: #fff !important;
 }
 /* badge (897) tetap kebaca */
-.app-sidebar .side-menu__item.active .badge { color: #fff !important; }
+html body .app-sidebar .side-menu__item.active .badge { color: #fff !important; }
 
 /* 2. Icon chip base */
 .app-sidebar .side-menu__icon {
