@@ -3222,13 +3222,13 @@ export default {
 }
 
 .emoji-picker-wrapper {
-    position: fixed;        /* fixed = bypass overflow:hidden ancestor */
-    bottom: 80px;
-    left: 10px;
+    position: absolute;     /* relatif ke .chat-input-area (position:relative) */
+    bottom: 60px;           /* 60px di atas input bar */
+    left: 0;                /* rata kiri input bar */
     z-index: 3000;
     background: white;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
 }
 
 /* FIXED: Audio Media Styling with proper padding */
