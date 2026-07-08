@@ -3222,13 +3222,20 @@ export default {
 }
 
 .emoji-picker-wrapper {
-    position: absolute;     /* relatif ke .chat-input-area (position:relative) */
-    bottom: 60px;           /* 60px di atas input bar */
-    left: 0;                /* rata kiri input bar */
+    position: absolute;
+    bottom: 64px;
+    left: 0;
     z-index: 3000;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.13), 0 2px 8px rgba(0,0,0,.07);
+    border: 1px solid #E4EAF2;
+    overflow: hidden;       /* clip anak agar ikut border-radius */
+    background: #fff;
+    animation: emojiSlideUp .18s cubic-bezier(.16,1,.3,1);
+}
+@keyframes emojiSlideUp {
+    from { opacity:0; transform: translateY(10px) scale(.97); }
+    to   { opacity:1; transform: translateY(0)    scale(1);   }
 }
 
 /* FIXED: Audio Media Styling with proper padding */
@@ -5363,5 +5370,64 @@ export default {
 .chat-input-area {
     flex-shrink: 0 !important;
     position: relative !important;  /* emoji picker anchor */
+}
+
+/* ── Emoji Picker Polish (::v-deep → targets emoji-mart internals) ── */
+.emoji-picker-wrapper ::v-deep .emoji-mart {
+    border: none !important;
+    border-radius: 16px !important;
+    font-family: inherit !important;
+}
+/* Category tab bar */
+.emoji-picker-wrapper ::v-deep .emoji-mart-bar {
+    border-color: #E4EAF2 !important;
+}
+.emoji-picker-wrapper ::v-deep .emoji-mart-bar:first-child {
+    background: #F5F8FC !important;
+    padding: 4px 0 !important;
+}
+/* Active category tab underline → brand blue */
+.emoji-picker-wrapper ::v-deep .emoji-mart-anchor-selected {
+    color: #2E8DE1 !important;
+}
+.emoji-picker-wrapper ::v-deep .emoji-mart-anchor-bar {
+    background: #2E8DE1 !important;
+}
+/* Search bar */
+.emoji-picker-wrapper ::v-deep .emoji-mart-search {
+    padding: 8px 10px 4px !important;
+}
+.emoji-picker-wrapper ::v-deep .emoji-mart-search input {
+    border-radius: 20px !important;
+    border: 1.5px solid #E4EAF2 !important;
+    background: #F5F8FC !important;
+    padding: 6px 14px !important;
+    font-size: 13px !important;
+    color: #1E2A4A !important;
+    transition: border-color .2s, box-shadow .2s !important;
+}
+.emoji-picker-wrapper ::v-deep .emoji-mart-search input:focus {
+    border-color: #2E8DE1 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(46,141,225,.12) !important;
+    background: #fff !important;
+}
+/* Category label */
+.emoji-picker-wrapper ::v-deep .emoji-mart-category-label span {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #64748B !important;
+    letter-spacing: .04em !important;
+    text-transform: uppercase !important;
+    background: transparent !important;
+}
+/* Emoji hover highlight */
+.emoji-picker-wrapper ::v-deep .emoji-mart-emoji:hover::before {
+    background: #EAF3FC !important;
+    border-radius: 8px !important;
+}
+/* Hide "Emoji Mart™" branding footer */
+.emoji-picker-wrapper ::v-deep .emoji-mart-bar:last-child {
+    display: none !important;
 }
 </style>
