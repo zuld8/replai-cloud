@@ -25,9 +25,12 @@ class LabelController extends Controller
     public function index(Request $request)
     {
         $labels     = $this->labelObserver->getData($request)->get(['id', 'name', 'position', 'color', 'type']);
-        // Add chat count for each label
+        // Add chat count for each label (JSON_VALID guard — aman untuk kolom TEXT non-JSON)
         $labels->each(function ($label) {
-            $label->chat_count = \App\Models\ChatBot\HistoryChat::whereRaw('JSON_VALID(label) AND JSON_CONTAINS(label, ?)', [json_encode(['id' => $label->id])])->count();
+            $label->chat_count = \App\Models\ChatBot\HistoryChat::whereRaw(
+                'JSON_VALID(label) AND JSON_CONTAINS(label, ?)',
+                [json_encode(['id' => $label->id])]
+            )->count();
         });
         return view('master.label.index', ['page' => 'Daftar Label', 'breadcumb' => true], compact('labels'));
     }
@@ -94,7 +97,7 @@ class LabelController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | 6. Delete Kategori Data
+    | 6. Delete Label Data
     |--------------------------------------------------------------------------
     */
 
@@ -104,9 +107,10 @@ class LabelController extends Controller
 
         return redirect()->back()->with(['flash'    => __('general.success_deleted')]);
     }
+
     /*
     |--------------------------------------------------------------------------
-    | 6. Download Contacts by Label (CSV Export)
+    | 7. Download Contacts by Label (CSV Export)
     |--------------------------------------------------------------------------
     */
 
@@ -153,7 +157,7 @@ class LabelController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | 7. Get Contacts for a Label (JSON - for modal)
+    | 8. Get Contacts for a Label (JSON - for modal)
     |--------------------------------------------------------------------------
     */
 
