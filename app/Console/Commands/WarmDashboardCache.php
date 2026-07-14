@@ -203,11 +203,12 @@ class WarmDashboardCache extends Command
 
     private function computeSummary(string $businessId): array
     {
-        // FIX: sama dengan home() $summary — query efisien, tidak whereHas
+        // FIX: return array LENGKAP sesuai home() — semua key yang dipakai home.blade.php
         $monthStart = now()->startOfMonth();
         $monthEnd   = now()->endOfMonth();
         $since30    = now()->subDays(30);
 
+        // Ambil id broadcast bisnis ini SEKALI (ratusan, bukan jutaan)
         $bw       = DB::table('blash_whatsapps')->where('business_id', $businessId)->get(['id', 'use']);
         $waIds    = $bw->where('use', 'whatsapp')->pluck('id')->all();
         $emailIds = $bw->where('use', 'email')->pluck('id')->all();
@@ -223,9 +224,21 @@ class WarmDashboardCache extends Command
             ->selectRaw('SUM(reports IS NULL) AS sending, SUM(reports IS NOT NULL) AS not_sending')
             ->first();
 
+        // Return WAJIB lengkap — semua key yang dipakai home.blade.php
         return [
+            'unofficial'  => \App\Models\WhatsappDevice::count(),
+            'official'    => \App\Models\WhatsappKeyAccount::count(),
+            'livechats'   => \App\Models\LiveChat::count(),
+            'telegram'    => \App\Models\TelegramKey::count(),
+            'instagram'   => \App\Models\InstagramAccount::count(),
+            'messenger'   => \App\Models\MessengerAccount::count(),
+            'finetunnels' => \App\Models\FineTunnel::count(),
+            'stores'      => \App\Models\Store::count(),
+            'categories'  => \App\Models\Category::count(),
+            'user'        => \App\Models\User::count(),
             'blast_w'     => $blastW,
             'blast_e'     => $blastE,
+            'scraping'    => \App\Models\Store::whereNotNull('scrapping_id')->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
             'sending'     => (int) ($snd->sending     ?? 0),
             'not_sending' => (int) ($snd->not_sending ?? 0),
         ];

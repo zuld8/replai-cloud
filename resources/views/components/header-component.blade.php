@@ -1,17 +1,6 @@
  <!-- app-header -->
  <header class="app-header">
 
- <style>
- @media (max-width: 767px) {
-     /* Meter: tampilkan cincin saja, sembunyikan teks label+nilai */
-     .cmeter-text { display: none !important; }
-     /* Kurangi margin antar cincin di HP */
-     .ai-cwrap, .msg-cwrap { margin-left: 3px !important; }
-     /* Ikon utilitas tidak berguna di HP → sembunyikan */
-     .hide-on-mobile { display: none !important; }
- }
- </style>
-
      <!-- Start::main-header-container -->
      <div class="main-header-container container-fluid">
 
@@ -94,31 +83,33 @@
               .ai-tip-row:last-child{border-bottom:none;}
               </style>
               <div class="header-element ai-cwrap" style="margin-left:6px;cursor:default;">
+                  {{-- NO BOX — langsung di atas header --}}
                   <div style="display:inline-flex;align-items:center;gap:7px;padding:0 4px;">
-                      {{-- Cincin peluk ikon AI Credit --}}
-                      <div class="cmeter-ring" style="position:relative;width:38px;height:38px;flex-shrink:0;">
-                          <svg width="38" height="38" viewBox="0 0 36 36" style="position:absolute;inset:0;">
-                              <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
-                              <circle cx="18" cy="18" r="14" fill="none"
-                                  stroke="{{ $__aiPct > 80 ? '#ef4444' : ($__aiPct > 50 ? '#facc15' : '#a78bfa') }}"
-                                  stroke-width="3" stroke-linecap="round"
-                                  stroke-dasharray="{{ round($__aiPct / 100 * 87.96, 2) }} {{ round(87.96 - $__aiPct / 100 * 87.96, 2) }}"
-                                  transform="rotate(-90 18 18)"/>
-                          </svg>
-                          <span style="position:absolute;inset:5px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(124,58,237,0.5);">
-                              <i class="bx bx-bot" style="font-size:14px;color:#fff;line-height:1;"></i>
-                          </span>
-                      </div>
-                      {{-- Teks (disembunyikan di mobile) --}}
-                      <div class="cmeter-text" style="line-height:1.2;">
-                          <div style="font-size:9px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:3px;">
-                              AI Credit &middot; {{ $__aiPct }}%
+                      {{-- Donut --}}
+                      <svg width="46" height="46" viewBox="0 0 36 36" style="flex-shrink:0;">
+                          {{-- Track ring --}}
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="4"/>
+                          {{-- Progress ring --}}
+                          <circle cx="18" cy="18" r="14" fill="none"
+                              stroke="{{ $__aiPct > 80 ? '#ef4444' : ($__aiPct > 50 ? '#facc15' : '#22c55e') }}"
+                              stroke-width="4" stroke-linecap="round"
+                              stroke-dasharray="{{ round($__aiPct / 100 * 87.96, 2) }} {{ round(87.96 - $__aiPct / 100 * 87.96, 2) }}"
+                              transform="rotate(-90 18 18)"/>
+                          {{-- % text - besar, centered --}}
+                          <text x="18" y="18" text-anchor="middle" dominant-baseline="central"
+                              font-size="9" font-weight="900" fill="#ffffff"
+                              style="letter-spacing:-0.3px;">{{ $__aiPct }}%</text>
+                      </svg>
+                      {{-- Teks --}}
+                      <div style="line-height:1.2;">
+                          <div style="font-size:9px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.6px;text-shadow:0 1px 3px rgba(0,0,0,0.2);display:flex;align-items:center;gap:3px;">
+                              AI Credit
                               <span style="display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;background:rgba(255,255,255,0.2);border-radius:50%;">
                                   <i class="bx bx-question-mark" style="font-size:8px;color:white;line-height:1;"></i>
                               </span>
                           </div>
-                          <div style="font-size:12.5px;font-weight:800;color:#fff;white-space:nowrap;">
-                              {{ number_format($__aiUsed) }}<span style="opacity:.75;font-weight:500;">/{{ number_format($__aiLimit) }}</span>
+                          <div style="font-size:12.5px;font-weight:800;color:#ffffff;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.2);">
+                              {{ number_format($__aiUsed) }}<span style="opacity:0.75;font-weight:500;">/{{ number_format($__aiLimit) }}</span>
                           </div>
                       </div>
                   </div>
@@ -204,37 +195,34 @@
               </style>
               <div class="header-element msg-cwrap" style="margin-left:6px;cursor:default;">
                   <div style="display:inline-flex;align-items:center;gap:7px;padding:0 4px;">
-                      {{-- Cincin peluk ikon Kredit Pesan --}}
-                      <div class="cmeter-ring" style="position:relative;width:38px;height:38px;flex-shrink:0;">
-                          <svg width="38" height="38" viewBox="0 0 36 36" style="position:absolute;inset:0;">
-                              <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
-                              @if($__msgOption === 'yes' && $__msgLimit > 0)
-                              <circle cx="18" cy="18" r="14" fill="none"
-                                  stroke="{{ $__msgColor }}"
-                                  stroke-width="3" stroke-linecap="round"
-                                  stroke-dasharray="{{ round($__msgPct / 100 * 87.96, 2) }} {{ round(87.96 - $__msgPct / 100 * 87.96, 2) }}"
-                                  transform="rotate(-90 18 18)"/>
-                              @else
-                              {{-- Unlimited: cincin penuh biru --}}
-                              <circle cx="18" cy="18" r="14" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"
-                                  stroke-dasharray="87.96 0" transform="rotate(-90 18 18)"/>
-                              @endif
-                          </svg>
-                          <span style="position:absolute;inset:5px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#38bdf8);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(14,165,233,0.5);">
-                              <i class="bx bxs-paper-plane" style="font-size:13px;color:#fff;line-height:1;"></i>
-                          </span>
-                      </div>
-                      {{-- Teks (disembunyikan di mobile) --}}
-                      <div class="cmeter-text" style="line-height:1.2;">
-                          <div style="font-size:9px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:3px;">
-                              Kredit Pesan &infin;
+                      {{-- Donut --}}
+                      <svg width="46" height="46" viewBox="0 0 36 36" style="flex-shrink:0;">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="4"/>
+                          @if($__msgOption === 'yes' && $__msgLimit > 0)
+                          <circle cx="18" cy="18" r="14" fill="none"
+                              stroke="{{ $__msgColor }}"
+                              stroke-width="4" stroke-linecap="round"
+                              stroke-dasharray="{{ round($__msgPct / 100 * 87.96, 2) }} {{ round(87.96 - $__msgPct / 100 * 87.96, 2) }}"
+                              transform="rotate(-90 18 18)"/>
+                          <text x="18" y="18" text-anchor="middle" dominant-baseline="central"
+                              font-size="9" font-weight="900" fill="#ffffff"
+                              style="letter-spacing:-0.3px;">{{ $__msgPct }}%</text>
+                          @else
+                          <text x="18" y="18" text-anchor="middle" dominant-baseline="central"
+                              font-size="12" font-weight="900" fill="#38bdf8">∞</text>
+                          @endif
+                      </svg>
+                      {{-- Teks --}}
+                      <div style="line-height:1.2;">
+                          <div style="font-size:9px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.6px;text-shadow:0 1px 3px rgba(0,0,0,0.2);display:flex;align-items:center;gap:3px;">
+                              Kredit Pesan
                               <span style="display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;background:rgba(255,255,255,0.2);border-radius:50%;">
                                   <i class="bx bx-question-mark" style="font-size:8px;color:white;line-height:1;"></i>
                               </span>
                           </div>
-                          <div style="font-size:12.5px;font-weight:800;color:#fff;white-space:nowrap;">
+                          <div style="font-size:12.5px;font-weight:800;color:#ffffff;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.2);">
                               @if($__msgOption === 'yes' && $__msgLimit > 0)
-                                  {{ number_format($__msgUsed) }}<span style="opacity:.75;font-weight:500;">/{{ number_format($__msgLimit) }}</span>
+                                  {{ number_format($__msgUsed) }}<span style="opacity:0.75;font-weight:500;">/{{ number_format($__msgLimit) }}</span>
                               @else
                                   <span style="color:#38bdf8;">Tak Terbatas</span>
                               @endif
@@ -353,31 +341,25 @@
               @if($__hasStorage)
               <div class="header-element ai-cwrap" style="margin-left:6px;cursor:default;">
                   <div style="display:inline-flex;align-items:center;gap:7px;padding:0 4px;">
-                      {{-- Cincin peluk ikon Storage --}}
-                      <div class="cmeter-ring" style="position:relative;width:38px;height:38px;flex-shrink:0;">
-                          <svg width="38" height="38" viewBox="0 0 36 36" style="position:absolute;inset:0;">
-                              <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
-                              <circle cx="18" cy="18" r="14" fill="none"
-                                  stroke="{{ $__stPct > 90 ? '#ef4444' : ($__stPct > 70 ? '#facc15' : '#f59e0b') }}"
-                                  stroke-width="3" stroke-linecap="round"
-                                  stroke-dasharray="{{ $__stFilled }} {{ $__stEmpty }}"
-                                  transform="rotate(-90 18 18)"/>
-                          </svg>
-                          <span style="position:absolute;inset:5px;border-radius:50%;background:{{ $__stPct > 90 ? 'linear-gradient(135deg,#dc2626,#ef4444)' : 'linear-gradient(135deg,#d97706,#f59e0b)' }};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px {{ $__stPct > 90 ? 'rgba(220,38,38,0.5)' : 'rgba(217,119,6,0.5)' }};">
-                              <i class="bx bxs-hdd" style="font-size:13px;color:#fff;line-height:1;"></i>
-                          </span>
-                      </div>
-                      {{-- Teks (disembunyikan di mobile) --}}
-                      <div class="cmeter-text" style="line-height:1.2;">
-                          <div style="font-size:9px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:3px;">
-                              Storage &middot; {{ $__stPct }}%
-                              @if($__stPct > 90)<i class="bx bxs-error" style="font-size:10px;color:#fecaca;"></i>@endif
+                      <svg width="46" height="46" viewBox="0 0 36 36" style="flex-shrink:0;">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="4"/>
+                          <circle cx="18" cy="18" r="14" fill="none"
+                              stroke="{{ $__stPct > 80 ? '#ef4444' : ($__stPct > 60 ? '#facc15' : '#38bdf8') }}"
+                              stroke-width="4" stroke-linecap="round"
+                              stroke-dasharray="{{ $__stFilled }} {{ $__stEmpty }}"
+                              transform="rotate(-90 18 18)"/>
+                          <text x="18" y="18" text-anchor="middle" dominant-baseline="central"
+                              font-size="9" font-weight="900" fill="#ffffff">{{ $__stPct }}%</text>
+                      </svg>
+                      <div style="line-height:1.2;">
+                          <div style="font-size:9px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.6px;text-shadow:0 1px 3px rgba(0,0,0,0.2);display:flex;align-items:center;gap:3px;">
+                              Storage
                               <span style="display:inline-flex;align-items:center;justify-content:center;width:12px;height:12px;background:rgba(255,255,255,0.2);border-radius:50%;">
                                   <i class="bx bx-question-mark" style="font-size:8px;color:white;line-height:1;"></i>
                               </span>
                           </div>
-                          <div style="font-size:12.5px;font-weight:800;color:#fff;white-space:nowrap;">
-                              {{ number_format($__stUsedMB, 1) }}<span style="opacity:.75;font-weight:500;">/{{ number_format($__stTotalMB) }} MB</span>
+                          <div style="font-size:12.5px;font-weight:800;color:#ffffff;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,0.2);">
+                              {{ number_format($__stUsedMB, 1) }}<span style="opacity:0.75;font-weight:500;">/{{ number_format($__stTotalMB) }} MB</span>
                           </div>
                       </div>
                   </div>
@@ -432,7 +414,7 @@
          <!-- Start::header-content-right -->
          <div class="header-content-right">
 
-             <div class="header-element country-selector hide-on-mobile">
+             <div class="header-element country-selector">
                  <a aria-label="anchor" href="javascript:void(0);" class="header-link dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                      <i class="bx bx-world header-link-icon" style="font-size:1.25rem"></i>
                  </a>
@@ -505,7 +487,7 @@
 
 
              <!-- Start::header-element -->
-             <div class="header-element header-theme-mode hide-on-mobile">
+             <div class="header-element header-theme-mode">
                  <a aria-label="anchor" href="javascript:void(0);" class="header-link layout-setting">
                      <i class="bx bxs-sun header-link-icon dark-layout" style="font-size:1.25rem"></i>
                      <i class="bx bxs-moon header-link-icon light-layout" style="font-size:1.25rem"></i>
@@ -515,7 +497,7 @@
 
 
              <!-- Start::header-element -->
-             <div class="header-element header-fullscreen hide-on-mobile">
+             <div class="header-element header-fullscreen">
                  <!-- Start::header-link -->
                  <a aria-label="anchor" onclick="openFullscreen();" href="javascript:void(0);" class="header-link">
                      <i class="bx bx-expand-alt header-link-icon full-screen-open" style="font-size:1.25rem"></i>
@@ -576,7 +558,7 @@
 
 
              <!-- Start::header-element -->
-             <div class="header-element hide-on-mobile">
+             <div class="header-element">
                  <!-- Start::header-link|switcher-icon -->
                  <a aria-label="anchor" href="javascript:void(0);" class="header-link switcher-icon ms-1" data-bs-toggle="offcanvas" data-bs-target="#switcher-canvas">
                      <i class="bx bxs-cog header-link-icon" style="font-size:1.25rem"></i>
