@@ -260,19 +260,25 @@ class HomeController extends Controller
 
     public function interactionAnalysis()
     {
+        // Cache per merchant per bulan — berat, data mingguan jarang berubah
+        $merchantId = my_user()->merchant_id;
+        $monthYear  = now()->format('Y-m');
+        $cacheKey   = "home_interaction_analysis_{$merchantId}_{$monthYear}";
 
-        $interactions = HistoryChat::selectRaw("
-            YEARWEEK(created_at, 1) as yearweek,
-            MIN(DATE(created_at)) as start_date,
-            COUNT(*) as count
-        ")
-            ->whereBetween('created_at', [
-                Carbon::now()->startOfMonth(),
-                Carbon::now()->endOfMonth()
-            ])
-            ->groupBy('yearweek')
-            ->orderBy('start_date')
-            ->get();
+        $interactions = \Cache::remember($cacheKey, 900, function () {
+            return HistoryChat::selectRaw("
+                YEARWEEK(created_at, 1) as yearweek,
+                MIN(DATE(created_at)) as start_date,
+                COUNT(*) as count
+            ")
+                ->whereBetween('created_at', [
+                    Carbon::now()->startOfMonth(),
+                    Carbon::now()->endOfMonth()
+                ])
+                ->groupBy('yearweek')
+                ->orderBy('start_date')
+                ->get();
+        });
 
         return response()->json($interactions);
     }
@@ -319,32 +325,40 @@ class HomeController extends Controller
 
     public function analiss(Request $request)
     {
-        $senderData     = array();
-        $notSenderData  = array();
-        $dateData       = array();
+        // Cache per merchant 15 menit — analisis blast 30 hari, berat di blash_details
+        $merchantId = my_user()->merchant_id;
+        $cacheKey   = "home_analiss_{$merchantId}";
 
-        $blashData = BlashDetail::whereHas('parent', function ($q) {
-            return $q->where("merchant_id", my_user()->merchant_id);
-        })->selectRaw('LEFT(created_at, 10) as date, 
-        SUM(CASE WHEN reports IS NULL THEN 1 ELSE 0 END) AS sending,
-        SUM(CASE WHEN reports IS NOT NULL THEN 1 ELSE 0 END) AS not_sending')
-            ->where('created_at', ">=", now()->subDays(30))
-            ->groupBy('date')
-            ->get();
+        $result = \Cache::remember($cacheKey, 900, function () {
+            $senderData    = [];
+            $notSenderData = [];
+            $dateData      = [];
 
-        foreach ($blashData as $blash) {
-            $dateData[]             = Carbon::parse($blash->date, 'Asia/Jakarta')->setTimezone('Asia/Jakarta')->format('d, M Y');
-            $senderData[]           = (int)$blash->sending;
-            $notSenderData[]        = (int)$blash->not_sending;
-        }
+            $blashData = BlashDetail::whereHas('parent', function ($q) {
+                return $q->where("merchant_id", my_user()->merchant_id);
+            })->selectRaw('LEFT(created_at, 10) as date,
+            SUM(CASE WHEN reports IS NULL THEN 1 ELSE 0 END) AS sending,
+            SUM(CASE WHEN reports IS NOT NULL THEN 1 ELSE 0 END) AS not_sending')
+                ->where('created_at', ">=", now()->subDays(30))
+                ->groupBy('date')
+                ->get();
 
-        return response()->json([
-            'analisis_blash'    => array(
-                'sender'            => $senderData,
-                'not_sender'        => $notSenderData,
-                'date'              => $dateData,
-            ),
-        ]);
+            foreach ($blashData as $blash) {
+                $dateData[]      = Carbon::parse($blash->date, 'Asia/Jakarta')->setTimezone('Asia/Jakarta')->format('d, M Y');
+                $senderData[]    = (int)$blash->sending;
+                $notSenderData[] = (int)$blash->not_sending;
+            }
+
+            return [
+                'analisis_blash' => [
+                    'sender'     => $senderData,
+                    'not_sender' => $notSenderData,
+                    'date'       => $dateData,
+                ],
+            ];
+        });
+
+        return response()->json($result);
     }
 
     public function chats(Request $request)

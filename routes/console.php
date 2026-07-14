@@ -193,3 +193,10 @@ Schedule::command(RefreshInstagramTokens::class, ['--days' => 10])
     ->dailyAt('03:00')
     ->withoutOverlapping()
     ->name('instagram:refresh-tokens');
+
+// Pre-warm dashboard cache tiap 10 menit — cegah cold-load 1 menit+ untuk semua merchant
+Schedule::command('dashboard:warm')
+    ->everyTenMinutes()
+    ->withoutOverlapping(5)
+    ->runInBackground()
+    ->name('dashboard-warm');
