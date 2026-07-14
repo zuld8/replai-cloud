@@ -225,20 +225,22 @@ class WarmDashboardCache extends Command
             ->first();
 
         // Return WAJIB lengkap — semua key yang dipakai home.blade.php
+        // Pakai DB::table() biar tidak bergantung model class name
         return [
-            'unofficial'  => \App\Models\WhatsappDevice::count(),
-            'official'    => \App\Models\WhatsappKeyAccount::count(),
-            'livechats'   => \App\Models\LiveChat::count(),
-            'telegram'    => \App\Models\TelegramKey::count(),
-            'instagram'   => \App\Models\InstagramAccount::count(),
-            'messenger'   => \App\Models\MessengerAccount::count(),
-            'finetunnels' => \App\Models\FineTunnel::count(),
-            'stores'      => \App\Models\Store::count(),
-            'categories'  => \App\Models\Category::count(),
-            'user'        => \App\Models\User::count(),
+            'unofficial'  => DB::table('whatsapp_devices')->count(),
+            'official'    => DB::table('whatsapp_key_accounts')->count(),
+            'livechats'   => DB::table('live_chats')->count(),
+            'telegram'    => DB::table('telegram_keys')->count(),
+            'instagram'   => DB::table('instagram_accounts')->count(),
+            'messenger'   => DB::table('messenger_accounts')->count(),
+            'finetunnels' => DB::table('fine_tunnels')->count(),
+            'stores'      => DB::table('stores')->count(),
+            'categories'  => DB::table('categories')->count(),
+            'user'        => DB::table('users')->count(),
             'blast_w'     => $blastW,
             'blast_e'     => $blastE,
-            'scraping'    => \App\Models\Store::whereNotNull('scrapping_id')->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
+            'scraping'    => DB::table('stores')->whereNotNull('scrapping_id')
+                                ->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
             'sending'     => (int) ($snd->sending     ?? 0),
             'not_sending' => (int) ($snd->not_sending ?? 0),
         ];
