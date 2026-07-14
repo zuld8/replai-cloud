@@ -54,7 +54,10 @@ class Label extends Model
 
     public function chats()
     {
-        return HistoryChat::whereJsonContains('label', ['id' => $this->id]);
+        return HistoryChat::whereRaw(
+            'JSON_VALID(label) AND JSON_CONTAINS(label, ?)',
+            [json_encode(['id' => $this->id])]
+        );
     }
 
     public function stores()

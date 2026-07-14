@@ -51,7 +51,10 @@ class LabelObserver
 
             // 2. Bersihkan label dari JSON history.label di semua percakapan
             //    (Label disimpan sebagai array objek {id,name,color} di kolom JSON)
-            HistoryChat::whereJsonContains('label', ['id' => $label->id])
+            HistoryChat::whereRaw(
+                'JSON_VALID(label) AND JSON_CONTAINS(label, ?)',
+                [json_encode(['id' => $label->id])]
+            )
                 ->get()
                 ->each(function ($h) use ($label) {
                     $arr = collect(json_decode($h->label ?? '[]', true) ?: [])

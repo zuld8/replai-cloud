@@ -70,7 +70,7 @@ class HistoryChatObserver
                 $q->whereHas('livechat', fn($subQ) => $subQ->where('finetunnel_id', $request->agent));
             })->when($request->label, function ($q) use ($request) {
                 foreach ((array)$request->label as $label) {
-                    $q->whereJsonContains('label', ['id' => $label]);
+                    $q->whereRaw('JSON_VALID(label) AND JSON_CONTAINS(label, ?)', [json_encode(['id' => $label])]);
                 }
             })->when($request->start_date || $request->end_date, function ($q) use ($request) {
                 $q->whereHas('details', function ($query) use ($request) {
