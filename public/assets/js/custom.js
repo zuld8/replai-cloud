@@ -60,6 +60,7 @@
         nanoButtons.push(button);
 
         button.addEventListener('click', () => {
+            if (typeof Pickr === 'undefined') return; // guard: Pickr belum load
             const el = document.createElement('p');
             pickrContainerPrimary.appendChild(el);
 
@@ -93,7 +94,7 @@
 
         themeContainerPrimary.appendChild(button);
     }
-    nanoButtons[0].click();
+    if (typeof Pickr !== 'undefined' && nanoButtons.length) nanoButtons[0].click(); // guard: skip jika Pickr belum load
     /* for theme primary */
 
     /* for theme background */
@@ -168,7 +169,7 @@
         });
         themeContainerBackground.appendChild(button);
     }
-    nanoButtons1[0].click();
+    if (typeof Pickr !== 'undefined' && nanoButtons1.length) nanoButtons1[0].click(); // guard: skip jika Pickr belum load
     /* for theme background */
 
     /* header theme toggle */
