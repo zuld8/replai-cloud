@@ -145,12 +145,12 @@ class HomeController extends Controller
             ];
         });
 
-        $logs = Cache::remember("home_logs_{$merchantId}_{$monthYear}", 60, function () use ($request) {
+        $logs = Cache::remember("home_logs_{$merchantId}_{$monthYear}", 300, function () use ($request) {  // 5 min — log ringan
             return ['whatsapp' => $this->logsObserver->getData($request, 'whatsapp')->limit(10)->get(['description', 'error', 'type', 'status', 'created_at'])];
         });
 
         // CRM Messages: 5 newest + 5 oldest unanswered
-        $crmMessages = Cache::remember("home_crm_{$merchantId}_{$businessId}", 60, function () {
+        $crmMessages = Cache::remember("home_crm_{$merchantId}_{$businessId}", 600, function () { // 10 min — preview chat, gak harus real-time
             // 5 newest unread messages (has unread count, sorted newest first)
             $newest = HistoryChat::with(['details' => function($q) {
                     $q->where('from', 'user')->orderBy('created_at', 'desc')->limit(1)->select('history_chat_id', 'message', 'type', 'from');
