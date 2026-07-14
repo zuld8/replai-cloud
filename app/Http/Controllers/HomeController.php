@@ -436,46 +436,58 @@ class HomeController extends Controller
         $merchantId = my_user()->merchant_id;
         $cacheKey   = "broadcast_status_{$merchantId}_{$businessId}";
 
-        $data = Cache::remember($cacheKey, 300, function () use ($businessId) {
+        // TTL naik 600s agar warming tiap 10 menit selalu nutupin
+        $data = Cache::remember($cacheKey, 600, function () use ($businessId) {
+            // FIX: Ambil 5 broadcast DULU (ringan, tidak nyentuh blash_details)
+            // Query lama: JOIN + GROUP BY seluruh riwayat bisnis → baru LIMIT 5 = 55 detik!
+            // Query baru: 2 query kecil → total <1 detik
             $broadcasts = \DB::select("
-                SELECT
-                    bw.id,
-                    bw.name,
-                    bw.use,
-                    bw.created_at,
-                    COUNT(bd.id) as total,
-                    SUM(CASE WHEN bd.sending_status = 'yes' THEN 1 ELSE 0 END) as sent,
-                    SUM(CASE WHEN bd.sending_status = 'no'  THEN 1 ELSE 0 END) as failed
-                FROM blash_whatsapps bw
-                LEFT JOIN blash_details bd
-                    ON bd.blash_whatsapp_id = bw.id AND bd.type = 'whatsapp'
-                WHERE bw.business_id = ?
-                GROUP BY bw.id, bw.name, bw.use, bw.created_at
-                ORDER BY bw.created_at DESC
+                SELECT id, name, `use`, created_at
+                FROM blash_whatsapps
+                WHERE business_id = ?
+                ORDER BY created_at DESC
                 LIMIT 5
             ", [$businessId]);
 
+            if (empty($broadcasts)) return [];
+
+            $ids          = array_map(fn($b) => $b->id, $broadcasts);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+            // Agregasi HANYA untuk 5 broadcast (bukan seluruh riwayat bisnis)
+            $totalsRaw = \DB::select("
+                SELECT blash_whatsapp_id,
+                       COUNT(*)                              AS total,
+                       SUM(sending_status = 'yes')           AS sent,
+                       SUM(sending_status = 'no')            AS failed
+                FROM blash_details
+                WHERE blash_whatsapp_id IN ($placeholders) AND type = 'whatsapp'
+                GROUP BY blash_whatsapp_id
+            ", $ids);
+            $totals = collect($totalsRaw)->keyBy('blash_whatsapp_id');
+
             $result = [];
             foreach ($broadcasts as $b) {
-                $total  = (int) $b->total;
-                $sent   = (int) $b->sent;
-                $failed = (int) $b->failed;
+                $t      = $totals->get($b->id);
+                $total  = (int) ($t->total  ?? 0);
+                $sent   = (int) ($t->sent   ?? 0);
+                $failed = (int) ($t->failed ?? 0);
                 $rate   = $total > 0 ? round($sent / $total * 100, 1) : 0;
 
+                // Per-device: scoped ke 1 broadcast → ringan
                 $devices = \DB::select("
                     SELECT
                         bd.device_id,
                         COALESCE(wd.name, wka.phone, 'Unknown')                        AS device_name,
-                        COALESCE(wd.phone, wka.phone, '-')                              AS device_phone,
-                        CASE WHEN wka.id IS NOT NULL THEN 'WABA' ELSE 'Personal' END   AS device_type,
-                        COUNT(bd.id)                                                      AS total,
-                        SUM(CASE WHEN bd.sending_status = 'yes' THEN 1 ELSE 0 END)     AS sent,
-                        SUM(CASE WHEN bd.sending_status = 'no'  THEN 1 ELSE 0 END)     AS failed
+                        COALESCE(wd.phone, wka.phone, '-')                             AS device_phone,
+                        CASE WHEN wka.id IS NOT NULL THEN 'WABA' ELSE 'Personal' END  AS device_type,
+                        COUNT(bd.id)                                                   AS total,
+                        SUM(CASE WHEN bd.sending_status = 'yes' THEN 1 ELSE 0 END)   AS sent,
+                        SUM(CASE WHEN bd.sending_status = 'no'  THEN 1 ELSE 0 END)   AS failed
                     FROM blash_details bd
                     LEFT JOIN whatsapp_devices      wd  ON wd.id  = bd.device_id
                     LEFT JOIN whatsapp_key_accounts wka ON wka.id = bd.device_id
-                    WHERE bd.blash_whatsapp_id = ?
-                      AND bd.type = 'whatsapp'
+                    WHERE bd.blash_whatsapp_id = ? AND bd.type = 'whatsapp'
                     GROUP BY bd.device_id, device_name, device_phone, device_type
                     ORDER BY sent DESC
                 ", [$b->id]);

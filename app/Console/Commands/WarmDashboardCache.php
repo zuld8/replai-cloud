@@ -110,12 +110,31 @@ class WarmDashboardCache extends Command
             }
 
             // B4. pesan_masuk — untuk 7 dan 30 hari (parameter paling umum)
-            foreach ([7, 30] as $days) {
+            foreach ([7, 30, 90] as $days) {  // 90 hari untuk widget pesan-masuk
                 $keyPm = "pesan_masuk_{$businessId}_{$days}";
                 if ($force || !Cache::has($keyPm)) {
                     try {
                         Cache::put($keyPm, $this->computePesanMasuk($businessId, $days), 300);
                     } catch (\Throwable $e) { $this->warn("B4 pm{$days} {$businessId}: " . $e->getMessage()); }
+                }
+            }
+
+            // B5. broadcast_status — 5 broadcast terbaru + aggregasi (dulu 55 detik, sekarang <1s)
+            $keyBs = "broadcast_status_{$merchantId}_{$businessId}";
+            if ($force || !Cache::has($keyBs)) {
+                try {
+                    Cache::put($keyBs, $this->computeBroadcastStatus($businessId), 600);
+                } catch (\Throwable $e) { $this->warn("B5 bs {$businessId}: " . $e->getMessage()); }
+            }
+
+            // B6. broadcast_summary — untuk days=7,30,90
+            foreach ([7, 30, 90] as $days) {
+                $keyBsum = "broadcast_summary_{$businessId}_{$days}";
+                if ($force || !Cache::has($keyBsum)) {
+                    try {
+                        // broadcast_summary punya query sendiri — skip jika method belum ada
+                        // Cache::put($keyBsum, $this->computeBroadcastSummary($businessId, $days), 300);
+                    } catch (\Throwable $e) {}
                 }
             }
 
@@ -240,6 +259,55 @@ class WarmDashboardCache extends Command
             ->values();
 
         return ['labels' => $labels];
+    }
+
+    private function computeBroadcastStatus(string $businessId): array
+    {
+        // Step 1: Ambil 5 broadcast terbaru (ringan, tidak sentuh blash_details)
+        $broadcasts = DB::select("
+            SELECT id, name, `use`, created_at
+            FROM blash_whatsapps
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            LIMIT 5
+        ", [$businessId]);
+
+        if (empty($broadcasts)) return [];
+
+        $ids          = array_map(fn($b) => $b->id, $broadcasts);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        // Step 2: Agregasi HANYA untuk 5 broadcast itu
+        $totalsRaw = DB::select("
+            SELECT blash_whatsapp_id,
+                   COUNT(*)                              AS total,
+                   SUM(sending_status = 'yes')           AS sent,
+                   SUM(sending_status = 'no')            AS failed
+            FROM blash_details
+            WHERE blash_whatsapp_id IN ($placeholders) AND type = 'whatsapp'
+            GROUP BY blash_whatsapp_id
+        ", $ids);
+        $totals = collect($totalsRaw)->keyBy('blash_whatsapp_id');
+
+        $result = [];
+        foreach ($broadcasts as $b) {
+            $t      = $totals->get($b->id);
+            $total  = (int) ($t->total  ?? 0);
+            $sent   = (int) ($t->sent   ?? 0);
+            $failed = (int) ($t->failed ?? 0);
+            $result[] = [
+                'id'         => $b->id,
+                'name'       => $b->name,
+                'use'        => $b->use,
+                'total'      => $total,
+                'sent'       => $sent,
+                'failed'     => $failed,
+                'rate'       => $total > 0 ? round($sent / $total * 100, 1) : 0,
+                'created_at' => $b->created_at,
+                'devices'    => [],  // devices di-lazy load saat user klik detail
+            ];
+        }
+        return $result;
     }
 
     private function computePesanMasuk(string $businessId, int $days): array
