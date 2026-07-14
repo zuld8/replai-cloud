@@ -34,3 +34,16 @@ Thumbs.db
 *_backup_*/
 *_fix_backup_*/
 *.bak_*
+
+# ============================================================
+# Backup files — jangan pernah commit ke repo
+# ============================================================
+*.bak
+*.bak.*
+*.bak_*
+*_backup_*
+test_*.php
+send_test*.php
+check_labels*.php
+debug_*.php
+*.backup
