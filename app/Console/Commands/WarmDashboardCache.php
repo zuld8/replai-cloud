@@ -29,6 +29,10 @@ class WarmDashboardCache extends Command
 
     public function handle(): int
     {
+        // Cegah timeout saat warming banyak merchant (query blash_details bisa > 60s tanpa ini)
+        set_time_limit(0);
+        \DB::statement('SET SESSION max_execution_time=0');
+
         $monthYear = now()->format('Y-m');
         $limit     = (int) $this->option('limit');
         $force     = (bool) $this->option('force');
@@ -199,13 +203,31 @@ class WarmDashboardCache extends Command
 
     private function computeSummary(string $businessId): array
     {
-        $monthYear = now()->format('Y-m');
+        // FIX: sama dengan home() $summary — query efisien, tidak whereHas
+        $monthStart = now()->startOfMonth();
+        $monthEnd   = now()->endOfMonth();
+        $since30    = now()->subDays(30);
+
+        $bw       = DB::table('blash_whatsapps')->where('business_id', $businessId)->get(['id', 'use']);
+        $waIds    = $bw->where('use', 'whatsapp')->pluck('id')->all();
+        $emailIds = $bw->where('use', 'email')->pluck('id')->all();
+        $allIds   = $bw->pluck('id')->all();
+
+        $blastW = empty($waIds)    ? 0 : BlashDetail::whereIn('blash_whatsapp_id', $waIds)
+                      ->whereBetween('created_at', [$monthStart, $monthEnd])->count();
+        $blastE = empty($emailIds) ? 0 : BlashDetail::whereIn('blash_whatsapp_id', $emailIds)
+                      ->whereBetween('created_at', [$monthStart, $monthEnd])->count();
+        $snd = empty($allIds) ? null : DB::table('blash_details')
+            ->whereIn('blash_whatsapp_id', $allIds)
+            ->where('created_at', '>=', $since30)
+            ->selectRaw('SUM(reports IS NULL) AS sending, SUM(reports IS NOT NULL) AS not_sending')
+            ->first();
+
         return [
-            'total_chats'  => HistoryChat::where('business_id', $businessId)->count(),
-            'total_open'   => HistoryChat::where('business_id', $businessId)->where('status', 'open')->count(),
-            'total_month'  => HistoryChat::where('business_id', $businessId)
-                ->whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])
-                ->count(),
+            'blast_w'     => $blastW,
+            'blast_e'     => $blastE,
+            'sending'     => (int) ($snd->sending     ?? 0),
+            'not_sending' => (int) ($snd->not_sending ?? 0),
         ];
     }
 

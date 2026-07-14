@@ -93,6 +93,30 @@ class HomeController extends Controller
         $monthYear  = date('Y-m');
 
         $summary = Cache::remember("home_summary_{$merchantId}_{$businessId}_{$monthYear}", 900, function () use ($businessId) {
+            // FIX: 4 query whereHas lambat (scan jutaan blash_details) → 3 query efisien
+            // Step 1: Ambil id broadcast bisnis ini dari blash_whatsapps (ratusan baris, bukan jutaan)
+            $monthStart = now()->startOfMonth();
+            $monthEnd   = now()->endOfMonth();
+            $since30    = now()->subDays(30);
+
+            $bw       = \DB::table('blash_whatsapps')->where('business_id', $businessId)->get(['id', 'use']);
+            $waIds    = $bw->where('use', 'whatsapp')->pluck('id')->all();
+            $emailIds = $bw->where('use', 'email')->pluck('id')->all();
+            $allIds   = $bw->pluck('id')->all();
+
+            // Step 2: COUNT blash_details bulan ini — whereIn pakai index blash_whatsapp_id (cepat)
+            $blastW = empty($waIds)    ? 0 : BlashDetail::whereIn('blash_whatsapp_id', $waIds)
+                          ->whereBetween('created_at', [$monthStart, $monthEnd])->count();
+            $blastE = empty($emailIds) ? 0 : BlashDetail::whereIn('blash_whatsapp_id', $emailIds)
+                          ->whereBetween('created_at', [$monthStart, $monthEnd])->count();
+
+            // Step 3: sending + not_sending dalam 1 query SUM (bukan 2 query terpisah)
+            $snd = empty($allIds) ? null : \DB::table('blash_details')
+                ->whereIn('blash_whatsapp_id', $allIds)
+                ->where('created_at', '>=', $since30)
+                ->selectRaw('SUM(reports IS NULL) AS sending, SUM(reports IS NOT NULL) AS not_sending')
+                ->first();
+
             return [
                 'unofficial'  => WhatsappDevice::count(),
                 'official'    => WhatsappKeyAccount::count(),
@@ -104,19 +128,11 @@ class HomeController extends Controller
                 'stores'      => Store::count(),
                 'categories'  => Category::count(),
                 'user'        => User::count(),
-                'blast_w'     => BlashDetail::whereHas('parent', function ($q) use ($businessId) {
-                    return $q->where('use', 'whatsapp')->where('business_id', $businessId);
-                })->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
-                'blast_e'     => BlashDetail::whereHas('parent', function ($q) use ($businessId) {
-                    return $q->where('use', 'email')->where('business_id', $businessId);
-                })->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
-                'scraping'    => Store::where('scrapping_id', '!=', null)->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
-                'sending'     => BlashDetail::whereHas('parent', function ($q) use ($businessId) {
-                    return $q->where('business_id', $businessId);
-                })->where('reports', null)->where('created_at', '>=', now()->subDays(30))->count(),
-                'not_sending' => BlashDetail::whereHas('parent', function ($q) use ($businessId) {
-                    return $q->where('business_id', $businessId);
-                })->where('reports', '!=', null)->where('created_at', '>=', now()->subDays(30))->count(),
+                'blast_w'     => $blastW,
+                'blast_e'     => $blastE,
+                'scraping'    => Store::whereNotNull('scrapping_id')->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
+                'sending'     => (int) ($snd->sending     ?? 0),
+                'not_sending' => (int) ($snd->not_sending ?? 0),
             ];
         });
 
