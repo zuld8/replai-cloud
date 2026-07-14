@@ -112,7 +112,10 @@ class LabelController extends Controller
 
     public function downloadContacts(Label $label)
     {
-        $chats = \App\Models\ChatBot\HistoryChat::whereJsonContains('label', ['id' => $label->id])
+        $chats = \App\Models\ChatBot\HistoryChat::whereRaw(
+                'JSON_VALID(label) AND JSON_CONTAINS(label, ?)',
+                [json_encode(['id' => $label->id])]
+            )
             ->whereNotNull('from_number')
             ->get(['name', 'from_number', 'from', 'created_at']);
 
@@ -156,7 +159,10 @@ class LabelController extends Controller
 
     public function contacts(Label $label)
     {
-        $chats = \App\Models\ChatBot\HistoryChat::whereJsonContains('label', ['id' => $label->id])
+        $chats = \App\Models\ChatBot\HistoryChat::whereRaw(
+                'JSON_VALID(label) AND JSON_CONTAINS(label, ?)',
+                [json_encode(['id' => $label->id])]
+            )
             ->whereNotNull('from_number')
             ->orderBy('name')
             ->get(['id', 'name', 'from_number', 'from', 'created_at', 'status']);
