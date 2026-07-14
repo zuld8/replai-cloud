@@ -639,7 +639,7 @@
     <script src="{{cache_asset('assets/js/custom-switcher.min.js')}}" defer></script>
 
     <!-- Custom JS -->
-    <script src="{{cache_asset('assets/js/custom.js')}}&bust=20260514"></script>
+    <script src="{{cache_asset('assets/js/custom.js')}}&bust=20260715" defer></script>
 
     <!-- Main Theme Js -->
     <script src="{{ cache_asset('assets/libs/sweetalert/sweetalert2.all.min.js')}}" defer></script>
@@ -652,7 +652,7 @@
         };
     </script>
 
-    <script src="{{cache_asset('assets/js/main.js')}}&bust=20260514"></script>
+    <script src="{{cache_asset('assets/js/main.js')}}&bust=20260715" defer></script>
 
     @yield('scripts')
     <script src="{{cache_asset('assets/js/theme-presets.js')}}" defer></script>

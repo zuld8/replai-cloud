@@ -582,7 +582,7 @@
     <script src="{{asset('assets/js/simplebar.js')}}"></script>
 
     <!-- Color Picker JS -->
-    <script src="{{asset('assets/libs/@simonwep/pickr/pickr.es5.min.js')}}"></script>
+    <script src="{{asset('assets/libs/@simonwep/pickr/pickr.es5.min.js')}}" defer></script>
 
 
     <!-- Page Header JS -->
@@ -594,7 +594,7 @@
     <script src="{{asset('assets/js/custom-switcher.min.js')}}"></script>
 
     <!-- Custom JS -->
-    <script src="{{asset('assets/js/custom.js')}}"></script>
+    <script src="{{asset('assets/js/custom.js')}}" defer></script>
 
     <!-- Main Theme Js -->
     <script src="{{ asset('assets/libs/sweetalert/sweetalert2.all.min.js')}}" defer></script>
