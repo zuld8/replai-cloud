@@ -27,7 +27,7 @@ class LabelController extends Controller
         $labels     = $this->labelObserver->getData($request)->get(['id', 'name', 'position', 'color', 'type']);
         // Add chat count for each label
         $labels->each(function ($label) {
-            $label->chat_count = \App\Models\ChatBot\HistoryChat::whereJsonContains('label', ['id' => $label->id])->count();
+            $label->chat_count = \App\Models\ChatBot\HistoryChat::whereRaw('JSON_VALID(label) AND JSON_CONTAINS(label, ?)', [json_encode(['id' => $label->id])])->count();
         });
         return view('master.label.index', ['page' => 'Daftar Label', 'breadcumb' => true], compact('labels'));
     }
