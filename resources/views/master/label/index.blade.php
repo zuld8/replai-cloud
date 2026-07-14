@@ -132,7 +132,7 @@
                                     <a href="{{ route('label.update', $label->id) }}" class="action-btn edit" title="Edit">
                                         <i class="bx bx-pencil"></i>
                                     </a>
-                                    <a href="{{ route('label.delete', $label- onclick="return confirm(\'Label ini akan dihapus permanen. Kontak yang menggunakan label ini akan kehilangan label ini. Lanjutkan?\')" >id) }}" class="action-btn delete deletebutton" title="Hapus">
+                                    <a href="{{ route('label.delete', $label->id) }}" onclick="return confirm('Label ini akan dihapus permanen. Kontak yang menggunakan label ini akan kehilangan label ini. Lanjutkan?')" class="action-btn delete deletebutton" title="Hapus">
                                         <i class="bx bx-trash"></i>
                                     </a>
                                 </div>
