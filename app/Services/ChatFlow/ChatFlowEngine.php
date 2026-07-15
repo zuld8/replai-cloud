@@ -8,7 +8,9 @@ use App\Models\ChatFlow\ChatFlowOption;
 use App\Models\ChatFlow\ChatFlowSession;
 use App\Models\WhatsappKeyAccount;
 use App\Services\Sistem\WabaNotificationService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Http\Resources\LiveChat\HistoryChatResources;
 
 /**
  * ChatFlowEngine — Engine runtime Menu Otomatis (WhatsApp Interactive).
@@ -269,13 +271,14 @@ class ChatFlowEngine
     {
         if (!$node->body_text) return false;
 
-        // Simpan ke CRM timeline (from=device, source=bot)
-        $history->details()->create([
+        // Simpan ke CRM timeline (from=device, source=bot) + emit realtime
+        $detail = $history->details()->create([
             'history_chat_id' => $history->id,
             'from'            => 'device',
             'source'          => 'bot',
             'message'         => $node->body_text,
         ]);
+        $this->emitToCrm($detail);
 
         // Kirim ke customer via WABA
         $this->notif->sendText($history->from_number, $node->body_text, $device, $history->bsuid ?? null);
@@ -292,14 +295,15 @@ class ChatFlowEngine
         WhatsappKeyAccount $device,
         $history
     ): bool {
-        // Simpan preview ke CRM (tampil sebagai teks di timeline)
+        // Simpan preview ke CRM (tampil sebagai teks di timeline) + emit realtime
         $preview = ($node->type === 'buttons' ? '[Tombol] ' : '[Menu] ') . $node->body_text;
-        $history->details()->create([
+        $detail = $history->details()->create([
             'history_chat_id' => $history->id,
             'from'            => 'device',
             'source'          => 'bot',
             'message'         => $preview,
         ]);
+        $this->emitToCrm($detail);
 
         // Kirim interactive ke customer
         return $this->notif->sendInteractive(
@@ -353,14 +357,15 @@ class ChatFlowEngine
         ?ChatFlowSession $session,
         ?ChatFlowNode $node = null
     ): bool {
-        // Kirim pesan handoff ke customer jika ada
+        // Kirim pesan handoff ke customer jika ada + emit realtime
         if ($node && $node->body_text) {
-            $history->details()->create([
+            $detail = $history->details()->create([
                 'history_chat_id' => $history->id,
                 'from'            => 'device',
                 'source'          => 'bot',
                 'message'         => $node->body_text,
             ]);
+            $this->emitToCrm($detail);
             $this->notif->sendText($history->from_number, $node->body_text, $device, $history->bsuid ?? null);
         }
 
@@ -407,4 +412,23 @@ class ChatFlowEngine
             'last_activity_at'=> now(),
         ]);
     }
+    /**
+     * Emit pesan bot ke Express server → realtime di CRM (socket).
+     * Mirror cara WabaCallbackController::triggerEmit() emit $replyForEmit.
+     * Dibungkus try/catch — kalau Express mati, flow tetap jalan.
+     */
+    private function emitToCrm($detail): void
+    {
+        try {
+            if (!$detail) return;
+            $expressUrl = config('services.express.url') . '/trigger-whatsapp';
+            Http::withHeaders(['x-api-key' => config('services.express.api_key')])
+                ->timeout(5)
+                ->post($expressUrl, HistoryChatResources::make($detail));
+        } catch (\Throwable $e) {
+            Log::warning('[ChatFlowEngine] emit realtime gagal: ' . $e->getMessage());
+            // Jangan crash flow kalau Express mati / timeout
+        }
+    }
+
 }
