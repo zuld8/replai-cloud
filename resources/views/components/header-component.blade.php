@@ -1,10 +1,10 @@
  <!-- app-header -->
- <header class="app-header" style="background: linear-gradient(120deg, #1a2755 0%, #2d1d6b 55%, #5B3FB0 100%) !important; border-bottom: none !important;">
+ <header class="app-header" style="background: linear-gradient(120deg, #1E9BE0 0%, #5B3FB0 60%, #7B2FF7 100%) !important; border-bottom: none !important;">
 
  <style>
- /* ── Header background — gradient gelap navy ke ungu sesuai mockup ── */
+ /* ── Header background — gradient sesuai warna logo Replai.id ── */
  .app-header {
-     background: linear-gradient(120deg, #1a2755 0%, #2d1d6b 55%, #5B3FB0 100%) !important;
+     background: linear-gradient(120deg, #1E9BE0 0%, #5B3FB0 60%, #7B2FF7 100%) !important;
      border-bottom: none !important;
  }
  /* Pastikan teks di header putih di atas bg gelap */
