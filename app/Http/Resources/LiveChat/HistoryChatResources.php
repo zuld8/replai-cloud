@@ -61,6 +61,7 @@ class HistoryChatResources extends JsonResource
             // ── Tambah untuk konsistensi realtime ↔ refresh ──
             'source'                => $this->source ?? ($this->reply_by_id ? 'agent' : 'system'),
             'buttons'               => $this->buttons ? json_decode($this->buttons, true) : [],
+            'takeover'              => $this->takeover ?? null,   // null=normal, 'yes'=handoff trigger
             '_id'                   => $this->history_chat_id,
             'from'                  => $this->from,
         ];

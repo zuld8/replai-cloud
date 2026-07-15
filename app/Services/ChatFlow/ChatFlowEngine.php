@@ -383,6 +383,9 @@ class ChatFlowEngine
                 'created_at'      => $this->nextTs(),  // urutan konsisten
                 'updated_at'      => now(),
             ]);
+            // Tandai pesan ini sbg pemicu handoff → frontend flip takeover realtime
+            // setAttribute cuma nempel di objek, gak di-save() → aman (kolom ini milik history_chats)
+            $detail->setAttribute('takeover', 'yes');
             $this->emitToCrm($detail);
             $this->notif->sendText($history->from_number, $node->body_text, $device, $history->bsuid ?? null);
         }

@@ -2697,6 +2697,11 @@ export default {
 
             this.message.list.push(newMessage);
 
+            // Kalau pesan ini pemicu handoff → flip input bar ke composer realtime (tanpa refresh)
+            if (newMessage.takeover === 'yes' || newMessage.takeover === true) {
+                this.detail.takeover = true;
+            }
+
             this.$nextTick(() => {
                 if (this.shouldScrollToBottom) {
                     this.scrollToBottom();
