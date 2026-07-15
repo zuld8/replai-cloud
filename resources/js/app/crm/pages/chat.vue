@@ -4220,25 +4220,27 @@ export default {
 
 /* ── Template buttons ────────────────────────────────── */
 .msg-tbtns {
-    border-top: 1px solid rgba(255, 255, 255, .15);
-    margin-top: 8px;
+    border-top: 1px solid rgba(255,255,255,.15);
+    margin-top: 6px;
+    padding-top: 2px;
 }
 .msg-tbtn {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 9px;
-    font-size: 12px;
+    padding: 10px 8px;
+    font-size: 12.5px;
     font-weight: 500;
     color: #9FE3C8;
     text-decoration: none;
     cursor: pointer;
-    transition: opacity .15s;
+    border-radius: 6px;
+    transition: background .15s;
 }
-.msg-tbtn:hover { opacity: .8; }
-.msg-tbtn + .msg-tbtn { border-top: 1px solid rgba(255, 255, 255, .1); }
-.msg-tbtn i { font-size: 14px; }
+.msg-tbtn:hover { background: rgba(255,255,255,.07); }
+.msg-tbtn + .msg-tbtn { border-top: 1px solid rgba(255,255,255,.1); }
+.msg-tbtn i { font-size: 14px; opacity: .85; }
 
 
 /* ── Echo chip (dibalas dari luar CRM) ─────────────────── */

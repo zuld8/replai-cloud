@@ -58,6 +58,9 @@ class HistoryChatResources extends JsonResource
             'reply_to'              => $replyTo,
             'reply_type'            => $replyType,
             'reply_media_url'       => $replyMediaUrl,
+            // ── Tambah untuk konsistensi realtime ↔ refresh ──
+            'source'                => $this->source ?? ($this->reply_by_id ? 'agent' : 'system'),
+            'buttons'               => $this->buttons ? json_decode($this->buttons, true) : [],
             '_id'                   => $this->history_chat_id,
             'from'                  => $this->from,
         ];
