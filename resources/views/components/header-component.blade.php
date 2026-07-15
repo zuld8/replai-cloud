@@ -560,8 +560,8 @@
              <div class="header-element header-fullscreen hide-on-mobile">
                  <!-- Start::header-link -->
                  <a aria-label="anchor" onclick="openFullscreen();" href="javascript:void(0);" class="header-link">
-                     <i class="bx bx-expand-alt header-link-icon full-screen-open" style="font-size:1.25rem"></i>
-                     <i class="bx bx-collapse-alt header-link-icon full-screen-close d-none" style="font-size:1.25rem"></i>
+                     <i class="bx bx-expand-alt header-link-icon full-screen-open"></i>
+                     <i class="bx bx-collapse-alt header-link-icon full-screen-close d-none"></i>
                  </a>
                  <!-- End::header-link -->
              </div>
@@ -571,13 +571,13 @@
              <div class="header-element mainuserProfile">
                  <!-- Start::header-link|dropdown-toggle -->
                  <a href="javascript:void(0);" class="header-link dropdown-toggle" id="mainHeaderProfile" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                     <div class="d-flex align-items-center" style="gap:8px;">
-                         {{-- Avatar: gradient circle + icon (konsisten dengan meter kiri) --}}
-                         <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2E8DE1,#5B3FB0);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(46,141,225,.35);">
-                             <i class="bx bx-user" style="color:#fff;font-size:1.1rem;line-height:1;"></i>
+                     <div class="d-flex align-items-center" style="gap:7px;">
+                         {{-- Avatar: sama dengan circle icons lain (rgba putih di atas bg gelap) --}}
+                         <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                             <i class="bx bx-user" style="color:#fff;font-size:1.05rem;line-height:1;"></i>
                          </div>
                          {{-- Nama user — hanya tampil di xl+ --}}
-                         <span class="d-none d-xl-block fw-600" style="font-size:0.82rem;color:#fff;letter-spacing:.01em;white-space:nowrap;">{{auth()->user()->name}}</span>
+                         <span class="d-none d-xl-block" style="font-size:0.82rem;font-weight:600;color:#fff;letter-spacing:.01em;white-space:nowrap;">{{auth()->user()->name}}</span>
                      </div>
                  </a>
                  <!-- End::header-link|dropdown-toggle -->
