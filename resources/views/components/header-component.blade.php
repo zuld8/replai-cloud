@@ -2,6 +2,18 @@
  <header class="app-header">
 
  <style>
+ /* ── Header background — gradient gelap navy ke ungu sesuai mockup ── */
+ .app-header {
+     background: linear-gradient(120deg, #1a2755 0%, #2d1d6b 55%, #5B3FB0 100%) !important;
+     border-bottom: none !important;
+ }
+ /* Pastikan teks di header putih di atas bg gelap */
+ .app-header .header-link-icon,
+ .app-header .user-name,
+ .app-header .header-link {
+     color: #fff !important;
+ }
+
  @media (max-width: 767px) {
      /* Meter: tampilkan cincin saja, sembunyikan teks label+nilai */
      .cmeter-text { display: none !important; }
@@ -15,23 +27,23 @@
  .header-content-right {
      gap: 4px;
  }
- /* Circle button — rgba gelap agar terlihat di bg terang maupun gelap */
+ /* Circle button — rgba putih (bg header gelap) */
  .header-content-right .header-element:not(.mainuserProfile) .header-link {
      width: 34px;
      height: 34px;
      border-radius: 50%;
-     background: rgba(0,0,0,0.12);
+     background: rgba(255,255,255,0.15);
      display: flex;
      align-items: center;
      justify-content: center;
      transition: background .18s;
      padding: 0;
-     margin: 0 !important;   /* override ms-1 dll dari Bootstrap */
+     margin: 0 !important;
  }
  .header-content-right .header-element:not(.mainuserProfile) .header-link:hover {
-     background: rgba(0,0,0,0.22);
+     background: rgba(255,255,255,0.27);
  }
- /* Ukuran ikon semua seragam — override inline style dari template */
+ /* Ukuran ikon semua seragam */
  .header-content-right .header-link-icon {
      font-size: 1.05rem !important;
      line-height: 1 !important;
@@ -39,6 +51,7 @@
  /* Sembunyikan caret dropdown dari globe selector */
  .header-content-right .country-selector .header-link::after { display: none !important; }
  </style>
+
 
 
      <!-- Start::main-header-container -->
