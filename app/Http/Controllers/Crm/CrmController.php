@@ -549,6 +549,20 @@ class CrmController extends Controller
             'type'          => 'required|in:text,video,audio,document,image,media'
         ]);
 
+
+        // ── Guard: di luar customer-service window → free-form DILARANG ──────────
+        $windowChannels = ['waba', 'messanger', 'instagram'];
+        if (in_array($history->from, $windowChannels)) {
+            $hours  = $history->from === 'instagram' ? 168 : 24;
+            $last   = $history->last_incoming_at;
+            $inside = $last && \Carbon\Carbon::parse($last)->gt(now()->subHours($hours));
+            if (!$inside) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'Sesi sudah tutup. Silakan kirim pesan template.',
+                ], 422);
+            }
+        }
         $messageType = 'text';
         $image  = array(
             'status'    => false,

@@ -487,6 +487,9 @@
 
                     <!-- Input Controls (when takeover is active) -->
                     <template v-if="detail.takeover">
+
+                        <!-- Sesi masih dalam window → composer normal -->
+                        <template v-if="canFreeform">
                         <div class="composer">
                             <div class="composer-pill">
                                 <div class="plus-menu-container" style="position: relative;">
@@ -529,6 +532,23 @@
                                 <i class="bx bx-send"></i>
                             </button>
                         </div>
+                        </template>
+
+                        <!-- Sesi TUTUP → bar terkunci, arahkan ke template -->
+                        <template v-else>
+                            <div class="session-lock">
+                                <div class="sl-icon"><i class="bx bx-lock-alt"></i></div>
+                                <div class="sl-text">
+                                    <div class="sl-title">Sesi {{ detail.from === 'instagram' ? '7 hari' : '24 jam' }} sudah tutup</div>
+                                    <div class="sl-sub">Balasan bebas cuma bisa selama window sejak pesan terakhir pelanggan — atau kirim pesan template.</div>
+                                </div>
+                                <div class="sl-actions">
+                                    <button class="sl-btn" @click="openTemplatePanel"><i class="bx bx-file"></i> Kirim Template</button>
+                                    <a class="sl-new" href="/app/templates"><i class="bx bx-plus"></i> Buat template baru</a>
+                                </div>
+                            </div>
+                        </template>
+
                     </template>
 
                     <!-- State bot aktif — input terkunci -->
@@ -1298,6 +1318,12 @@ export default {
             return { text: '', color: '#64748B', icon: '', template: false };
         },
 
+        canFreeform() {
+            // sessionInfo.template === true ↔ sesi tutup (waba/messanger/instagram di luar window)
+            // sessionInfo.template === false ↔ boleh kirim pesan bebas
+            return !this.sessionInfo.template;
+        },
+
         filteredMessages() {
             if (!this.message.search) return this.message.list;
             return this.message.list.filter(msg =>
@@ -1913,9 +1939,16 @@ export default {
 
                 NProgress.done();
             } catch (error) {
-                console.error(error);
                 this.send.loader = false;
                 NProgress.done();
+                // Guard: sesi tutup → toast error, jangan push bubble gagal
+                if (error.response?.status === 422) {
+                    const msg = error.response.data?.message || 'Sesi sudah tutup. Silakan kirim pesan template.';
+                    if (this.$toast?.error) this.$toast.error(msg);
+                    else alert(msg);
+                    return;
+                }
+                console.error(error);
             }
         },
 
@@ -5332,6 +5365,17 @@ export default {
 .tl-btn{display:inline-flex;align-items:center;gap:6px;background:#5B3FB0;color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:500;flex:0 0 auto;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
 .tl-btn:hover{opacity:.88;}
 .tl-btn i{font-size:16px;}
+/* ── Session lock bar (sesi tutup) ────────────────────────── */
+.session-lock{display:flex;align-items:center;gap:12px;background:#FBF3E2;border:1px solid #EAD9AE;border-radius:16px;padding:12px 14px;margin:8px 10px;}
+.session-lock .sl-icon{width:40px;height:40px;border-radius:12px;background:#F3E2B0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.session-lock .sl-icon i{color:#854F0B;font-size:20px;}
+.session-lock .sl-text{flex:1;min-width:0;line-height:1.45;}
+.session-lock .sl-title{font-size:13.5px;font-weight:600;color:#633806;}
+.session-lock .sl-sub{font-size:11.5px;color:#8A6414;}
+.session-lock .sl-actions{display:flex;flex-direction:column;align-items:stretch;gap:5px;flex-shrink:0;}
+.session-lock .sl-btn{background:#2E8DE1;color:#fff;border:none;border-radius:11px;padding:10px 16px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:background .15s;}
+.session-lock .sl-btn:hover{background:#1f7ac8;}
+.session-lock .sl-new{font-size:11px;color:#2E8DE1;text-align:center;cursor:pointer;text-decoration:none;}
 /* ── Mobile composer fix (≤768px) ── */
 @media (max-width: 768px) {
   .composer { gap: 5px; padding: 6px 8px; }
