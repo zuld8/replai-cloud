@@ -22,8 +22,8 @@ return new class extends Migration
         if (!$this->hasIndex('history_chat_details', 'idx_hcd_msg_paginate')) {
             DB::statement(
                 'ALTER TABLE `history_chat_details`
-                 ADD INDEX `idx_hcd_msg_paginate` (`history_chat_id`, `deleted_at`, `created_at`, `id`)
-                 ALGORITHM=INPLACE LOCK=NONE'
+                 ADD INDEX `idx_hcd_msg_paginate` (`history_chat_id`, `deleted_at`, `created_at`, `id`),
+                 ALGORITHM=INPLACE, LOCK=NONE'
             );
         }
     }
