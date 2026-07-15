@@ -25,8 +25,9 @@
  /* ── Icon buttons kanan — circle style sesuai mockup ──────────── */
  /* Gap merata antar semua header-element kanan */
  .header-content-right {
-     gap: 4px;
+     gap: 6px;
      align-items: center !important;
+     padding-right: 8px;
  }
  /* Setiap header-element juga flex + center vertikal */
  .header-content-right .header-element {
@@ -34,12 +35,12 @@
      align-items: center !important;
      height: 100%;
  }
- /* Circle button — rgba putih (bg header gelap) */
+ /* Circle button — lebih opak sesuai mockup */
  .header-content-right .header-element:not(.mainuserProfile) .header-link {
      width: 34px;
      height: 34px;
      border-radius: 50%;
-     background: rgba(255,255,255,0.15);
+     background: rgba(255,255,255,0.22);
      display: flex;
      align-items: center;
      justify-content: center;
@@ -48,7 +49,7 @@
      margin: 0 !important;
  }
  .header-content-right .header-element:not(.mainuserProfile) .header-link:hover {
-     background: rgba(255,255,255,0.27);
+     background: rgba(255,255,255,0.35);
  }
  /* Ukuran ikon semua seragam */
  .header-content-right .header-link-icon {
