@@ -146,8 +146,8 @@
               <div class="header-element ai-cwrap" style="margin-left:6px;cursor:default;">
                   <div style="display:inline-flex;align-items:center;gap:7px;padding:0 4px;">
                       {{-- Cincin peluk ikon AI Credit --}}
-                      <div class="cmeter-ring" style="position:relative;width:38px;height:38px;flex-shrink:0;">
-                          <svg width="38" height="38" viewBox="0 0 36 36" style="position:absolute;inset:0;">
+                      <div class="cmeter-ring" style="position:relative;width:34px;height:34px;flex-shrink:0;">
+                          <svg width="34" height="34" viewBox="0 0 36 36" style="position:absolute;inset:0;">
                               <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
                               <circle cx="18" cy="18" r="14" fill="none"
                                   stroke="{{ $__aiPct > 80 ? '#ef4444' : ($__aiPct > 50 ? '#facc15' : '#a78bfa') }}"
@@ -155,8 +155,8 @@
                                   stroke-dasharray="{{ round($__aiPct / 100 * 87.96, 2) }} {{ round(87.96 - $__aiPct / 100 * 87.96, 2) }}"
                                   transform="rotate(-90 18 18)"/>
                           </svg>
-                          <span style="position:absolute;inset:5px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(124,58,237,0.5);">
-                              <i class="bx bx-bot" style="font-size:14px;color:#fff;line-height:1;"></i>
+                          <span style="position:absolute;inset:4px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(124,58,237,0.5);">
+                              <i class="bx bxs-magic-wand" style="font-size:11px;color:#fff;line-height:1;"></i>
                           </span>
                       </div>
                       {{-- Teks (disembunyikan di mobile) --}}
@@ -255,8 +255,8 @@
               <div class="header-element msg-cwrap" style="margin-left:6px;cursor:default;">
                   <div style="display:inline-flex;align-items:center;gap:7px;padding:0 4px;">
                       {{-- Cincin peluk ikon Kredit Pesan --}}
-                      <div class="cmeter-ring" style="position:relative;width:38px;height:38px;flex-shrink:0;">
-                          <svg width="38" height="38" viewBox="0 0 36 36" style="position:absolute;inset:0;">
+                      <div class="cmeter-ring" style="position:relative;width:34px;height:34px;flex-shrink:0;">
+                          <svg width="34" height="34" viewBox="0 0 36 36" style="position:absolute;inset:0;">
                               <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
                               @if($__msgOption === 'yes' && $__msgLimit > 0)
                               <circle cx="18" cy="18" r="14" fill="none"
@@ -404,8 +404,8 @@
               <div class="header-element ai-cwrap" style="margin-left:6px;cursor:default;">
                   <div style="display:inline-flex;align-items:center;gap:7px;padding:0 4px;">
                       {{-- Cincin peluk ikon Storage --}}
-                      <div class="cmeter-ring" style="position:relative;width:38px;height:38px;flex-shrink:0;">
-                          <svg width="38" height="38" viewBox="0 0 36 36" style="position:absolute;inset:0;">
+                      <div class="cmeter-ring" style="position:relative;width:34px;height:34px;flex-shrink:0;">
+                          <svg width="34" height="34" viewBox="0 0 36 36" style="position:absolute;inset:0;">
                               <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3"/>
                               <circle cx="18" cy="18" r="14" fill="none"
                                   stroke="{{ $__stPct > 90 ? '#ef4444' : ($__stPct > 70 ? '#facc15' : '#f59e0b') }}"
@@ -414,7 +414,7 @@
                                   transform="rotate(-90 18 18)"/>
                           </svg>
                           <span style="position:absolute;inset:5px;border-radius:50%;background:{{ $__stPct > 90 ? 'linear-gradient(135deg,#dc2626,#ef4444)' : 'linear-gradient(135deg,#d97706,#f59e0b)' }};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px {{ $__stPct > 90 ? 'rgba(220,38,38,0.5)' : 'rgba(217,119,6,0.5)' }};">
-                              <i class="bx bxs-hdd" style="font-size:13px;color:#fff;line-height:1;"></i>
+                              <i class="bx bxs-data" style="font-size:11px;color:#fff;line-height:1;"></i>
                           </span>
                       </div>
                       {{-- Teks (disembunyikan di mobile) --}}
