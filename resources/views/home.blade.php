@@ -393,7 +393,16 @@
                             @elseif($msg['last_message_type'] === 'video') 🎥 Video
                             @elseif($msg['last_message_type'] === 'document') 📄 Dokumen
                             @elseif($msg['last_message_type'] === 'audio') 🎵 Audio
-                            @else {{ Str::limit($msg['last_message'] ?? '-', 50) }}
+                            @elseif($msg['last_message_type'] === 'sticker') 🎭 Stiker
+                            @elseif($msg['last_message_type'] === 'contacts') 📇 Kontak
+                            @elseif($msg['last_message_type'] === 'location') 📍 Lokasi
+                            @elseif($msg['last_message_type'] === 'template') 📋 Template
+                            @elseif($msg['last_message_type'] === 'button') 🔘 {{ Str::limit(strip_tags($msg['last_message'] ?? '-'), 50) }}
+                            @elseif($msg['last_message_type'] === 'interactive') 📊 Pesan Interaktif
+                            @elseif($msg['last_message_type'] === 'reaction') 👍 Reaksi
+                            @else {{ Str::limit(
+                                (Str::startsWith($msg['last_message'] ?? '', ['{','[']) ? '📎 Pesan' : ($msg['last_message'] ?? '-')),
+                                50) }}
                             @endif
                         </p>
                         <div class="d-flex align-items-center gap-1 mt-1">
@@ -454,7 +463,16 @@
                             @elseif($msg['last_message_type'] === 'video') 🎥 Video
                             @elseif($msg['last_message_type'] === 'document') 📄 Dokumen
                             @elseif($msg['last_message_type'] === 'audio') 🎵 Audio
-                            @else {{ Str::limit($msg['last_message'] ?? '-', 50) }}
+                            @elseif($msg['last_message_type'] === 'sticker') 🎭 Stiker
+                            @elseif($msg['last_message_type'] === 'contacts') 📇 Kontak
+                            @elseif($msg['last_message_type'] === 'location') 📍 Lokasi
+                            @elseif($msg['last_message_type'] === 'template') 📋 Template
+                            @elseif($msg['last_message_type'] === 'button') 🔘 {{ Str::limit(strip_tags($msg['last_message'] ?? '-'), 50) }}
+                            @elseif($msg['last_message_type'] === 'interactive') 📊 Pesan Interaktif
+                            @elseif($msg['last_message_type'] === 'reaction') 👍 Reaksi
+                            @else {{ Str::limit(
+                                (Str::startsWith($msg['last_message'] ?? '', ['{','[']) ? '📎 Pesan' : ($msg['last_message'] ?? '-')),
+                                50) }}
                             @endif
                         </p>
                         <div class="d-flex align-items-center gap-1 mt-1">
