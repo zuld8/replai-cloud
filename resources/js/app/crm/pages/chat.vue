@@ -540,11 +540,15 @@
                                 <div class="sl-icon"><i class="bx bx-lock-alt"></i></div>
                                 <div class="sl-text">
                                     <div class="sl-title">Sesi {{ detail.from === 'instagram' ? '7 hari' : '24 jam' }} sudah tutup</div>
-                                    <div class="sl-sub">Balasan bebas cuma bisa selama window sejak pesan terakhir pelanggan — atau kirim pesan template.</div>
+                                    <div class="sl-sub">Balas pakai template, atau tandai selesai.</div>
                                 </div>
                                 <div class="sl-actions">
-                                    <button class="sl-btn" @click="openTemplatePanel"><i class="bx bx-file"></i> Kirim Template</button>
-                                    <a class="sl-new" href="/app/templates"><i class="bx bx-plus"></i> Buat template baru</a>
+                                    <button class="btn-selesai" @click="resolved" v-if="detail.status !== 'resolved'" title="Selesai">
+                                        <i class="bx bx-check"></i><span class="btn-selesai-txt"> Selesai</span>
+                                    </button>
+                                    <button class="sl-btn" @click="openTemplatePanel" title="Kirim Template">
+                                        <i class="bx bx-file"></i><span class="sl-btn-txt"> Kirim Template</span>
+                                    </button>
                                 </div>
                             </div>
                         </template>
@@ -5366,16 +5370,16 @@ export default {
 .tl-btn:hover{opacity:.88;}
 .tl-btn i{font-size:16px;}
 /* ── Session lock bar (sesi tutup) ────────────────────────── */
-.session-lock{display:flex;align-items:center;gap:12px;background:#FBF3E2;border:1px solid #EAD9AE;border-radius:16px;padding:12px 14px;margin:8px 10px;}
-.session-lock .sl-icon{width:40px;height:40px;border-radius:12px;background:#F3E2B0;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.session-lock .sl-icon i{color:#854F0B;font-size:20px;}
-.session-lock .sl-text{flex:1;min-width:0;line-height:1.45;}
-.session-lock .sl-title{font-size:13.5px;font-weight:600;color:#633806;}
-.session-lock .sl-sub{font-size:11.5px;color:#8A6414;}
-.session-lock .sl-actions{display:flex;flex-direction:column;align-items:stretch;gap:5px;flex-shrink:0;}
-.session-lock .sl-btn{background:#2E8DE1;color:#fff;border:none;border-radius:11px;padding:10px 16px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:background .15s;}
-.session-lock .sl-btn:hover{background:#1f7ac8;}
-.session-lock .sl-new{font-size:11px;color:#2E8DE1;text-align:center;cursor:pointer;text-decoration:none;}
+.composer,.takeover-lock,.session-lock{min-height:56px;box-sizing:border-box;}
+.session-lock{display:flex;align-items:center;gap:10px;background:#FBF3E2;border:1px solid #EAD9AE;border-radius:26px;padding:8px 10px;margin:0;}
+.session-lock .sl-icon{width:36px;height:36px;border-radius:50%;background:#F3E2B0;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.session-lock .sl-icon i{color:#854F0B;font-size:18px;}
+.session-lock .sl-text{flex:1;min-width:0;line-height:1.25;overflow:hidden;}
+.session-lock .sl-title{font-size:12.5px;font-weight:600;color:#633806;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.session-lock .sl-sub{font-size:11px;color:#8A6414;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.session-lock .sl-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.session-lock .sl-btn{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 16px;border-radius:20px;background:#2E8DE1;color:#fff;font-size:12.5px;font-weight:500;border:none;cursor:pointer;white-space:nowrap;}
+.session-lock .sl-btn:hover{opacity:.9;}
 /* ── Mobile composer fix (≤768px) ── */
 @media (max-width: 768px) {
   .composer { gap: 5px; padding: 6px 8px; }
@@ -5395,6 +5399,10 @@ export default {
   .btn-selesai-txt { display: none; }
   .btn-kirim { width: 38px; height: 38px; }
   .composer .chat-input { font-size: 16px; }
+  /* ── session-lock mobile ── */
+  .session-lock .sl-sub { display: none; }
+  .session-lock .sl-btn { padding: 0; width: 38px; height: 38px; border-radius: 50%; justify-content: center; gap: 0; }
+  .session-lock .sl-btn-txt { display: none; }
 }
 
 /* ══════════════════════════════════════════════════════
