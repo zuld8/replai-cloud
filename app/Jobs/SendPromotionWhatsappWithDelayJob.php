@@ -511,13 +511,8 @@ class SendPromotionWhatsappWithDelayJob implements ShouldQueue
                     $image              = $blast->parent->file != null ? $this->analyzeImage($blast->parent->file) : $image;
                 }
 
-                // Extract buttons from template for CRM display
-                $templateButtons = null;
-                if (isset($templateDetails['buttons']) && is_array($templateDetails['buttons'])) {
-                    $templateButtons = json_encode(array_map(function($b) {
-                        return ['type' => $b['type'] ?? 'quick_reply', 'text' => $b['text'] ?? ($b['title'] ?? '')];
-                    }, $templateDetails['buttons']));
-                }
+                // Extract + normalisasi buttons (ButtonFormatter → type selalu 'reply'/'url' lowercase)
+                $templateButtons = \App\Support\ButtonFormatter::format($templateDetails['buttons'] ?? null);
 
                 $history->details()->create([
                     'file_path' => $image['path'],

@@ -1012,17 +1012,8 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                     $image = $blast->parent->file != null ? $this->analyzeImage($blast->parent->file) : $image;
                 }
 
-                // Extract buttons from broadcast template
-                $templateButtons = null;
-                if (!empty($templateDetails['buttons']) && is_array($templateDetails['buttons'])) {
-                    $templateButtons = json_encode(array_map(function($b) {
-                        return [
-                            'type' => $b['type'] ?? 'quick_reply',
-                            'text' => $b['text'] ?? ($b['title'] ?? ''),
-                            'url'  => $b['url'] ?? null,
-                        ];
-                    }, $templateDetails['buttons']));
-                }
+                // Extract + normalisasi buttons (ButtonFormatter → type selalu 'reply'/'url' lowercase)
+                $templateButtons = \App\Support\ButtonFormatter::format($templateDetails['buttons'] ?? null);
 
                 $history->details()->create([
                     'file_path' => $image['path'],
@@ -1034,6 +1025,7 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
                     'from' => 'device',
                     'source'            => 'broadcast',
                     'message' => $text,
+                    'buttons'           => $templateButtons,   // ← FIX: dulu terkomputasi tapi gak disimpan
                 ]);
             }
         } else {

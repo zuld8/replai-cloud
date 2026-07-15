@@ -309,14 +309,14 @@ class ChatFlowEngine
         WhatsappKeyAccount $device,
         $history
     ): bool {
-        // Simpan preview ke CRM (tampil sebagai teks di timeline) + emit realtime
-        $preview = ($node->type === 'buttons' ? '[Tombol] ' : '[Menu] ') . $node->body_text;
+        // Simpan ke CRM + emit realtime (tanpa prefix [Tombol]/[Menu] — buttons column yang tampilkan chip)
         $detail = $history->details()->create([
             'history_chat_id' => $history->id,
             'from'            => 'device',
             'source'          => 'bot',
-            'message'         => $preview,
-            'created_at'      => $this->nextTs(),  // urutan konsisten
+            'message'         => $node->body_text,   // teks bersih, tanpa prefix
+            'buttons'         => \App\Support\ButtonFormatter::fromFlowOptions($options),
+            'created_at'      => $this->nextTs(),
             'updated_at'      => now(),
         ]);
         $this->emitToCrm($detail);
