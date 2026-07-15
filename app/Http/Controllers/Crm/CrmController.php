@@ -554,7 +554,7 @@ class CrmController extends Controller
         $windowChannels = ['waba', 'messanger', 'instagram'];
         if (in_array($history->from, $windowChannels)) {
             $hours  = $history->from === 'instagram' ? 168 : 24;
-            $last   = $history->last_incoming_at;
+            $last   = optional($history->lastIncomingMessage)->created_at;
             $inside = $last && \Carbon\Carbon::parse($last)->gt(now()->subHours($hours));
             if (!$inside) {
                 return response()->json([
