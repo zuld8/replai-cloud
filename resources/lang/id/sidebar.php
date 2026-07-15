@@ -147,4 +147,12 @@ return [
     'russian' => 'Rusia',
     'turkish' => 'Turki',
     'urdu' => 'Urdu', 
+
+    // CRM Welcome page (blank.vue)
+    'welcome'          => 'Selamat datang di',
+    'select_contact'   => 'Pilih percakapan di samping untuk mulai membalas, atau mulai chat baru.',
+    'manage_chat'      => 'Kelola Percakapan',
+    'realtime_chat'    => 'Balas Realtime',
+    'manage_contact'   => 'Database Kontak',
+    'use_sidebar_info' => 'Gunakan panel di kiri untuk memilih atau mencari percakapan.',
 ];
