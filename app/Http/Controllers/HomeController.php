@@ -168,9 +168,7 @@ class HomeController extends Controller
         // CRM Messages: 5 newest + 5 oldest unanswered
         $crmMessages = Cache::remember("home_crm_{$merchantId}_{$businessId}", 600, function () { // 10 min — preview chat, gak harus real-time
             // 5 newest unread messages (has unread count, sorted newest first)
-            $newest = HistoryChat::with(['details' => function($q) {
-                    $q->where('from', 'user')->orderBy('created_at', 'desc')->limit(1)->select('history_chat_id', 'message', 'type', 'from');
-                }])
+            $newest = HistoryChat::with(['last_message'])
                 ->where('unread_count', '>', 0)
                 ->whereIn('status', ['open', 'pending'])
                 ->orderBy('last_message_at', 'desc')
@@ -178,9 +176,7 @@ class HomeController extends Controller
                 ->get(['id', 'name', 'from_number', 'from', 'status', 'last_message_at', 'unread_count', 'avatar_url']);
 
             // 5 oldest unread messages (has unread count, sorted oldest first)
-            $oldest = HistoryChat::with(['details' => function($q) {
-                    $q->orderBy('created_at', 'desc')->limit(1)->select('history_chat_id', 'message', 'type', 'from');
-                }])
+            $oldest = HistoryChat::with(['last_message'])
                 ->where('unread_count', '>', 0)
                 ->whereIn('status', ['open', 'pending'])
                 ->orderBy('last_message_at', 'asc')
@@ -189,10 +185,8 @@ class HomeController extends Controller
 
             return [
                 'newest' => $newest->map(function($chat) {
-                    $lastDetail = $chat->details->first();
-                    if (!$lastDetail) {
-                        $lastDetail = $chat->details()->orderBy('created_at', 'desc')->first(['message', 'type']);
-                    }
+                    // FIX: pakai last_message (hasOne desc) — tidak kena bug limit/order ASC
+                    $lastDetail = $chat->last_message;
                     return [
                         'id' => $chat->id,
                         'name' => $chat->name ?? $chat->from_number,
@@ -207,10 +201,8 @@ class HomeController extends Controller
                     ];
                 }),
                 'oldest' => $oldest->map(function($chat) {
-                    $lastDetail = $chat->details()->where('from', 'user')->orderBy('created_at', 'desc')->first(['message', 'type']);
-                    if (!$lastDetail) {
-                        $lastDetail = $chat->details()->orderBy('created_at', 'desc')->first(['message', 'type']);
-                    }
+                    // FIX: pakai last_message (hasOne desc)
+                    $lastDetail = $chat->last_message;
                     $waitTime = $chat->last_message_at 
                         ? \Carbon\Carbon::parse($chat->last_message_at)->diffForHumans() 
                         : ($chat->created_at ? \Carbon\Carbon::parse($chat->created_at)->diffForHumans() : '-');
