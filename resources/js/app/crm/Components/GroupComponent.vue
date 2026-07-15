@@ -607,7 +607,8 @@ export default {
                 loader: false,
                 list: [],
                 totalchats: 0,
-                page: 1,
+                cursor: null,    // keyset cursor (ISO8601) — null = load pertama
+                cursorId: null,  // id item terakhir (tie-breaker)
                 limit: 25,
                 hasMoreChats: true,
             },
@@ -793,7 +794,7 @@ export default {
                     });
                 }, 300);
 
-                this.getChatList(1, false);
+                this.getChatList(null, false);
 
             } catch (error) {
                 console.error('Error creating chat session:', error);
@@ -859,7 +860,7 @@ export default {
                 }, 300);
 
                 // Refresh chat list
-                this.getChatList(1, false);
+                this.getChatList(null, false);
 
             } catch (error) {
                 console.error('Error saving contact:', error);
@@ -1021,15 +1022,19 @@ export default {
             rootInstance.getChatList();
         }, 300),
 
-        async getChatList(page = 1, append = false) {
+        async getChatList(cursor = null, append = false) {
             NProgress.start();
             this.chats.loader = true;
 
             try {
-                // FIX: Buang key yang null/undefined/empty string sebelum dikirim
-                // Mencegah waba_id=null dikirim sebagai string dan merusak filter backend
+                // Keyset cursor params — gantikan page-based OFFSET
+                const cursorParams = {};
+                if (cursor) { cursorParams.cursor = cursor; }
+                if (this.chats.cursorId) { cursorParams.cursor_id = this.chats.cursorId; }
+
+                // Buang key null/undefined/empty sebelum dikirim ke backend
                 const cleanFilter = Object.fromEntries(
-                    Object.entries({ page, ...this.filter })
+                    Object.entries({ ...cursorParams, ...this.filter })
                           .filter(([, v]) => v !== null && v !== undefined && v !== '')
                 );
                 const response = await this.$axios.get(`/crm/contacts`, {
@@ -1039,15 +1044,19 @@ export default {
                 let data = response.data;
                 let newContacts = data.contacts;
                 this.merchantId = data.merchant_id;
+
                 if (append) {
                     this.chats.list = [...this.chats.list, ...newContacts];
                 } else {
-                    this.chats.list = newContacts;
+                    // Load pertama: pinned di atas, lalu contacts biasa
+                    const pinned = data.pinned || [];
+                    this.chats.list = [...pinned, ...newContacts];
                 }
 
                 this.chats.totalchats = data.total;
-                this.chats.page = page;
-                this.chats.hasMoreChats = newContacts.length > 0;
+                this.chats.cursor   = data.next_cursor   || null;
+                this.chats.cursorId = data.next_cursor_id || null;
+                this.chats.hasMoreChats = data.has_more === true;
                 this.chats.loader = false;
                 NProgress.done();
             } catch (error) {
@@ -1108,7 +1117,7 @@ export default {
                 this.filter.status = "";
                 this.filter.takeover = "";
             }
-            this.getChatList(1, false, "switchAssignmentTab");
+            this.getChatList(null, false);
 
             if (tabName === "unassignment") {
             } else if (tabName === "assignment") {
@@ -1197,7 +1206,7 @@ export default {
             // FIX: threshold 150px supaya tidak trigger terlalu sensitif
             const bottom = e.target.scrollHeight - e.target.scrollTop <= e.target.clientHeight + 150;
             if (bottom && !this.chats.loader && this.chats.hasMoreChats) {
-                this.getChatList(this.chats.page + 1, true);
+                this.getChatList(this.chats.cursor, true);
             }
         },
 
@@ -1414,7 +1423,7 @@ export default {
             this.loadLabels();
 
         window.addEventListener("socket-reconnected", () => {
-            this.getChatList(1, false);
+            this.getChatList(null, false);
         });
 
         socket.on("update-chat-list", (newMessage) => {
@@ -1451,7 +1460,7 @@ export default {
                     // Chat baru - langsung reload list supaya muncul segera
                     clearTimeout(this._reloadTimer);
                     this._reloadTimer = setTimeout(() => {
-                        this.getChatList(1, false);
+                        this.getChatList(null, false);
                     }, 500); // Kurangi dari 3000 -> 500ms untuk respons lebih cepat
                     this.newMessageNotification(newMessage);
                 }

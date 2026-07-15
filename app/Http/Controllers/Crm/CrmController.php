@@ -91,32 +91,12 @@ class CrmController extends Controller
 
     public function getContacts(Request $request)
     {
-        $limit  = $request->limit ?: 10;
-        $page   = (int)($request->page ?? 1);
-        $data   = $this->historyChatObserver->getData($request);
-
-        // Pin ordering: pinned-first (per agent, no N+1 — LEFT JOIN instead of subquery per row)
-        $userId = my_user()->id;
-        $data->addSelect(['history_chats.*', \DB::raw(
-            'CASE WHEN hcp.user_id IS NOT NULL THEN 1 ELSE 0 END as is_pinned_for_user'
-        )])->leftJoin('history_chat_pins as hcp', function ($join) use ($userId) {
-            $join->on('hcp.history_chat_id', '=', 'history_chats.id')
-                 ->where('hcp.user_id', '=', $userId);
-        })->orderByRaw(
-            'is_pinned_for_user DESC, history_chats.last_message_at DESC'
-        );
-
-        // Archived filter: hide archived from main inbox, show only in archived tab
-        if (($request->tab ?? '') === 'archived') {
-            $data->where('history_chats.is_archived', true);
-        } else {
-            $data->where('history_chats.is_archived', false);
-        }
-
-        $bizId    = my_business();
+        $limit    = (int) ($request->limit ?: 25);
+        $cursor   = $request->input('cursor');    // ISO8601 datetime — null = load pertama
+        $cid      = $request->input('cursor_id'); // id item terakhir (tie-breaker duplikat timestamp)
         $userId   = my_user()->id;
+        $bizId    = my_business();
         $tab      = $request->tab ?? 'all';
-        $cacheKey = "crm_count_{$bizId}_{$userId}_{$tab}";
 
         $withRelations = [
             'last_message:id,history_chat_id,message,created_at,type',
@@ -124,27 +104,93 @@ class CrmController extends Controller
             'waba:id,phone,meta_account_id', 'waba.meta:id,name',
             'livechat:id,name',
             'telegram:id,name',
-            'instagram:id,name',   // Instagram account name for sidebar label
+            'instagram:id,name',
         ];
 
-        if ($page === 1) {
-            // Page 1: full paginate (needs COUNT for total display)
-            // Cache the COUNT result for 30s - it runs once then served from Redis
-            $contacts = $data->with($withRelations)->paginate($limit);
-            $total    = Cache::remember($cacheKey, 30, fn() => $contacts->total());
+        // ── Base query: semua filter agen + business scope dari Observer ──────────
+        $base = $this->historyChatObserver->getData($request);
+
+        // Archived filter
+        if ($tab === 'archived') {
+            $base->where('history_chats.is_archived', true);
         } else {
-            // Page 2+: infinite scroll - SKIP the expensive COUNT(*) query entirely!
-            // Use simplePaginate: only runs SELECT, no COUNT → ~2s saved per scroll
-            // Frontend uses newContacts.length > 0 for hasMoreChats - doesn't need total
-            $contacts = $data->with($withRelations)->simplePaginate($limit);
-            // Return cached total (from page 1 load) so totalchats badge stays correct
-            $total    = Cache::get($cacheKey, 0);
+            $base->where('history_chats.is_archived', false);
+        }
+
+        // Exclude pinned dari stream utama (biar gak muncul dobel di bawah)
+        $base->whereNotExists(function ($q) use ($userId) {
+            $q->selectRaw('1')
+              ->from('history_chat_pins as hcp_ex')
+              ->whereColumn('hcp_ex.history_chat_id', 'history_chats.id')
+              ->where('hcp_ex.user_id', $userId);
+        });
+
+        // ── KEYSET: loncat via index tanpa OFFSET ─────────────────────────────────
+        if ($cursor) {
+            if ($cid) {
+                // Tie-breaker: cegah chat loncat/dobel kalau last_message_at sama persis
+                $base->where(function ($q) use ($cursor, $cid) {
+                    $q->where('history_chats.last_message_at', '<', $cursor)
+                      ->orWhere(function ($q2) use ($cursor, $cid) {
+                          $q2->where('history_chats.last_message_at', '=', $cursor)
+                             ->where('history_chats.id', '<', $cid);
+                      });
+                });
+            } else {
+                $base->where('history_chats.last_message_at', '<', $cursor);
+            }
+        }
+
+        $base->orderBy('history_chats.last_message_at', 'desc')
+             ->orderBy('history_chats.id', 'desc')
+             ->limit($limit);
+
+        $contacts = $base->with($withRelations)->get();
+
+        // ── Cursor untuk batch berikutnya ─────────────────────────────────────────
+        $last         = $contacts->last();
+        $nextCursor   = $last ? \Carbon\Carbon::parse($last->last_message_at)->toIso8601String() : null;
+        $nextCursorId = $last ? $last->id : null;
+        $hasMore      = $contacts->count() === $limit;
+
+        // ── Pinned: hanya saat load pertama (cursor null) ─────────────────────────
+        $pinned = [];
+        if (!$cursor) {
+            $pinnedBase = $this->historyChatObserver->getData($request);
+            if ($tab === 'archived') {
+                $pinnedBase->where('history_chats.is_archived', true);
+            } else {
+                $pinnedBase->where('history_chats.is_archived', false);
+            }
+            $pinnedBase->join('history_chat_pins as hcp', function ($j) use ($userId) {
+                $j->on('hcp.history_chat_id', '=', 'history_chats.id')
+                  ->where('hcp.user_id', $userId);
+            })->orderBy('history_chats.last_message_at', 'desc');
+            $pinned = $pinnedBase->with($withRelations)->get();
+        }
+
+        // ── Total: cache 30s, hitung sekali saat load pertama ────────────────────
+        $cacheKey = "crm_count_{$bizId}_{$userId}_{$tab}";
+        if (!$cursor) {
+            $countBase = $this->historyChatObserver->getData($request);
+            if ($tab === 'archived') {
+                $countBase->where('history_chats.is_archived', true);
+            } else {
+                $countBase->where('history_chats.is_archived', false);
+            }
+            $total = Cache::remember($cacheKey, 30, fn() => $countBase->count());
+        } else {
+            $total = Cache::get($cacheKey, 0);
         }
 
         return response()->json([
-            'total'       => $total,
-            'merchant_id' => my_user()->merchant_id,
-            'contacts'    => ContactListResource::collection($contacts),
+            'total'          => $total,
+            'merchant_id'    => my_user()->merchant_id,
+            'pinned'         => $cursor ? [] : ContactListResource::collection($pinned),
+            'contacts'       => ContactListResource::collection($contacts),
+            'next_cursor'    => $nextCursor,
+            'next_cursor_id' => $nextCursorId,
+            'has_more'       => $hasMore,
         ], 200);
     }
 
