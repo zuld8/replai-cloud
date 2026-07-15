@@ -101,6 +101,7 @@
                         <img :src="(list.photo && !list.photo.includes('default') && !list.photo.includes('user.png'))
                                     ? list.photo : defaultUserIcon"
                              class="ci-img"
+                             loading="lazy"
                              @error="$event.target.src=defaultUserIcon"/>
                         <span class="ci-badge" :class="`ci-badge--${list.from}`">
                             <i :class="getChannelIcon(list.from)"></i>
@@ -375,7 +376,7 @@
                                             @mouseleave="hoveredContactId = null"
                                             :style="hoveredContactId === item.id ? 'background:#f5faff;' : ''">
                                             <img :src="item.photo || item.avatar_url || attribute.user"
-                                                class="contact-avatar" alt="Avatar" />
+                                                class="contact-avatar" alt="Avatar" loading="lazy" />
                                             <div class="contact-info-modal">
                                                 <div class="contact-name">{{ item.name }}</div>
                                                 <div class="contact-phone">{{ item.phone }}</div>
