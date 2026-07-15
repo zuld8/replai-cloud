@@ -54,6 +54,15 @@ class ChatFlowEngine
             $replyId = $rawMessage['interactive']['button_reply']['id']
                      ?? $rawMessage['interactive']['list_reply']['id'] ?? null;
 
+            // [DEBUG] Log setiap kali engine dipanggil
+            Log::info('[ChatFlowEngine] handle called', [
+                'business_id' => $businessId,
+                'history_id'  => $history->id,
+                'takeover'    => $history->takeover ?? 'n/a',
+                'reply_id'    => $replyId,
+                'message'     => $messageText,
+            ]);
+
             // 3A. Balasan interaktif (customer klik tombol/list)
             if ($replyId) {
                 $option = ChatFlowOption::where('reply_id', $replyId)->first();
