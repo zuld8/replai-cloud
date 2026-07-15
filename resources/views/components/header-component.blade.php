@@ -26,6 +26,13 @@
  /* Gap merata antar semua header-element kanan */
  .header-content-right {
      gap: 4px;
+     align-items: center !important;
+ }
+ /* Setiap header-element juga flex + center vertikal */
+ .header-content-right .header-element {
+     display: flex !important;
+     align-items: center !important;
+     height: 100%;
  }
  /* Circle button — rgba putih (bg header gelap) */
  .header-content-right .header-element:not(.mainuserProfile) .header-link {
