@@ -25,9 +25,21 @@ use App\Http\Resources\LiveChat\HistoryChatResources;
  */
 class ChatFlowEngine
 {
+    /** Counter urutan pesan bot per-request — dijamin naik monoton */
+    private int $seq = 0;
+
     public function __construct(
         private WabaNotificationService $notif
     ) {}
+
+    /**
+     * Timestamp bot = now + seq detik.
+     * Dijamin SETELAH pesan user (dibuat lebih dulu di webhook) & urut antar pesan bot.
+     */
+    private function nextTs(): \Illuminate\Support\Carbon
+    {
+        return now()->addSeconds(++$this->seq);
+    }
 
     /**
      * Entry point — dipanggil dari WabaCallbackController sebelum processAutoReplies.
@@ -277,6 +289,8 @@ class ChatFlowEngine
             'from'            => 'device',
             'source'          => 'bot',
             'message'         => $node->body_text,
+            'created_at'      => $this->nextTs(),  // urutan konsisten vs pesan user
+            'updated_at'      => now(),
         ]);
         $this->emitToCrm($detail);
 
@@ -302,6 +316,8 @@ class ChatFlowEngine
             'from'            => 'device',
             'source'          => 'bot',
             'message'         => $preview,
+            'created_at'      => $this->nextTs(),  // urutan konsisten
+            'updated_at'      => now(),
         ]);
         $this->emitToCrm($detail);
 
@@ -364,6 +380,8 @@ class ChatFlowEngine
                 'from'            => 'device',
                 'source'          => 'bot',
                 'message'         => $node->body_text,
+                'created_at'      => $this->nextTs(),  // urutan konsisten
+                'updated_at'      => now(),
             ]);
             $this->emitToCrm($detail);
             $this->notif->sendText($history->from_number, $node->body_text, $device, $history->bsuid ?? null);

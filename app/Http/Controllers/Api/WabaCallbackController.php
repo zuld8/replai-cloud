@@ -527,19 +527,19 @@ class WabaCallbackController extends Controller
                     // Send webhook if configured
                     $this->sendWebhook($device, $messageData, $mediaInfo);
 
+                    // Emit pesan USER dulu → urutan socket benar (user → bot)
+                    $this->triggerEmit(null, $userMessage, null);
+
                     // [Menu Otomatis] Engine — prioritas: Menu > AI Agent > Manual Reply
-                    // Jika flow menangani pesan, skip processAutoReplies
                     $flowHandled = app(\App\Services\ChatFlow\ChatFlowEngine::class)
                         ->handle($device, $histories, $messageData['rawMessage'] ?? [], $messageContent['message'] ?? '');
                     if ($flowHandled) {
-                        $this->triggerEmit(null, $userMessage, null);
-                        return; // Flow handled — jangan jalankan auto-reply
+                        return; // Engine sudah emit balasan bot (urut SESUDAH user di atas)
                     }
 
                     // Process auto replies
                     $replyMessage = $this->processAutoReplies($device, $settings, $histories, $messageContent);
-
-                    // Trigger real-time events
+                    // Re-emit user aman — frontend dedup by id, lalu emit bot
                     $this->triggerEmit($replyMessage, $userMessage, $welcomeMessage);
                 });
 
