@@ -221,6 +221,7 @@ class HistoryChatObserver
             'reply_text'            => $replyData['reply_text'] ?? null,
             'original_name'         => $originalName,
             'source'                => $type == 'device' ? 'agent' : 'system',
+            'buttons'               => $replyData['buttons'] ?? null,   // null buat pemanggil lain, aman
         ]);
     }
 

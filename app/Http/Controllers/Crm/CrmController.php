@@ -1425,14 +1425,7 @@ class CrmController extends Controller
             if ($footerText) {
                 $messageParts[] = $footerText;
             }
-            if (!empty($buttons)) {
-                $btnTexts = [];
-                foreach ($buttons as $btn) {
-                    $btnTexts[] = '🔘 ' . ($btn['text'] ?? '');
-                }
-                $messageParts[] = implode("\n", $btnTexts);
-            }
-
+            // Tombol tidak di-flatten ke teks — disimpan di kolom buttons (render sebagai chip di CRM)
             $fullMessage = implode("\n\n", array_filter($messageParts));
 
             // Prepare media data for CRM display
@@ -1447,7 +1440,8 @@ class CrmController extends Controller
             }
 
             $message = $this->historyChatObserver->sendMessage(
-                $history, $fullMessage, 'device', $imageData, []
+                $history, $fullMessage, 'device', $imageData,
+                ['buttons' => \App\Support\ButtonFormatter::format($buttons ?? null)]
             );
             if ($response['messageid'] ?? null) {
                 $message->update(['messageid' => $response['messageid']]);
