@@ -10,7 +10,30 @@
      /* Ikon utilitas tidak berguna di HP → sembunyikan */
      .hide-on-mobile { display: none !important; }
  }
+ /* ── Icon buttons kanan — circle style sesuai mockup ──────── */
+ .header-content-right .header-element:not(.mainuserProfile) .header-link {
+     width: 32px;
+     height: 32px;
+     border-radius: 50%;
+     background: rgba(255,255,255,0.13);
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     transition: background .18s;
+     padding: 0;
+ }
+ .header-content-right .header-element:not(.mainuserProfile) .header-link:hover {
+     background: rgba(255,255,255,0.24);
+ }
+ /* Ukuran ikon semua sama */
+ .header-content-right .header-link-icon {
+     font-size: 1.05rem !important;
+     line-height: 1 !important;
+ }
+ /* Dropdown triangle dari country-selector — jangan muncul */
+ .header-content-right .country-selector .header-link::after { display: none !important; }
  </style>
+
 
      <!-- Start::main-header-container -->
      <div class="main-header-container container-fluid">
@@ -529,13 +552,13 @@
              <div class="header-element mainuserProfile">
                  <!-- Start::header-link|dropdown-toggle -->
                  <a href="javascript:void(0);" class="header-link dropdown-toggle" id="mainHeaderProfile" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                     <div class="d-flex align-items-center">
-                         <div class="d-sm-flex wd-100p lh-0">
-                             <div class="avatar avatar-md"><img alt="avatar" class="rounded-circle" src="{{asset(auth()->user()->image_data)}}"></div>
-                             <div class="ms-2 my-auto d-none d-xl-flex">
-                                 <h6 class=" font-weight-semibold mb-0 fs-13 user-name d-sm-block d-none">{{auth()->user()->name}}</h6>
-                             </div>
+                     <div class="d-flex align-items-center" style="gap:8px;">
+                         {{-- Avatar: gradient circle + icon (konsisten dengan meter kiri) --}}
+                         <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#2E8DE1,#5B3FB0);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(46,141,225,.35);">
+                             <i class="bx bx-user" style="color:#fff;font-size:1.1rem;line-height:1;"></i>
                          </div>
+                         {{-- Nama user — hanya tampil di xl+ --}}
+                         <span class="d-none d-xl-block fw-600" style="font-size:0.82rem;color:#fff;letter-spacing:.01em;white-space:nowrap;">{{auth()->user()->name}}</span>
                      </div>
                  </a>
                  <!-- End::header-link|dropdown-toggle -->
