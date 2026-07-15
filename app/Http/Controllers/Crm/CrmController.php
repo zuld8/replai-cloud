@@ -99,7 +99,7 @@ class CrmController extends Controller
         $tab      = $request->tab ?? 'all';
 
         $withRelations = [
-            'last_message:id,history_chat_id,message,created_at,type',
+            'last_message', // tanpa column constraint — diperlukan latestOfMany (avoid ambiguous join)
             'device:id,name',
             'waba:id,phone,meta_account_id', 'waba.meta:id,name',
             'livechat:id,name',

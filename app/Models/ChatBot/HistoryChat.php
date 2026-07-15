@@ -156,7 +156,11 @@ class HistoryChat extends Model
 
     public function last_message()
     {
-        return $this->hasOne(HistoryChatDetail::class, 'history_chat_id')->orderBy('created_at', 'desc');
+        // latestOfMany: MAX(created_at) per chat via idx_hcd_chat_created — 1 row per chat
+        // CATATAN: Jangan pakai column-constraint ('last_message:col,col') di eager-load
+        // karena menyebabkan ambiguous column di JOIN subquery latestOfMany.
+        // Pakai 'last_message' (tanpa constraint) di getContacts().
+        return $this->hasOne(HistoryChatDetail::class, 'history_chat_id')->latestOfMany('created_at');
     }
 
     public function handled()
