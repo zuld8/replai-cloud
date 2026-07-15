@@ -40,7 +40,7 @@
      width: 34px;
      height: 34px;
      border-radius: 50%;
-     background: rgba(255,255,255,0.22);
+     background: transparent;
      display: flex;
      align-items: center;
      justify-content: center;
@@ -49,7 +49,7 @@
      margin: 0 !important;
  }
  .header-content-right .header-element:not(.mainuserProfile) .header-link:hover {
-     background: rgba(255,255,255,0.35);
+     background: rgba(255,255,255,0.15);
  }
  /* Ukuran ikon semua seragam */
  .header-content-right .header-link-icon {
