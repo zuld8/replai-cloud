@@ -389,20 +389,24 @@
                             </div>
                         </div>
                         <p class="mb-0 text-truncate" style="font-size:0.75rem;color:#6b7280;">
-                            @if($msg['last_message_type'] === 'image') 📷 Foto
-                            @elseif($msg['last_message_type'] === 'video') 🎥 Video
-                            @elseif($msg['last_message_type'] === 'document') 📄 Dokumen
-                            @elseif($msg['last_message_type'] === 'audio') 🎵 Audio
-                            @elseif($msg['last_message_type'] === 'sticker') 🎭 Stiker
-                            @elseif($msg['last_message_type'] === 'contacts') 📇 Kontak
-                            @elseif($msg['last_message_type'] === 'location') 📍 Lokasi
-                            @elseif($msg['last_message_type'] === 'template') 📋 Template
-                            @elseif($msg['last_message_type'] === 'button') 🔘 {{ Str::limit(strip_tags($msg['last_message'] ?? '-'), 50) }}
-                            @elseif($msg['last_message_type'] === 'interactive') 📊 Pesan Interaktif
-                            @elseif($msg['last_message_type'] === 'reaction') 👍 Reaksi
-                            @else {{ Str::limit(
-                                (Str::startsWith($msg['last_message'] ?? '', ['{','[']) ? '📎 Pesan' : ($msg['last_message'] ?? '-')),
-                                50) }}
+                            @php
+                                $__lmsg  = $msg['last_message'] ?? '';
+                                $__ltype = $msg['last_message_type'] ?? 'text';
+                                // Jika isi JSON → kosongkan agar tipe yang handle
+                                if (Str::startsWith($__lmsg, ['{','['])) $__lmsg = '';
+                            @endphp
+                            @if($__ltype === 'image') 📷 {{ $__lmsg ?: 'Foto' }}
+                            @elseif($__ltype === 'video') 🎥 {{ $__lmsg ?: 'Video' }}
+                            @elseif($__ltype === 'document') 📄 {{ $__lmsg ?: 'Dokumen' }}
+                            @elseif($__ltype === 'audio') 🎵 {{ $__lmsg ?: 'Audio' }}
+                            @elseif($__ltype === 'sticker') 🎭 Stiker
+                            @elseif($__ltype === 'contacts') 📇 Kontak
+                            @elseif($__ltype === 'location') 📍 Lokasi
+                            @elseif(in_array($__ltype, ['template','hsm'])) 📋 {{ $__lmsg ?: 'Template' }}
+                            @elseif($__ltype === 'button') 🔘 {{ Str::limit(strip_tags($__lmsg) ?: 'Tombol', 50) }}
+                            @elseif($__ltype === 'interactive') 📊 Pesan Interaktif
+                            @elseif($__ltype === 'reaction') 👍 Reaksi
+                            @else {{ Str::limit($__lmsg ?: '📎 Pesan', 50) }}
                             @endif
                         </p>
                         <div class="d-flex align-items-center gap-1 mt-1">
@@ -459,20 +463,24 @@
                             </span>
                         </div>
                         <p class="mb-0 text-truncate" style="font-size:0.75rem;color:#6b7280;">
-                            @if($msg['last_message_type'] === 'image') 📷 Foto
-                            @elseif($msg['last_message_type'] === 'video') 🎥 Video
-                            @elseif($msg['last_message_type'] === 'document') 📄 Dokumen
-                            @elseif($msg['last_message_type'] === 'audio') 🎵 Audio
-                            @elseif($msg['last_message_type'] === 'sticker') 🎭 Stiker
-                            @elseif($msg['last_message_type'] === 'contacts') 📇 Kontak
-                            @elseif($msg['last_message_type'] === 'location') 📍 Lokasi
-                            @elseif($msg['last_message_type'] === 'template') 📋 Template
-                            @elseif($msg['last_message_type'] === 'button') 🔘 {{ Str::limit(strip_tags($msg['last_message'] ?? '-'), 50) }}
-                            @elseif($msg['last_message_type'] === 'interactive') 📊 Pesan Interaktif
-                            @elseif($msg['last_message_type'] === 'reaction') 👍 Reaksi
-                            @else {{ Str::limit(
-                                (Str::startsWith($msg['last_message'] ?? '', ['{','[']) ? '📎 Pesan' : ($msg['last_message'] ?? '-')),
-                                50) }}
+                            @php
+                                $__lmsg  = $msg['last_message'] ?? '';
+                                $__ltype = $msg['last_message_type'] ?? 'text';
+                                // Jika isi JSON → kosongkan agar tipe yang handle
+                                if (Str::startsWith($__lmsg, ['{','['])) $__lmsg = '';
+                            @endphp
+                            @if($__ltype === 'image') 📷 {{ $__lmsg ?: 'Foto' }}
+                            @elseif($__ltype === 'video') 🎥 {{ $__lmsg ?: 'Video' }}
+                            @elseif($__ltype === 'document') 📄 {{ $__lmsg ?: 'Dokumen' }}
+                            @elseif($__ltype === 'audio') 🎵 {{ $__lmsg ?: 'Audio' }}
+                            @elseif($__ltype === 'sticker') 🎭 Stiker
+                            @elseif($__ltype === 'contacts') 📇 Kontak
+                            @elseif($__ltype === 'location') 📍 Lokasi
+                            @elseif(in_array($__ltype, ['template','hsm'])) 📋 {{ $__lmsg ?: 'Template' }}
+                            @elseif($__ltype === 'button') 🔘 {{ Str::limit(strip_tags($__lmsg) ?: 'Tombol', 50) }}
+                            @elseif($__ltype === 'interactive') 📊 Pesan Interaktif
+                            @elseif($__ltype === 'reaction') 👍 Reaksi
+                            @else {{ Str::limit($__lmsg ?: '📎 Pesan', 50) }}
                             @endif
                         </p>
                         <div class="d-flex align-items-center gap-1 mt-1">
