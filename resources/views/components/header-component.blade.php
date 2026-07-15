@@ -10,27 +10,33 @@
      /* Ikon utilitas tidak berguna di HP → sembunyikan */
      .hide-on-mobile { display: none !important; }
  }
- /* ── Icon buttons kanan — circle style sesuai mockup ──────── */
+ /* ── Icon buttons kanan — circle style sesuai mockup ──────────── */
+ /* Gap merata antar semua header-element kanan */
+ .header-content-right {
+     gap: 4px;
+ }
+ /* Circle button — rgba gelap agar terlihat di bg terang maupun gelap */
  .header-content-right .header-element:not(.mainuserProfile) .header-link {
-     width: 32px;
-     height: 32px;
+     width: 34px;
+     height: 34px;
      border-radius: 50%;
-     background: rgba(255,255,255,0.13);
+     background: rgba(0,0,0,0.12);
      display: flex;
      align-items: center;
      justify-content: center;
      transition: background .18s;
      padding: 0;
+     margin: 0 !important;   /* override ms-1 dll dari Bootstrap */
  }
  .header-content-right .header-element:not(.mainuserProfile) .header-link:hover {
-     background: rgba(255,255,255,0.24);
+     background: rgba(0,0,0,0.22);
  }
- /* Ukuran ikon semua sama */
+ /* Ukuran ikon semua seragam — override inline style dari template */
  .header-content-right .header-link-icon {
      font-size: 1.05rem !important;
      line-height: 1 !important;
  }
- /* Dropdown triangle dari country-selector — jangan muncul */
+ /* Sembunyikan caret dropdown dari globe selector */
  .header-content-right .country-selector .header-link::after { display: none !important; }
  </style>
 
@@ -601,8 +607,8 @@
              <!-- Start::header-element -->
              <div class="header-element hide-on-mobile">
                  <!-- Start::header-link|switcher-icon -->
-                 <a aria-label="anchor" href="javascript:void(0);" class="header-link switcher-icon ms-1" data-bs-toggle="offcanvas" data-bs-target="#switcher-canvas">
-                     <i class="bx bxs-cog header-link-icon" style="font-size:1.25rem"></i>
+                 <a aria-label="anchor" href="javascript:void(0);" class="header-link switcher-icon" data-bs-toggle="offcanvas" data-bs-target="#switcher-canvas">
+                     <i class="bx bx-cog header-link-icon"></i>
                  </a>
                  <!-- End::header-link|switcher-icon -->
              </div>
