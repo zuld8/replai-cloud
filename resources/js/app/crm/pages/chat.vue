@@ -170,7 +170,7 @@
 
                                     <!-- Image -->
                                     <div v-if="msg.media_type === 'image' && msg.media_url" class="message-media">
-                                        <img :src="msg.media_url" alt="image"
+                                        <img :src="msg.media_url" alt="image" loading="lazy"
                                             @click="openImagePreview(msg.media_url)"
                                             @error="$event.target.style.display='none'; $event.target.nextElementSibling.style.display='flex'"
                                         />
@@ -190,7 +190,7 @@
                                     <!-- Video -->
                                     <div v-if="msg.media_type === 'video' && msg.media_url" class="message-media">
                                         <div class="video-wrapper">
-                                            <video controls>
+                                            <video controls preload="none">
                                                 <source :src="msg.media_url" type="video/mp4" />
                                             </video>
                                             <div class="video-play-overlay"
@@ -209,7 +209,7 @@
                                     <!-- Audio -->
                                     <div v-if="msg.media_type === 'audio' && msg.media_url"
                                         class="message-media audio-media">
-                                        <audio controls>
+                                        <audio controls preload="none">
                                             <source :src="msg.media_url" type="audio/mpeg" />
                                         </audio>
                                     </div>
@@ -219,7 +219,7 @@
                                         class="sticker-compact-wrapper"
                                         @click="openStickerLightbox(msg.media_url)"
                                         title="Tap untuk lihat stiker">
-                                        <img
+                                        <img loading="lazy"
                                             :src="msg.media_url"
                                             alt="sticker"
                                             class="sticker-compact-img"
@@ -902,7 +902,7 @@
                         <img :src="filePreview.url" class="img-fluid" />
                     </div>
                     <div v-else-if="filePreview.type === 'video'" class="text-center">
-                        <video controls class="w-100">
+                        <video controls preload="none" class="w-100">
                             <source :src="filePreview.url" type="video/mp4" />
                         </video>
                     </div>
