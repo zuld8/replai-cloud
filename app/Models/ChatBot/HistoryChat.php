@@ -156,7 +156,8 @@ class HistoryChat extends Model
 
     public function last_message()
     {
-        return $this->hasOne(HistoryChatDetail::class, 'history_chat_id')->orderBy('created_at', 'desc');
+        // latestOfMany: subquery MAX(created_at) per chat → 1 row per chat, pakai index idx_hcd_chat_created
+        return $this->hasOne(HistoryChatDetail::class, 'history_chat_id')->latestOfMany('created_at');
     }
 
     public function handled()
