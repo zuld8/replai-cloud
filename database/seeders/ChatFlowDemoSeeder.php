@@ -21,15 +21,8 @@ class ChatFlowDemoSeeder extends Seeder
     public function run(): void
     {
         // ── Konfigurasi ──────────────────────────────────────────
-        // Ambil business_id dari tabel, ATAU set manual di sini
-        $businessId = \DB::table('history_chats')
-            ->whereNotNull('business_id')
-            ->value('business_id');
-
-        if (!$businessId) {
-            $this->command->error('Tidak ada business_id di history_chats. Set manual di seeder.');
-            return;
-        }
+        // Business: Yayasan Golden Future (WABA: 6285113021144)
+        $businessId = 'a491f89e-3bb4-4ab4-96f6-1c313539919a';
 
         $this->command->info("Menggunakan business_id: {$businessId}");
 
@@ -72,7 +65,7 @@ class ChatFlowDemoSeeder extends Seeder
             'name'               => 'Demo — Menu ONPOINT',
             'trigger_type'       => 'keyword',
             'trigger_keywords'   => json_encode(['halo', 'menu', 'mulai', 'hi', 'hello']),
-            'channels'           => json_encode([]),  // kosong = semua channel
+            'channels'           => json_encode(['d667dc08-1632-44c6-8e20-2052408461f9']),  // WABA Roswita
             'start_node_id'      => $n1,
             'fallback_action'    => 'repeat_menu',
             'session_timeout_min'=> 30,
