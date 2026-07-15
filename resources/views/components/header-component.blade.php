@@ -270,8 +270,8 @@
                                   stroke-dasharray="87.96 0" transform="rotate(-90 18 18)"/>
                               @endif
                           </svg>
-                          <span style="position:absolute;inset:5px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#38bdf8);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(14,165,233,0.5);">
-                              <i class="bx bxs-paper-plane" style="font-size:13px;color:#fff;line-height:1;"></i>
+                          <span style="position:absolute;inset:4px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#38bdf8);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(14,165,233,0.5);">
+                              <i class="bx bxs-paper-plane" style="font-size:11px;color:#fff;line-height:1;"></i>
                           </span>
                       </div>
                       {{-- Teks (disembunyikan di mobile) --}}
@@ -413,7 +413,7 @@
                                   stroke-dasharray="{{ $__stFilled }} {{ $__stEmpty }}"
                                   transform="rotate(-90 18 18)"/>
                           </svg>
-                          <span style="position:absolute;inset:5px;border-radius:50%;background:{{ $__stPct > 90 ? 'linear-gradient(135deg,#dc2626,#ef4444)' : 'linear-gradient(135deg,#d97706,#f59e0b)' }};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px {{ $__stPct > 90 ? 'rgba(220,38,38,0.5)' : 'rgba(217,119,6,0.5)' }};">
+                          <span style="position:absolute;inset:4px;border-radius:50%;background:{{ $__stPct > 90 ? 'linear-gradient(135deg,#dc2626,#ef4444)' : 'linear-gradient(135deg,#d97706,#f59e0b)' }};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px {{ $__stPct > 90 ? 'rgba(220,38,38,0.5)' : 'rgba(217,119,6,0.5)' }};">
                               <i class="bx bxs-data" style="font-size:11px;color:#fff;line-height:1;"></i>
                           </span>
                       </div>
