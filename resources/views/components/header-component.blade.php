@@ -1,5 +1,5 @@
  <!-- app-header -->
- <header class="app-header">
+ <header class="app-header" style="background: linear-gradient(120deg, #1a2755 0%, #2d1d6b 55%, #5B3FB0 100%) !important; border-bottom: none !important;">
 
  <style>
  /* ── Header background — gradient gelap navy ke ungu sesuai mockup ── */
