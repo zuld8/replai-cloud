@@ -14,7 +14,7 @@ class ChatFlow extends Model
 
     protected $fillable = [
         'id', 'business_id', 'merchant_id', 'name',
-        'trigger_type', 'trigger_keywords', 'channels',
+        'trigger_type', 'trigger_keywords', 'keyword_match', 'channels',
         'start_node_id', 'fallback_action', 'session_timeout_min', 'status',
     ];
 

@@ -158,7 +158,12 @@ class ChatFlowEngine
         foreach ($flows as $flow) {
             if ($flow->trigger_type === 'keyword' && $this->channelMatches($flow, $device)) {
                 foreach ($flow->trigger_keywords ?? [] as $kw) {
-                    if (strtolower(trim($kw)) === $lower) {
+                    $kwLower = strtolower(trim($kw));
+                    $isContains = ($flow->keyword_match ?? 'exact') === 'contains';
+                    $matched = $isContains
+                        ? ($kwLower !== '' && str_contains($lower, $kwLower))
+                        : ($kwLower === $lower);
+                    if ($matched) {
                         return $flow;
                     }
                 }

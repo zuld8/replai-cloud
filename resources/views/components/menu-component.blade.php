@@ -214,6 +214,12 @@
                                 <span class="side-menu__label">Flow</span>
                             </a>
                         </li>
+                        <li class="slide {{ request()->is('app/auto-reply/menu-otomatis*') ? 'active' : '' }}">
+                            <a href="{{ route('menu-otomatis') }}" class="side-menu__item {{ request()->is('app/auto-reply/menu-otomatis*') ? 'active' : '' }}">
+                                <i class="bx bx-sitemap side-menu__icon"></i>
+                                <span class="side-menu__label">Menu Otomatis</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
 

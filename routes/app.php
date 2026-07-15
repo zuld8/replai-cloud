@@ -18,6 +18,7 @@ use App\Http\Controllers\Blash\BroadcastFollowUpWhatsappController;
 use App\Http\Controllers\ChatBot\ChatBotController;
 use App\Http\Controllers\ChatBot\FineTunnelController;
 use App\Http\Controllers\Flow\FlowController;
+use App\Http\Controllers\Flow\ChatFlowBuilderController;
 use App\Http\Controllers\ComponentController as ControllersComponentController;
 use App\Http\Controllers\Crm\CrmController;
 use App\Http\Controllers\Crm\QuickReplyController;
@@ -261,6 +262,18 @@ Route::middleware('package_active')->group(function () {
             Route::post('edit/{flow}', [FlowController::class, 'edit'])->name('flow.edit');
             Route::delete('delete/{flow}', [FlowController::class, 'delete'])->name('flow.delete');
             Route::post('toggle/{flow}', [FlowController::class, 'toggleStatus'])->name('flow.toggle');
+        });
+
+        // Menu Otomatis Interaktif (BEDA dari 'flow' = pembayaran)
+        Route::prefix('menu-otomatis')->group(function () {
+            Route::get('/', [ChatFlowBuilderController::class, 'index'])->name('menu-otomatis');
+            Route::get('create', [ChatFlowBuilderController::class, 'create'])->name('menu-otomatis.create');
+            Route::get('{chatFlow}/edit', [ChatFlowBuilderController::class, 'edit'])->name('menu-otomatis.edit');
+            Route::get('{chatFlow}/data', [ChatFlowBuilderController::class, 'data'])->name('menu-otomatis.data');
+            Route::post('save', [ChatFlowBuilderController::class, 'save'])->name('menu-otomatis.save');
+            Route::post('{chatFlow}/toggle', [ChatFlowBuilderController::class, 'toggle'])->name('menu-otomatis.toggle');
+            Route::delete('{chatFlow}', [ChatFlowBuilderController::class, 'destroy'])->name('menu-otomatis.destroy');
+            Route::post('{chatFlow}/duplicate', [ChatFlowBuilderController::class, 'duplicate'])->name('menu-otomatis.duplicate');
         });
 
 
