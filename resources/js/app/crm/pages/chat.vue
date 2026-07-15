@@ -5371,7 +5371,7 @@ export default {
 .tl-btn i{font-size:16px;}
 /* ── Session lock bar (sesi tutup) ────────────────────────── */
 .composer,.takeover-lock,.session-lock{min-height:56px;box-sizing:border-box;}
-.session-lock{display:flex;align-items:center;gap:10px;background:#FBF3E2;border:1px solid #EAD9AE;border-radius:26px;padding:8px 10px;margin:0;}
+.session-lock{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;background:#FBF3E2;border:1px solid #EAD9AE;border-radius:26px;padding:8px 10px;margin:0;}
 .session-lock .sl-icon{width:36px;height:36px;border-radius:50%;background:#F3E2B0;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .session-lock .sl-icon i{color:#854F0B;font-size:18px;}
 .session-lock .sl-text{flex:1;min-width:0;line-height:1.25;overflow:hidden;}
