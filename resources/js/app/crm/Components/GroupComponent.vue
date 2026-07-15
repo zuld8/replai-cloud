@@ -2471,6 +2471,36 @@ overflow:visible;}
 .lead-source-link  { background:#F0FDF4; color:#166534; border:1px solid #BBF7D0; }
 .lead-chip i { font-size:10px; flex-shrink:0; }
 
+
+/* ── Chat Item Inner Layout (ci-* class fix) ───────────────────────────── */
+/* HTML template memakai ci-* bukan chat-*; rules ini override crm.css      */
+.ci-center{flex:1;min-width:0;}
+.ci-name-row{display:flex;align-items:center;gap:4px;overflow:hidden;}
+.ci-name{flex:1;min-width:0;font-size:13px;font-weight:600;color:#1E2A4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ci-preview{font-size:11px;color:#64748B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+/* Kolom kanan — cukup lebar untuk unread+time+status */
+.ci-right{min-width:82px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+.ci-top{display:flex;align-items:center;gap:5px;}
+.ci-time{font-size:10px;color:#94A3B8;white-space:nowrap;}
+.ci-unread{font-size:9px;background:#16A34A;color:#fff;min-width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0 4px;font-weight:600;flex-shrink:0;}
+.ci-status{font-size:9.5px;padding:1px 7px;border-radius:10px;font-weight:500;white-space:nowrap;flex-shrink:0;}
+.st-open    {background:#FEF3C7;color:#B45309;}
+.st-resolved{background:#DCFCE7;color:#15803D;}
+.st-block   {background:#FEECEC;color:#B91C1C;}
+/* Chip sesi WABA — ci-24h */
+.ci-24h{display:inline-flex;align-items:center;gap:2px;flex-shrink:0;font-size:9px;font-weight:600;padding:1px 5px;border-radius:10px;white-space:nowrap;}
+.ci-24h.active{background:#DCFCE7;color:#15803D;}
+.ci-24h.soon  {background:#FEF3C7;color:#B45309;}
+.ci-24h.closed{background:#FEECEC;color:#B91C1C;}
+/* Baris akun (device + ⋯) */
+.ci-acctrow{display:flex;align-items:center;gap:6px;margin-top:3px;}
+.ci-dev{flex:1;min-width:0;font-size:9.5px;color:#94A3B8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;gap:2px;}
+.ci-dev i{font-size:11px;flex-shrink:0;}
+/* Lead chip */
+.ci-lead-inline{display:inline-flex;align-items:center;gap:2px;flex-shrink:0;font-size:9px;padding:1px 5px;border-radius:8px;white-space:nowrap;background:#EEF2F7;color:#475569;}
+/* Tombol ⋯ */
+.ci-dots{width:24px;height:18px;border-radius:6px;background:#F8FAFC;border:.5px solid #E4EAF2;color:#94A3B8;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.ci-dots:hover,.ci-dots.active{background:#2E8DE1;border-color:#2E8DE1;color:#fff;}
 </style>
 
 <style>
