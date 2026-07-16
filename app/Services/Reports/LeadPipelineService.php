@@ -172,13 +172,11 @@ class LeadPipelineService
             ];
         }
 
-        // Get closed leads
-        $closedLeads = Store::whereHas('histories')
+        // Hitung langsung di DB (bukan get() lalu count() di PHP)
+        $totalClosed = Store::whereHas('histories')
             ->whereBetween('created_at', [$start, $end])
             ->whereIn('label_id', $closeableLabels)
-            ->get();
-
-        $totalClosed = $closedLeads->count();
+            ->count();
         $totalLeads = $this->getTotalLeads($start, $end);
 
         // Calculate average time to close

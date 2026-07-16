@@ -794,7 +794,7 @@ Route::middleware('package_active')->group(function () {
         Route::get('statistic', [ReportController::class, 'index'])->name('reports.statistic');
         Route::get('email', [LogController::class, 'email'])->name('logs.email');
         Route::get('scrapping', [LogController::class, 'scrapping'])->name('logs.scrapping');
-        Route::get('delete', [LogController::class, 'delete'])->name('logs.delete');
+        Route::post('delete', [LogController::class, 'delete'])->name('logs.delete');
         Route::get('export', [LogController::class, 'export'])->name('logs.export');
     });
 

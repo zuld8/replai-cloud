@@ -7,13 +7,21 @@
 
 @section('button')
 <div class="btn-list">
-    <a href="{{route('logs.delete')}}?type=email" class="btn btn-danger d-none d-sm-inline-block">
-        <i class="ti ti-trash"></i>
-        {{__('blash.delete_all_log')}}
-    </a>
-    <a href="{{route('logs.delete')}}?type=email" class="btn btn-danger d-sm-none btn-icon" aria-label="{{__('general.add_data')}}">
-        <i class="ti ti-trash"></i>
-    </a>
+    <form method="POST" action="{{route('logs.delete')}}" class="d-inline" onsubmit="return confirm('{{__(\'blash.delete_all_log\')}}?')">
+        @csrf
+        <input type="hidden" name="type" value="{{$type}}">
+        <button type="submit" class="btn btn-danger d-none d-sm-inline-block">
+            <i class="ti ti-trash"></i>
+            {{__('blash.delete_all_log')}}
+        </button>
+    </form>
+    <form method="POST" action="{{route('logs.delete')}}" class="d-sm-none d-inline" onsubmit="return confirm('{{__(\'blash.delete_all_log\')}}?')">
+        @csrf
+        <input type="hidden" name="type" value="{{$type}}">
+        <button type="submit" class="btn btn-danger btn-icon" aria-label="{{__('general.add_data')}}">
+            <i class="ti ti-trash"></i>
+        </button>
+    </form>
 </div>
 @endsection
 

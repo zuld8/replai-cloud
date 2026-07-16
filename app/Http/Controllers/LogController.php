@@ -24,7 +24,8 @@ class LogController extends Controller
 
         if ($request->ajax()) {
 
-            $blashs         = $this->logObserver->getData($request, 'whatsapp');
+            $blashs         = $this->logObserver->getData($request, 'whatsapp')
+                                    ->with(['device:id,name', 'store:id,name,phone']);
 
             return DataTables::of($blashs)
                 ->addColumn('device', function ($row) {
@@ -57,13 +58,15 @@ class LogController extends Controller
 
     public function scrapping(Request $request)
     {
-        $logs   = $this->logObserver->getData($request, 'scrapping')->get(['description', 'error', 'type', 'status', 'created_at']);
+        $logs   = $this->logObserver->getData($request, 'scrapping')
+                    ->limit(500)->get(['description', 'error', 'type', 'status', 'created_at']);
         return view('logs.index', ['page' => __('report.scrapping_log.title'), 'type' => 'scrapping', 'breadcumb' => true], compact('logs'));
     }
 
     public function email(Request $request)
     {
-        $logs   = $this->logObserver->getData($request, 'email')->get(['description', 'error', 'type', 'status', 'created_at']);
+        $logs   = $this->logObserver->getData($request, 'email')
+                    ->limit(500)->get(['description', 'error', 'type', 'status', 'created_at']);
         return view('logs.index', ['page' => __('report.email_log.title'), 'type' => 'email', 'breadcumb' => true], compact('logs'));
     }
 

@@ -99,11 +99,13 @@ class BlashWhatsappObserver
         )->whereHas('device', function ($q) {
             return $q->where('business_id', my_business());
         })->where(function ($q) use ($request) {
-            if ($request->start_date && $request->end_date) {
-                return $q->whereBetween('schedule', [$request->start_date, $request->end_date]);
-            } else if ($request->start_date && $request->end_date == null) {
+            // Default: 30 hari terakhir jika tidak ada filter tanggal (hindari full-table scan)
+            $start = $request->start_date ?: now()->subDays(30)->toDateString();
+            $end   = $request->end_date   ?: now()->toDateString();
+            if ($request->start_date && !$request->end_date) {
                 return $q->where('schedule', $request->start_date);
             }
+            return $q->whereBetween('schedule', [$start, $end]);
         })->groupBy('device_id')->get();
     }
 
