@@ -5,9 +5,10 @@
     data-flow-id="{{ $flowId ?? '' }}"
     data-devices='{{ json_encode($devices ?? []) }}'
     data-csrf="{{ csrf_token() }}">
+    <menu-builder></menu-builder>
 </div>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script src="{{ mix('js/app-menu-builder.js') }}"></script>
-@endpush
+@endsection
