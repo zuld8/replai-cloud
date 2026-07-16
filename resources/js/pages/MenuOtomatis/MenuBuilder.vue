@@ -416,35 +416,40 @@ export default {
         };
         this.devices = data.devices || [];
 
-        // Build tempId map
+        // Pass 1: build tempId map (plain objects, belum reaktif)
+        const rawNodes = Array.isArray(f.nodes) ? f.nodes : [];
         const idToTemp = {};
-        this.nodes = f.nodes.map(n => {
+        const pass1 = rawNodes.map(n => {
+          if (!n) return null;
           const tid = this.newTemp();
           idToTemp[n.id] = tid;
-          return {
-            temp_id: tid, type: n.type,
-            body_text: n.body_text || '', header: n.header || '',
-            footer: n.footer || '', list_button_label: n.list_button_label || '',
-            position: n.position, options: [],
-            _dbId: n.id,
-            _options: n.options || [],
-          };
-        });
+          return { _rawNode: n, temp_id: tid };
+        }).filter(Boolean);
 
-        // Resolve options target_node_id → tempId
-        this.nodes.forEach(n => {
-          n.options = (n._options || []).map(o => ({
-            kind: o.kind, label: o.label, description: o.description || '',
-            order: o.order, target_action: o.target_action,
+        // Pass 2: resolve options → assign sekali ke this.nodes (tanpa mutasi reactive)
+        this.nodes = pass1.map(({ _rawNode: n, temp_id: tid }) => ({
+          temp_id: tid,
+          type: n.type || 'message',
+          body_text: n.body_text || '',
+          header: n.header || '',
+          footer: n.footer || '',
+          list_button_label: n.list_button_label || '',
+          position: n.position || 0,
+          options: (Array.isArray(n.options) ? n.options : []).map(o => ({
+            kind: o.kind || 'button',
+            label: o.label || '',
+            description: o.description || '',
+            order: o.order || 0,
+            target_action: o.target_action || 'end',
             target_temp_id: o.target_node_id ? (idToTemp[o.target_node_id] || '') : '',
-          }));
-          delete n._options; delete n._dbId;
-        });
+          })),
+        }));
 
-        this.startTempId = f.start_node_id ? idToTemp[f.start_node_id] || null : null;
+        this.startTempId = f.start_node_id ? (idToTemp[f.start_node_id] || null) : null;
         this.selectedTempId = this.nodes[0]?.temp_id || null;
       } catch (e) {
-        this.$showToast('Gagal memuat data flow', 'error');
+        console.error('[MenuBuilder] loadData error:', e);
+        this.$showToast('Gagal memuat data: ' + (e.message || 'unknown'), 'error');
       }
     },
   },
