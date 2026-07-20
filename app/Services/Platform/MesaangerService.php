@@ -42,13 +42,23 @@ class MesaangerService
      */
     public function createData($pageData)
     {
+        // SEC P2-1: cegah rebutan page — tolak jika page sudah dimiliki bisnis LAIN
+        $businessId = my_business();
+        $owned = \App\Models\Meta\MessengerAccount::withoutGlobalScopes()
+            ->where('page_id', $pageData['page_id'])
+            ->whereNotNull('business_id')
+            ->where('business_id', '!=', $businessId)
+            ->exists();
+        abort_if($owned, 422, 'Halaman Facebook ini sudah terhubung ke akun bisnis lain.');
+
         $expiresAt = isset($pageData['expires_in'])
             ? now()->addSeconds($pageData['expires_in'])
             : now()->addDays(60);
 
         $messenger = MessengerAccount::updateOrCreate(
             [
-                'page_id' => $pageData['page_id'],
+                'page_id'     => $pageData['page_id'],
+                'business_id' => $businessId,  // SEC P2-1: scope ke bisnis ini
             ],
             [
                 'agent' => my_user()->id,
