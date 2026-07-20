@@ -44,7 +44,7 @@ class MesaangerService
     {
         // SEC P2-1: cegah rebutan page — tolak jika page sudah dimiliki bisnis LAIN
         $businessId = my_business();
-        $owned = \App\Models\Meta\MessengerAccount::withoutGlobalScopes()
+        $owned = MessengerAccount::withoutGlobalScopes()
             ->where('page_id', $pageData['page_id'])
             ->whereNotNull('business_id')
             ->where('business_id', '!=', $businessId)
