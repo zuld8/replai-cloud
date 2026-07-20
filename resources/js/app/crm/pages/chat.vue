@@ -2702,6 +2702,12 @@ export default {
                 this.detail.takeover = true;
             }
 
+            // FIX #1: pesan MASUK dari customer → refresh window sesi 24 jam realtime
+            // Tanpa ini: bar "Sesi 24 jam tutup" tidak flip ke composer sampai refresh halaman
+            if (newMessage.from === 'user') {
+                this.detail.last_incoming_at = newMessage.created_at || new Date().toISOString();
+            }
+
             this.$nextTick(() => {
                 if (this.shouldScrollToBottom) {
                     this.scrollToBottom();
