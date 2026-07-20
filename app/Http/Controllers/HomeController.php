@@ -142,7 +142,10 @@ class HomeController extends Controller
             $monthStart = now()->startOfMonth()->toDateString();
             $monthEnd   = now()->endOfMonth()->toDateString();
 
-            $counts = HistoryChat::selectRaw("
+            // FIX P0 addendum: eksplisit merchant_id
+            $counts = HistoryChat::withoutGlobalScopes()
+                ->where('merchant_id', $merchantId)
+                ->selectRaw("
                     status,
                     COUNT(*) as total,
                     SUM(CASE WHEN handled_by IS NOT NULL THEN 1 ELSE 0 END) as assigned
@@ -151,7 +154,9 @@ class HomeController extends Controller
                 ->groupBy('status')
                 ->pluck('total', 'status');
 
-            $assignCount = HistoryChat::whereBetween('created_at', [$monthStart, $monthEnd])
+            $assignCount = HistoryChat::withoutGlobalScopes()
+                ->where('merchant_id', $merchantId)
+                ->whereBetween('created_at', [$monthStart, $monthEnd])
                 ->whereNotNull('handled_by')->count();
 
             return [
@@ -274,8 +279,11 @@ class HomeController extends Controller
         $monthYear  = now()->format('Y-m');
         $cacheKey   = "home_interaction_analysis_{$merchantId}_{$monthYear}";
 
-        $interactions = \Cache::remember($cacheKey, 900, function () {
-            return HistoryChat::selectRaw("
+        // FIX P0 addendum: eksplisit merchant_id
+        $interactions = \Cache::remember($cacheKey, 900, function () use ($merchantId) {
+            return HistoryChat::withoutGlobalScopes()
+                ->where('merchant_id', $merchantId)
+                ->selectRaw("
                 YEARWEEK(created_at, 1) as yearweek,
                 MIN(DATE(created_at)) as start_date,
                 COUNT(*) as count

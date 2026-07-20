@@ -151,9 +151,12 @@ class WarmDashboardCache extends Command
 
     // ── Query methods (single source of truth, sama dengan HomeController) ──
 
-    private function computeInteractionAnalysis(): mixed
+    private function computeInteractionAnalysis(string $merchantId): mixed
     {
-        return HistoryChat::selectRaw("
+        // FIX P0 addendum: filter merchant eksplisit (CLI tanpa session → global scope no-op)
+        return HistoryChat::withoutGlobalScopes()
+            ->where('merchant_id', $merchantId)
+            ->selectRaw("
             YEARWEEK(created_at, 1) as yearweek,
             MIN(DATE(created_at)) as start_date,
             COUNT(*) as count
@@ -167,9 +170,12 @@ class WarmDashboardCache extends Command
             ->get();
     }
 
-    private function computeInteractions(): mixed
+    private function computeInteractions(string $merchantId): mixed
     {
-        return HistoryChat::selectRaw('status, COUNT(*) as total')
+        // FIX P0 addendum: filter merchant eksplisit
+        return HistoryChat::withoutGlobalScopes()
+            ->where('merchant_id', $merchantId)
+            ->selectRaw('status, COUNT(*) as total')
             ->whereBetween('created_at', [
                 Carbon::now()->startOfMonth(),
                 Carbon::now()->endOfMonth(),
