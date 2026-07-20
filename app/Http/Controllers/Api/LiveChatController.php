@@ -120,6 +120,11 @@ class LiveChatController extends Controller
 
     public function chatHistories(Request $request, HistoryChat $history)
     {
+        // SEC P1-1: verifikasi token widget — cegah IDOR baca transcript tenant lain
+        $request->validate(['token' => 'required']);
+        $livechat = $this->livechatObserver->getById($request->token);
+        abort_if(!$livechat || $history->livechat_id !== $livechat->id, 403, 'Akses ditolak');
+
         return response()->json([
             'data'      => HistoryChatResources::collection($history->details_desc),
             'metadata'  => array(
@@ -133,6 +138,11 @@ class LiveChatController extends Controller
 
     public function sendMessage(Request $request, HistoryChat $history)
     {
+        // SEC P1-1: verifikasi token widget — cegah IDOR kirim pesan ke chat tenant lain
+        $request->validate(['token' => 'required']);
+        $livechat = $this->livechatObserver->getById($request->token);
+        abort_if(!$livechat || $history->livechat_id !== $livechat->id, 403, 'Akses ditolak');
+
         if ($history->status == 'block') {
             return;
         }
@@ -162,7 +172,10 @@ class LiveChatController extends Controller
             return;
         }
 
-        $livechat       = $history->livechat;
+        // SEC P1-1: verifikasi token widget — cegah IDOR trigger AI + potong kredit tenant lain
+        $request->validate(['token' => 'required']);
+        $livechat = $this->livechatObserver->getById($request->token);
+        abort_if(!$livechat || $history->livechat_id !== $livechat->id, 403, 'Akses ditolak');
         $setting        = Setting::where('id', $history->business_id)->first(['is_online', 'id', 'cek_ongkir_api']);
         $followUps      = $livechat->finetunnel ? $livechat->finetunnel->follow_ups->count() : 0;
         $message        = $request->message;

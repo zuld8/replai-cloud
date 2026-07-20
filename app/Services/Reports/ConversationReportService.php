@@ -28,7 +28,8 @@ class ConversationReportService
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth();
 
-        // Cache key based on all parameters
+        // SEC P1-3: $businessId tidak ada di signature → selalu 'all' → key global → cache kolaps lintas-tenant
+        $businessId = my_business();
         $cacheKey = 'conv_report_' . ($businessId ?? 'all') . '_' . $year . '_' . $month . '_' . ($agentId ?? 'all');
         if ($cached = \Illuminate\Support\Facades\Cache::get($cacheKey)) {
             return $cached;
@@ -181,11 +182,14 @@ class ConversationReportService
     private function calculateResponseTime(Carbon $startDate, Carbon $endDate, ?string $agentId = null)
     {
         // Step 1: Get first user message per conversation
+        // SEC P2-5: eksplisit business_id — DB::table bypass global scope
+        $currentBusiness = my_business();
         $firstUserMessages = DB::table('history_chats as hc')
             ->join('history_chat_details as hcd', 'hc.id', '=', 'hcd.history_chat_id')
             ->whereBetween('hc.created_at', [$startDate, $endDate])
             ->whereNotNull('hc.handled_by')
             ->where('hcd.from', '=', 'user')
+            ->when($currentBusiness, fn($q) => $q->where('hc.business_id', $currentBusiness))
             ->when($agentId, function ($q) use ($agentId) {
                 $q->where('hc.handled_by', $agentId);
             })
@@ -202,6 +206,7 @@ class ConversationReportService
             ->whereNotNull('hc.handled_by')
             ->where('hcd.from', '=', 'device')
             ->whereNotNull('hcd.reply_by_id')
+            ->when($currentBusiness, fn($q) => $q->where('hc.business_id', $currentBusiness))
             ->when($agentId, function ($q) use ($agentId) {
                 $q->where('hc.handled_by', $agentId);
             })

@@ -420,7 +420,8 @@ class WhatsappCallbackController extends Controller
     {
         $reply_for_chat = null;
         if (isset($request->stanzaId) && !is_null($request->stanzaId)) {
-            $reply_for_chat = HistoryChatDetail::where('messageid', $request->stanzaId)->first();
+            // SEC P2-2: scope ke chat ini — stanzaId tidak globally unique
+            $reply_for_chat = $history->details()->where('messageid', $request->stanzaId)->first();
         }
 
         return $history->details()->create([
@@ -1752,7 +1753,8 @@ class WhatsappCallbackController extends Controller
 
                 $replyForChat = null;
                 if (isset($request->stanzaId) && $request->stanzaId != null) {
-                    $replyForChat = HistoryChatDetail::where('messageid', $request->stanzaId)->first();
+                    // SEC P2-2: scope ke chat ini
+                    $replyForChat = $history->details()->where('messageid', $request->stanzaId)->first();
                 }
 
                 $userForEmit = $history->details()->create([

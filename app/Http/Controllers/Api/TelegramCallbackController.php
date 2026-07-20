@@ -242,7 +242,8 @@ class TelegramCallbackController extends Controller
         $tgReplyText = null;
         $tgReplyMsgId = request()->input('message.reply_to_message.message_id');
         if ($tgReplyMsgId) {
-            $originalMsg = HistoryChatDetail::where('messageid', (string) $tgReplyMsgId)->first();
+            // SEC P1-2: scope ke chat ini — Telegram msg_id sekuensial, tabrakan lintas-tenant tinggi
+            $originalMsg = $histories->details()->where('messageid', (string) $tgReplyMsgId)->first();
             if ($originalMsg) {
                 $tgReplyTo   = $originalMsg->id;      // UUID for repliedMessage relationship
                 $tgReplyText = $originalMsg->message;
