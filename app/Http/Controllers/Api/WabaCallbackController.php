@@ -2578,11 +2578,23 @@ class WabaCallbackController extends Controller
 
             $newStatus = $statusMap[$event] ?? $event;
 
-            $updated = \App\Models\Master\MessageTemplate::where('meta_id', (string) $metaTemplateId)
-                ->update([
-                    'waba_status_template' => $newStatus,
-                    'updated_at'           => now(),
-                ]);
+            // SEC P2-4: scope update ke business via WABA entry.id — defense-in-depth
+            // meta_id unik global tapi eksplisit lebih aman (scope mati di webhook)
+            $wabaId = $data['entry'][0]['id'] ?? null;
+            $device = $wabaId
+                ? \App\Models\WhatsappKeyAccount::withoutGlobalScopes()
+                    ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(meta_data, '$.whatsapp.waba_id')) = ?", [$wabaId])
+                    ->first()
+                : null;
+
+            $templateQuery = \App\Models\Master\MessageTemplate::where('meta_id', (string) $metaTemplateId);
+            if ($device) {
+                $templateQuery->where('business_id', $device->business_id);
+            }
+            $updated = $templateQuery->update([
+                'waba_status_template' => $newStatus,
+                'updated_at'           => now(),
+            ]);
 
             Log::info('Template status updated via webhook', [
                 'meta_template_id' => $metaTemplateId,

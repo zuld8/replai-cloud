@@ -1682,14 +1682,20 @@ class InstagramController extends Controller
             $mid = $messaging['message']['mid'] ?? $messaging['message']['id'] ?? null;
             if (!$mid) return;
 
-            // Dedup: if already saved (sent via CRM), skip
-            if (\App\Models\ChatBot\HistoryChatDetail::where('messageid', $mid)->exists()) return;
-
-            $instagramAccount = \App\Models\InstagramAccount::where('instagram_id', $pageId)
-                ->orWhere('page_id', $pageId)
+            // SEC P2-3b: dedup setelah account resolve — scope ke akun ini (lebih bersih)
+            // Catatan: mid Meta cukup unik global, scoped dedup untuk rapiin saja
+            // SEC P2-3a: fix precedence orWhere — tanpa grouping: instagram_id match bisa bypass status=active
+            $instagramAccount = \App\Models\InstagramAccount::where(function ($q) use ($pageId) {
+                    $q->where('instagram_id', $pageId)->orWhere('page_id', $pageId);
+                })
                 ->where('status', 'active')
                 ->first();
             if (!$instagramAccount) return;
+
+            // SEC P2-3b: dedup scoped ke akun ini
+            if (\App\Models\ChatBot\HistoryChatDetail::where('messageid', $mid)
+                ->whereHas('history', fn ($q) => $q->where('instagram_id', $instagramAccount->id))
+                ->exists()) return;
 
             // recipient = the other party (pelanggan) in echo
             $recipientId = $messaging['recipient']['id'] ?? null;
