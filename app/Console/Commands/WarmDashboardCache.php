@@ -66,7 +66,7 @@ class WarmDashboardCache extends Command
                 $key1 = "home_interaction_analysis_{$merchantId}_{$monthYear}";
                 if ($force || !Cache::has($key1)) {
                     try {
-                        Cache::put($key1, $this->computeInteractionAnalysis(), 900);
+                        Cache::put($key1, $this->computeInteractionAnalysis($merchantId), 900);
                     } catch (\Throwable $e) { $this->warn("A1 {$merchantId}: " . $e->getMessage()); }
                 }
 
@@ -74,7 +74,7 @@ class WarmDashboardCache extends Command
                 $key2 = "home_interactions_{$merchantId}_{$monthYear}";
                 if ($force || !Cache::has($key2)) {
                     try {
-                        Cache::put($key2, $this->computeInteractions(), 900);
+                        Cache::put($key2, $this->computeInteractions($merchantId), 900);
                     } catch (\Throwable $e) { $this->warn("A2 {$merchantId}: " . $e->getMessage()); }
                 }
 

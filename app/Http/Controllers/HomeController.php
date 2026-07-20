@@ -137,7 +137,7 @@ class HomeController extends Controller
             ];
         });
 
-        $interactions = Cache::remember("home_interactions_{$merchantId}_{$monthYear}", 900, function () {
+        $interactions = Cache::remember("home_interactions_{$merchantId}_{$monthYear}", 900, function () use ($merchantId) {
             // OPTIMIZED: 4 queries → 1 GROUP BY query (saves ~1.8s)
             $monthStart = now()->startOfMonth()->toDateString();
             $monthEnd   = now()->endOfMonth()->toDateString();
