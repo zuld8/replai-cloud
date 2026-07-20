@@ -434,14 +434,16 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
         }
 
         // DIAGNOSTIC: Log pending count and skip reason at WARNING level (visible in prod)
-        FacadesLog::warning('WABA PASS1 done: ' . count($pending) . '/' . count($blastIds) . ' queued for HTTP, errorCount=' . $errorCount);
+        // LOG-FIX: WABA PASS1 done = success log, bukan warning
+        FacadesLog::info('WABA PASS1 done: ' . count(\$pending) . '/' . count(\$blastIds) . ' queued for HTTP, errorCount=' . \$errorCount);
 
         if (empty($pending)) {
             FacadesLog::warning('Concurrent WABA: 0 pending after PASS 1 — all skipped/blocked — errorCount=' . $errorCount);
             return;
         }
 
-        FacadesLog::warning('CONCURRENT WABA PASS 2+3: ' . count($pending) . ' requests, chunk=' . $CONCURRENT_CHUNK);
+        // LOG-FIX: CONCURRENT WABA PASS = progress log, bukan warning
+        FacadesLog::info('CONCURRENT WABA PASS 2+3: ' . count(\$pending) . ' requests, chunk=' . \$CONCURRENT_CHUNK);
 
         // ── PASS 2+3: Chunk → Pool → Results ──────────────────────────────
         foreach (array_chunk($pending, $CONCURRENT_CHUNK) as $chunkIdx => $chunk) {

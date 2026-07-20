@@ -173,7 +173,9 @@ class WabaCallbackController extends Controller
         $hasMsg  = isset($bodyDecoded['entry'][0]['changes'][0]['value']['messages']);
         $hasStat = isset($bodyDecoded['entry'][0]['changes'][0]['value']['statuses']);
         $hasRef  = isset($bodyDecoded['entry'][0]['changes'][0]['value']['messages'][0]['referral']);
-        \Illuminate\Support\Facades\Log::warning('WABA_CAPTURE', [
+        // LOG-FIX: WABA_CAPTURE terjadi tiap status webhook (has_stat=true) — volume massive saat blast
+        // downgrade warning→info; dengan LOG_LEVEL=warning di .env ini otomatis tersuppress
+        \Illuminate\Support\Facades\Log::info('WABA_CAPTURE', [
             'biz' => $settingsId,
             'ip' => $request->ip(),
             'size' => strlen($rawBody),
