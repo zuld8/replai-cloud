@@ -117,20 +117,21 @@ class HomeController extends Controller
                 ->selectRaw('SUM(reports IS NULL) AS sending, SUM(reports IS NOT NULL) AS not_sending')
                 ->first();
 
+            // FIX P0 defense-in-depth: eksplisit business_id, tidak andalkan global scope
             return [
-                'unofficial'  => WhatsappDevice::count(),
-                'official'    => WhatsappKeyAccount::count(),
-                'livechats'   => LiveChat::count(),
-                'telegram'    => TelegramKey::count(),
-                'instagram'   => InstagramAccount::count(),
-                'messenger'   => MessengerAccount::count(),
-                'finetunnels' => FineTunnel::count(),
-                'stores'      => Store::count(),
-                'categories'  => Category::count(),
-                'user'        => User::count(),
+                'unofficial'  => WhatsappDevice::where('business_id', $businessId)->count(),
+                'official'    => WhatsappKeyAccount::where('business_id', $businessId)->count(),
+                'livechats'   => LiveChat::where('business_id', $businessId)->count(),
+                'telegram'    => TelegramKey::where('business_id', $businessId)->count(),
+                'instagram'   => InstagramAccount::where('business_id', $businessId)->count(),
+                'messenger'   => MessengerAccount::where('business_id', $businessId)->count(),
+                'finetunnels' => FineTunnel::where('business_id', $businessId)->count(),
+                'stores'      => Store::where('business_id', $businessId)->count(),
+                'categories'  => Category::where('business_id', $businessId)->count(),
+                'user'        => User::where('business_id', $businessId)->count(),
                 'blast_w'     => $blastW,
                 'blast_e'     => $blastE,
-                'scraping'    => Store::whereNotNull('scrapping_id')->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
+                'scraping'    => Store::where('business_id', $businessId)->whereNotNull('scrapping_id')->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
                 'sending'     => (int) ($snd->sending     ?? 0),
                 'not_sending' => (int) ($snd->not_sending ?? 0),
             ];

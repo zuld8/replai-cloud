@@ -225,21 +225,23 @@ class WarmDashboardCache extends Command
             ->first();
 
         // Return WAJIB lengkap — semua key yang dipakai home.blade.php
-        // Pakai DB::table() biar tidak bergantung model class name
+        // FIX P0: eksplisit where business_id — DB::table() tidak kena global scope,
+        //          jalan di CLI (tanpa session) → tanpa filter = count semua bisnis (tenant leak)
         return [
-            'unofficial'  => DB::table('whatsapp_devices')->count(),
-            'official'    => DB::table('whatsapp_key_accounts')->count(),
-            'livechats'   => DB::table('live_chats')->count(),
-            'telegram'    => DB::table('telegram_keys')->count(),
-            'instagram'   => DB::table('instagram_accounts')->count(),
-            'messenger'   => DB::table('messenger_accounts')->count(),
-            'finetunnels' => DB::table('fine_tunnels')->count(),
-            'stores'      => DB::table('stores')->count(),
-            'categories'  => DB::table('categories')->count(),
-            'user'        => DB::table('users')->count(),
+            'unofficial'  => DB::table('whatsapp_devices')->where('business_id', $businessId)->count(),
+            'official'    => DB::table('whatsapp_key_accounts')->where('business_id', $businessId)->count(),
+            'livechats'   => DB::table('live_chats')->where('business_id', $businessId)->count(),
+            'telegram'    => DB::table('telegram_keys')->where('business_id', $businessId)->count(),
+            'instagram'   => DB::table('instagram_accounts')->where('business_id', $businessId)->count(),
+            'messenger'   => DB::table('messenger_accounts')->where('business_id', $businessId)->count(),
+            'finetunnels' => DB::table('fine_tunnels')->where('business_id', $businessId)->count(),
+            'stores'      => DB::table('stores')->where('business_id', $businessId)->count(),
+            'categories'  => DB::table('categories')->where('business_id', $businessId)->count(),
+            'user'        => DB::table('users')->where('business_id', $businessId)->count(),
             'blast_w'     => $blastW,
             'blast_e'     => $blastE,
-            'scraping'    => DB::table('stores')->whereNotNull('scrapping_id')
+            'scraping'    => DB::table('stores')->where('business_id', $businessId)
+                                ->whereNotNull('scrapping_id')
                                 ->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
             'sending'     => (int) ($snd->sending     ?? 0),
             'not_sending' => (int) ($snd->not_sending ?? 0),
