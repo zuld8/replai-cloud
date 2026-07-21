@@ -152,11 +152,12 @@
                   <select v-if="opt.target_action === 'goto_node'" v-model="opt.target_temp_id"
                     class="form-select form-select-sm mb-target-node">
                     <option value="">Pilih langkah…</option>
-                    <option v-for="(n2, n2i) in nodes" :key="n2.temp_id"
-                      v-if="n2.temp_id !== node.temp_id"
-                      :value="n2.temp_id">
-                      Langkah {{ n2i + 1 }} — {{ n2.body_text ? n2.body_text.slice(0,30) : typeLabel(n2.type) }}
-                    </option>
+                    <template v-for="(n2, n2i) in nodes" :key="n2.temp_id">
+                      <option v-if="n2.temp_id !== node.temp_id"
+                              :value="n2.temp_id">
+                        Langkah {{ n2i + 1 }} — {{ n2.body_text ? n2.body_text.slice(0,30) : typeLabel(n2.type) }}
+                      </option>
+                    </template>
                   </select>
                 </div>
                 <button class="mb-icon-btn mb-icon-danger ms-1" @click="removeOption(node, oi)">×</button>
