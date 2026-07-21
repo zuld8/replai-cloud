@@ -37,14 +37,13 @@ class WarmDashboardCache extends Command
         $limit     = (int) $this->option('limit');
         $force     = (bool) $this->option('force');
 
-        // ── Ambil semua pasangan (merchant_id, business_id) aktif dari users ──
-        // users.business_id menyimpan business_id (= settings.id)
-        $pairs = DB::table('users')
+        // ── Ambil SEMUA bisnis aktif dari settings (bukan users)
+        // → cover semua bisnis (termasuk yang tidak punya user pasangan di tabel users)
+        // settings.id = business_id, settings.merchant_id = parent merchant
+        $pairs = DB::table('settings')
             ->whereNotNull('merchant_id')
-            ->whereNotNull('business_id')
-            ->where('business_id', '!=', '')
-            ->select('merchant_id', 'business_id')
-            ->distinct()
+            ->where('merchant_id', '!=', '')
+            ->select('merchant_id', DB::raw('id as business_id'))
             ->limit($limit)
             ->get();
 
@@ -142,13 +141,12 @@ class WarmDashboardCache extends Command
                 }
             }
 
-            // B7. storage_usage — dihitung background, header baca cache ini (fix perf 11 detik)
+            // B7. storage_usage — SELALU overwrite agar TTL tidak decay ke 0 (cegah badge 0 sesaat)
+            // computeStorage = du -sb → murah, aman dijalankan tiap 10 menit warm
             $keySt = "storage_usage_business_{$businessId}";
-            if ($force || !Cache::has($keySt)) {
-                try {
-                    Cache::put($keySt, $this->computeStorage($businessId), 1800); // 30 menit
-                } catch (\Throwable $e) { $this->warn("B7 storage {$businessId}: " . $e->getMessage()); }
-            }
+            try {
+                Cache::put($keySt, $this->computeStorage($businessId), 1800); // 30 menit
+            } catch (\Throwable $e) { $this->warn("B7 storage {$businessId}: " . $e->getMessage()); }
 
             $warmedBiz++;
         }
