@@ -98,9 +98,9 @@
 
               @php
               /* Helper warna per level (Fase poles meter card) */
-              $__lvl = function (\$pct) {
-                  if (\$pct >= 90) return ['bar'=>'#E24B4A','text'=>'#A32D2D','tint'=>'#FCEBEB','badge'=>'Mepet'];
-                  if (\$pct >= 70) return ['bar'=>'#EF9F27','text'=>'#B45309','tint'=>'#FAEEDA','badge'=>'Hati-hati'];
+              $__lvl = function ($pct) {
+                  if ($pct >= 90) return ['bar'=>'#E24B4A','text'=>'#A32D2D','tint'=>'#FCEBEB','badge'=>'Mepet'];
+                  if ($pct >= 70) return ['bar'=>'#EF9F27','text'=>'#B45309','tint'=>'#FAEEDA','badge'=>'Hati-hati'];
                   return ['bar'=>'#639922','text'=>'#3B6D11','tint'=>'#EAF3DE','badge'=>'Aman'];
               };
               @endphp
@@ -196,19 +196,19 @@
                   </div>
                   {{-- Tooltip AI Credit --}}
                   <div class="ai-ctip">
-                      @php \$__cai = \$__lvl(\$__aiPct); @endphp
+                      @php $__cai = $__lvl($__aiPct); @endphp
                       <div class="meter-card">
                           <div class="meter-head">
                               <span class="meter-ic" style="background:#F1ECFE;color:#6D28D9;"><i class="bx bxs-magic-wand"></i></span>
                               <span class="meter-title">AI Credit</span>
-                              <span class="meter-badge" style="color:{{ \$__cai['text'] }};background:{{ \$__cai['tint'] }};">{{ \$__cai['badge'] }}</span>
+                              <span class="meter-badge" style="color:{{ $__cai['text'] }};background:{{ $__cai['tint'] }};">{{ $__cai['badge'] }}</span>
                           </div>
                           <div class="meter-desc">Dipakai untuk balas otomatis AI Chatbot dan AI Training.</div>
-                          <div class="meter-row"><span>Terpakai</span><span>{{ number_format(\$__aiUsed, 0, ',', '.') }}</span></div>
-                          <div class="meter-row"><span>Total limit</span><span>{{ number_format(\$__aiLimit, 0, ',', '.') }}</span></div>
-                          <div class="meter-row meter-row-last"><span>Sisa</span><span style="color:{{ \$__cai['text'] }};font-weight:500;">{{ number_format(max(0,\$__aiLimit-\$__aiUsed), 0, ',', '.') }}</span></div>
-                          <div class="meter-usage"><span>Penggunaan</span><span style="color:{{ \$__cai['text'] }};">{{ \$__aiPct }}%</span></div>
-                          <div class="meter-bar"><div style="width:{{ min(\$__aiPct,100) }}%;background:{{ \$__cai['bar'] }};"></div></div>
+                          <div class="meter-row"><span>Terpakai</span><span>{{ number_format($__aiUsed, 0, ',', '.') }}</span></div>
+                          <div class="meter-row"><span>Total limit</span><span>{{ number_format($__aiLimit, 0, ',', '.') }}</span></div>
+                          <div class="meter-row meter-row-last"><span>Sisa</span><span style="color:{{ $__cai['text'] }};font-weight:500;">{{ number_format(max(0,$__aiLimit-$__aiUsed), 0, ',', '.') }}</span></div>
+                          <div class="meter-usage"><span>Penggunaan</span><span style="color:{{ $__cai['text'] }};">{{ $__aiPct }}%</span></div>
+                          <div class="meter-bar"><div style="width:{{ min($__aiPct,100) }}%;background:{{ $__cai['bar'] }};"></div></div>
                       </div>
                   </div>
               </div>
@@ -296,23 +296,23 @@
                           <div class="meter-head">
                               <span class="meter-ic" style="background:#EAF3FC;color:#185FA5;"><i class="bx bxs-paper-plane"></i></span>
                               <span class="meter-title">Kredit Pesan</span>
-                              @if(\$__msgOption === 'yes' && \$__msgLimit > 0)
-                                  @php \$__cmsg = \$__lvl(\$__msgPct); @endphp
-                                  <span class="meter-badge" style="color:{{ \$__cmsg['text'] }};background:{{ \$__cmsg['tint'] }};">{{ \$__cmsg['badge'] }}</span>
+                              @if($__msgOption === 'yes' && $__msgLimit > 0)
+                                  @php $__cmsg = $__lvl($__msgPct); @endphp
+                                  <span class="meter-badge" style="color:{{ $__cmsg['text'] }};background:{{ $__cmsg['tint'] }};">{{ $__cmsg['badge'] }}</span>
                               @else
                                   <span class="meter-badge" style="color:#185FA5;background:#EAF3FC;">&#8734; Bebas</span>
                               @endif
                           </div>
                           <div class="meter-desc">Dipakai untuk broadcast WhatsApp massal dan follow-up otomatis.</div>
-                          <div class="meter-row"><span>Terpakai</span><span>{{ number_format(\$__msgUsed, 0, ',', '.') }}</span></div>
-                          @if(\$__msgOption === 'yes' && \$__msgLimit > 0)
+                          <div class="meter-row"><span>Terpakai</span><span>{{ number_format($__msgUsed, 0, ',', '.') }}</span></div>
+                          @if($__msgOption === 'yes' && $__msgLimit > 0)
                               <div class="meter-row meter-row-last"><span>Sisa</span>
-                                  <span style="color:{{ \$__cmsg['text'] }};font-weight:500;">
-                                      {{ number_format(max(0,\$__msgLimit-\$__msgUsed), 0, ',', '.') }} dari {{ number_format(\$__msgLimit, 0, ',', '.') }}
+                                  <span style="color:{{ $__cmsg['text'] }};font-weight:500;">
+                                      {{ number_format(max(0,$__msgLimit-$__msgUsed), 0, ',', '.') }} dari {{ number_format($__msgLimit, 0, ',', '.') }}
                                   </span>
                               </div>
-                              <div class="meter-usage"><span>Penggunaan</span><span style="color:{{ \$__cmsg['text'] }};">{{ \$__msgPct }}%</span></div>
-                              <div class="meter-bar"><div style="width:{{ min(\$__msgPct,100) }}%;background:{{ \$__cmsg['bar'] }};"></div></div>
+                              <div class="meter-usage"><span>Penggunaan</span><span style="color:{{ $__cmsg['text'] }};">{{ $__msgPct }}%</span></div>
+                              <div class="meter-bar"><div style="width:{{ min($__msgPct,100) }}%;background:{{ $__cmsg['bar'] }};"></div></div>
                           @else
                               <div class="meter-row meter-row-last"><span>Status</span><span style="color:#185FA5;font-weight:500;">Tidak terbatas &#8734;</span></div>
                               <div style="background:#EAF3FC;border-radius:8px;padding:9px 12px;font-size:12px;color:#185FA5;text-align:center;margin-top:2px;">
@@ -402,16 +402,16 @@
                       </div>
                   </div>
                   <!-- Storage Popover — meter-card terang -->
-                  @php \$__c = \$__lvl(\$__stPct); @endphp
+                  @php $__c = $__lvl($__stPct); @endphp
                   <div class="ai-ctip" style="left:0;">
-                      <div class="meter-card" style="{{ \$__stPct >= 80 ? 'border:1px solid #E24B4A;' : '' }}">
+                      <div class="meter-card" style="{{ $__stPct >= 80 ? 'border:1px solid #E24B4A;' : '' }}">
                           <div class="meter-head">
                               <span class="meter-ic" style="background:#FAEEDA;color:#854F0B;"><i class="bx bx-hdd"></i></span>
                               <span class="meter-title">Storage</span>
-                              <span class="meter-badge" style="color:{{ \$__c['text'] }};background:{{ \$__c['tint'] }};">{{ \$__c['badge'] }}</span>
+                              <span class="meter-badge" style="color:{{ $__c['text'] }};background:{{ $__c['tint'] }};">{{ $__c['badge'] }}</span>
                           </div>
                           <div class="meter-desc">Foto, video, dan dokumen dari chat pelanggan dan AI Training.</div>
-                          @if (\$__stPct >= 80)
+                          @if ($__stPct >= 80)
                               <div class="meter-warn" style="background:#FCEBEB;color:#791F1F;">
                                   <i class="bx bx-error-circle" style="color:#A32D2D;flex-shrink:0;margin-top:1px;"></i>
                                   Hampir penuh! Jika penuh, tidak bisa terima file/foto/video.
@@ -422,15 +422,15 @@
                                   Jika penuh, tidak bisa terima file/foto/video.
                               </div>
                           @endif
-                          <div class="meter-row"><span>Terpakai</span><span>{{ number_format(\$__stUsedMB, 1, ',', '.') }} MB</span></div>
+                          <div class="meter-row"><span>Terpakai</span><span>{{ number_format($__stUsedMB, 1, ',', '.') }} MB</span></div>
                           <div class="meter-row meter-row-last"><span>Sisa</span>
-                              <span style="color:{{ \$__c['text'] }};font-weight:500;">
-                                  {{ number_format(max(\$__stTotalMB - \$__stUsedMB, 0), 1, ',', '.') }} MB dari {{ number_format(\$__stTotalMB, 0, ',', '.') }} MB
+                              <span style="color:{{ $__c['text'] }};font-weight:500;">
+                                  {{ number_format(max($__stTotalMB - $__stUsedMB, 0), 1, ',', '.') }} MB dari {{ number_format($__stTotalMB, 0, ',', '.') }} MB
                               </span>
                           </div>
-                          <div class="meter-usage"><span>Penggunaan</span><span style="color:{{ \$__c['text'] }};">{{ \$__stPct }}%</span></div>
-                          <div class="meter-bar"><div style="width:{{ min(\$__stPct,100) }}%;background:{{ \$__c['bar'] }};"></div></div>
-                          @if (\$__stPct >= 80)
+                          <div class="meter-usage"><span>Penggunaan</span><span style="color:{{ $__c['text'] }};">{{ $__stPct }}%</span></div>
+                          <div class="meter-bar"><div style="width:{{ min($__stPct,100) }}%;background:{{ $__c['bar'] }};"></div></div>
+                          @if ($__stPct >= 80)
                               <a href="{{ url('app/master/media-manager') }}" class="meter-btn meter-btn-danger"><i class="bx bx-trash"></i> Hapus media sekarang</a>
                           @else
                               <a href="{{ url('app/master/media-manager') }}" class="meter-btn meter-btn-ghost"><i class="bx bx-images"></i> Kelola media</a>
