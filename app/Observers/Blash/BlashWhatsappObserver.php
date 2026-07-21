@@ -91,7 +91,7 @@ class BlashWhatsappObserver
         $end   = $request->end_date   ?: now()->toDateString();
 
         // FIX perf: ambil device_id list dulu (ringan), ganti whereHas EXISTS yang lambat
-        $deviceIds = \App\Models\Waba\WhatsappKeyAccount::where('business_id', my_business())
+        $deviceIds = \App\Models\WhatsappDevice::where('business_id', my_business())
             ->pluck('id')->all();
         if (empty($deviceIds)) return collect();
 

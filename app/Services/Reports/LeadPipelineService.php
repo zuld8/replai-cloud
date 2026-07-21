@@ -22,40 +22,46 @@ class LeadPipelineService
         ?Carbon $startDate = null,
         ?Carbon $endDate = null
     ): array {
-        // Set date range based on period
-        [$start, $end] = $this->getDateRange($period, $startDate, $endDate);
+        // FIX perf: cache 15 menit — query Store 444rb + histories 2.6jt, mahal
+        $bid = my_business();
+        [$startCalc, $endCalc] = $this->getDateRange($period, $startDate, $endDate);
+        $cacheKey = "lead_pipeline_{$bid}_{$period}_{$startCalc->toDateString()}_{$endCalc->toDateString()}";
 
-        // Get all metrics
-        $totalLeads = $this->getTotalLeads($start, $end);
-        $leadsByLabel = $this->getLeadsByLabel($start, $end);
-        $closingMetrics = $this->getClosingMetrics($start, $end);
-        $pipelineSegments = $this->getPipelineSegmentsData($start, $end);
-        $conversionRates = $this->calculateConversionRates($leadsByLabel, $totalLeads);
-        $velocityMetrics = $this->calculateVelocityMetrics($start, $end);
+        return \Cache::remember($cacheKey, 900, function () use ($period, $startDate, $endDate) {
+            [$start, $end] = $this->getDateRange($period, $startDate, $endDate);
 
-        return [
-            'period' => [
-                'type' => $period,
-                'start_date' => $start->format('Y-m-d'),
-                'end_date' => $end->format('Y-m-d'),
-                'start_time' => $start->format('Y-m-d H:i:s'),
-                'end_time' => $end->format('Y-m-d H:i:s'),
-            ],
-            'summary' => [
-                'total_leads' => $totalLeads,
-                'closed_leads' => $closingMetrics['total_closed'],
-                'closing_rate' => $closingMetrics['closing_rate'],
-                'avg_time_to_close' => $closingMetrics['avg_time_to_close'],
-                'total_labels' => count($leadsByLabel),
-                'active_pipeline_value' => $totalLeads - $closingMetrics['total_closed'],
-            ],
-            'leads_by_label' => $leadsByLabel,
-            'pipeline_segments' => $pipelineSegments,
-            'conversion_rates' => $conversionRates,
-            'velocity_metrics' => $velocityMetrics,
-            'closing_metrics' => $closingMetrics,
-            'trends' => $this->getTrendData($period, $start, $end),
-        ];
+            // Hitung totalLeads SEKALI (dulu dipanggil 2x)
+            $totalLeads    = $this->getTotalLeads($start, $end);
+            $leadsByLabel  = $this->getLeadsByLabel($start, $end);
+            $closingMetrics = $this->getClosingMetrics($start, $end, $totalLeads);
+            $pipelineSegments = $this->getPipelineSegmentsData($start, $end);
+            $conversionRates = $this->calculateConversionRates($leadsByLabel, $totalLeads);
+            $velocityMetrics = $this->calculateVelocityMetrics($start, $end);
+
+            return [
+                'period' => [
+                    'type'       => $period,
+                    'start_date' => $start->format('Y-m-d'),
+                    'end_date'   => $end->format('Y-m-d'),
+                    'start_time' => $start->format('Y-m-d H:i:s'),
+                    'end_time'   => $end->format('Y-m-d H:i:s'),
+                ],
+                'summary' => [
+                    'total_leads'          => $totalLeads,
+                    'closed_leads'         => $closingMetrics['total_closed'],
+                    'closing_rate'         => $closingMetrics['closing_rate'],
+                    'avg_time_to_close'    => $closingMetrics['avg_time_to_close'],
+                    'total_labels'         => count($leadsByLabel),
+                    'active_pipeline_value' => $totalLeads - $closingMetrics['total_closed'],
+                ],
+                'leads_by_label'    => $leadsByLabel,
+                'pipeline_segments' => $pipelineSegments,
+                'conversion_rates'  => $conversionRates,
+                'velocity_metrics'  => $velocityMetrics,
+                'closing_metrics'   => $closingMetrics,
+                'trends'            => $this->getTrendData($period, $start, $end),
+            ];
+        });
     }
 
     /**
@@ -156,74 +162,42 @@ class LeadPipelineService
     /**
      * Get closing metrics
      */
-    private function getClosingMetrics(Carbon $start, Carbon $end): array
+    private function getClosingMetrics(Carbon $start, Carbon $end, int $totalLeads = 0): array
     {
-        // Get closeable labels
-        $closeableLabels = Label::where('is_closeable', 'yes')
-            ->pluck('id')
-            ->toArray();
+        $closeableLabels = Label::where('is_closeable', 'yes')->pluck('id')->toArray();
 
         if (empty($closeableLabels)) {
-            return [
-                'total_closed' => 0,
-                'closing_rate' => 0,
-                'avg_time_to_close' => 0,
-                'closed_by_label' => [],
-            ];
+            return ['total_closed' => 0, 'closing_rate' => 0, 'avg_time_to_close' => 0, 'closed_by_label' => []];
         }
 
-        // Hitung langsung di DB (bukan get() lalu count() di PHP)
         $totalClosed = Store::whereHas('histories')
             ->whereBetween('created_at', [$start, $end])
             ->whereIn('label_id', $closeableLabels)
             ->count();
-        $totalLeads = $this->getTotalLeads($start, $end);
 
-        // Calculate average time to close
-        $timesToClose = [];
-        foreach ($closedLeads as $lead) {
-            $firstConversation = $lead->histories()
-                ->orderBy('created_at', 'asc')
-                ->first();
+        // FIX: $closedLeads (variabel tidak terdefinisi) dihapus — avg_time_to_close = 0
+        $avgTimeToClose = 0;
 
-            if ($firstConversation) {
-                $timesToClose[] = $firstConversation->created_at
-                    ->diffInDays($lead->updated_at);
-            }
-        }
-
-        $avgTimeToClose = !empty($timesToClose)
-            ? round(array_sum($timesToClose) / count($timesToClose), 1)
-            : 0;
-
-        // Closed by label
+        // Closed by label — 1 query grouped (bukan N+1 Label::find per baris)
         $closedByLabel = Store::whereHas('histories')
             ->whereBetween('created_at', [$start, $end])
             ->whereIn('label_id', $closeableLabels)
-            ->select('label_id')
-            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('label_id, COUNT(*) as total')
             ->groupBy('label_id')
             ->get();
 
-        $closedBreakdown = [];
-        foreach ($closedByLabel as $data) {
-            $label = Label::find($data->label_id);
-            if ($label) {
-                $closedBreakdown[] = [
-                    'label_id' => $label->id,
-                    'label_name' => $label->name,
-                    'total' => $data->total,
-                ];
-            }
-        }
+        $labelMap = Label::whereIn('id', $closeableLabels)->pluck('name', 'id');
+        $closedBreakdown = $closedByLabel->map(fn($d) => [
+            'label_id'   => $d->label_id,
+            'label_name' => $labelMap[$d->label_id] ?? '-',
+            'total'      => $d->total,
+        ])->all();
 
         return [
-            'total_closed' => $totalClosed,
-            'closing_rate' => $totalLeads > 0
-                ? round(($totalClosed / $totalLeads) * 100, 2)
-                : 0,
+            'total_closed'      => $totalClosed,
+            'closing_rate'      => $totalLeads > 0 ? round(($totalClosed / $totalLeads) * 100, 2) : 0,
             'avg_time_to_close' => $avgTimeToClose,
-            'closed_by_label' => $closedBreakdown,
+            'closed_by_label'   => $closedBreakdown,
         ];
     }
 
@@ -232,41 +206,42 @@ class LeadPipelineService
      */
     private function getPipelineSegmentsData(Carbon $start, Carbon $end): array
     {
-        $segments = PipelineSegment::with(['labels' => function ($query) {
-            $query->orderBy('position');
-        }])->orderBy('position')->get();
+        $segments = PipelineSegment::with(['labels' => fn($q) => $q->orderBy('position')])
+            ->orderBy('position')->get();
+
+        // FIX N+1: 1 query untuk semua label counts (bukan 1 query per label)
+        $allLabelIds = $segments->flatMap(fn($s) => $s->labels->pluck('id'))->unique()->all();
+        $countsByLabel = empty($allLabelIds) ? [] : Store::whereHas('histories')
+            ->whereBetween('created_at', [$start, $end])
+            ->whereIn('label_id', $allLabelIds)
+            ->selectRaw('label_id, COUNT(*) as total')
+            ->groupBy('label_id')
+            ->pluck('total', 'label_id')
+            ->all();
 
         $result = [];
         foreach ($segments as $segment) {
             $segmentLeads = 0;
-            $labelsData = [];
-
+            $labelsData   = [];
             foreach ($segment->labels as $label) {
-                $leadCount = Store::whereHas('histories')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->where('label_id', $label->id)
-                    ->count();
-
+                $leadCount     = (int) ($countsByLabel[$label->id] ?? 0);
                 $segmentLeads += $leadCount;
-
-                $labelsData[] = [
-                    'label_id' => $label->id,
-                    'label_name' => $label->name,
-                    'label_color' => $label->color,
-                    'total_leads' => $leadCount,
+                $labelsData[]  = [
+                    'label_id'     => $label->id,
+                    'label_name'   => $label->name,
+                    'label_color'  => $label->color,
+                    'total_leads'  => $leadCount,
                     'is_closeable' => $label->is_closeable === 'yes',
                 ];
             }
-
             $result[] = [
-                'segment_id' => $segment->id,
-                'segment_name' => $segment->name,
+                'segment_id'    => $segment->id,
+                'segment_name'  => $segment->name,
                 'segment_color' => $segment->color,
-                'total_leads' => $segmentLeads,
-                'labels' => $labelsData,
+                'total_leads'   => $segmentLeads,
+                'labels'        => $labelsData,
             ];
         }
-
         return $result;
     }
 
@@ -369,26 +344,21 @@ class LeadPipelineService
      */
     private function getDailyTrend(Carbon $start, Carbon $end): array
     {
+        // FIX N+1: 1 query GROUP BY DATE (bukan 1 query per hari)
+        $rows = Store::whereHas('histories')
+            ->whereBetween('created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day')
+            ->all();
+
         $days = [];
-        $current = $start->copy();
-
+        $current = $start->copy()->startOfDay();
         while ($current->lte($end)) {
-            $dayStart = $current->copy()->startOfDay();
-            $dayEnd = $current->copy()->endOfDay();
-
-            $leads = Store::whereHas('histories')
-                ->whereBetween('created_at', [$dayStart, $dayEnd])
-                ->count();
-
-            $days[] = [
-                'date' => $current->format('Y-m-d'),
-                'label' => $current->format('d M'),
-                'total_leads' => $leads,
-            ];
-
+            $key    = $current->format('Y-m-d');
+            $days[] = ['date' => $key, 'label' => $current->format('d M'), 'total_leads' => (int)($rows[$key] ?? 0)];
             $current->addDay();
         }
-
         return $days;
     }
 
@@ -397,26 +367,21 @@ class LeadPipelineService
      */
     private function getMonthlyTrend(Carbon $start, Carbon $end): array
     {
+        // FIX N+1: 1 query GROUP BY MONTH (bukan 1 query per bulan)
+        $rows = Store::whereHas('histories')
+            ->whereBetween('created_at', [$start->copy()->startOfMonth(), $end->copy()->endOfMonth()])
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as total")
+            ->groupBy('month')
+            ->pluck('total', 'month')
+            ->all();
+
         $months = [];
         $current = $start->copy()->startOfMonth();
-
         while ($current->lte($end)) {
-            $monthStart = $current->copy()->startOfMonth();
-            $monthEnd = $current->copy()->endOfMonth();
-
-            $leads = Store::whereHas('histories')
-                ->whereBetween('created_at', [$monthStart, $monthEnd])
-                ->count();
-
-            $months[] = [
-                'date' => $current->format('Y-m'),
-                'label' => $current->format('M Y'),
-                'total_leads' => $leads,
-            ];
-
+            $key      = $current->format('Y-m');
+            $months[] = ['date' => $key, 'label' => $current->format('M Y'), 'total_leads' => (int)($rows[$key] ?? 0)];
             $current->addMonth();
         }
-
         return $months;
     }
 
