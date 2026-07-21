@@ -21,14 +21,86 @@ class FolderManagerController extends Controller
         $realBasePath = realpath(public_path($basePath));
         $realFullPath = realpath(public_path($fullPath));
 
-        // if (!$realFullPath || strpos($realFullPath, $realBasePath) !== 0) {
-        //     abort(403, 'Invalid path');
-        // }
-
         // Buat base directory jika belum ada
         if (!file_exists(public_path($basePath))) {
             mkdir(public_path($basePath), 0755, true);
         }
+
+        // Scan directory
+        $folders = [];
+        $media   = [];
+
+        if (file_exists(public_path($fullPath))) {
+            $items = scandir(public_path($fullPath));
+
+            foreach ($items as $item) {
+                if ($item === '.' || $item === '..') continue;
+
+                $itemPath     = $fullPath . '/' . $item;
+                $itemFullPath = public_path($itemPath);
+
+                if (is_dir($itemFullPath)) {
+                    $folders[] = [
+                        'name'       => $item,
+                        'slug'       => $item,
+                        'path'       => $requestedPath ? $requestedPath . '/' . $item : $item,
+                        'created_at' => date('Y-m-d H:i:s', filectime($itemFullPath)),
+                        // 'size' dihilangkan dari listing — getFolderSize rekursif terlalu lambat
+                        'item_count' => $this->cheapCount($itemFullPath),
+                    ];
+                } else {
+                    // FIX perf: ekstensi → mime (tanpa baca file), filesize 1× saja
+                    $ext  = strtolower(pathinfo($item, PATHINFO_EXTENSION));
+                    $size = filesize($itemFullPath);
+                    $media[] = [
+                        'name'           => $item,
+                        'path'           => $itemPath,
+                        'format'         => $ext,
+                        'mime_type'      => $this->mimeFromExt($ext),
+                        'size'           => $size,
+                        'size_formatted' => $this->formatBytes($size),
+                        'created_at'     => date('Y-m-d H:i:s', filectime($itemFullPath)),
+                        'modified_at'    => date('Y-m-d H:i:s', filemtime($itemFullPath)),
+                        'url'            => asset($itemPath),
+                    ];
+                }
+            }
+        }
+
+        // Sort folders and media by name
+        usort($folders, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        usort($media,   fn($a, $b) => strcasecmp($a['name'], $b['name']));
+
+        // Pagination media — batasi 60 per halaman agar folder padat tidak nge-render ribuan item
+        $page           = max(1, (int) request('page', 1));
+        $perPage        = 60;
+        $mediaTotal     = count($media);
+        $mediaPage      = array_slice($media, ($page - 1) * $perPage, $perPage);
+        $mediaPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $mediaPage, $mediaTotal, $perPage, $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        // Build breadcrumb
+        $directory  = $requestedPath ? explode('/', $requestedPath) : [];
+        $parentPath = null;
+        if (count($directory) > 0) {
+            $parentArray = array_slice($directory, 0, -1);
+            $parentPath  = count($parentArray) > 0 ? implode('/', $parentArray) : '';
+        }
+
+        return view('media.folder', [
+            'current_folder' => $requestedPath ? end($directory) : null,
+            'sub_folders'    => $folders,
+            'media'          => $mediaPaginated,
+            'media_total'    => $mediaTotal,
+            'directory'      => $directory,
+            'path'           => $requestedPath,
+            'parent_path'    => $parentPath,
+            'page'           => __('sidebar.media_manager'),
+            'breadcumb'      => true,
+        ]);
+    }
 
         // Scan directory
         $folders = [];
@@ -292,6 +364,46 @@ class FolderManagerController extends Controller
 
         return rmdir($dir);
     }
+
+    /**
+     * Hitung jumlah item di folder TANPA memuat seluruh konten ke array.
+     * Pengganti count(scandir()) yang lebih hemat memori.
+     */
+    private function cheapCount(string $dir): int
+    {
+        $n  = 0;
+        $dh = @opendir($dir);
+        if (!$dh) return 0;
+        while (($f = readdir($dh)) !== false) {
+            if ($f !== '.' && $f !== '..') $n++;
+        }
+        closedir($dh);
+        return $n;
+    }
+
+    /**
+     * Tebak MIME type dari ekstensi — tanpa baca isi file (mime_content_type).
+     * Cukup untuk badge/display di listing; gunakan mime_content_type hanya saat serve.
+     */
+    private function mimeFromExt(string $ext): string
+    {
+        static $map = [
+            'jpg'  => 'image/jpeg',  'jpeg' => 'image/jpeg',
+            'png'  => 'image/png',   'gif'  => 'image/gif',
+            'webp' => 'image/webp',  'svg'  => 'image/svg+xml',
+            'mp4'  => 'video/mp4',   'mov'  => 'video/quicktime',
+            'webm' => 'video/webm',  'ogg'  => 'video/ogg',
+            'mp3'  => 'audio/mpeg',  'wav'  => 'audio/wav',
+            'pdf'  => 'application/pdf',
+            'doc'  => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls'  => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'zip'  => 'application/zip',
+        ];
+        return $map[$ext] ?? 'application/octet-stream';
+    }
+
 
     private function formatBytes($bytes, $precision = 2)
     {

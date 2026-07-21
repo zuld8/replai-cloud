@@ -102,7 +102,6 @@
                                         <div class="folder-stats">
                                             <i class="bx bx-file"></i> {{ $folder['item_count'] }} {{ __('master.folder.items') }}
                                         </div>
-                                        <small class="text-muted d-block mt-2">{{ $folder['size_formatted'] ?? '0 B' }}</small>
                                     </div>
                                 </div>
                             </a>
@@ -116,7 +115,7 @@
     @endif
 
     <!-- Media Files Section -->
-    @if(count($media) > 0)
+    @if($media_total > 0)
     <div class="col-12">
         <div class="card">
             <div class="card-header">
@@ -195,6 +194,13 @@
                         </div>
                     </div>
                     @endforeach
+                </div>{{-- /row --}}
+                {{-- Pagination --}}
+                @if($media->hasPages())
+                <div class="d-flex justify-content-center mt-3">
+                    {{ $media->links() }}
+                </div>
+                @endif
                 </div>
             </div>
         </div>
@@ -202,7 +208,7 @@
     @endif
 
     <!-- Empty State -->
-    @if(count($sub_folders) == 0 && count($media) == 0)
+    @if(count($sub_folders) == 0 && $media_total == 0)
     <div class="col-12">
         <div class="card">
             <div class="card-body">
