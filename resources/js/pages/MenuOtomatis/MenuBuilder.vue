@@ -38,7 +38,7 @@
           </select>
         </div>
 
-        <!-- Kata kunci (muncul jika keyword mode) -->
+        <!-- Kata kunci -->
         <div class="mb-setting-item" v-if="triggerMode !== 'default'">
           <label class="mb-label">Kata Kunci <small class="text-muted">(Enter untuk tambah)</small></label>
           <div class="mb-tag-input" @click="$refs.kwInput.focus()">
@@ -105,7 +105,7 @@
                 <span class="mb-node-num">Langkah {{ ni + 1 }}</span>
               </div>
               <div class="mb-node-actions">
-                <button class="mb-icon-btn" title="Jadikan langkah awal" @click.stop="startTempId = node.temp_id" v-if="startTempId !== node.temp_id">
+                <button class="mb-icon-btn" title="Jadikan langkah awal" @click.stop="startTempId = node.temp_id; previewStart()" v-if="startTempId !== node.temp_id">
                   <i class="bx bx-home-alt"></i>
                 </button>
                 <button class="mb-icon-btn mb-icon-danger" title="Hapus langkah" @click.stop="removeNode(ni)">
@@ -135,29 +135,29 @@
                   <input v-model="opt.label" class="mb-opt-label"
                     :placeholder="opt.kind === 'button' ? 'Label tombol (max 20)' : 'Judul baris (max 24)'"
                     :maxlength="opt.kind === 'button' ? 20 : 24" />
-                  <span class="mb-char-count" :class="{ 'text-danger': opt.label.length >= (opt.kind === 'button' ? 20 : 24) }">
+                  <!-- Fase 2: char count hanya muncul ≥15 karakter -->
+                  <span v-if="opt.label.length >= 15" class="mb-char-count"
+                    :class="{ 'text-danger': opt.label.length >= (opt.kind === 'button' ? 20 : 24) }">
                     {{ opt.label.length }}/{{ opt.kind === 'button' ? 20 : 24 }}
                   </span>
                   <input v-if="opt.kind === 'list_row'" v-model="opt.description"
                     class="mb-opt-desc" placeholder="Deskripsi (opsional, max 72)" maxlength="72" />
                 </div>
+                <!-- Fase 2: unified dropdown (ganti 2 select lama) -->
                 <div class="mb-option-target">
-                  <select v-model="opt.target_action" class="form-select form-select-sm mb-target-select"
-                    @change="opt.target_temp_id = ''">
-                    <option value="goto_node">→ Ke Langkah</option>
-                    <option value="back_to_start">↩ Menu awal</option>
-                    <option value="handoff">👤 Serahkan ke CS</option>
-                    <option value="end">✋ Akhiri</option>
-                  </select>
-                  <select v-if="opt.target_action === 'goto_node'" v-model="opt.target_temp_id"
-                    class="form-select form-select-sm mb-target-node">
-                    <option value="">Pilih langkah…</option>
-                    <template v-for="(n2, n2i) in nodes" :key="n2.temp_id">
-                      <option v-if="n2.temp_id !== node.temp_id"
-                              :value="n2.temp_id">
-                        Langkah {{ n2i + 1 }} — {{ n2.body_text ? n2.body_text.slice(0,30) : typeLabel(n2.type) }}
-                      </option>
-                    </template>
+                  <select :value="combinedValue(opt)"
+                    @change="setCombined(opt, $event.target.value)"
+                    class="form-select form-select-sm mb-target-unified">
+                    <optgroup label="— Ke langkah lain">
+                      <template v-for="(n2, n2i) in nodes" :key="n2.temp_id">
+                        <option v-if="n2.temp_id !== node.temp_id" :value="'goto:' + n2.temp_id">
+                          {{ ringkasNode(n2, n2i) }}
+                        </option>
+                      </template>
+                    </optgroup>
+                    <option value="handoff">👤 Sambungkan ke CS</option>
+                    <option value="back_to_start">↩ Kembali ke awal</option>
+                    <option value="end">✋ Selesai</option>
                   </select>
                 </div>
                 <button class="mb-icon-btn mb-icon-danger ms-1" @click="removeOption(node, oi)">×</button>
@@ -198,42 +198,62 @@
         </div>
       </div>
 
-      <!-- RIGHT: WA Preview -->
+      <!-- RIGHT: Fase 1 — Interactive WA Preview -->
       <div class="mb-preview">
-        <div class="mb-preview-header">Pratinjau WhatsApp</div>
-        <div class="mb-preview-phone">
-          <template v-if="previewNode">
-            <div class="mb-wa-bubble">
-              <div class="mb-wa-header" v-if="previewNode.header">{{ previewNode.header }}</div>
-              <div class="mb-wa-body">{{ previewNode.body_text || '…' }}</div>
-              <div class="mb-wa-footer" v-if="previewNode.footer">{{ previewNode.footer }}</div>
-              <div class="mb-wa-time">{{ now }}</div>
-            </div>
-            <!-- Buttons preview -->
-            <div v-if="previewNode.type === 'buttons'" class="mb-wa-btns">
-              <div v-for="opt in previewNode.options" :key="opt.label" class="mb-wa-btn">
-                <i class="bx bx-reply me-1"></i>{{ opt.label || '…' }}
-              </div>
-            </div>
-            <!-- List preview -->
-            <div v-if="previewNode.type === 'list'" class="mb-wa-list-btn">
-              <i class="bx bx-list-ul me-1"></i>{{ previewNode.list_button_label || 'Pilih' }}
-            </div>
-            <div v-if="previewNode.type === 'list'" class="mb-wa-list-rows">
-              <div v-for="opt in previewNode.options" :key="opt.label" class="mb-wa-list-row">
-                <div class="mb-wa-list-title">{{ opt.label || '…' }}</div>
-                <div class="mb-wa-list-desc" v-if="opt.description">{{ opt.description }}</div>
-              </div>
-            </div>
-            <!-- Handoff preview -->
-            <div v-if="previewNode.type === 'handoff'" class="mb-wa-handoff">
-              <i class="bx bx-user-voice me-1"></i> Menghubungkan ke CS…
+        <div class="mb-preview-header">
+          <i class="bx bx-mobile me-1"></i>
+          Tampilan pelanggan — tap buat coba
+        </div>
+        <div class="mb-preview-phone" ref="previewScroll">
+          <template v-if="previewLog.length > 0">
+            <div v-for="(msg, mi) in previewLog" :key="mi" class="mb-pv-row"
+              :class="msg.who === 'user' ? 'mb-pv-row-user' : 'mb-pv-row-bot'">
+
+              <!-- Bot bubble -->
+              <template v-if="msg.who === 'bot'">
+                <div class="mb-pv-bot-card">
+                  <div v-if="msg.header" class="mb-pv-header">{{ msg.header }}</div>
+                  <div class="mb-pv-body">{{ msg.text || '…' }}</div>
+                  <div v-if="msg.footer" class="mb-pv-footer">{{ msg.footer }}</div>
+                  <div class="mb-pv-time">{{ now }}</div>
+                </div>
+                <!-- Interaktif: hanya bubble bot TERAKHIR yang tampilkan tombol -->
+                <template v-if="mi === previewLog.length - 1 && msg.buttons && msg.buttons.length">
+                  <!-- List: tampilkan sebagai panel list -->
+                  <template v-if="msg.type === 'list'">
+                    <div class="mb-pv-list-trigger" @click="showListPanel = !showListPanel">
+                      <i class="bx bx-list-ul me-1"></i>{{ msg.listLabel || 'Pilih' }}
+                    </div>
+                    <div v-if="showListPanel" class="mb-pv-list-panel">
+                      <div v-for="btn in msg.buttons" :key="btn.label"
+                        class="mb-pv-list-row" @click="previewTap(btn); showListPanel = false">
+                        {{ btn.label }}
+                      </div>
+                    </div>
+                  </template>
+                  <!-- Buttons: tampilkan sebagai chip -->
+                  <div v-else class="mb-pv-btns">
+                    <button v-for="btn in msg.buttons" :key="btn.label"
+                      class="mb-pv-btn" @click="previewTap(btn)">
+                      {{ btn.label || '…' }}
+                    </button>
+                  </div>
+                </template>
+              </template>
+
+              <!-- User bubble -->
+              <div v-else class="mb-pv-user-bubble">{{ msg.text }}</div>
             </div>
           </template>
           <div v-else class="mb-preview-empty">
-            <i class="bx bx-select-multiple fs-2 text-muted mb-2 d-block"></i>
-            Klik langkah untuk pratinjau
+            <i class="bx bx-message-dots fs-2 text-muted mb-2 d-block"></i>
+            Belum ada langkah untuk dicoba
           </div>
+        </div>
+        <div class="mb-preview-footer">
+          <button class="mb-pv-reset" @click="previewStart">
+            <i class="bx bx-refresh me-1"></i>Ulang
+          </button>
         </div>
       </div>
     </div>
@@ -273,6 +293,9 @@ export default {
       saving: false,
       errors: [],
       now: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+      // Fase 1: interactive preview state
+      previewLog: [],
+      showListPanel: false,
     };
   },
   computed: {
@@ -286,9 +309,10 @@ export default {
         this.flow.keyword_match = val === 'contains' ? 'contains' : 'exact';
       },
     },
-    previewNode() {
-      return this.nodes.find(n => n.temp_id === this.selectedTempId) || null;
-    },
+  },
+  watch: {
+    // Fase 1: restart preview saat startTempId berubah
+    startTempId() { this.previewStart(); },
   },
   methods: {
     newTemp() { return 'n' + (++this.seq); },
@@ -327,11 +351,11 @@ export default {
       this.nodes.splice(i, 1);
       if (this.startTempId === tid) this.startTempId = this.nodes[0]?.temp_id || null;
       if (this.selectedTempId === tid) this.selectedTempId = this.nodes[0]?.temp_id || null;
-      // Hapus referensi target ke node yang dihapus
       this.nodes.forEach(n => n.options.forEach(o => {
         if (o.target_temp_id === tid) { o.target_action = 'end'; o.target_temp_id = ''; }
       }));
       this.reindex();
+      this.previewStart();
     },
     reindex() { this.nodes.forEach((n, i) => n.position = i + 1); },
 
@@ -343,6 +367,76 @@ export default {
 
     toggleStatus() { this.flow.status = this.flow.status === 'active' ? 'inactive' : 'active'; },
 
+    // ── Fase 2: helper dropdown terpadu ──────────────────────
+    combinedValue(opt) {
+      return opt.target_action === 'goto_node'
+        ? ('goto:' + (opt.target_temp_id || ''))
+        : opt.target_action;
+    },
+    setCombined(opt, val) {
+      if (val.startsWith('goto:')) {
+        opt.target_action = 'goto_node';
+        opt.target_temp_id = val.slice(5);
+      } else {
+        opt.target_action = val;
+        opt.target_temp_id = '';
+      }
+    },
+    ringkasNode(n2, i) {
+      const txt = n2.body_text ? n2.body_text.slice(0, 24) : this.typeLabel(n2.type);
+      return 'Langkah ' + (i + 1) + ' · ' + txt;
+    },
+
+    // ── Fase 1: interactive preview ───────────────────────────
+    previewStart() {
+      this.showListPanel = false;
+      if (!this.startTempId || this.nodes.length === 0) {
+        this.previewLog = [];
+        return;
+      }
+      this.previewLog = [{ who: 'user', text: 'halo' }];
+      this.pushPreviewNode(this.startTempId);
+    },
+    pushPreviewNode(tempId) {
+      const n = this.nodes.find(x => x.temp_id === tempId);
+      if (!n) return;
+      this.previewLog.push({
+        who: 'bot',
+        text: n.body_text || ('(' + this.typeLabel(n.type) + ')'),
+        header: n.header || null,
+        footer: n.footer || null,
+        listLabel: n.list_button_label || null,
+        type: n.type,
+        buttons: (n.options || []).map(o => ({
+          label: o.label,
+          action: o.target_action,
+          target: o.target_temp_id,
+        })),
+      });
+      this.$nextTick(() => {
+        const el = this.$refs.previewScroll;
+        if (el) el.scrollTop = el.scrollHeight;
+      });
+    },
+    previewTap(btn) {
+      this.showListPanel = false;
+      this.previewLog.push({ who: 'user', text: btn.label || '…' });
+      if (btn.action === 'goto_node' && btn.target) {
+        this.pushPreviewNode(btn.target);
+      } else if (btn.action === 'back_to_start') {
+        this.pushPreviewNode(this.startTempId);
+      } else if (btn.action === 'handoff') {
+        this.previewLog.push({ who: 'bot', text: 'Menghubungkan ke CS kami… Tunggu sebentar ya! 👤', buttons: [], type: 'message' });
+      } else {
+        this.previewLog.push({ who: 'bot', text: '✅ Percakapan selesai.', buttons: [], type: 'message' });
+      }
+      this.$nextTick(() => {
+        const el = this.$refs.previewScroll;
+        if (el) el.scrollTop = el.scrollHeight;
+      });
+    },
+
+    // ── Validasi & Simpan ─────────────────────────────────────
     validate() {
       const errs = [];
       if (!this.flow.name.trim()) errs.push('Nama menu wajib diisi.');
@@ -398,7 +492,6 @@ export default {
 
     async loadData() {
       if (!this.flowId) {
-        // Create mode — ambil devices dari data attribute
         const el = document.getElementById('app');
         try { this.devices = JSON.parse(el.dataset.devices || '[]'); } catch {}
         return;
@@ -417,7 +510,6 @@ export default {
         };
         this.devices = data.devices || [];
 
-        // Pass 1: build tempId map (plain objects, belum reaktif)
         const rawNodes = Array.isArray(f.nodes) ? f.nodes : [];
         const idToTemp = {};
         const pass1 = rawNodes.map(n => {
@@ -427,7 +519,6 @@ export default {
           return { _rawNode: n, temp_id: tid };
         }).filter(Boolean);
 
-        // Pass 2: resolve options → assign sekali ke this.nodes (tanpa mutasi reactive)
         this.nodes = pass1.map(({ _rawNode: n, temp_id: tid }) => ({
           temp_id: tid,
           type: n.type || 'message',
@@ -457,7 +548,10 @@ export default {
   mounted() {
     const el = document.getElementById('app');
     this.flowId = el.dataset.flowId || null;
-    this.loadData();
+    this.loadData().then(() => {
+      // Fase 1: mulai preview setelah data dimuat
+      this.previewStart();
+    });
     setInterval(() => { this.now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }); }, 10000);
   },
 };
@@ -551,8 +645,9 @@ export default {
 .mb-opt-desc { border:1px solid #E4EAF2; border-radius:5px; padding:4px 7px; font-size:12px; width:100%; color:#64748B; }
 .mb-opt-desc:focus { border-color:#2E8DE1; outline:none; }
 .mb-char-count { font-size:10px; color:#94A3B8; text-align:right; }
-.mb-option-target { display:flex; flex-direction:column; gap:3px; min-width:130px; }
-.mb-target-select, .mb-target-node { font-size:12px !important; }
+/* Fase 2: unified dropdown */
+.mb-option-target { min-width:150px; }
+.mb-target-unified { font-size:12px !important; }
 .mb-add-opt { background:none; border:1px dashed #CBD5E1; border-radius:6px; padding:5px 10px; font-size:12px; color:#64748B; cursor:pointer; width:100%; text-align:center; transition:all .15s; }
 .mb-add-opt:hover:not(:disabled) { border-color:#2E8DE1; color:#2E8DE1; background:#EAF3FC; }
 .mb-add-opt:disabled { opacity:.45; cursor:not-allowed; }
@@ -567,29 +662,84 @@ export default {
 .mb-type-btn i { font-size:20px; color:#2E8DE1; }
 .mb-type-btn-handoff i { color:#0369A1; }
 
-/* ── Preview ──────────────────────────────────────────── */
-.mb-preview { width:300px; flex-shrink:0; border-left:1px solid #E4EAF2; background:#ECE5DD; display:flex; flex-direction:column; }
-.mb-preview-header { padding:12px 16px; font-size:12px; font-weight:600; color:#64748B; text-transform:uppercase; letter-spacing:.05em; background:#fff; border-bottom:1px solid #E4EAF2; }
-.mb-preview-phone { flex:1; overflow-y:auto; padding:16px 12px; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+/* ── Preview (Fase 1) ─────────────────────────────────── */
+.mb-preview {
+  width:300px; flex-shrink:0; border-left:1px solid #E4EAF2;
+  background:#ECE5DD; display:flex; flex-direction:column;
+}
+.mb-preview-header {
+  padding:12px 16px; font-size:12px; font-weight:600; color:#64748B;
+  text-transform:uppercase; letter-spacing:.05em;
+  background:#fff; border-bottom:1px solid #E4EAF2;
+}
+.mb-preview-phone {
+  flex:1; overflow-y:auto; padding:12px 10px;
+  display:flex; flex-direction:column; gap:8px;
+}
 .mb-preview-empty { text-align:center; color:#94A3B8; font-size:13px; margin:auto; }
+.mb-preview-footer {
+  padding:10px; background:#fff; border-top:1px solid #E4EAF2;
+  text-align:center;
+}
+.mb-pv-reset {
+  background:none; border:none; font-size:12px; color:#2E8DE1;
+  cursor:pointer; padding:4px 10px; border-radius:6px;
+  transition:background .15s;
+}
+.mb-pv-reset:hover { background:#EAF3FC; }
 
-.mb-wa-bubble { background:#fff; border-radius:12px 2px 12px 12px; padding:10px 12px; max-width:240px; box-shadow:0 1px 2px rgba(0,0,0,.12); }
-.mb-wa-header { font-weight:700; font-size:13px; color:#1E2A4A; margin-bottom:4px; }
-.mb-wa-body { font-size:13px; color:#333; white-space:pre-line; }
-.mb-wa-footer { font-size:11px; color:#94A3B8; margin-top:4px; }
-.mb-wa-time { font-size:10px; color:#94A3B8; text-align:right; margin-top:4px; }
+/* Preview rows */
+.mb-pv-row { display:flex; flex-direction:column; gap:4px; }
+.mb-pv-row-user { align-items:flex-end; }
+.mb-pv-row-bot  { align-items:flex-start; }
 
-.mb-wa-btns { display:flex; flex-direction:column; gap:4px; max-width:240px; }
-.mb-wa-btn { background:#fff; border-radius:8px; padding:9px 12px; font-size:13px; color:#2E8DE1; font-weight:500; text-align:center; box-shadow:0 1px 2px rgba(0,0,0,.1); }
+/* Bot bubble */
+.mb-pv-bot-card {
+  background:#fff; border-radius:2px 12px 12px 12px;
+  padding:9px 12px; max-width:220px;
+  box-shadow:0 1px 2px rgba(0,0,0,.12);
+}
+.mb-pv-header { font-weight:700; font-size:12px; color:#1E2A4A; margin-bottom:3px; }
+.mb-pv-body { font-size:13px; color:#333; white-space:pre-line; line-height:1.4; }
+.mb-pv-footer { font-size:11px; color:#94A3B8; margin-top:3px; }
+.mb-pv-time { font-size:10px; color:#94A3B8; text-align:right; margin-top:3px; }
 
-.mb-wa-list-btn { background:#fff; border-radius:8px; padding:9px 14px; font-size:13px; color:#2E8DE1; font-weight:500; text-align:center; max-width:240px; box-shadow:0 1px 2px rgba(0,0,0,.1); }
-.mb-wa-list-rows { background:#fff; border-radius:8px; padding:6px 0; max-width:240px; box-shadow:0 1px 2px rgba(0,0,0,.1); }
-.mb-wa-list-row { padding:8px 14px; border-bottom:1px solid #F1F5F9; }
-.mb-wa-list-row:last-child { border-bottom:none; }
-.mb-wa-list-title { font-size:13px; font-weight:500; color:#1E2A4A; }
-.mb-wa-list-desc { font-size:11px; color:#94A3B8; }
+/* User bubble */
+.mb-pv-user-bubble {
+  background:#DCF8C6; border-radius:12px 2px 12px 12px;
+  padding:9px 12px; max-width:200px; font-size:13px; color:#111;
+  box-shadow:0 1px 2px rgba(0,0,0,.10);
+}
 
-.mb-wa-handoff { background:#fff; border-radius:8px; padding:10px 14px; font-size:13px; color:#0369A1; max-width:240px; box-shadow:0 1px 2px rgba(0,0,0,.1); }
+/* Interactive buttons (Fase 1) */
+.mb-pv-btns { display:flex; flex-direction:column; gap:3px; max-width:220px; }
+.mb-pv-btn {
+  background:#fff; border:none; border-radius:8px; padding:9px 12px;
+  font-size:13px; color:#2E8DE1; font-weight:500; text-align:center;
+  box-shadow:0 1px 2px rgba(0,0,0,.1); cursor:pointer;
+  transition:background .12s, transform .1s;
+}
+.mb-pv-btn:hover { background:#EAF3FC; transform:scale(1.02); }
+.mb-pv-btn:active { transform:scale(0.98); }
+
+/* List trigger & panel */
+.mb-pv-list-trigger {
+  background:#fff; border-radius:8px; padding:9px 14px;
+  font-size:13px; color:#2E8DE1; font-weight:500; text-align:center;
+  max-width:220px; box-shadow:0 1px 2px rgba(0,0,0,.1); cursor:pointer;
+  transition:background .12s;
+}
+.mb-pv-list-trigger:hover { background:#EAF3FC; }
+.mb-pv-list-panel {
+  background:#fff; border-radius:8px; max-width:220px;
+  box-shadow:0 1px 4px rgba(0,0,0,.15); overflow:hidden;
+}
+.mb-pv-list-row {
+  padding:9px 14px; border-bottom:1px solid #F1F5F9;
+  font-size:13px; color:#1E2A4A; cursor:pointer; transition:background .1s;
+}
+.mb-pv-list-row:last-child { border-bottom:none; }
+.mb-pv-list-row:hover { background:#F1F5F9; }
 
 @media (max-width: 900px) {
   .mb-preview { display:none; }
