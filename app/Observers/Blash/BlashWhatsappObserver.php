@@ -87,26 +87,35 @@ class BlashWhatsappObserver
 
     public function getStatisticData(Request $request)
     {
-        return BlashDetail::select(
-            'device_id',
-            DB::raw("COUNT(*) as sent"),
-            DB::raw("SUM(CASE WHEN sending_status = 'yes' THEN 1 ELSE 0 END) as delivered"),
-            DB::raw("SUM(CASE WHEN sending_status = 'no' THEN 1 ELSE 0 END) as not_delivered"),
-            DB::raw("
-                ROUND(
-                    (SUM(CASE WHEN sending_status = 'yes' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2
-                ) as percent")
-        )->whereHas('device', function ($q) {
-            return $q->where('business_id', my_business());
-        })->where(function ($q) use ($request) {
-            // Default: 30 hari terakhir jika tidak ada filter tanggal (hindari full-table scan)
-            $start = $request->start_date ?: now()->subDays(30)->toDateString();
-            $end   = $request->end_date   ?: now()->toDateString();
-            if ($request->start_date && !$request->end_date) {
-                return $q->where('schedule', $request->start_date);
-            }
-            return $q->whereBetween('schedule', [$start, $end]);
-        })->groupBy('device_id')->get();
+        $start = $request->start_date ?: now()->subDays(30)->toDateString();
+        $end   = $request->end_date   ?: now()->toDateString();
+
+        // FIX perf: ambil device_id list dulu (ringan), ganti whereHas EXISTS yang lambat
+        $deviceIds = \App\Models\Waba\WhatsappKeyAccount::where('business_id', my_business())
+            ->pluck('id')->all();
+        if (empty($deviceIds)) return collect();
+
+        // Cache 10 menit — query 2.3jt baris, gak perlu real-time
+        $cacheKey = 'stat_kirim_' . my_business() . '_' . $start . '_' . $end;
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($deviceIds, $start, $end, $request) {
+            return BlashDetail::selectRaw("
+                    device_id,
+                    COUNT(*) as sent,
+                    SUM(CASE WHEN sending_status = 'yes' THEN 1 ELSE 0 END) as delivered,
+                    SUM(CASE WHEN sending_status = 'no'  THEN 1 ELSE 0 END) as not_delivered,
+                    ROUND(
+                        (SUM(CASE WHEN sending_status = 'yes' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2
+                    ) as percent
+                ")
+                ->whereIn('device_id', $deviceIds)
+                ->when(
+                    $request->start_date && !$request->end_date,
+                    fn($q) => $q->where('schedule', $request->start_date),
+                    fn($q) => $q->whereBetween('schedule', [$start, $end])
+                )
+                ->groupBy('device_id')
+                ->get();
+        });
     }
 
     public function deleting(BlashWhatsapp $blash)
