@@ -347,26 +347,9 @@
                       // Used storage — pakai Storage::disk('local') persis seperti StorageBillingController
                       // Cache 5 menit, key sama = shared dengan billing controller
                       $__stCacheKey = "storage_usage_business_{$__stBid}";
-                      if (\Illuminate\Support\Facades\Cache::has($__stCacheKey)) {
-                          // Gunakan cache yang sudah ada (set oleh billing controller)
-                          $__stUsedMB = \Illuminate\Support\Facades\Cache::get($__stCacheKey, 0);
-                      } else {
-                          // Hitung sendiri dengan Storage::disk persis seperti controller
-                          $__stUsedMB = \Illuminate\Support\Facades\Cache::remember(
-                              $__stCacheKey, 60,
-                              function() use ($__stBid) {
-                                  $totalSize = 0;
-                                  $path = "uploads/folders/{$__stBid}";
-                                  if (\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
-                                      $files = \Illuminate\Support\Facades\Storage::disk('local')->allFiles($path);
-                                      foreach ($files as $file) {
-                                          $totalSize += \Illuminate\Support\Facades\Storage::disk('local')->size($file);
-                                      }
-                                  }
-                                  return round($totalSize / 1024 / 1024, 2);
-                              }
-                          );
-                      }
+                      // FIX perf: header HANYA baca cache — scan folder dilakukan background oleh dashboard:warm
+                      // Kalau cache belum ada (bisnis baru), badge tampil 0 sampai warm pertama jalan — aman.
+                      $__stUsedMB = \Illuminate\Support\Facades\Cache::get($__stCacheKey, 0);
 
                       // Total storage limit dari package aktif
                       $__stPkg = \Illuminate\Support\Facades\DB::connection('mysql')

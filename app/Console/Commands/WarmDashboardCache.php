@@ -142,6 +142,14 @@ class WarmDashboardCache extends Command
                 }
             }
 
+            // B7. storage_usage — dihitung background, header baca cache ini (fix perf 11 detik)
+            $keySt = "storage_usage_business_{$businessId}";
+            if ($force || !Cache::has($keySt)) {
+                try {
+                    Cache::put($keySt, $this->computeStorage($businessId), 1800); // 30 menit
+                } catch (\Throwable $e) { $this->warn("B7 storage {$businessId}: " . $e->getMessage()); }
+            }
+
             $warmedBiz++;
         }
 
@@ -353,6 +361,26 @@ class WarmDashboardCache extends Command
             ];
         }
         return $result;
+    }
+
+    private function computeStorage(string $businessId): float
+    {
+        $path = "uploads/folders/{$businessId}";
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        if (!$disk->exists($path)) return 0;
+
+        $abs = $disk->path($path);
+        // Cepat: du -sb (1 proses). Fallback ke allFiles kalau shell_exec tidak tersedia.
+        if (function_exists('shell_exec') && stripos(PHP_OS, 'WIN') === false) {
+            $out = @shell_exec('du -sb ' . escapeshellarg($abs) . ' 2>/dev/null');
+            if ($out && preg_match('/^(\d+)/', trim($out), $m)) {
+                return round(((int)$m[1]) / 1024 / 1024, 2);
+            }
+        }
+        // Fallback lambat — hanya jalan kalau du tidak tersedia (bukan Linux)
+        $total = 0;
+        foreach ($disk->allFiles($path) as $f) { $total += $disk->size($f); }
+        return round($total / 1024 / 1024, 2);
     }
 
     private function computePesanMasuk(string $businessId, int $days): array
