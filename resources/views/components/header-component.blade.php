@@ -96,6 +96,34 @@
 
 
 
+              @php
+              /* Helper warna per level (Fase poles meter card) */
+              $__lvl = function (\$pct) {
+                  if (\$pct >= 90) return ['bar'=>'#E24B4A','text'=>'#A32D2D','tint'=>'#FCEBEB','badge'=>'Mepet'];
+                  if (\$pct >= 70) return ['bar'=>'#EF9F27','text'=>'#B45309','tint'=>'#FAEEDA','badge'=>'Hati-hati'];
+                  return ['bar'=>'#639922','text'=>'#3B6D11','tint'=>'#EAF3DE','badge'=>'Aman'];
+              };
+              @endphp
+              <style>
+              /* ── Meter card — popover TERANG (bukan hitam) ── */
+              .meter-card{background:#fff;border:0.5px solid #E4EAF2;border-radius:12px;padding:14px;box-shadow:0 8px 24px rgba(30,42,74,.10),0 2px 6px rgba(30,42,74,.06);width:250px;}
+              .meter-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+              .meter-ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+              .meter-title{font-size:14px;font-weight:600;color:#1E2A4A;}
+              .meter-badge{margin-left:auto;font-size:11px;border-radius:20px;padding:2px 8px;}
+              .meter-desc{font-size:11.5px;color:#6B7A99;line-height:1.6;margin-bottom:6px;}
+              .meter-note{font-size:11px;color:#8A96AC;line-height:1.5;margin-bottom:10px;display:flex;gap:5px;align-items:flex-start;}
+              .meter-warn{font-size:11px;line-height:1.45;border-radius:8px;padding:8px 10px;margin-bottom:10px;display:flex;gap:6px;align-items:flex-start;}
+              .meter-row{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;color:#6B7A99;}
+              .meter-row span:last-child{color:#1E2A4A;}
+              .meter-row-last{border-bottom:0.5px solid #E4EAF2;padding-bottom:8px;margin-bottom:8px;}
+              .meter-usage{display:flex;justify-content:space-between;font-size:11px;color:#8A96AC;margin-bottom:4px;}
+              .meter-bar{height:6px;background:#F0F3F8;border-radius:20px;overflow:hidden;margin-bottom:11px;}
+              .meter-bar>div{height:100%;border-radius:20px;}
+              .meter-btn{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;border-radius:8px;padding:9px;text-decoration:none;}
+              .meter-btn-ghost{color:#6B7A99;border:0.5px solid #CBD5E1;}
+              .meter-btn-danger{color:#fff;background:#E24B4A;font-weight:500;}
+              </style>
               <!-- Start::header-element AI Credit Donut -->
               @php
                   try {
@@ -128,16 +156,10 @@
               @if($__hasAI)
               <style>
               .ai-cwrap{position:relative;display:inline-flex;align-items:center;}
-              .ai-ctip{
-                  visibility:hidden;opacity:0;
-                  position:absolute;top:calc(100% + 8px);left:0;
-                  width:240px;background:#1a1a2e;color:#e2e8f0;
-                  border-radius:12px;padding:14px;font-size:12px;line-height:1.65;
-                  box-shadow:0 12px 32px rgba(0,0,0,0.35);z-index:9999;
-                  transition:opacity 0s,visibility 0s;pointer-events:none;
-                  border:1px solid rgba(255,255,255,0.08);}
-              .ai-ctip::before{content:'';position:absolute;top:-7px;left:16px;
-                  border:7px solid transparent;border-bottom-color:#1a1a2e;border-top:none;}
+              .ai-ctip{visibility:hidden;opacity:0;position:absolute;top:calc(100% + 8px);left:0;
+                  width:260px;background:transparent;z-index:9999;
+                  transition:opacity .15s,visibility .15s;pointer-events:none;}
+              .ai-ctip::before{display:none;}
               .ai-cwrap:hover .ai-ctip{visibility:visible;opacity:1;}
               .ai-tip-row{display:flex;justify-content:space-between;padding:4px 0;
                   border-bottom:1px solid rgba(255,255,255,0.06);}
@@ -172,40 +194,21 @@
                           </div>
                       </div>
                   </div>
-                  {{-- Tooltip --}}
+                  {{-- Tooltip AI Credit --}}
                   <div class="ai-ctip">
-                      <div style="font-weight:700;font-size:12.5px;color:#a78bfa;margin-bottom:8px;">🤖 AI Credit</div>
-                      <div style="color:#94a3b8;font-size:11px;margin-bottom:8px;">Digunakan untuk:</div>
-                      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
-                          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
-                              <span style="color:#34d399;">●</span>
-                              Balas otomatis <b style="color:#f0fdf4;">AI Chatbot</b>
+                      @php \$__cai = \$__lvl(\$__aiPct); @endphp
+                      <div class="meter-card">
+                          <div class="meter-head">
+                              <span class="meter-ic" style="background:#F1ECFE;color:#6D28D9;"><i class="bx bxs-magic-wand"></i></span>
+                              <span class="meter-title">AI Credit</span>
+                              <span class="meter-badge" style="color:{{ \$__cai['text'] }};background:{{ \$__cai['tint'] }};">{{ \$__cai['badge'] }}</span>
                           </div>
-                          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
-                              <span style="color:#34d399;">●</span>
-                              <b style="color:#f0fdf4;">AI Training</b> & fine-tuning
-                          </div>
-                      </div>
-                      <div class="ai-tip-row">
-                          <span style="color:#64748b;">Terpakai</span>
-                          <span style="font-weight:600;">{{ number_format($__aiUsed) }}</span>
-                      </div>
-                      <div class="ai-tip-row">
-                          <span style="color:#64748b;">Total Limit</span>
-                          <span style="font-weight:600;">{{ number_format($__aiLimit) }}</span>
-                      </div>
-                      <div class="ai-tip-row">
-                          <span style="color:#64748b;">Sisa</span>
-                          <span style="font-weight:700;color:#34d399;">{{ number_format(max(0,$__aiLimit-$__aiUsed)) }}</span>
-                      </div>
-                      <div style="margin-top:8px;background:rgba(52,211,153,0.08);border-radius:6px;padding:6px 8px;">
-                          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                              <span style="font-size:10px;color:#64748b;">Penggunaan</span>
-                              <span style="font-size:10px;font-weight:700;color:{{ $__aiPct > 80 ? '#f87171' : '#34d399' }};">{{ $__aiPct }}%</span>
-                          </div>
-                          <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:4px;overflow:hidden;">
-                              <div style="background:{{ $__aiPct > 80 ? '#f87171' : '#34d399' }};width:{{ $__aiPct }}%;height:100%;border-radius:4px;"></div>
-                          </div>
+                          <div class="meter-desc">Dipakai untuk balas otomatis AI Chatbot dan AI Training.</div>
+                          <div class="meter-row"><span>Terpakai</span><span>{{ number_format(\$__aiUsed, 0, ',', '.') }}</span></div>
+                          <div class="meter-row"><span>Total limit</span><span>{{ number_format(\$__aiLimit, 0, ',', '.') }}</span></div>
+                          <div class="meter-row meter-row-last"><span>Sisa</span><span style="color:{{ \$__cai['text'] }};font-weight:500;">{{ number_format(max(0,\$__aiLimit-\$__aiUsed), 0, ',', '.') }}</span></div>
+                          <div class="meter-usage"><span>Penggunaan</span><span style="color:{{ \$__cai['text'] }};">{{ \$__aiPct }}%</span></div>
+                          <div class="meter-bar"><div style="width:{{ min(\$__aiPct,100) }}%;background:{{ \$__cai['bar'] }};"></div></div>
                       </div>
                   </div>
               </div>
@@ -239,14 +242,10 @@
               @if($__hasMsg)
               <style>
               .msg-cwrap{position:relative;display:inline-flex;align-items:center;}
-              .msg-ctip{
-                  visibility:hidden;opacity:0;position:absolute;top:calc(100% + 10px);left:50%;
-                  transform:translateX(-50%);background:#1a1a2e;border:1px solid rgba(56,189,248,0.2);
-                  border-radius:10px;padding:14px 16px;min-width:200px;z-index:9999;
-                  box-shadow:0 8px 30px rgba(0,0,0,0.5);transition:opacity 0.2s ease,visibility 0.2s ease;
-                  color:#e2e8f0;font-size:12px;}
-              .msg-ctip::before{content:'';position:absolute;top:-7px;left:50%;transform:translateX(-50%);
-                  border:7px solid transparent;border-bottom-color:#1a1a2e;border-top:none;}
+              .msg-ctip{visibility:hidden;opacity:0;position:absolute;top:calc(100% + 10px);left:50%;
+                  transform:translateX(-50%);background:transparent;
+                  min-width:260px;z-index:9999;transition:opacity .15s,visibility .15s;pointer-events:none;}
+              .msg-ctip::before{display:none;}
               .msg-cwrap:hover .msg-ctip{visibility:visible;opacity:1;}
               .msg-tip-row{display:flex;justify-content:space-between;padding:4px 0;
                   border-bottom:1px solid rgba(255,255,255,0.06);}
@@ -291,48 +290,36 @@
                           </div>
                       </div>
                   </div>
-                  {{-- Tooltip --}}
+                  {{-- Tooltip Kredit Pesan --}}
                   <div class="msg-ctip">
-                      <div style="font-weight:700;font-size:12.5px;color:#38bdf8;margin-bottom:8px;">💬 Kredit Pesan</div>
-                      <div style="color:#94a3b8;font-size:11px;margin-bottom:8px;">Digunakan untuk:</div>
-                      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
-                          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
-                              <span style="color:#38bdf8;">●</span>
-                              Broadcast <b style="color:#f0fdf4;">WhatsApp</b> massal
+                      <div class="meter-card">
+                          <div class="meter-head">
+                              <span class="meter-ic" style="background:#EAF3FC;color:#185FA5;"><i class="bx bxs-paper-plane"></i></span>
+                              <span class="meter-title">Kredit Pesan</span>
+                              @if(\$__msgOption === 'yes' && \$__msgLimit > 0)
+                                  @php \$__cmsg = \$__lvl(\$__msgPct); @endphp
+                                  <span class="meter-badge" style="color:{{ \$__cmsg['text'] }};background:{{ \$__cmsg['tint'] }};">{{ \$__cmsg['badge'] }}</span>
+                              @else
+                                  <span class="meter-badge" style="color:#185FA5;background:#EAF3FC;">&#8734; Bebas</span>
+                              @endif
                           </div>
-                          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
-                              <span style="color:#38bdf8;">●</span>
-                              Follow-up <b style="color:#f0fdf4;">pesan otomatis</b>
-                          </div>
+                          <div class="meter-desc">Dipakai untuk broadcast WhatsApp massal dan follow-up otomatis.</div>
+                          <div class="meter-row"><span>Terpakai</span><span>{{ number_format(\$__msgUsed, 0, ',', '.') }}</span></div>
+                          @if(\$__msgOption === 'yes' && \$__msgLimit > 0)
+                              <div class="meter-row meter-row-last"><span>Sisa</span>
+                                  <span style="color:{{ \$__cmsg['text'] }};font-weight:500;">
+                                      {{ number_format(max(0,\$__msgLimit-\$__msgUsed), 0, ',', '.') }} dari {{ number_format(\$__msgLimit, 0, ',', '.') }}
+                                  </span>
+                              </div>
+                              <div class="meter-usage"><span>Penggunaan</span><span style="color:{{ \$__cmsg['text'] }};">{{ \$__msgPct }}%</span></div>
+                              <div class="meter-bar"><div style="width:{{ min(\$__msgPct,100) }}%;background:{{ \$__cmsg['bar'] }};"></div></div>
+                          @else
+                              <div class="meter-row meter-row-last"><span>Status</span><span style="color:#185FA5;font-weight:500;">Tidak terbatas &#8734;</span></div>
+                              <div style="background:#EAF3FC;border-radius:8px;padding:9px 12px;font-size:12px;color:#185FA5;text-align:center;margin-top:2px;">
+                                  Kuota pesan kamu tak terbatas — kirim sepuasnya.
+                              </div>
+                          @endif
                       </div>
-                      <div class="msg-tip-row">
-                          <span style="color:#64748b;">Terpakai</span>
-                          <span style="font-weight:600;">{{ number_format($__msgUsed) }}</span>
-                      </div>
-                      @if($__msgOption === 'yes' && $__msgLimit > 0)
-                      <div class="msg-tip-row">
-                          <span style="color:#64748b;">Total Limit</span>
-                          <span style="font-weight:600;">{{ number_format($__msgLimit) }}</span>
-                      </div>
-                      <div class="msg-tip-row">
-                          <span style="color:#64748b;">Sisa</span>
-                          <span style="font-weight:700;color:#38bdf8;">{{ number_format(max(0,$__msgLimit-$__msgUsed)) }}</span>
-                      </div>
-                      <div style="margin-top:8px;background:rgba(56,189,248,0.08);border-radius:6px;padding:6px 8px;">
-                          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                              <span style="font-size:10px;color:#64748b;">Penggunaan</span>
-                              <span style="font-size:10px;font-weight:700;color:{{ $__msgColor }};">{{ $__msgPct }}%</span>
-                          </div>
-                          <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:4px;overflow:hidden;">
-                              <div style="background:{{ $__msgColor }};width:{{ $__msgPct }}%;height:100%;border-radius:4px;"></div>
-                          </div>
-                      </div>
-                      @else
-                      <div class="msg-tip-row">
-                          <span style="color:#64748b;">Status</span>
-                          <span style="font-weight:700;color:#38bdf8;">Tidak Terbatas ∞</span>
-                      </div>
-                      @endif
                   </div>
               </div>
               @endif
@@ -414,44 +401,40 @@
                           </div>
                       </div>
                   </div>
-                  <!-- Storage Tooltip -->
+                  <!-- Storage Popover — meter-card terang -->
+                  @php \$__c = \$__lvl(\$__stPct); @endphp
                   <div class="ai-ctip" style="left:0;">
-                      <div style="font-weight:700;font-size:12.5px;color:#38bdf8;margin-bottom:8px;">💾 Storage</div>
-                      <div style="color:#94a3b8;font-size:11px;margin-bottom:6px;">Penyimpanan file & media bisnis:</div>
-                      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
-                          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
-                              <span style="color:#38bdf8;">●</span>
-                              <span>Foto & video dari <b style="color:#f0fdf4;">chat pelanggan</b></span>
+                      <div class="meter-card" style="{{ \$__stPct >= 80 ? 'border:1px solid #E24B4A;' : '' }}">
+                          <div class="meter-head">
+                              <span class="meter-ic" style="background:#FAEEDA;color:#854F0B;"><i class="bx bx-hdd"></i></span>
+                              <span class="meter-title">Storage</span>
+                              <span class="meter-badge" style="color:{{ \$__c['text'] }};background:{{ \$__c['tint'] }};">{{ \$__c['badge'] }}</span>
                           </div>
-                          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
-                              <span style="color:#38bdf8;">●</span>
-                              <span>Dokumen <b style="color:#f0fdf4;">AI Training</b></span>
+                          <div class="meter-desc">Foto, video, dan dokumen dari chat pelanggan dan AI Training.</div>
+                          @if (\$__stPct >= 80)
+                              <div class="meter-warn" style="background:#FCEBEB;color:#791F1F;">
+                                  <i class="bx bx-error-circle" style="color:#A32D2D;flex-shrink:0;margin-top:1px;"></i>
+                                  Hampir penuh! Jika penuh, tidak bisa terima file/foto/video.
+                              </div>
+                          @else
+                              <div class="meter-note">
+                                  <i class="bx bx-info-circle" style="flex-shrink:0;margin-top:1px;"></i>
+                                  Jika penuh, tidak bisa terima file/foto/video.
+                              </div>
+                          @endif
+                          <div class="meter-row"><span>Terpakai</span><span>{{ number_format(\$__stUsedMB, 1, ',', '.') }} MB</span></div>
+                          <div class="meter-row meter-row-last"><span>Sisa</span>
+                              <span style="color:{{ \$__c['text'] }};font-weight:500;">
+                                  {{ number_format(max(\$__stTotalMB - \$__stUsedMB, 0), 1, ',', '.') }} MB dari {{ number_format(\$__stTotalMB, 0, ',', '.') }} MB
+                              </span>
                           </div>
-                          <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;">
-                              <span style="color:#f87171;">⚠</span>
-                              <span style="color:#fca5a5;">Jika penuh, tidak bisa terima <b>file/foto/video</b></span>
-                          </div>
-                      </div>
-                      <div class="ai-tip-row">
-                          <span style="color:#64748b;">Terpakai</span>
-                          <span style="font-weight:600;">{{ number_format($__stUsedMB, 2) }} MB</span>
-                      </div>
-                      <div class="ai-tip-row">
-                          <span style="color:#64748b;">Total Limit</span>
-                          <span style="font-weight:600;">{{ number_format($__stTotalMB) }} MB</span>
-                      </div>
-                      <div class="ai-tip-row">
-                          <span style="color:#64748b;">Sisa</span>
-                          <span style="font-weight:700;color:#38bdf8;">{{ number_format(max(0, $__stTotalMB - $__stUsedMB), 2) }} MB</span>
-                      </div>
-                      <div style="margin-top:8px;background:rgba(56,189,248,0.08);border-radius:6px;padding:6px 8px;">
-                          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                              <span style="font-size:10px;color:#64748b;">Penggunaan</span>
-                              <span style="font-size:10px;font-weight:700;color:{{ $__stPct > 80 ? '#f87171' : '#38bdf8' }};">{{ $__stPct }}%</span>
-                          </div>
-                          <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:4px;overflow:hidden;">
-                              <div style="background:{{ $__stPct > 80 ? '#ef4444' : '#38bdf8' }};width:{{ $__stPct }}%;height:100%;border-radius:4px;"></div>
-                          </div>
+                          <div class="meter-usage"><span>Penggunaan</span><span style="color:{{ \$__c['text'] }};">{{ \$__stPct }}%</span></div>
+                          <div class="meter-bar"><div style="width:{{ min(\$__stPct,100) }}%;background:{{ \$__c['bar'] }};"></div></div>
+                          @if (\$__stPct >= 80)
+                              <a href="{{ url('app/master/media-manager') }}" class="meter-btn meter-btn-danger"><i class="bx bx-trash"></i> Hapus media sekarang</a>
+                          @else
+                              <a href="{{ url('app/master/media-manager') }}" class="meter-btn meter-btn-ghost"><i class="bx bx-images"></i> Kelola media</a>
+                          @endif
                       </div>
                   </div>
               </div>
