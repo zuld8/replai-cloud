@@ -174,6 +174,25 @@
             </div>
           </div>
 
+          <!-- Fase 3: Template Starter (hanya muncul saat belum ada node) -->
+          <div v-if="nodes.length === 0" class="mb-tpl-picker">
+            <div class="mb-tpl-title">Mulai dari contoh — tinggal ganti teksnya</div>
+            <div class="mb-tpl-grid">
+              <button class="mb-tpl-card" @click="applyTemplate('cs')">
+                <i class="bx bx-headphone"></i><span>Menu Bantuan CS</span><small>Sapaan + FAQ + Chat CS</small>
+              </button>
+              <button class="mb-tpl-card" @click="applyTemplate('faq')">
+                <i class="bx bx-help-circle"></i><span>Tanya Jawab (FAQ)</span><small>Daftar pertanyaan umum</small>
+              </button>
+              <button class="mb-tpl-card" @click="applyTemplate('katalog')">
+                <i class="bx bx-store"></i><span>Katalog Produk</span><small>Tampilkan produk + order</small>
+              </button>
+              <button class="mb-tpl-card mb-tpl-blank" @click="applyTemplate('kosong')">
+                <i class="bx bx-plus"></i><span>Mulai kosong</span><small>Susun sendiri dari nol</small>
+              </button>
+            </div>
+          </div>
+
           <!-- Tambah Langkah -->
           <div class="mb-add-node-area">
             <div v-if="!addingNode" class="mb-add-node-btn" @click="addingNode = true">
@@ -296,6 +315,42 @@ export default {
       // Fase 1: interactive preview state
       previewLog: [],
       showListPanel: false,
+      // Fase 3: data template starter
+      TEMPLATES: {
+        cs: {
+          start: 'start',
+          nodes: [
+            { key:'start', type:'buttons', body:'Halo! 👋 Terima kasih sudah menghubungi kami. Ada yang bisa dibantu?',
+              opts:[ {label:'Tanya (FAQ)', act:'goto_node', to:'faq'}, {label:'Chat CS', act:'handoff', to:'ho'} ] },
+            { key:'faq', type:'list', listLabel:'Pilih', body:'Pilih pertanyaan yang sering ditanyakan:',
+              opts:[ {label:'Cara Pesan', act:'goto_node', to:'pesan'}, {label:'Jam & Lokasi', act:'goto_node', to:'jam'}, {label:'Kembali ke Menu', act:'back_to_start'} ] },
+            { key:'pesan', type:'message', body:'Cara pesan gampang: chat kami *nama produk + jumlah*, nanti CS bantu proses ya 😊' },
+            { key:'jam', type:'message', body:'🕐 Buka Senin–Sabtu 09.00–17.00 WIB\n📍 Alamat: (isi alamat kamu)' },
+            { key:'ho', type:'handoff', body:'Baik, kami sambungkan ke CS ya. Mohon tunggu sebentar 🙏' },
+          ],
+        },
+        faq: {
+          start: 'start',
+          nodes: [
+            { key:'start', type:'list', listLabel:'Pilih', body:'Halo! Mau tanya apa? Pilih di bawah 👇',
+              opts:[ {label:'Harga', act:'goto_node', to:'harga'}, {label:'Pengiriman', act:'goto_node', to:'kirim'}, {label:'Garansi', act:'goto_node', to:'garansi'}, {label:'Chat CS', act:'handoff', to:'ho'} ] },
+            { key:'harga', type:'message', body:'💰 Harga mulai Rp— (isi). Katalog lengkap: (link)' },
+            { key:'kirim', type:'message', body:'📦 Pengiriman 1–3 hari via (ekspedisi). Ongkir sesuai lokasi.' },
+            { key:'garansi', type:'message', body:'✅ Garansi 7 hari tukar kalau ada cacat produksi.' },
+            { key:'ho', type:'handoff', body:'Oke, kami sambungkan ke CS ya 🙏' },
+          ],
+        },
+        katalog: {
+          start: 'start',
+          nodes: [
+            { key:'start', type:'buttons', body:'Halo! 👋 Lihat produk kami:',
+              opts:[ {label:'Produk A', act:'goto_node', to:'a'}, {label:'Produk B', act:'goto_node', to:'b'}, {label:'Order / CS', act:'handoff', to:'ho'} ] },
+            { key:'a', type:'message', body:'✨ *Produk A* — (deskripsi singkat). Harga Rp—. Foto/link: (isi)' },
+            { key:'b', type:'message', body:'✨ *Produk B* — (deskripsi singkat). Harga Rp—.' },
+            { key:'ho', type:'handoff', body:'Siap! Kami bantu proses order kamu 🙏' },
+          ],
+        },
+      },
     };
   },
   computed: {
@@ -385,6 +440,43 @@ export default {
     ringkasNode(n2, i) {
       const txt = n2.body_text ? n2.body_text.slice(0, 24) : this.typeLabel(n2.type);
       return 'Langkah ' + (i + 1) + ' · ' + txt;
+    },
+
+    // ── Fase 3: apply template starter ───────────────────────
+    applyTemplate(key) {
+      if (key === 'kosong') {
+        const t = this.newTemp();
+        this.nodes = [{ temp_id:t, type:'buttons', body_text:'', header:'', footer:'', list_button_label:'', position:0, options:[] }];
+        this.startTempId = t;
+        this.selectedTempId = t;
+        this.previewStart();
+        return;
+      }
+      const T = this.TEMPLATES[key];
+      if (!T) return;
+      // Pass 1: alokasikan temp_id per node
+      const idMap = {};
+      T.nodes.forEach(n => { idMap[n.key] = this.newTemp(); });
+      // Pass 2: rakit node + resolve target
+      this.nodes = T.nodes.map((n, i) => ({
+        temp_id: idMap[n.key],
+        type: n.type,
+        body_text: n.body || '',
+        header: '', footer: '',
+        list_button_label: n.type === 'list' ? (n.listLabel || 'Pilih') : '',
+        position: i,
+        options: (n.opts || []).map((o, oi) => ({
+          kind: n.type === 'list' ? 'list_row' : 'button',
+          label: o.label,
+          description: o.desc || '',
+          order: oi + 1,
+          target_action: o.act,
+          target_temp_id: o.to ? (idMap[o.to] || '') : '',
+        })),
+      }));
+      this.startTempId = idMap[T.start];
+      this.selectedTempId = this.startTempId;
+      this.previewStart();
     },
 
     // ── Fase 1: interactive preview ───────────────────────────
@@ -740,6 +832,34 @@ export default {
 }
 .mb-pv-list-row:last-child { border-bottom:none; }
 .mb-pv-list-row:hover { background:#F1F5F9; }
+
+/* ── Template Starter Picker (Fase 3) ────────────────── */
+.mb-tpl-picker {
+  background:#fff; border:1.5px dashed #CBD5E1; border-radius:12px;
+  padding:20px 16px; margin-bottom:12px; text-align:center;
+}
+.mb-tpl-title {
+  font-size:12px; font-weight:600; color:#64748B;
+  text-transform:uppercase; letter-spacing:.06em; margin-bottom:14px;
+}
+.mb-tpl-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+}
+.mb-tpl-card {
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  background:#F5F8FC; border:1.5px solid #E4EAF2; border-radius:10px;
+  padding:14px 10px; cursor:pointer; transition:all .18s;
+  font-family:inherit;
+}
+.mb-tpl-card:hover {
+  border-color:#2E8DE1; background:#EAF3FC;
+  box-shadow:0 2px 8px rgba(46,141,225,.15); transform:translateY(-1px);
+}
+.mb-tpl-card i { font-size:22px; color:#2E8DE1; }
+.mb-tpl-card span { font-size:13px; font-weight:600; color:#1E2A4A; }
+.mb-tpl-card small { font-size:11px; color:#94A3B8; line-height:1.3; text-align:center; }
+.mb-tpl-blank i { color:#64748B; }
+.mb-tpl-blank:hover { border-color:#64748B; background:#F1F5F9; box-shadow:none; }
 
 @media (max-width: 900px) {
   .mb-preview { display:none; }
