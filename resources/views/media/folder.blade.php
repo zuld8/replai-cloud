@@ -197,8 +197,8 @@
                 </div>{{-- /row --}}
                 {{-- Pagination --}}
                 @if($media->hasPages())
-                <div class="d-flex justify-content-center mt-3">
-                    {{ $media->links() }}
+                <div class="d-flex justify-content-center mt-3" style="font-size:0.875rem">
+                    {{ $media->links('vendor.pagination.bootstrap-5') }}
                 </div>
                 @endif
                 </div>
