@@ -540,7 +540,7 @@
                                 <div class="sl-icon"><i class="bx bx-lock-alt"></i></div>
                                 <div class="sl-text">
                                     <div class="sl-title">Sesi {{ detail.from === 'instagram' ? '7 hari' : '24 jam' }} sudah tutup</div>
-                                    <div class="sl-sub">Balas pakai template, atau tandai selesai.</div>
+                                    <div class="sl-sub">Balas pakai template, atau tandai selesai.<template v-if="detail.is_coexistence"> Atau balas langsung dari HP (WhatsApp Business).</template></div>
                                 </div>
                                 <div class="sl-actions">
                                     <button class="btn-selesai" @click="resolved" v-if="detail.status !== 'resolved'" title="Selesai">

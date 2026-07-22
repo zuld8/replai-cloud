@@ -81,6 +81,8 @@ class ContactDetailResource extends JsonResource
             'lead_source'        => $this->lead_source,
             'lead_source_detail' => $this->lead_source_detail
                 ? json_decode($this->lead_source_detail, true) : null,
+            // is_coexistence: dari WhatsappKeyAccount (waba relation) → meta_data.whatsapp.is_coexistence
+            'is_coexistence'     => (bool) ((json_decode($this->waba?->meta_data ?? '{}', true))['whatsapp']['is_coexistence'] ?? false),
         ];
     }
 }
