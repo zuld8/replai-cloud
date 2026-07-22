@@ -227,7 +227,8 @@
 
     // Limits from transaction – Platform
     $limDevice   = $pkg ? (int)($pkg->device_limit        ?? 0) : 0;
-    $limWaba     = $pkg ? (int)($pkg->waba_limit           ?? 0) : 0;
+    // Langkah 3: hormati flag limit_waba — jangan ∞ kalau package set limit eksplisit
+   $limWaba     = $pkg ? ($pkg->limit_waba === 'yes' ? (int)($pkg->waba_limit ?? 0) : 0) : 0;
     $limTelegram = $pkg ? (int)($pkg->telegram             ?? 0) : 0;
     $limInsta    = $pkg ? (int)($pkg->instagram            ?? 0) : 0;
     $limMsg      = $pkg ? (int)($pkg->messanger            ?? 0) : 0;
