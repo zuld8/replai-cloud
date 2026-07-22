@@ -27,9 +27,6 @@
     transform: translateY(-3px);
     box-shadow: 0 8px 30px rgba(0,0,0,0.14);
 }
-.pkg-card.pkg-popular {
-    border: 2px solid #2563EB !important;
-}
 /* ── Header ──────────────────────────────────────────── */
 .pkg-header {
     padding: 20px 20px 16px;
@@ -44,17 +41,6 @@
     font-size: 11px;
     opacity: 0.8;
     margin-top: 2px;
-}
-/* ── Popular badge ───────────────────────────────────── */
-.pkg-popular-badge {
-    background: #EAF2FE;
-    color: #1B5FA6;
-    font-size: 11px;
-    font-weight: 700;
-    text-align: center;
-    padding: 4px 0;
-    letter-spacing: 0.5px;
-    border-radius: 0;
 }
 /* ── Body ────────────────────────────────────────────── */
 .pkg-body {
@@ -129,15 +115,9 @@
                 ['from'=>'#c94b4b','to'=>'#4b134f'],
             ];
             $clr = $colors[$i % count($colors)];
-            $isPopular = ($i === 1);
         @endphp
         <div class="col-xxl-4 col-xl-6 col-lg-6 col-md-6 col-sm-12">
-            <div class="pkg-card card {{ $isPopular ? 'pkg-popular' : '' }}">
-
-                {{-- POPULAR BADGE --}}
-                @if($isPopular)
-                    <div class="pkg-popular-badge">⭐ Paling Populer</div>
-                @endif
+            <div class="pkg-card card">
 
                 {{-- HEADER --}}
                 <div class="pkg-header" style="background:linear-gradient(135deg,{{$clr['from']}},{{$clr['to']}});">
