@@ -920,7 +920,7 @@ export default {
       });
     },
     scrollPreview() {
-      this.$nextTick(() => { const el = this.$refs.previewScroll; if (el) el.scrollTop = el.scrollHeight; });
+      this.scrollPreview();
     },
     previewStart() {
       this.showListPanel = false;
@@ -964,7 +964,7 @@ export default {
       } else {
         this.previewLog.push({ who: 'bot', text: '✅ Percakapan selesai.', buttons: [], type: 'message' });
       }
-      this.$nextTick(() => { const el = this.$refs.previewScroll; if (el) el.scrollTop = el.scrollHeight; });
+      this.scrollPreview();
     },
 
     // ── Peta alur (Fase 2a) ──────────────────────────────
