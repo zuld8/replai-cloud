@@ -378,10 +378,13 @@
             </span>
             <span v-if="mermaidError" class="mb-map-error-inline">⚠ {{ mermaidError }}</span>
           </div>
-          <div class="mb-map-container" ref="mermaidContainer">
+          <div class="mb-map-container">
+            <!-- Loading: dikelola Vue, sibling dari target Mermaid -->
             <div class="mb-map-loading" v-if="!mermaidReady">
               <i class="bx bx-loader-circle bx-spin me-1"></i>Memuat diagram…
             </div>
+            <!-- Target render Mermaid: div KOSONG, Vue tidak menyentuh isinya -->
+            <div class="mb-map-svg" ref="mermaidContainer"></div>
           </div>
         </div>
 
@@ -1022,8 +1025,9 @@ export default {
 
       try {
         const uid = 'mbmap_' + Date.now();
-        const { svg } = await window.mermaid.render(uid, def);
+        const { svg, bindFunctions } = await window.mermaid.render(uid, def);
         container.innerHTML = svg;
+        if (bindFunctions) bindFunctions(container); // bind click mbJumpToNode
         this.mermaidReady = true;
       } catch (e) {
         this.mermaidError = 'Gagal render diagram.';
