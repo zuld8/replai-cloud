@@ -206,7 +206,11 @@ class ConversationReportService
             ->whereBetween('hc.created_at', [$startDate, $endDate])
             ->whereNotNull('hc.handled_by')
             ->where('hcd.from', '=', 'device')
-            ->whereNotNull('hcd.reply_by_id')
+            ->where(function ($q) {
+                // echo_% (balasan dari HP) diakui sebagai respon agen, bukan hanya reply_by_id
+                $q->whereNotNull('hcd.reply_by_id')
+                  ->orWhere('hcd.source', 'like', 'echo\_%');
+            })
             ->when($currentBusiness, fn($q) => $q->where('hc.business_id', $currentBusiness))
             ->when($agentId, function ($q) use ($agentId) {
                 $q->where('hc.handled_by', $agentId);
@@ -276,17 +280,26 @@ class ConversationReportService
         $handledByAI        = HistoryChat::whereBetween('created_at', [$startDate, $endDate])->whereNull('handled_by')->count();
 
         // FIX Bug 2: scope ke business — pakai join (HistoryChatDetail tidak punya business_id)
+        // echo_% = balasan manusia dari luar CRM (app WA Business / WA Personal) → diperlakukan setara agen
         $agentMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
             ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
             ->where('history_chat_details.from', 'device')
-            ->whereNotNull('history_chat_details.reply_by_id')
+            ->where(function ($q) {
+                $q->whereNotNull('history_chat_details.reply_by_id')              // balasan agen via CRM
+                  ->orWhere('history_chat_details.source', 'like', 'echo\_%');   // balasan manusia via HP/desktop
+            })
             ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
             ->count();
 
+        // Otomatis/AI = device + reply_by_id NULL + BUKAN echo (echo = manusia)
         $aiMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
             ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
             ->where('history_chat_details.from', 'device')
             ->whereNull('history_chat_details.reply_by_id')
+            ->where(function ($q) {
+                $q->whereNull('history_chat_details.source')
+                  ->orWhere('history_chat_details.source', 'not like', 'echo\_%');  // buang echo dari AI
+            })
             ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
             ->count();
 
