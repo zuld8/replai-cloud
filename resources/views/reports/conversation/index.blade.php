@@ -246,11 +246,11 @@
                         <div class="chart-legend">
                             <div class="legend-item">
                                 <span class="legend-color" style="background-color: #4CAF50;"></span>
-                                <span class="legend-label">By Agents ({{ number_format($data['overall']['handled_by_agents']) }})</span>
+                                <span class="legend-label">Oleh Agen ({{ number_format($data['overall']['handled_by_agents']) }})</span>
                             </div>
                             <div class="legend-item">
                                 <span class="legend-color" style="background-color: #2196F3;"></span>
-                                <span class="legend-label">By AI ({{ number_format($data['overall']['handled_by_ai']) }})</span>
+                                <span class="legend-label">Otomatis ({{ number_format($data['overall']['handled_by_ai']) }})</span>
                             </div>
                         </div>
                     </div>
@@ -271,16 +271,23 @@
                         <div class="chart-legend">
                             <div class="legend-item">
                                 <span class="legend-color" style="background-color: #4CAF50;"></span>
-                                <span class="legend-label">From Agents ({{ number_format($data['overall']['messages']['from_agents']) }})</span>
+                                <span class="legend-label">Dari Agen ({{ number_format($data['overall']['messages']['from_agents']) }})</span>
                             </div>
                             <div class="legend-item">
                                 <span class="legend-color" style="background-color: #2196F3;"></span>
-                                <span class="legend-label">From AI ({{ number_format($data['overall']['messages']['from_ai']) }})</span>
+                                <span class="legend-label">Otomatis ({{ number_format($data['overall']['messages']['from_ai']) }})</span>
                             </div>
                             <div class="legend-item">
                                 <span class="legend-color" style="background-color: #FF9800;"></span>
-                                <span class="legend-label">From Users ({{ number_format($data['overall']['messages']['from_users']) }})</span>
+                                <span class="legend-label">Dari User ({{ number_format($data['overall']['messages']['from_users']) }})</span>
                             </div>
+                        </div>
+                        <div class="mt-2 px-1">
+                            <small class="text-muted" style="font-size:11px;line-height:1.4">
+                                <i class="bi bi-info-circle"></i>
+                                'Otomatis' mencakup AI, broadcast, notifikasi &amp; menu.
+                                Rinciannya lihat <em>Rincian Balasan Keluar</em> di bawah.
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -436,10 +443,7 @@
                                 Avg Response
 
                             </th>
-                            <th class="sortable text-center" data-sort="engagement">
-                                Engagement %
-
-                            </th>
+                            {{-- Engagement disembunyikan: selalu 100% (gak informatif untuk 1 agen) --}}
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
@@ -479,15 +483,7 @@
                                     {{ number_format($agent['response_time']['avg_first_response'], 1) }} min
                                 </span>
                             </td>
-                            <td class="text-center">
-                                <div class="engagement-cell">
-                                    <span class="metric-value">{{ number_format($agent['engagement']['engagement_rate'], 1) }}%</span>
-                                    <div class="progress engagement-progress">
-                                        <div class="progress-bar {{ $agent['engagement']['engagement_rate'] >= 90 ? 'bg-success' : ($agent['engagement']['engagement_rate'] >= 70 ? 'bg-warning' : 'bg-danger') }}"
-                                            style="width: {{ $agent['engagement']['engagement_rate'] }}%"></div>
-                                    </div>
-                                </div>
-                            </td>
+                            {{-- Engagement TD disembunyikan --}}
                             <td class="text-center">
                                 <div class="action-buttons">
                                     <a href="{{ route('reports.conversation.agent', $agent['agent_id']) }}?year={{ $selectedYear }}"
@@ -500,7 +496,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="text-center py-5">
+                            <td colspan="8" class="text-center py-5">
                                 <div class="empty-state">
                                     <i class="bi bi-inbox"></i>
                                     <p class="empty-text">Tidak ada data agent untuk periode ini</p>
@@ -545,12 +541,12 @@
     // Initialize charts with data
     const chartData = {
         conversationDistribution: {
-            labels: ['Handled by Agents', 'Handled by AI'],
+            labels: ['Oleh Agen', 'Oleh Bot/AI'],
             data: [{{ $data['overall']['handled_by_agents'] }}, {{ $data['overall']['handled_by_ai'] }}],
             colors: ['#4CAF50', '#2196F3']
         },
         messageDistribution: {
-            labels: ['From Agents', 'From AI', 'From Users'],
+            labels: ['Dari Agen', 'Otomatis (bot/broadcast/dll)', 'Dari User'],
             data: [
                 {{ $data['overall']['messages']['from_agents'] }}, 
                 {{ $data['overall']['messages']['from_ai'] }}, 
