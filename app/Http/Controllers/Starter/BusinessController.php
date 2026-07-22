@@ -127,4 +127,24 @@ class BusinessController extends Controller
             return redirect()->back()->with(['gagal'    => $e->getMessage()]);
         }
     }
+    /**
+     * Rename bisnis (inline edit dari daftar bisnis)
+     */
+    public function rename(Request $request, $business)
+    {
+        $this->validate($request, [
+            'name' => 'required|string|max:100',
+        ]);
+
+        $biz = \App\Models\Setting::where('id', $business)
+            ->where(function ($q) {
+                $ids = explode(',', my_user()->business_id ?? '');
+                return $q->whereIn('id', $ids);
+            })->firstOrFail();
+
+        $biz->update(['name' => trim($request->name)]);
+
+        return response()->json(['success' => true, 'name' => $biz->name]);
+    }
+
 }
