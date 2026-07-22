@@ -80,6 +80,7 @@ Route::prefix('starter')->middleware('starter_app')->group(function () {
         Route::post('store', [BusinessController::class, 'store'])->name('starter.business.store');
         Route::get('delete/{business}', [BusinessController::class, 'deleteBusiness'])->name('starter.business.delete');
         Route::get('chooses/{business}', [BusinessController::class, 'choosedBusiness'])->name('starter.business.choose');
+        Route::post('rename/{business}', [BusinessController::class, 'rename'])->name('starter.business.rename');
     });
 
     // Transaction Management
