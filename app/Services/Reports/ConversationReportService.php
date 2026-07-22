@@ -465,7 +465,6 @@ class ConversationReportService
                 'Messages Sent' => $agent['messages']['sent'],
                 'Avg Messages Per Conversation' => $agent['messages']['avg_per_conversation'],
                 'Avg First Response Time (minutes)' => $agent['response_time']['avg_first_response'],
-                'Engagement Rate (%)' => $agent['engagement']['engagement_rate'],
             ];
         }
 
