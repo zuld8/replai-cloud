@@ -1,28 +1,37 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
+    /**
+     * Composite index pada blash_details untuk query statistik.
+     * (device_id, schedule) — fix perf: ganti dari INPLACE syntax ke Schema standar.
+     */
     public function up(): void
     {
-        // Idempotent: cek dulu sebelum tambah
-        if (!$this->hasIndex('blash_details', 'bd_device_schedule_idx')) {
-            // INPLACE, LOCK=NONE → tidak block tulis di tabel 2.3jt baris
-            \DB::statement('ALTER TABLE blash_details ADD INDEX bd_device_schedule_idx (device_id, schedule) ALGORITHM=INPLACE, LOCK=NONE');
+        // Skip kalau index sudah ada (idempotent)
+        $hasIndex = \DB::select("
+            SELECT COUNT(*) as cnt FROM information_schema.STATISTICS
+            WHERE table_schema = DATABASE()
+              AND table_name = 'blash_details'
+              AND index_name = 'bd_device_schedule_idx'
+        ");
+        if (($hasIndex[0]->cnt ?? 0) > 0) {
+            return;
         }
+
+        Schema::table('blash_details', function (Blueprint $table) {
+            $table->index(['device_id', 'schedule'], 'bd_device_schedule_idx');
+        });
     }
 
     public function down(): void
     {
-        if ($this->hasIndex('blash_details', 'bd_device_schedule_idx')) {
-            \DB::statement('ALTER TABLE blash_details DROP INDEX bd_device_schedule_idx');
-        }
-    }
-
-    private function hasIndex(string $table, string $name): bool
-    {
-        $res = \DB::select("SHOW INDEX FROM {$table} WHERE Key_name = ?", [$name]);
-        return !empty($res);
+        Schema::table('blash_details', function (Blueprint $table) {
+            $table->dropIndex('bd_device_schedule_idx');
+        });
     }
 };
