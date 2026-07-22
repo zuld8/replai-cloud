@@ -920,7 +920,7 @@ export default {
       });
     },
     scrollPreview() {
-      this.scrollPreview();
+      this.$nextTick(() => { const el = this.$refs.previewScroll; if (el) el.scrollTop = el.scrollHeight; });
     },
     previewStart() {
       this.showListPanel = false;
