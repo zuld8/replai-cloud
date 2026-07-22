@@ -276,7 +276,11 @@
         $platformType   = $metaWa['whatsapp']['platform_type'] ?? null;
         // is_coexistence = true jika smb_message_echoes pernah diterima (paling reliable)
         // ATAU platform_type === 'COEXISTENCE' dari Meta GET endpoint
-        $isCoexistence  = !empty($metaWa['whatsapp']['is_coexistence']) || $platformType === 'COEXISTENCE';
+        // is_coexistence dari smb_message_echoes (paling reliable)
+        // ATAU platform_type bukan CLOUD_API → semua akun non-cloud = hybrid
+        // Nilai yang diketahui: 'NOT_APPLICABLE', 'COEXISTENCE', 'SMB_APP'
+        $isCoexistence  = !empty($metaWa['whatsapp']['is_coexistence'])
+                        || ($platformType && $platformType !== 'CLOUD_API');
         $displayPhone   = $metaWa['whatsapp']['display_phone_number'] ?? '';
         $reviewStatus   = $detailBusiness['healt_status']['data']['account_review_status'] ?? '-';
         $qualityRating  = strtoupper($metaWa['whatsapp']['quality_rating'] ?? '');
