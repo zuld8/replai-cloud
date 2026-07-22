@@ -156,8 +156,9 @@ class ConversationReportService
                 ],
                 'engagement' => [
                     'conversations_with_replies' => $messages->conversations_with_replies ?? 0,
+                    // FIX Bug 3: cap 100% (numerator bisa > denominator karena beda scope tanggal)
                     'engagement_rate' => $totalConversations > 0
-                        ? round((($messages->conversations_with_replies ?? 0) / $totalConversations) * 100, 2)
+                        ? min(100, round((($messages->conversations_with_replies ?? 0) / $totalConversations) * 100, 2))
                         : 0,
                 ]
             ];
@@ -231,7 +232,7 @@ class ConversationReportService
                     $responseTimes->push([
                         'handled_by' => $userMsg->handled_by,
                         'conversation_id' => $conversationId,
-                        'response_time_minutes' => $agentTime->diffInMinutes($userTime),
+                        'response_time_minutes' => $userTime->diffInMinutes($agentTime), // FIX: Carbon3 signed diff — user→agent = positif
                     ]);
                 }
             }
@@ -280,21 +281,30 @@ class ConversationReportService
             ->whereNull('handled_by')
             ->count();
 
+        // FIX Bug 2: scope ke business — pakai join (HistoryChatDetail tidak punya business_id)
+        $bizId = my_business();
+
         // Messages sent by agents (human)
-        $agentMessages = HistoryChatDetail::whereBetween('created_at', [$startDate, $endDate])
-            ->where('from', 'device')
-            ->whereNotNull('reply_by_id')
+        $agentMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+            ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
+            ->where('history_chat_details.from', 'device')
+            ->whereNotNull('history_chat_details.reply_by_id')
+            ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
             ->count();
 
-        // Messages sent by AI
-        $aiMessages = HistoryChatDetail::whereBetween('created_at', [$startDate, $endDate])
-            ->where('from', 'device')
-            ->whereNull('reply_by_id')
+        // Messages sent by AI / bot
+        $aiMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+            ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
+            ->where('history_chat_details.from', 'device')
+            ->whereNull('history_chat_details.reply_by_id')
+            ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
             ->count();
 
         // Total messages from users
-        $userMessages = HistoryChatDetail::whereBetween('created_at', [$startDate, $endDate])
-            ->where('from', 'user')
+        $userMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+            ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
+            ->where('history_chat_details.from', 'user')
+            ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
             ->count();
 
         return [
