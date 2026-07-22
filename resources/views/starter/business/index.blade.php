@@ -212,7 +212,7 @@
         <div class="biz-actions">
             @if($hasPkg)
                 <a href="{{ route('starter.business.choose', $business->id) }}"
-                   class="btn-biz-enter choosepackage">
+                   class="btn-biz-enter">
                     <i class="bx bx-log-in-circle"></i> Masuk
                 </a>
                 <a href="{{ route('starter.business.detail', $business->id) }}"
@@ -225,16 +225,7 @@
                 </a>
             @endif
         </div>
-
-        {{-- Hapus (kecil, di bawah) --}}
-        <div class="text-center">
-            <a href="{{ route('starter.business.delete', $business->id) }}"
-               class="biz-del-link deletebutton">
-                <i class="bx bx-trash"></i> Hapus bisnis
-            </a>
-        </div>
-
-    </div>
+</div>
     @endforeach
 
     {{-- Buat baru --}}
@@ -300,18 +291,6 @@ $(document).on('blur keydown', '.biz-name-input', function(e) {
         }
     });
 });
-
-// ── Masuk bisnis ──────────────────────────────────────────────
-$(".choosepackage").on("click", function(e) {
-    e.preventDefault();
-    const href = $(this).attr("href");
-    Swal.fire({
-        title: "{{ __('general.are_you_sure') }}",
-        text: "{{ __('starter.choose_package_alert') }}",
-        icon: "warning", showCancelButton: true,
-        confirmButtonColor: "#3085d6", cancelButtonColor: "#d33",
-        confirmButtonText: "Ok",
-    }).then(r => { if (r.value) location.href = href; });
 });
 
 // ── Hapus bisnis ──────────────────────────────────────────────
