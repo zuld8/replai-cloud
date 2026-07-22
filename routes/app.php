@@ -274,6 +274,7 @@ Route::middleware('package_active')->group(function () {
             Route::post('{chatFlow}/toggle', [ChatFlowBuilderController::class, 'toggle'])->name('menu-otomatis.toggle');
             Route::delete('{chatFlow}', [ChatFlowBuilderController::class, 'destroy'])->name('menu-otomatis.destroy');
             Route::post('{chatFlow}/duplicate', [ChatFlowBuilderController::class, 'duplicate'])->name('menu-otomatis.duplicate');
+            Route::post('{chatFlow}/test-send', [ChatFlowBuilderController::class, 'testSend'])->name('menu-otomatis.test-send');
         });
 
 

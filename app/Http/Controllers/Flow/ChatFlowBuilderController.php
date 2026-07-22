@@ -211,4 +211,64 @@ class ChatFlowBuilderController extends Controller
             return response()->json(['status' => 'ok', 'id' => $newFlow->id]);
         });
     }
+    public function testSend(Request $request, ChatFlow $chatFlow)
+    {
+        // Pastikan flow milik business yang login
+        $bizId = my_business()->id ?? null;
+        if (!$bizId || $chatFlow->business_id !== $bizId) abort(403);
+
+        $data = $request->validate([
+            'phone'     => 'required|string',
+            'device_id' => 'nullable|uuid',
+        ]);
+
+        // Pilih device WABA: dari request atau device pertama business
+        $device = \App\Models\WhatsappKeyAccount::withoutGlobalScopes()
+            ->where('business_id', $chatFlow->business_id)
+            ->where('status', 'active')
+            ->when($data['device_id'] ?? null, fn($q, $id) => $q->where('id', $id))
+            ->first();
+
+        if (!$device) {
+            return response()->json(['status' => 'error', 'message' => 'Belum ada device WABA aktif untuk business ini.'], 422);
+        }
+
+        // Load langkah pertama
+        $start = \App\Models\ChatFlow\ChatFlowNode::with('options')
+            ->where('id', $chatFlow->start_node_id)
+            ->first();
+
+        if (!$start) {
+            return response()->json(['status' => 'error', 'message' => 'Flow belum punya langkah awal. Simpan dulu.'], 422);
+        }
+
+        // Normalisasi nomor: 08xx → 628xx
+        $phone = preg_replace('/[^0-9]/', '', $data['phone']);
+        if (str_starts_with($phone, '0')) $phone = '62' . substr($phone, 1);
+        if (!$phone) {
+            return response()->json(['status' => 'error', 'message' => 'Nomor tidak valid.'], 422);
+        }
+
+        $notif = app(\App\Services\Sistem\WabaNotificationService::class);
+
+        // Kirim sesuai tipe node awal (gak nyentuh DB / history_chats)
+        try {
+            if (in_array($start->type, ['buttons', 'list'])) {
+                $ok = $notif->sendInteractive($phone, $start, $start->options, $device, null);
+            } else {
+                $ok = $notif->sendText($phone, $start->body_text ?? '-', $device, null);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('[testSend] ' . $e->getMessage());
+            $ok = false;
+        }
+
+        return response()->json([
+            'status'  => $ok ? 'ok' : 'error',
+            'message' => $ok
+                ? "Terkirim ke {$phone}! Ini hanya langkah pertama. Tes penuh: aktifkan flow, chat dari nomor sendiri."
+                : 'Gagal kirim. Cek: (1) nomor valid, (2) device WABA aktif, (3) akun Meta tidak error.',
+        ]);
+    }
+
 }
