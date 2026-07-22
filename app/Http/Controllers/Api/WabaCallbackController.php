@@ -650,8 +650,19 @@ class WabaCallbackController extends Controller
             // Update bsuid/username if we now have more info
             if ($history->exists && ($bsuid || $waUsername)) {
                 $updates = [];
+
                 if ($bsuid && !$history->bsuid) $updates['bsuid'] = $bsuid;
+
                 if ($waUsername && !$history->wa_username) $updates['wa_username'] = $waUsername;
+
+                // Update nama kalau masih default dari echo & inbound bawa nama asli
+
+                $realName  = $messageData['fromName'] ?? $waUsername ?? null;
+
+                $isGeneric = in_array($history->name, ['WhatsApp User', 'WA', null, ''], true);
+
+                if ($realName && $isGeneric) $updates['name'] = $realName;
+
                 if (!empty($updates)) $history->update($updates);
             }
 
