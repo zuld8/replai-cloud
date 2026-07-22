@@ -1,214 +1,271 @@
-@extends('layouts.starter') 
+@extends('layouts.starter')
 
 @section('content')
-<div class="row align-items-stretch">
-    <div class="col-12 mb-4">
-        <x-validation-component></x-validation-component>
-    </div>
 
-    @foreach ($businesses as $business)
-    <div class="col-sm-12 col-lg-4 d-flex card-wrapper">
-        <div class="card mb-4 w-100 h-100 {{ !$business->package_active ? 'border-danger' : '' }}">
-            <div class="card-body d-flex flex-column justify-content-between">
-                
-                <!-- Header Section -->
-                <div>
-                    <!-- Package Badge & Price -->
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            @if($business->package_active)
-                            <span class="badge bg-label-primary rounded-pill mb-2">
-                                <i class="bx bx-crown me-1"></i>
-                                {{ $business->package_active->package->name ?? '' }}
-                            </span>
-                            @else
-                            <span class="badge bg-label-danger rounded-pill mb-2">
-                                <i class="bx bx-error-circle me-1"></i>
-                                {{ __('starter.no_active_package') }}
-                            </span>
-                            @endif
-                        </div>
+{{-- ── CSS ─────────────────────────────────────────────────────── --}}
+<style>
+/* Card grid */
+.biz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
 
-                        @if($business->package_active)
-                        <div class="text-end">
-                            <div class="d-flex align-items-start">
-                                <small class="text-muted me-1">Rp</small>
-                                <h4 class="mb-0 text-primary fw-bold">
-                                    {{ number_format($business->package_active->price ?? 0) }}
-                                </h4>
-                            </div>
-                            <small class="text-muted">/ {{ __('starter.monthly') }}</small>
-                        </div>
-                        @endif
-                    </div>
+/* Business card */
+.biz-card {
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+    position: relative;
+    transition: box-shadow .18s, transform .18s;
+    display: flex; flex-direction: column;
+}
+.biz-card:hover { box-shadow: 0 4px 24px rgba(30,42,74,.1); transform: translateY(-2px); }
+.biz-card.biz-danger { border-color: #fca5a5; }
+.biz-card.biz-warning { border-color: #fcd34d; }
+.biz-card.biz-none  { border-color: #e4eaf2; border-style: solid; }
 
-                    <!-- Business Info -->
-                    <div class="mb-4">
-                        <h5 class="mb-2 d-flex align-items-center">
-                            <i class="bx bx-briefcase text-primary me-2"></i>
-                            {{ $business->name }}
-                        </h5>
-                        
-                        @if($business->package_active)
-                        <div class="d-flex align-items-center text-muted small">
-                            <i class="bx bx-calendar me-1"></i>
-                            <span>{{ __('starter.expires_on') }}: <strong>{{ $business->package_active->expire_date }}</strong></span>
-                        </div>
-                        @else
-                        <div class="alert alert-warning d-flex align-items-center p-2 mb-0" role="alert">
-                            <i class="bx bx-info-circle me-2"></i>
-                            <small>{{ __('starter.please_buy_package') }}</small>
-                        </div>
-                        @endif
-                    </div>
+/* Kebab menu */
+.biz-kebab {
+    position: absolute; top: 12px; right: 12px;
+}
+.biz-kebab .btn-link { color: #94a3b8; line-height: 1; }
+.biz-kebab .btn-link:hover { color: #475569; }
 
-                    <!-- Progress Section -->
-                    @if($business->package_active && $business->package_active->days_option == 'limited')
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <small class="text-muted">
-                                <i class="bx bx-time-five me-1"></i>
-                                {{ __('starter.package_usage') }}
-                            </small>
-                            <span class="badge bg-label-info">{{ number_format($business->progress_day) }}%</span>
-                        </div>
-                        
-                        <div class="progress mb-2" style="height: 10px">
-                            <div class="progress-bar {{ $business->remaining_day < 7 ? 'bg-danger' : ($business->remaining_day < 14 ? 'bg-warning' : 'bg-success') }}" 
-                                 role="progressbar" 
-                                 style="width: {{ $business->progress_day }}%"
-                                 aria-valuenow="{{ $business->progress_day }}" 
-                                 aria-valuemin="0" 
-                                 aria-valuemax="100">
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="bx bx-calendar-check me-1"></i>
-                                {{ number_format($business->remaining_day) }} {{ __('starter.remaining_days') }}
-                            </small>
-                            @if($business->remaining_day < 7)
-                            <span class="badge bg-danger">{{ __('starter.almost_expired') }}</span>
-                            @elseif($business->remaining_day < 14)
-                            <span class="badge bg-warning">{{ __('starter.attention') }}</span>
-                            @endif
-                        </div>
-                    </div>
+/* Avatar */
+.biz-avatar {
+    width: 44px; height: 44px; border-radius: 12px;
+    font-weight: 700; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
 
-                    @elseif(!$business->package_active)
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <small class="text-muted">
-                                <i class="bx bx-time-five me-1"></i>
-                                {{ __('starter.package_usage') }}
-                            </small>
-                            <span class="badge bg-label-danger">100%</span>
-                        </div>
-                        
-                        <div class="progress mb-2" style="height: 10px">
-                            <div class="progress-bar bg-danger" 
-                                 role="progressbar" 
-                                 style="width: 100%"
-                                 aria-valuenow="100" 
-                                 aria-valuemin="0" 
-                                 aria-valuemax="100">
-                            </div>
-                        </div>
-                        
-                        <small class="text-danger">
-                            <i class="bx bx-error-circle me-1"></i>
-                            {{ __('starter.package_inactive') }}
-                        </small>
-                    </div>
+/* Status badges */
+.biz-badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px; vertical-align: middle;
+    line-height: 1.6; letter-spacing: .2px;
+}
+.biz-badge-ok      { background: #dcfce7; color: #16a34a; }
+.biz-badge-warning { background: #fef9c3; color: #b26b0b; }
+.biz-badge-danger  { background: #fee2e2; color: #dc2626; }
+.biz-badge-none    { background: #f1f5f9; color: #64748b; }
 
-                    @else
-                    <!-- Unlimited Package Indicator -->
-                    <div class="mb-3 p-3 bg-light rounded">
-                        <div class="text-center">
-                            <i class="bx bx-infinite text-success mb-2" style="font-size: 2rem;"></i>
-                            <div class="fw-semibold text-success">{{ __('starter.unlimited_package') }}</div>
-                            <small class="text-muted">{{ __('starter.no_time_limit') }}</small>
-                        </div>
-                    </div>
-                    @endif
-                </div>
+/* Progress bar */
+.biz-progress { height: 5px; border-radius: 20px; background: #e4eaf2; overflow: hidden; margin: 6px 0 3px; }
+.biz-progress-bar { height: 100%; border-radius: 20px; transition: width .6s ease; }
 
-                <!-- Action Buttons -->
-                <div class="mt-4">
-                    @if($business->package_active)
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <a href="{{ route('starter.business.choose', $business->id) }}" 
-                               class="btn btn-primary w-100 d-flex align-items-center justify-content-center">
-                                <i class="bx bx-log-in-circle me-1"></i>
-                                {{ __('starter.enter_business') }}
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{{ route('starter.business.detail', $business->id) }}" 
-                               class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center">
-                                <i class="bx bx-shopping-bag me-1"></i>
-                                {{ __('starter.buy_package') }}
-                            </a>
-                        </div>
-                    </div>
-                    @else
-                    <div class="row g-2">
-                        <div class="col-7">
-                            <a href="{{ route('starter.business.detail', $business->id) }}" 
-                               class="btn btn-success w-100 d-flex align-items-center justify-content-center">
-                                <i class="bx bx-shopping-bag me-1"></i>
-                                {{ __('starter.buy_package') }}
-                            </a>
-                        </div>
-                        <div class="col-5">
-                            <a href="{{ route('starter.business.delete', $business->id) }}" 
-                               class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center deletebutton">
-                                <i class="bx bx-trash me-1"></i>
-                                {{ __('starter.delete_business') }}
-                            </a>
-                        </div>
-                    </div>
-                    @endif
-                    
-                    <!-- Additional Info -->
-                    <div class="text-center mt-3">
-                        <small class="text-muted">
-                            @if($business->package_active)
-                            <i class="bx bx-check-circle text-success me-1"></i>
-                            {{ __('starter.business_active') }}
-                            @else
-                            <i class="bx bx-info-circle text-warning me-1"></i>
-                            {{ __('starter.activate_package') }}
-                            @endif
-                        </small>
-                    </div>
-                </div>
+/* Chips */
+.biz-chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.biz-chip {
+    font-size: 11px; color: #475569;
+    background: #f1f5f9; border: 1px solid #e2e8f0;
+    border-radius: 20px; padding: 3px 9px;
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+}
+.biz-chip i { font-size: 12px; color: #94a3b8; }
 
-            </div>
-        </div>
-    </div>
-    @endforeach
+/* Buttons */
+.biz-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 14px; }
+.btn-biz-enter {
+    flex: 1; background: #2E8DE1; color: #fff; font-weight: 600;
+    border: none; border-radius: 9px; padding: 9px 0;
+    text-align: center; font-size: 13px; transition: background .15s;
+    text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.btn-biz-enter:hover { background: #1a78c8; color: #fff; }
+.btn-biz-renew {
+    flex: 1; font-weight: 600; border-radius: 9px; padding: 9px 0;
+    text-align: center; font-size: 13px; transition: all .15s;
+    text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px;
+    border: 1px solid #cbd5e1; color: #64748b; background: #fff;
+}
+.btn-biz-renew:hover { border-color: #2E8DE1; color: #2E8DE1; background: #eaf3fc; }
+.btn-biz-renew.renew-warning { border-color: #f0c98a; color: #b26b0b; background: #fef8ec; }
+.btn-biz-renew.renew-danger  { border-color: #f0a9a9; color: #c0392b; background: #fdf0f0; }
+.btn-biz-buy {
+    flex: 1; background: #dc2626; color: #fff; font-weight: 600;
+    border: none; border-radius: 9px; padding: 9px 0;
+    text-align: center; font-size: 13px;
+    text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.btn-biz-buy:hover { background: #b91c1c; color: #fff; }
+
+/* New business card */
+.biz-card-new {
+    background: #fff; border: 1.5px dashed #b9bede; border-radius: 14px;
+    min-height: 160px; display: flex; align-items: center; justify-content: center;
+    text-decoration: none; transition: border-color .15s, background .15s;
+    flex-direction: column; text-align: center; padding: 24px;
+}
+.biz-card-new:hover { border-color: #2E8DE1; background: #f0f7ff; }
+.biz-new-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #e7ecfd; color: #2f4bd4;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 10px; font-size: 20px;
+}
+
+/* Validation alert */
+.biz-page-header { margin-bottom: 20px; }
+</style>
+
+{{-- ── Validation ───────────────────────────────────────────────── --}}
+<x-validation-component></x-validation-component>
+
+{{-- ── Page Header ──────────────────────────────────────────────── --}}
+<div class="biz-page-header">
+    <h5 class="fw-bold mb-1" style="color:#1e2a4a;">Bisnis kamu</h5>
+    <p class="text-muted mb-0" style="font-size:13px;">Pilih bisnis untuk masuk, atau buat yang baru.</p>
 </div>
 
-<style>
-   
-    /* Progress bar animation */
-    .progress-bar {
-        transition: width 0.6s ease;
-    }
-    
-    /* Badge styling */
-    .badge.rounded-pill {
-        padding: 0.5rem 1rem;
-        font-size: 0.75rem;
-    } 
-</style>
+{{-- ── Grid ─────────────────────────────────────────────────────── --}}
+<div class="biz-grid">
+
+    @foreach ($businesses as $business)
+    @php
+        $rem   = (int)($business->remaining_day ?? 0);
+        $prog  = (int)($business->progress_day  ?? 0);
+        $hasPkg = $business->package_active ? true : false;
+        $isUnlimited = $hasPkg && ($business->package_active->days_option ?? '') !== 'limited';
+
+        // State: none | ok | warning | danger
+        if (!$hasPkg)           $state = 'none';
+        elseif ($isUnlimited)   $state = 'ok';
+        elseif ($rem < 3)       $state = 'danger';
+        elseif ($rem < 8)       $state = 'warning';
+        else                    $state = 'ok';
+
+        // Inisial avatar (1-2 huruf)
+        $words = preg_split('/\s+/', trim($business->name));
+        $init  = strtoupper(
+            mb_substr($words[0] ?? 'B', 0, 1) .
+            (isset($words[1]) ? mb_substr($words[1], 0, 1) : '')
+        );
+
+        // Warna per state
+        $barColor = ['ok'=>'#16a34a','warning'=>'#f59e0b','danger'=>'#dc2626','none'=>'#cbd5e1'][$state];
+        $avatarBg = ['ok'=>'#dcfce7','warning'=>'#fef9c3','danger'=>'#fee2e2','none'=>'#e7ecfd'][$state];
+        $avatarTx = ['ok'=>'#16a34a','warning'=>'#b26b0b','danger'=>'#c0392b','none'=>'#2f4bd4'][$state];
+
+        // Paket info
+        $pkgName  = $business->package_active->package->name ?? null;
+        $pkgPrice = $business->package_active->price ?? 0;
+        $expDate  = $business->package_active->expire_date ?? null;
+    @endphp
+    <div class="biz-card {{ $state === 'danger' ? 'biz-danger' : ($state === 'warning' ? 'biz-warning' : '') }}">
+
+        {{-- ── Kebab menu ──────────────────────────────────────────────── --}}
+        <div class="biz-kebab dropdown">
+            <button class="btn btn-link btn-sm p-1" data-bs-toggle="dropdown" aria-label="Kelola bisnis">
+                <i class="bx bx-dots-vertical-rounded fs-5"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" style="font-size:13px;min-width:160px;">
+                <li>
+                    <a class="dropdown-item" href="{{ route('starter.business.detail', $business->id) }}">
+                        <i class="bx bx-cog me-1 text-muted"></i> Pengaturan
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                    <a class="dropdown-item text-danger deletebutton"
+                       href="{{ route('starter.business.delete', $business->id) }}">
+                        <i class="bx bx-trash me-1"></i> Hapus bisnis
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        {{-- ── Identitas ───────────────────────────────────────────────── --}}
+        <div class="d-flex align-items-center gap-3 mb-3" style="padding-right:28px;">
+            <div class="biz-avatar" style="background:{{ $avatarBg }};color:{{ $avatarTx }};">{{ $init }}</div>
+            <div style="min-width:0;">
+                <div class="d-flex align-items-center gap-1 flex-wrap" style="margin-bottom:2px;">
+                    <span class="fw-bold" style="color:#1e2a4a;font-size:15px;line-height:1.3;">{{ $business->name }}</span>
+                    @if($state === 'ok')
+                        <span class="biz-badge biz-badge-ok">Aktif</span>
+                    @elseif($state === 'warning')
+                        <span class="biz-badge biz-badge-warning">Mau habis</span>
+                    @elseif($state === 'danger')
+                        <span class="biz-badge biz-badge-danger">Segera habis</span>
+                    @else
+                        <span class="biz-badge biz-badge-none">Belum ada paket</span>
+                    @endif
+                </div>
+                <div class="text-muted" style="font-size:11px;line-height:1.3;">
+                    @if($hasPkg && $pkgName)
+                        {{ $pkgName }} · Rp{{ number_format($pkgPrice) }}/bln
+                    @else
+                        Beli paket untuk mulai
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- ── Masa aktif (paket limited) ─────────────────────────────── --}}
+        @if($hasPkg && !$isUnlimited)
+        <div class="mb-2">
+            <div class="d-flex justify-content-between" style="font-size:11px;">
+                <span class="text-muted">Masa aktif</span>
+                <span class="fw-semibold" style="color:{{ $barColor }};">{{ number_format($rem) }} hari lagi</span>
+            </div>
+            <div class="biz-progress">
+                <div class="biz-progress-bar" style="width:{{ $prog }}%;background:{{ $barColor }};"></div>
+            </div>
+            <div style="font-size:10px;color:{{ in_array($state,['warning','danger']) ? $barColor : '#94a3b8' }};">
+                @if($state === 'ok')
+                    Berakhir {{ \Carbon\Carbon::parse($expDate)->isoFormat('D MMM YYYY') }}
+                @else
+                    Perpanjang biar gak terputus
+                @endif
+            </div>
+        </div>
+        @elseif($hasPkg && $isUnlimited)
+        <div class="mb-2">
+            <div class="d-flex align-items-center gap-1 text-muted" style="font-size:11px;">
+                <i class="bx bx-infinite" style="color:#16a34a;"></i>
+                <span style="color:#16a34a;font-weight:600;">Paket selamanya</span>
+            </div>
+        </div>
+        @else
+        <div class="mb-2" style="font-size:11px;color:#ef4444;">
+            <i class="bx bx-error-circle me-1"></i>Tidak ada paket aktif
+        </div>
+        @endif
+
+        {{-- ── Action buttons ──────────────────────────────────────────── --}}
+        <div class="biz-actions">
+            @if($hasPkg)
+            <a href="{{ route('starter.business.choose', $business->id) }}"
+               class="btn-biz-enter choosepackage">
+                <i class="bx bx-log-in-circle"></i> Masuk
+            </a>
+            <a href="{{ route('starter.business.detail', $business->id) }}"
+               class="btn-biz-renew {{ $state === 'danger' ? 'renew-danger' : ($state === 'warning' ? 'renew-warning' : '') }}">
+                <i class="bx bx-refresh"></i> Perpanjang
+            </a>
+            @else
+            <a href="{{ route('starter.business.detail', $business->id) }}" class="btn-biz-buy">
+                <i class="bx bx-cart"></i> Beli paket
+            </a>
+            @endif
+        </div>
+
+    </div>{{-- .biz-card --}}
+    @endforeach
+
+    {{-- ── Kartu "Buat bisnis baru" ──────────────────────────────────── --}}
+    <a href="{{ route('starter.business.create') }}" class="biz-card-new">
+        <div class="biz-new-icon"><i class="bx bx-plus"></i></div>
+        <div class="fw-semibold" style="color:#1e2a4a;font-size:13px;">Buat bisnis baru</div>
+        <div class="text-muted" style="font-size:11px;margin-top:2px;">Kelola beberapa toko dalam 1 akun</div>
+    </a>
+
+</div>{{-- .biz-grid --}}
+
 @endsection
 
 @section('scripts')
 <script>
+    // Konfirmasi masuk bisnis
     $(".choosepackage").on("click", function(e) {
         e.preventDefault();
         const href = $(this).attr("href");
@@ -221,13 +278,11 @@
             cancelButtonColor: "#d33",
             confirmButtonText: "Ok",
         }).then((result) => {
-            if (result.value) {
-                document.location.href = href;
-            }
+            if (result.value) { document.location.href = href; }
         });
     });
-    
-    // Confirm delete business
+
+    // Konfirmasi hapus bisnis
     $(".deletebutton").on("click", function(e) {
         e.preventDefault();
         const href = $(this).attr("href");
@@ -241,9 +296,7 @@
             confirmButtonText: "{{ __('starter.yes_delete') }}",
             cancelButtonText: "{{ __('starter.cancel') }}"
         }).then((result) => {
-            if (result.value) {
-                document.location.href = href;
-            }
+            if (result.value) { document.location.href = href; }
         });
     });
 </script>
