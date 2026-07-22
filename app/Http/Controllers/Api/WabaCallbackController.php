@@ -329,45 +329,43 @@ class WabaCallbackController extends Controller
                     foreach ($echoMessages as $echoMsg) {
                         try {
                             $mid  = $echoMsg['id'] ?? null;
-                            // 'to' = nomor pelanggan (tujuan); 'from' mungkin nomor bisnis
-                            // Struktur payload: akan terkonfirmasi dari log di atas
-                            $from = $echoMsg['to'] ?? ($echoMsg['from'] ?? null);
-                            $text = $echoMsg['text']['body']
-                                ?? $echoMsg['text']['preview_url']
-                                ?? null;
+                            // Echo = pesan KELUAR dari bisnis → 'to' = nomor pelanggan
+                            $cust = $echoMsg['to'] ?? null;
+                            if (!$mid || !$cust) continue;
 
-                            if (!$mid || !$from) continue;
-
-                            // Dedup: already saved via CRM send
+                            // Dedup: sudah tersimpan (mis. dikirim via CRM/API)
                             if (\App\Models\ChatBot\HistoryChatDetail::where('messageid', $mid)->exists()) continue;
 
-                            $history = \App\Models\ChatBot\HistoryChat::where('device_id', $device->id)
-                                ->where(function ($q) use ($from) {
-                                    $q->where('from_number', $from)
-                                      ->orWhere('jid_number', $from);
-                                })
-                                ->latest()
-                                ->first();
-
+                            // getOrCreateHistory: pakai whatsapp_waba_id (BUKAN device_id)
+                            // → firstOrCreate percakapan → chat pertama dari HP langsung dibuat
+                            $history = $this->getOrCreateHistory(
+                                ['from' => $cust, 'fromName' => null, 'bsuid' => null, 'wa_username' => null],
+                                $device
+                            );
                             if (!$history) continue;
 
-                            // Simpan echo ke CRM timeline
+                            // Teks / caption sesuai tipe pesan
                             $msgType = $echoMsg['type'] ?? 'text';
-                            // Untuk media: ambil caption jika ada
-                            if (!$text && isset($echoMsg[$msgType]['caption'])) {
-                                $text = $echoMsg[$msgType]['caption'];
-                            }
+                            $msgText = $echoMsg['text']['body']
+                                ?? $echoMsg['image']['caption']
+                                ?? $echoMsg['video']['caption']
+                                ?? $echoMsg['document']['caption']
+                                ?? ($msgType !== 'text' ? '[' . $msgType . ']' : '');
+
                             $echoDetail = $history->details()->create([
-                                'from'            => 'device',
-                                'source'          => 'echo_waba',
+                                'from'            => 'device',    // arah keluar (dari bisnis)
+                                'source'          => 'echo_waba', // penanda: dikirim dari app WA Business
                                 'messageid'       => $mid,
-                                'message'         => $text ?? '',
+                                'message'         => $msgText,
                                 'type'            => $msgType,
                                 'history_chat_id' => $history->id,
                                 'is_read'         => 'yes',
                             ]);
 
-                            // Part 3: emit realtime ke CRM (mirror pola triggerEmit)
+                            // Naikkan percakapan ke atas list CRM
+                            $history->update(['updated_at' => now()]);
+
+                            // Emit realtime ke CRM (biar muncul tanpa refresh)
                             try {
                                 $expressUrl = config('services.express.url') . '/trigger-whatsapp';
                                 Http::withHeaders(['x-api-key' => config('services.express.api_key')])
@@ -376,6 +374,7 @@ class WabaCallbackController extends Controller
                             } catch (\Throwable $emitErr) {
                                 Log::warning('[smb_echo] emit realtime gagal: ' . $emitErr->getMessage());
                             }
+
                         } catch (\Throwable $echoErr) {
                             Log::warning('WABA echo save error: ' . $echoErr->getMessage());
                         }
