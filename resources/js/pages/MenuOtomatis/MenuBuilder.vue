@@ -180,7 +180,7 @@
             <!-- ── Body text ── -->
             <textarea v-model="node.body_text" class="mb-node-body"
               :placeholder="node.type === 'handoff' ? 'Pesan handoff ke CS… (opsional)' : 'Teks pesan…'"
-              rows="2" @click.stop @input="previewStart"></textarea>
+              @click.stop @input="onBodyInput($event, node)"></textarea>
 
             <!-- ── Cara lanjut chips (1A) ── -->
             <div class="mb-cara-lanjut" @click.stop>
@@ -218,8 +218,11 @@
               <div v-if="node._showExtras" class="mb-node-extras">
                 <input v-model="node.header" class="mb-extra-input" placeholder="Header (opsional, max 60)" maxlength="60" @click.stop />
                 <input v-model="node.footer" class="mb-extra-input" placeholder="Footer (opsional, max 60)" maxlength="60" @click.stop />
-                <input v-if="node.type === 'list'" v-model="node.list_button_label" class="mb-extra-input"
-                  placeholder="Label tombol list (max 20, mis. 'Pilih')" maxlength="20" @click.stop />
+                <template v-if="node.type === 'list'">
+                  <label class="mb-extra-label">Teks tombol buka daftar</label>
+                  <input v-model="node.list_button_label" class="mb-extra-input"
+                    placeholder="mis. Lihat pilihan" maxlength="20" @click.stop />
+                </template>
               </div>
             </div>
 
@@ -233,7 +236,7 @@
               </div>
 
               <div v-for="(opt, oi) in node.options" :key="oi" class="mb-option-row">
-                <i class="bx me-1 text-muted" :class="opt.kind === 'button' ? 'bx-radio-circle' : 'bx-menu'"></i>
+                <i class="bx bx-menu me-1 text-muted mb-opt-grip" style="cursor:grab" title="Geser untuk urutkan"></i>
                 <div class="mb-option-inputs">
                   <input v-model="opt.label" class="mb-opt-label"
                     :placeholder="opt.kind === 'button' ? 'Label tombol (max 20)' : 'Judul baris (max 24)'"
@@ -247,7 +250,10 @@
                 </div>
                 <!-- Target: compact label + dropdown -->
                 <div class="mb-option-target">
-                  <span class="mb-opt-target-label">{{ optTargetLabel(opt) }}</span>
+                  <span class="mb-opt-target-label"
+                    :class="{ 'mb-opt-clickable': opt.target_action === 'goto_node' && opt.target_temp_id }"
+                    @click.stop="opt.target_action === 'goto_node' && opt.target_temp_id ? jumpToCardNode(opt.target_temp_id) : null"
+                    :title="opt.target_action === 'goto_node' && opt.target_temp_id ? 'Klik untuk loncat ke langkah tujuan' : ''">{{ optTargetLabel(opt) }}</span>
                   <select :value="combinedValue(opt)"
                     @change="setCombined(opt, $event.target.value)"
                     class="form-select form-select-sm mb-target-unified">
@@ -695,6 +701,22 @@ export default {
       return labels[opt.target_action] || '';
     },
 
+    // Poles 2: auto-grow textarea
+    autoGrow(el) {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 400) + 'px';
+    },
+    onBodyInput(evt, node) {
+      this.autoGrow(evt.target);
+      this.previewStart();
+    },
+    growAllBodies() {
+      this.$nextTick(() => {
+        document.querySelectorAll('.mb-node-body').forEach(el => this.autoGrow(el));
+      });
+    },
+
     addKeyword() {
       const kw = this.kwDraft.trim();
       if (kw && !this.flow.trigger_keywords.includes(kw)) this.flow.trigger_keywords.push(kw);
@@ -882,6 +904,24 @@ export default {
     },
 
     // ── Preview interaktif ──
+    // Poles 5: loncat ke kartu langkah (tanpa pindah tab)
+    jumpToCardNode(tempId) {
+      this.selectedTempId = tempId;
+      this.$nextTick(() => {
+        const refKey = 'node_' + tempId;
+        const ref = this.$refs[refKey];
+        const card = Array.isArray(ref) ? ref[0] : ref;
+        const el = card?.$el || card;
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('mb-node-highlight');
+          setTimeout(() => el.classList.remove('mb-node-highlight'), 1200);
+        }
+      });
+    },
+    scrollPreview() {
+      this.$nextTick(() => { const el = this.$refs.previewScroll; if (el) el.scrollTop = el.scrollHeight; });
+    },
     previewStart() {
       this.showListPanel = false;
       if (!this.startTempId || this.nodes.length === 0) { this.previewLog = []; return; }
@@ -910,7 +950,7 @@ export default {
         type: effType,
         buttons: effBtns,
       });
-      this.$nextTick(() => { const el = this.$refs.previewScroll; if (el) el.scrollTop = el.scrollHeight; });
+      this.scrollPreview();
     },
     previewTap(btn) {
       this.showListPanel = false;
@@ -1068,6 +1108,7 @@ export default {
       this.startTempId = idMap[T.start];
       this.selectedTempId = this.startTempId;
       this.previewStart();
+      this.growAllBodies();
     },
 
     // ── Load data ──
@@ -1138,7 +1179,7 @@ export default {
   mounted() {
     const el = document.getElementById('app');
     this.flowId = el.dataset.flowId || null;
-    this.loadData().then(() => { this.previewStart(); });
+    this.loadData().then(() => { this.previewStart(); this.growAllBodies(); });
     setInterval(() => {
       this.now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     }, 10000);
@@ -1288,7 +1329,8 @@ export default {
 
 .mb-node-body {
   width:100%; border:1px solid #E4EAF2; border-radius:8px; padding:8px 10px;
-  font-size:13px; resize:vertical; background:#F5F8FC; transition:border-color .15s; box-sizing:border-box;
+  font-size:13px; resize:none; background:#F5F8FC; transition:border-color .15s; box-sizing:border-box;
+  overflow:hidden; min-height:60px;
 }
 .mb-node-body:focus { border-color:#2E8DE1; outline:none; background:#fff; }
 
@@ -1316,6 +1358,7 @@ export default {
 .mb-node-extras { margin-top:6px; display:flex; flex-direction:column; gap:5px; }
 .mb-extra-input { border:1px solid #E4EAF2; border-radius:6px; padding:5px 8px; font-size:12px; width:100%; background:#F5F8FC; box-sizing:border-box; }
 .mb-extra-input:focus { border-color:#2E8DE1; outline:none; background:#fff; }
+.mb-extra-label { font-size:11px; color:#94A3B8; display:block; margin-bottom:3px; margin-top:4px; }
 
 /* ── Options ─────────────────────────────────────────── */
 .mb-options { margin-top:10px; border-top:1px solid #F1F5F9; padding-top:10px; display:flex; flex-direction:column; gap:7px; }
@@ -1328,6 +1371,8 @@ export default {
 
 .mb-option-target { min-width:160px; display:flex; flex-direction:column; gap:2px; }
 .mb-opt-target-label { font-size:10px; font-weight:600; color:#2E8DE1; text-align:right; padding-right:2px; }
+.mb-opt-clickable { cursor:pointer; text-decoration:underline dotted; }
+.mb-opt-clickable:hover { color:#1a6dbf; }
 .mb-target-unified { font-size:12px !important; }
 
 .mb-add-opt { background:none; border:1px dashed #CBD5E1; border-radius:6px; padding:5px 10px; font-size:12px; color:#64748B; cursor:pointer; width:100%; text-align:center; transition:all .15s; }
