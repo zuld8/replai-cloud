@@ -620,8 +620,8 @@ export default {
     // 1D: quick fix — tambah tombol ↩ Menu ke node buntu
     quickFixBuntu(node) {
       // Inisialisasi _cont jika belum ada
-      if (!node._cont) this.$set(node, '_cont', { menu: false, cs: false, goto: false, goto_target: '' });
-      this.$set(node._cont, 'menu', true);
+      if (!node._cont) node._cont = { menu: false, cs: false, goto: false, goto_target: '' };
+      node._cont.menu = true;
       // Langsung tampilkan sebagai antibuntu checkbox checked
     },
 
@@ -638,7 +638,7 @@ export default {
         if (node.options.length > 3) node.options.splice(3);
         node.type = 'buttons';
         if (node.options.length === 0) this.addOption(node);
-        this.$set(node, '_cont', null);
+        node._cont = null;
 
       } else if (mode === 'list') {
         // Konversi button → list_row, set list_button_label default
@@ -646,33 +646,33 @@ export default {
         if (!node.list_button_label) node.list_button_label = 'Pilih';
         node.type = 'list';
         if (node.options.length === 0) this.addOption(node);
-        this.$set(node, '_cont', null);
+        node._cont = null;
 
       } else if (mode === 'handoff') {
         node.options = [];        // handoff gak punya options
         node.type = 'handoff';
-        this.$set(node, '_cont', null);
+        node._cont = null;
 
       } else if (mode === 'message') {
         node.options = [];        // message mulai kosong
         node.type = 'message';
         // Inisialisasi _cont dengan default Menu+CS ON
-        this.$set(node, '_cont', { menu: true, cs: true, goto: false, goto_target: '' });
+        node._cont = { menu: true, cs: true, goto: false, goto_target: '' };
       }
       this.previewStart();
     },
 
     toggleExtras(node) {
-      this.$set(node, '_showExtras', !node._showExtras);
+      node._showExtras = !node._showExtras;
     },
 
     // 1C: toggle checkbox _cont
     toggleCont(node, key, val) {
       if (!node._cont) {
-        this.$set(node, '_cont', { menu: false, cs: false, goto: false, goto_target: '' });
+        node._cont = { menu: false, cs: false, goto: false, goto_target: '' };
       }
-      this.$set(node._cont, key, val);
-      if (key === 'goto' && !val) this.$set(node._cont, 'goto_target', '');
+      node._cont[key] = val;
+      if (key === 'goto' && !val) node._cont.goto_target = '';
     },
 
     // Index langkah tujuan dari _cont.goto_target
