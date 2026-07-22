@@ -292,7 +292,7 @@ class ChatFlowEngine
         $detail = $history->details()->create([
             'history_chat_id' => $history->id,
             'from'            => 'device',
-            'source'          => 'bot',
+            'source'          => 'flow',
             'message'         => $node->body_text,
             'created_at'      => $this->nextTs(),  // urutan konsisten vs pesan user
             'updated_at'      => now(),
@@ -318,7 +318,7 @@ class ChatFlowEngine
         $detail = $history->details()->create([
             'history_chat_id' => $history->id,
             'from'            => 'device',
-            'source'          => 'bot',
+            'source'          => 'flow',
             'message'         => $node->body_text,   // teks bersih, tanpa prefix
             'buttons'         => \App\Support\ButtonFormatter::fromFlowOptions($options),
             'created_at'      => $this->nextTs(),
@@ -383,7 +383,7 @@ class ChatFlowEngine
             $detail = $history->details()->create([
                 'history_chat_id' => $history->id,
                 'from'            => 'device',
-                'source'          => 'bot',
+                'source'          => 'flow',
                 'message'         => $node->body_text,
                 'created_at'      => $this->nextTs(),  // urutan konsisten
                 'updated_at'      => now(),
