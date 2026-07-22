@@ -53,8 +53,8 @@ class ConversationReportService
             'summary' => $this->generateSummary($agentMetrics)
         ];
 
-        // Cache for 5 minutes (reports are read-heavy)
-        \Illuminate\Support\Facades\Cache::put($cacheKey, $result, 300);
+        // Cache for 15 minutes (cold-load jarang = lebih sedikit scan berat)
+        \Illuminate\Support\Facades\Cache::put($cacheKey, $result, 900);
         return $result;
     }
 
@@ -274,40 +274,37 @@ class ConversationReportService
     {
         $bizId = my_business();
 
-        // Total conversations (HistoryChat punya global scope bisnis)
-        $totalConversations = HistoryChat::whereBetween('created_at', [$startDate, $endDate])->count();
-        $handledByAgents    = HistoryChat::whereBetween('created_at', [$startDate, $endDate])->whereNotNull('handled_by')->count();
-        $handledByAI        = HistoryChat::whereBetween('created_at', [$startDate, $endDate])->whereNull('handled_by')->count();
+        // FIX perf: 3 count HistoryChat → 1 query aggregated (3x scan → 1x)
+        $convAgg = HistoryChat::whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN handled_by IS NOT NULL THEN 1 ELSE 0 END) as by_agent,
+                SUM(CASE WHEN handled_by IS NULL     THEN 1 ELSE 0 END) as by_ai
+            ")->first();
+        $totalConversations = (int) ($convAgg->total    ?? 0);
+        $handledByAgents    = (int) ($convAgg->by_agent ?? 0);
+        $handledByAI        = (int) ($convAgg->by_ai    ?? 0);
 
-        // FIX Bug 2: scope ke business — pakai join (HistoryChatDetail tidak punya business_id)
-        // echo_% = balasan manusia dari luar CRM (app WA Business / WA Personal) → diperlakukan setara agen
-        $agentMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+        // FIX perf: 3 join-count history_chat_details → 1 scan SUM(CASE) (3x scan besar → 1x)
+        // Logika echo_% identik dengan atribusi balasan Tahap 4
+        $msgAgg = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
             ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
-            ->where('history_chat_details.from', 'device')
-            ->where(function ($q) {
-                $q->whereNotNull('history_chat_details.reply_by_id')              // balasan agen via CRM
-                  ->orWhere('history_chat_details.source', 'like', 'echo\_%');   // balasan manusia via HP/desktop
-            })
             ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
-            ->count();
-
-        // Otomatis/AI = device + reply_by_id NULL + BUKAN echo (echo = manusia)
-        $aiMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
-            ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
-            ->where('history_chat_details.from', 'device')
-            ->whereNull('history_chat_details.reply_by_id')
-            ->where(function ($q) {
-                $q->whereNull('history_chat_details.source')
-                  ->orWhere('history_chat_details.source', 'not like', 'echo\_%');  // buang echo dari AI
-            })
-            ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
-            ->count();
-
-        $userMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
-            ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
-            ->where('history_chat_details.from', 'user')
-            ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
-            ->count();
+            ->selectRaw("
+                SUM(CASE WHEN history_chat_details.`from` = 'device'
+                         AND (history_chat_details.reply_by_id IS NOT NULL
+                              OR history_chat_details.source LIKE 'echo\\_%')
+                         THEN 1 ELSE 0 END) as agent_msgs,
+                SUM(CASE WHEN history_chat_details.`from` = 'device'
+                         AND history_chat_details.reply_by_id IS NULL
+                         AND (history_chat_details.source IS NULL
+                              OR history_chat_details.source NOT LIKE 'echo\\_%')
+                         THEN 1 ELSE 0 END) as ai_msgs,
+                SUM(CASE WHEN history_chat_details.`from` = 'user' THEN 1 ELSE 0 END) as user_msgs
+            ")->first();
+        $agentMessages = (int) ($msgAgg->agent_msgs ?? 0);
+        $aiMessages    = (int) ($msgAgg->ai_msgs    ?? 0);
+        $userMessages  = (int) ($msgAgg->user_msgs  ?? 0);
 
         // 3a: Rincian balasan keluar — CASE berdasarkan reply_by_id + source (1 query)
         $replySourceRows = \DB::table('history_chat_details as hcd')
