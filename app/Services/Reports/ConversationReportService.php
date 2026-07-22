@@ -268,23 +268,14 @@ class ConversationReportService
      */
     private function calculateOverallStats(Carbon $startDate, Carbon $endDate): array
     {
-        // Total conversations
-        $totalConversations = HistoryChat::whereBetween('created_at', [$startDate, $endDate])->count();
-
-        // Handled by agents
-        $handledByAgents = HistoryChat::whereBetween('created_at', [$startDate, $endDate])
-            ->whereNotNull('handled_by')
-            ->count();
-
-        // Handled by AI only
-        $handledByAI = HistoryChat::whereBetween('created_at', [$startDate, $endDate])
-            ->whereNull('handled_by')
-            ->count();
-
-        // FIX Bug 2: scope ke business — pakai join (HistoryChatDetail tidak punya business_id)
         $bizId = my_business();
 
-        // Messages sent by agents (human)
+        // Total conversations (HistoryChat punya global scope bisnis)
+        $totalConversations = HistoryChat::whereBetween('created_at', [$startDate, $endDate])->count();
+        $handledByAgents    = HistoryChat::whereBetween('created_at', [$startDate, $endDate])->whereNotNull('handled_by')->count();
+        $handledByAI        = HistoryChat::whereBetween('created_at', [$startDate, $endDate])->whereNull('handled_by')->count();
+
+        // FIX Bug 2: scope ke business — pakai join (HistoryChatDetail tidak punya business_id)
         $agentMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
             ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
             ->where('history_chat_details.from', 'device')
@@ -292,7 +283,6 @@ class ConversationReportService
             ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
             ->count();
 
-        // Messages sent by AI / bot
         $aiMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
             ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
             ->where('history_chat_details.from', 'device')
@@ -300,26 +290,79 @@ class ConversationReportService
             ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
             ->count();
 
-        // Total messages from users
         $userMessages = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
             ->whereBetween('history_chat_details.created_at', [$startDate, $endDate])
             ->where('history_chat_details.from', 'user')
             ->when($bizId, fn($q) => $q->where('history_chats.business_id', $bizId))
             ->count();
 
+        // 3a: Rincian balasan keluar — CASE berdasarkan reply_by_id + source (1 query)
+        $replySourceRows = \DB::table('history_chat_details as hcd')
+            ->join('history_chats as hc', 'hcd.history_chat_id', '=', 'hc.id')
+            ->where('hcd.from', 'device')
+            ->whereBetween('hcd.created_at', [$startDate, $endDate])
+            ->when($bizId, fn($q) => $q->where('hc.business_id', $bizId))
+            ->selectRaw("
+                CASE
+                  WHEN hcd.reply_by_id IS NOT NULL  THEN 'agen'
+                  WHEN hcd.source = 'flow'          THEN 'menu'
+                  WHEN hcd.source = 'broadcast'     THEN 'broadcast'
+                  WHEN hcd.source = 'notification'  THEN 'notifikasi'
+                  WHEN hcd.source = 'followup'      THEN 'followup'
+                  WHEN hcd.source LIKE 'echo\\_%%' THEN 'echo'
+                  ELSE 'ai'
+                END as bucket,
+                COUNT(*) as total
+            ")
+            ->groupBy('bucket')
+            ->pluck('total', 'bucket');
+
+        // 3b: Percakapan per channel (dari FK nullable)
+        $channelRows = \DB::table('history_chats')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->when($bizId, fn($q) => $q->where('business_id', $bizId))
+            ->selectRaw("
+                CASE
+                  WHEN whatsapp_waba_id IS NOT NULL THEN 'WhatsApp API'
+                  WHEN device_id        IS NOT NULL THEN 'WA Personal'
+                  WHEN instagram_id     IS NOT NULL THEN 'Instagram'
+                  WHEN messanger_id     IS NOT NULL THEN 'Messenger'
+                  WHEN telegram_id      IS NOT NULL THEN 'Telegram'
+                  WHEN livechat_id      IS NOT NULL THEN 'Live Chat'
+                  ELSE 'Lainnya'
+                END as channel,
+                COUNT(*) as total
+            ")
+            ->groupBy('channel')
+            ->pluck('total', 'channel');
+
+        // 3c: Containment — percakapan selesai tanpa handoff (takeover='yes' OR handled_by IS NOT NULL)
+        $handedOff = \DB::table('history_chats')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->when($bizId, fn($q) => $q->where('business_id', $bizId))
+            ->where(fn($q) => $q->where('takeover', 'yes')->orWhereNotNull('handled_by'))
+            ->count();
+        $containment = $totalConversations > 0
+            ? round(($totalConversations - $handedOff) / $totalConversations * 100, 1)
+            : 0;
+
         return [
             'total_conversations' => $totalConversations,
-            'handled_by_agents' => $handledByAgents,
-            'handled_by_ai' => $handledByAI,
-            'agent_coverage' => $totalConversations > 0
+            'handled_by_agents'   => $handledByAgents,
+            'handled_by_ai'       => $handledByAI,
+            'agent_coverage'      => $totalConversations > 0
                 ? round(($handledByAgents / $totalConversations) * 100, 2)
                 : 0,
             'messages' => [
-                'from_agents' => $agentMessages,
-                'from_ai' => $aiMessages,
-                'from_users' => $userMessages,
+                'from_agents'    => $agentMessages,
+                'from_ai'        => $aiMessages,
+                'from_users'     => $userMessages,
                 'total_outbound' => $agentMessages + $aiMessages,
-            ]
+            ],
+            'reply_sources' => $replySourceRows->all(),   // 3a
+            'by_channel'    => $channelRows->all(),        // 3b
+            'containment'   => $containment,              // 3c
+            'handed_off'    => $handedOff,
         ];
     }
 

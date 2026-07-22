@@ -194,6 +194,40 @@
             </div>
         </div>
 
+        {{-- 3c: Kartu Selesai oleh Bot (containment) --}}
+        @php $ct = $data['overall']['containment'] ?? 0; @endphp
+        <div class="row g-4 mt-0 mb-1">
+            <div class="col-xl-4 col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body iconfont text-start">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h4 class="card-title mb-3">
+                                Selesai oleh Bot
+                                <span class="ms-1" data-bs-toggle="tooltip" title="Percakapan yang beres tanpa perlu diambil-alih agen manusia.">
+                                    <i class="bi bi-question-circle text-muted fs-12"></i>
+                                </span>
+                            </h4>
+                        </div>
+                        <div class="d-flex mb-2 align-items-end">
+                            <h4 class="mb-0 font-weight-bold {{ $ct >= 70 ? 'text-success' : ($ct >= 40 ? 'text-warning' : 'text-danger') }}">
+                                {{ number_format($ct, 1) }}%
+                            </h4>
+                            <div class="card-chart bg-{{ $ct >= 70 ? 'success' : ($ct >= 40 ? 'warning' : 'danger') }}-transparent rounded-circle ms-auto mt-0">
+                                <i class="bx bx-bot text-{{ $ct >= 70 ? 'success' : ($ct >= 40 ? 'warning' : 'danger') }} fs-24"></i>
+                            </div>
+                        </div>
+                        <div class="progress progress-sm mt-2">
+                            <div class="progress-bar bg-{{ $ct >= 70 ? 'success' : ($ct >= 40 ? 'warning' : 'danger') }}"
+                                 style="width: {{ min(100,$ct) }}%" role="progressbar"></div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">
+                            {{ number_format($data['overall']['handed_off'] ?? 0) }} dari {{ number_format($data['overall']['total_conversations']) }} percakapan perlu agen
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Charts Section -->
         <div class="charts-section">
             <div class="row g-4">
@@ -265,6 +299,102 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+
+        {{-- 3a: Rincian Balasan Keluar --}}
+        @php
+            $rSources = $data['overall']['reply_sources'] ?? [];
+            $rTotal   = max(1, array_sum($rSources));
+            $rLabels  = [
+                'agen'       => ['Agen (manual)',        '#2E8DE1'],
+                'ai'         => ['AI Chatbot',           '#5B3FB0'],
+                'menu'       => ['Menu Otomatis',        '#16A34A'],
+                'broadcast'  => ['Broadcast',            '#EF9F27'],
+                'notifikasi' => ['Notifikasi',           '#64748B'],
+                'followup'   => ['Follow-up',            '#06B6D4'],
+                'echo'       => ['Dibalas dari HP',      '#94A3B8'],
+            ];
+        @endphp
+        <div class="card custom-card mt-3">
+            <div class="card-header">
+                <i class="bi bi-send me-2"></i>
+                Rincian Balasan Keluar
+                <small class="text-muted ms-1">(berdasarkan pengirim)</small>
+            </div>
+            <div class="card-body">
+                @if(empty($rSources))
+                    <p class="text-muted text-center py-3">Tidak ada data balasan untuk periode ini.</p>
+                @else
+                    @foreach($rLabels as $key => [$label, $color])
+                        @if(isset($rSources[$key]) && $rSources[$key] > 0)
+                        @php $pct = round($rSources[$key] / $rTotal * 100, 1); @endphp
+                        <div class="d-flex align-items-center mb-2 gap-2">
+                            <div style="width:140px;font-size:13px;color:#334155;white-space:nowrap;">{{ $label }}</div>
+                            <div class="flex-grow-1">
+                                <div class="progress" style="height:18px;border-radius:6px;background:#F1F5F9;">
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width:{{ $pct }}%;background:{{ $color }};border-radius:6px;"
+                                         aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="width:120px;text-align:right;font-size:13px;color:#334155;">
+                                <strong>{{ number_format($rSources[$key], 0, ',', '.') }}</strong>
+                                <span class="text-muted">({{ $pct }}%)</span>
+                            </div>
+                        </div>
+                        @endif
+                    @endforeach
+                @endif
+            </div>
+        </div>
+
+        {{-- 3b: Percakapan per Channel --}}
+        @php
+            $channels = $data['overall']['by_channel'] ?? [];
+            $chTotal  = max(1, array_sum($channels));
+            $chColors = [
+                'WhatsApp API' => '#25D366',
+                'WA Personal'  => '#128C7E',
+                'Instagram'    => '#E1306C',
+                'Messenger'    => '#0084FF',
+                'Telegram'     => '#2CA5E0',
+                'Live Chat'    => '#EF9F27',
+                'Lainnya'      => '#94A3B8',
+            ];
+        @endphp
+        <div class="card custom-card mt-3">
+            <div class="card-header">
+                <i class="bi bi-diagram-3 me-2"></i>
+                Percakapan per Channel
+            </div>
+            <div class="card-body">
+                @if(empty($channels) || array_sum($channels) == 0)
+                    <p class="text-muted text-center py-3">Tidak ada data channel untuk periode ini.</p>
+                @else
+                    @foreach($channels as $ch => $cnt)
+                    @if($cnt > 0)
+                    @php $pct = round($cnt / $chTotal * 100, 1); $col = $chColors[$ch] ?? '#94A3B8'; @endphp
+                    <div class="d-flex align-items-center mb-2 gap-2">
+                        <div style="width:140px;font-size:13px;color:#334155;white-space:nowrap;">{{ $ch }}</div>
+                        <div class="flex-grow-1">
+                            <div class="progress" style="height:18px;border-radius:6px;background:#F1F5F9;">
+                                <div class="progress-bar" role="progressbar"
+                                     style="width:{{ $pct }}%;background:{{ $col }};border-radius:6px;"
+                                     aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width:120px;text-align:right;font-size:13px;color:#334155;">
+                            <strong>{{ number_format($cnt, 0, ',', '.') }}</strong>
+                            <span class="text-muted">({{ $pct }}%)</span>
+                        </div>
+                    </div>
+                    @endif
+                    @endforeach
+                @endif
             </div>
         </div>
 
