@@ -320,7 +320,7 @@ class WhatsappWabaController extends Controller
                     $metadataArray['whatsapp']['platform_type']          = $data['platform_type'] ?? null;
 
                     $metadataArray['whatsapp']['webhook_subscribed']        = true;
-                    $metadataArray['whatsapp']['webhook_fields']            = 'messages,message_template_quality_update,message_template_status_update,account_update';
+                    $metadataArray['whatsapp']['webhook_fields']            = 'messages,message_template_quality_update,message_template_status_update,account_update,smb_message_echoes';
 
                     $phoneStatus = $this->whatsappServiceObserver->getPhoneNumberStatus($request->access_token, $data['id']);
 
@@ -1032,7 +1032,7 @@ class WhatsappWabaController extends Controller
                     $metadataArray['whatsapp']['name_status']           = $data['name_status'];
                     $metadataArray['whatsapp']['messaging_limit_tier']  = $data['messaging_limit_tier'] ?? null;
                     $metadataArray['whatsapp']['webhook_subscribed']    = true;
-                    $metadataArray['whatsapp']['webhook_fields']        = 'messages,message_template_quality_update,message_template_status_update,account_update';
+                    $metadataArray['whatsapp']['webhook_fields']        = 'messages,message_template_quality_update,message_template_status_update,account_update,smb_message_echoes';
 
                     $phoneSubscribe = $this->whatsappServiceObserver->subscribePhoneToWebhook($data['id'], $accessToken);
 

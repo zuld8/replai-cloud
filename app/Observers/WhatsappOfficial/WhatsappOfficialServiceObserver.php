@@ -25,7 +25,7 @@ class WhatsappOfficialServiceObserver
         $responseObject = new \stdClass();
         $response       = Http::post("{$this->baseApiRequestEndpoint}/{$appId}/subscriptions?access_token={$appId}|{$appSecret}", [
             'object'        => 'whatsapp_business_account',
-            'fields'        => 'messages,message_template_quality_update,message_template_status_update,account_update',
+            'fields'        => 'messages,message_template_quality_update,message_template_status_update,account_update,smb_message_echoes',
             'callback_url'  => config('app.url') . '/api-app/waba/callback-url/' . $vendorUid,
             "verify_token"  => $vendorUid
         ]);

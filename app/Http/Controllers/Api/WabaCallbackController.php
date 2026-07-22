@@ -315,7 +315,8 @@ class WabaCallbackController extends Controller
                     }
 
                     // Save outbound echo messages to CRM timeline
-                    $echoMessages = $change['value']['messages'] ?? [];
+                    // Meta kirim echo di 'message_echoes', fallback 'messages' buat kompatibilitas
+                    $echoMessages = $change['value']['message_echoes'] ?? $change['value']['messages'] ?? [];
 
                     // Log raw payload first — so we can verify 'from'/'to' field structure
                     Log::info('WABA smb_message_echoes payload', [
@@ -350,15 +351,31 @@ class WabaCallbackController extends Controller
 
                             if (!$history) continue;
 
-                            $history->details()->create([
+                            // Simpan echo ke CRM timeline
+                            $msgType = $echoMsg['type'] ?? 'text';
+                            // Untuk media: ambil caption jika ada
+                            if (!$text && isset($echoMsg[$msgType]['caption'])) {
+                                $text = $echoMsg[$msgType]['caption'];
+                            }
+                            $echoDetail = $history->details()->create([
                                 'from'            => 'device',
                                 'source'          => 'echo_waba',
                                 'messageid'       => $mid,
-                                'message'         => $text,
-                                'type'            => 'text',
+                                'message'         => $text ?? '',
+                                'type'            => $msgType,
                                 'history_chat_id' => $history->id,
                                 'is_read'         => 'yes',
                             ]);
+
+                            // Part 3: emit realtime ke CRM (mirror pola triggerEmit)
+                            try {
+                                $expressUrl = config('services.express.url') . '/trigger-whatsapp';
+                                Http::withHeaders(['x-api-key' => config('services.express.api_key')])
+                                    ->timeout(5)
+                                    ->post($expressUrl, HistoryChatResources::make($echoDetail));
+                            } catch (\Throwable $emitErr) {
+                                Log::warning('[smb_echo] emit realtime gagal: ' . $emitErr->getMessage());
+                            }
                         } catch (\Throwable $echoErr) {
                             Log::warning('WABA echo save error: ' . $echoErr->getMessage());
                         }
