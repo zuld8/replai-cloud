@@ -228,7 +228,10 @@ class ChatFlowEngine
             case 'goto_node':
                 $target = ChatFlowNode::find($option->target_node_id);
                 if (!$target) return false;
-                $session->update(['current_node_id' => $target->id, 'last_activity_at' => now()]);
+                // Push current node ke history stack sebelum pindah (untuk back_previous)
+                $hist = $session->node_history ?? [];
+                if ($session->current_node_id) $hist[] = $session->current_node_id;
+                $session->update(['current_node_id' => $target->id, 'node_history' => $hist, 'last_activity_at' => now()]);
                 return $this->sendNode($target, $device, $history, $session);
 
             case 'handoff':
@@ -241,8 +244,27 @@ class ChatFlowEngine
                 if (!$flow || !$flow->start_node_id) return false;
                 $startNode = ChatFlowNode::find($flow->start_node_id);
                 if (!$startNode) return false;
-                $session->update(['current_node_id' => $startNode->id, 'last_activity_at' => now()]);
+                // Reset stack saat kembali ke awal
+                $session->update(['current_node_id' => $startNode->id, 'node_history' => [], 'last_activity_at' => now()]);
                 return $this->sendNode($startNode, $device, $history, $session);
+
+            case 'back_previous':
+                // Mundur 1 langkah: pop stack
+                $hist = $session->node_history ?? [];
+                $prevId = array_pop($hist);
+                if (!$prevId) {
+                    // Stack kosong → fallback ke start (aman)
+                    if (!$flow) $flow = ChatFlow::withoutGlobalScopes()->find($session->flow_id);
+                    if (!$flow || !$flow->start_node_id) return false;
+                    $fallback = ChatFlowNode::find($flow->start_node_id);
+                    if (!$fallback) return false;
+                    $session->update(['current_node_id' => $fallback->id, 'node_history' => [], 'last_activity_at' => now()]);
+                    return $this->sendNode($fallback, $device, $history, $session);
+                }
+                $prev = ChatFlowNode::find($prevId);
+                if (!$prev) return false;
+                $session->update(['current_node_id' => $prevId, 'node_history' => $hist, 'last_activity_at' => now()]);
+                return $this->sendNode($prev, $device, $history, $session);
 
             case 'end':
                 $session->update(['status' => 'ended', 'last_activity_at' => now()]);

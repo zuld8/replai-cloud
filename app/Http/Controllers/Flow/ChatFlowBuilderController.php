@@ -68,7 +68,7 @@ class ChatFlowBuilderController extends Controller
             'nodes.*.options.*.label'          => 'required|string|max:24',
             'nodes.*.options.*.description'    => 'nullable|string|max:72',
             'nodes.*.options.*.order'          => 'required|integer',
-            'nodes.*.options.*.target_action'  => 'required|in:goto_node,handoff,back_to_start,end',
+            'nodes.*.options.*.target_action'  => 'required|in:goto_node,handoff,back_to_start,end,back_previous',
             'nodes.*.options.*.target_temp_id' => 'nullable|string',
         ]);
 

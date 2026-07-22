@@ -14,11 +14,12 @@ class ChatFlowSession extends Model
 
     protected $fillable = [
         'id', 'business_id', 'history_chat_id',
-        'flow_id', 'current_node_id', 'status', 'last_activity_at',
+        'flow_id', 'current_node_id', 'node_history', 'status', 'last_activity_at',
     ];
 
     protected $casts = [
         'last_activity_at' => 'datetime',
+        'node_history'     => 'array',
     ];
 
     protected static function booted(): void
