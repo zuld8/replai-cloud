@@ -367,13 +367,21 @@
 
         </div><!-- end steps list -->
 
-        <!-- TAB: Peta alur (placeholder Fase 2) -->
-        <div v-show="activeTab === 'map'" class="mb-map-placeholder">
-          <div class="mb-map-inner">
-            <i class="bx bx-sitemap mb-map-icon"></i>
-            <h6 class="mt-3">Peta Alur — Fase 2</h6>
-            <p class="text-muted">Visualisasi pohon percakapan akan tersedia segera.<br>
-               Sementara, gunakan tab <strong>Langkah-langkah</strong> untuk melihat dan mengedit.</p>
+        <!-- TAB: Peta alur (2a — Mermaid diagram) -->
+        <div v-show="activeTab === 'map'" class="mb-map-view">
+          <div class="mb-map-toolbar">
+            <button class="mb-map-refresh-btn" @click="renderMermaid">
+              <i class="bx bx-refresh me-1"></i>Rapikan
+            </button>
+            <span class="mb-map-hint">
+              <i class="bx bx-info-circle me-1"></i>Klik kotak → buka langkahnya
+            </span>
+            <span v-if="mermaidError" class="mb-map-error-inline">⚠ {{ mermaidError }}</span>
+          </div>
+          <div class="mb-map-container" ref="mermaidContainer">
+            <div class="mb-map-loading" v-if="!mermaidReady">
+              <i class="bx bx-loader-circle bx-spin me-1"></i>Memuat diagram…
+            </div>
           </div>
         </div>
 
@@ -505,6 +513,8 @@ export default {
       showListPanel: false,
       testPhone: '',
       testSending: false,
+      mermaidError: '',
+      mermaidReady: false,
       TEMPLATES: {
         cs: {
           start: 'start',
@@ -578,6 +588,18 @@ export default {
 
   watch: {
     startTempId() { this.previewStart(); },
+    activeTab(val) {
+      if (val === 'map') this.$nextTick(() => this.renderMermaid());
+    },
+    nodes: {
+      deep: true,
+      handler() {
+        if (this.activeTab === 'map') {
+          clearTimeout(this._mermaidTimer);
+          this._mermaidTimer = setTimeout(() => this.renderMermaid(), 400);
+        }
+      },
+    },
   },
 
   methods: {
@@ -902,6 +924,114 @@ export default {
       this.$nextTick(() => { const el = this.$refs.previewScroll; if (el) el.scrollTop = el.scrollHeight; });
     },
 
+    // ── Peta alur (Fase 2a) ──────────────────────────────
+    /**
+     * Build string definisi Mermaid graph LR dari this.nodes.
+     * Materialisi _cont untuk node message supaya edge-nya ikut tergambar.
+     */
+    buildMermaidDef() {
+      if (!this.nodes.length) return null;
+      const lines = ['graph LR'];
+      const safe = (str, max = 22) => {
+        if (!str) return '';
+        return str.trim().replace(/"/g, "'").replace(/[\n\r]/g, ' ').slice(0, max);
+      };
+      // ID mermaid: awali n_, replace semua non-alphanum
+      const mid = (tid) => 'n_' + tid.replace(/[^a-zA-Z0-9]/g, '_');
+
+      let needAgen = false;
+      let needEnd = false;
+
+      // Definisi node kotak
+      this.nodes.forEach((node, ni) => {
+        const id = mid(node.temp_id);
+        const title = safe(this.nodeTitle(node) || ('Langkah ' + (ni + 1)));
+        const label = `L${ni + 1} · ${title}`;
+        let cls = '';
+        if (node.temp_id === this.startTempId) cls = ':::mulai';
+        else if (this.isBuntu(node)) cls = ':::buntu';
+        lines.push(`  ${id}["${label}"]${cls}`);
+      });
+
+      // Edge antar node
+      this.nodes.forEach((node) => {
+        const fromId = mid(node.temp_id);
+        // Efektif options: _cont untuk message
+        let opts = node.options || [];
+        if (node.type === 'message' && node._cont) {
+          const co = this.buildContOptions(node);
+          if (co.length) opts = co;
+        }
+        opts.forEach((opt) => {
+          const lbl = safe(opt.label, 18);
+          const lp = lbl ? `|"${lbl}"|` : '';
+          if (opt.target_action === 'goto_node' && opt.target_temp_id) {
+            lines.push(`  ${fromId} -->${lp} ${mid(opt.target_temp_id)}`);
+          } else if (opt.target_action === 'back_to_start' && this.startTempId) {
+            const startLbl = lbl || '↩ menu';
+            lines.push(`  ${fromId} -.->|"${startLbl}"| ${mid(this.startTempId)}`);
+          } else if (opt.target_action === 'handoff') {
+            needAgen = true;
+            lines.push(`  ${fromId} -->${lp} _agen_`);
+          } else if (opt.target_action === 'end') {
+            needEnd = true;
+            lines.push(`  ${fromId} -->${lp} _end_`);
+          } else if (opt.target_action === 'back_previous') {
+            lines.push(`  ${fromId} -.->|"↩ 1 langkah"| _prev_`);
+          }
+        });
+        // Click handler — butuh securityLevel:'loose'
+        lines.push(`  click ${fromId} call mbJumpToNode("${node.temp_id}")`);
+      });
+
+      // Node sintetis
+      if (needAgen) {
+        lines.push('  _agen_["👤 Agen"]:::agen');
+        lines.push('  click _agen_ call mbJumpToNode("")');
+      }
+      if (needEnd)  lines.push('  _end_["✋ Selesai"]:::selesai');
+
+      // Class definitions
+      lines.push('  classDef mulai fill:#DCFCE7,stroke:#16A34A,color:#14532D,font-weight:bold');
+      lines.push('  classDef buntu fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D');
+      lines.push('  classDef agen  fill:#E0F2FE,stroke:#0369A1,color:#0C4A6E');
+      lines.push('  classDef selesai fill:#F1F5F9,stroke:#64748B,color:#334155');
+
+      return lines.join('\n');
+    },
+
+    async renderMermaid() {
+      this.mermaidReady = false;
+      this.mermaidError = '';
+      const container = this.$refs.mermaidContainer;
+      if (!container) return;
+
+      if (!window.mermaid) {
+        this.mermaidError = 'Mermaid belum dimuat (cek koneksi internet).';
+        this.mermaidReady = true;
+        return;
+      }
+      if (!this.nodes.length) {
+        container.innerHTML = '<div class="mb-map-empty"><i class="bx bx-sitemap fs-1 text-muted d-block mb-2"></i>Belum ada langkah.</div>';
+        this.mermaidReady = true;
+        return;
+      }
+
+      const def = this.buildMermaidDef();
+      if (!def) { this.mermaidReady = true; return; }
+
+      try {
+        const uid = 'mbmap_' + Date.now();
+        const { svg } = await window.mermaid.render(uid, def);
+        container.innerHTML = svg;
+        this.mermaidReady = true;
+      } catch (e) {
+        this.mermaidError = 'Gagal render diagram.';
+        console.warn('[Mermaid]', e.message);
+        this.mermaidReady = true;
+      }
+    },
+
     // ── Template starter ──
     applyTemplate(key) {
       if (key === 'kosong') {
@@ -1008,6 +1138,27 @@ export default {
     setInterval(() => {
       this.now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     }, 10000);
+
+    // Expose global click handler untuk Mermaid (securityLevel:'loose')
+    window.mbJumpToNode = (tempId) => {
+      if (!tempId) return; // klik node sintetis (agen) diabaikan
+      this.activeTab = 'steps';
+      this.selectedTempId = tempId;
+      this.$nextTick(() => {
+        const refKey = 'node_' + tempId;
+        const ref = this.$refs[refKey];
+        const card = Array.isArray(ref) ? ref[0] : ref;
+        if (card && card.$el) {
+          card.$el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.$el.classList.add('mb-node-highlight');
+          setTimeout(() => card.$el.classList.remove('mb-node-highlight'), 1200);
+        } else if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.add('mb-node-highlight');
+          setTimeout(() => card.classList.remove('mb-node-highlight'), 1200);
+        }
+      });
+    };
   },
 };
 </script>
@@ -1266,6 +1417,37 @@ export default {
 .mb-ts-btn:disabled { opacity:.5; cursor:not-allowed; }
 .mb-ts-hint { font-size:11px; color:#F59E0B; margin-top:5px; }
 .mb-ts-note { font-size:10px; color:#94A3B8; margin-top:5px; line-height:1.4; }
+
+/* ── Peta alur (Fase 2a) ────────────────────────────── */
+.mb-map-view { flex:1; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+.mb-map-toolbar {
+  display:flex; align-items:center; gap:10px; padding:10px 20px;
+  background:#fff; border-bottom:1px solid #E4EAF2; flex-shrink:0;
+}
+.mb-map-refresh-btn {
+  background:none; border:1px solid #E4EAF2; border-radius:6px;
+  padding:4px 10px; font-size:12px; color:#64748B; cursor:pointer;
+  display:flex; align-items:center; transition:all .15s;
+}
+.mb-map-refresh-btn:hover { border-color:#2E8DE1; color:#2E8DE1; background:#EAF3FC; }
+.mb-map-hint { font-size:12px; color:#94A3B8; display:flex; align-items:center; }
+.mb-map-error-inline { font-size:12px; color:#DC2626; }
+.mb-map-container {
+  flex:1; overflow:auto; padding:20px;
+  display:flex; align-items:flex-start; justify-content:flex-start;
+}
+.mb-map-container svg { max-width:none !important; height:auto; }
+.mb-map-loading { color:#94A3B8; font-size:13px; margin:auto; display:flex; align-items:center; }
+.mb-map-empty { color:#94A3B8; font-size:13px; text-align:center; margin:auto; }
+
+/* Highlight saat klik dari peta */
+.mb-node-highlight {
+  animation: mb-flash 1.2s ease;
+}
+@keyframes mb-flash {
+  0%,100% { box-shadow: 0 0 0 3px rgba(46,141,225,.1); }
+  30%      { box-shadow: 0 0 0 6px rgba(46,141,225,.4); border-color:#2E8DE1; }
+}
 
 @media (max-width: 900px) {
   .mb-preview { display:none; }

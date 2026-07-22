@@ -10,5 +10,13 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js" integrity="sha512-IgrMh2PdXFQ0DGXU0GZN6VVqPm/Bc3lj8M9K5xKVzMg0VFYk+YEm+PeSGSHi8gDMU9A/ZeJP3o5n6s5OFaVA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+  // Mermaid diinit sebelum Vue bundle, dengan securityLevel:'loose' biar click handler jalan
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'base',
+    logLevel: 'error',
+    themeVariables: { fontSize: '13px', fontFamily: 'Inter, system-ui, sans-serif' }
+  });
+</script>
 <script src="{{ mix('js/app-menu-builder.js') }}"></script>
 @endsection
