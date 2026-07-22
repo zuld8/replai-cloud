@@ -226,11 +226,15 @@ class SendPromotionWhatsappBatchJob implements ShouldQueue
             $firstBlast = BlashDetail::with('parent')->find($this->blastIds[0] ?? null);
             if ($firstBlast && $firstBlast->parent) {
                 $parent = $firstBlast->parent;
-                $totalDetails = BlashDetail::where('blash_whatsapp_id', $parent->id)->count();
-                $sentDetails = BlashDetail::where('blash_whatsapp_id', $parent->id)
-                    ->where('sending_status', 'yes')->count();
-                $failedDetails = BlashDetail::where('blash_whatsapp_id', $parent->id)
-                    ->where('sending_status', 'no')->count();
+                // FIX perf: 3 COUNT → 1 agregat (kurangi scan index pas blast aktif)
+                $agg = BlashDetail::where('blash_whatsapp_id', $parent->id)
+                    ->selectRaw("COUNT(*) as total,
+                        SUM(CASE WHEN sending_status = 'yes' THEN 1 ELSE 0 END) as sent,
+                        SUM(CASE WHEN sending_status = 'no'  THEN 1 ELSE 0 END) as failed")
+                    ->first();
+                $totalDetails  = (int) ($agg->total  ?? 0);
+                $sentDetails   = (int) ($agg->sent   ?? 0);
+                $failedDetails = (int) ($agg->failed ?? 0);
                 
                 // Mark based on success rate: >=80%=success, >0%=partial_success, 0%=failed
                 if ($totalDetails > 0 && ($sentDetails + $failedDetails) >= $totalDetails) {
