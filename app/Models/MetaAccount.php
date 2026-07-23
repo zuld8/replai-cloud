@@ -25,11 +25,13 @@ class MetaAccount extends Model
     protected $fillable = [
         'app_id',
         'business_id',
+        'merchant_id',
         'app_secret',
         'access_token',
         'name',
         'details',
-        'business_app'
+        'business_app',
+        'type',         // waba | instagram | messenger
     ];
 
     /**

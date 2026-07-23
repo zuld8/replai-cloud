@@ -71,6 +71,7 @@ class WhatsappOfficialObserver
             'business_app'      => $businessId,
             'details'           => $details,
             'app_id'            => $resolvedAppId,
+            'type'              => 'waba',  // embedded signup selalu WABA
         ]);
     }
 
