@@ -155,4 +155,5 @@ class WarmDashboardCache extends Command
         }
 
         $this->info("✅ Done! Warmed {$warmedBiz} bisnis, " . count($warmedMerchant) . " merchant unik. Admin keys di-warm oleh dashboard:warm-admin.");
-        return self::SUCCESS;
+        return self::SUCCESS;    }
+}
