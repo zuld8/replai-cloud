@@ -5,25 +5,39 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use App\Models\ChatBot\HistoryChatDetail;
+// ── Models (sinkron dgn HomeController imports) ──
+use App\Models\Blash\BlashDetail;
+use App\Models\Master\Category;
 use App\Models\ChatBot\FineTunnel;
+use App\Models\ChatBot\HistoryChatDetail;
+use App\Models\LiveChat as LiveChatModel;
+use App\Models\Merchant\Merchant;
+use App\Models\Meta\InstagramAccount;
+use App\Models\Meta\MessengerAccount;
+use App\Models\Package\PackageTransaction;
+use App\Models\Setting;
+use App\Models\Store\Scrapping;
+use App\Models\Store\Store;
+use App\Models\TelegramKey;
+use App\Models\User;
+use App\Models\WhatsappDevice;
+use App\Models\WhatsappKeyAccount;
 
 /**
- * WarmAdminDashboard — Pre-isi cache 5 widget berat dashboard admin.
- * Ringan (~6 query), independen dari loop 200 bisnis di WarmDashboardCache.
- * Dijadwal tiap 5 menit. TTL 1800s >> interval 5 mnt → selalu HIT.
+ * WarmAdminDashboard — Pre-isi SEMUA cache key halaman /administrator.
+ * Dijalankan tiap 5 menit via cron (schedule:run).
  *
- * Keys yang di-warm (PERSIS sama dengan HomeController):
- *   admin_ai_usage_{Y-m}         → wAiStats()
- *   admin_credit_ai_total_{Y-m}  → wAiStats()
- *   admin_ai_top_{Y-m}           → wAiStats()
- *   admin_active_biz             → wActiveBiz()
- *   admin_credit_ai_{Y-m}        → creditAiResponse()
+ * TTL semua key: 1800s (30 mnt).
+ * Schedule interval: 5 mnt.
+ * Hasil: /administrator selalu < 500ms (cache HIT untuk semua blok home()).
+ *
+ * PENTING: query di sini HARUS sinkron dgn home() di HomeController.
+ * Jika ada perubahan query/key di home() → update sini juga.
  */
 class WarmAdminDashboard extends Command
 {
     protected $signature   = 'dashboard:warm-admin {--force : Paksa re-warm walau cache masih ada}';
-    protected $description = 'Pre-isi cache widget berat dashboard admin (ai-stats, active-biz, response-ai)';
+    protected $description = 'Pre-isi SEMUA cache key dashboard admin (home + AJAX widgets)';
 
     public function handle(): int
     {
@@ -35,8 +49,144 @@ class WarmAdminDashboard extends Command
         $monthStart = now()->startOfMonth()->toDateTimeString();
         $monthEnd   = now()->endOfMonth()->toDateTimeString();
 
-        $adminJobs = [
-            // ── 1. AI Usage (ai-stats: ai_replies, automation%, training) ──
+        // ────────────────────────────────────────────────────────────
+        // BLOK A — Key halaman home() (sinkron dgn HomeController::home)
+        // ────────────────────────────────────────────────────────────
+
+        $homeJobs = [
+
+            // ── 1. SUMMARY: KPI utama ──
+            // SINKRON dgn: Cache::remember("admin_summary_{$monthYear}", 900, ...)
+            "admin_summary_{$monthYear}" => function () use ($monthStart, $monthEnd) {
+                return [
+                    'merchants'   => Merchant::count(),
+                    'business'    => Setting::withoutGlobalScopes()->whereNotNull('merchant_id')->count(),
+                    'packages'    => PackageTransaction::where('status', 'success')->where('type', 'package')
+                                        ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('final_total'),
+                    'topup'       => PackageTransaction::where('status', 'success')->where('type', 'topup')
+                                        ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('final_total'),
+                    'finetunnels' => FineTunnel::withoutGlobalScopes()->count(),
+                    'users'       => User::withoutGlobalScopes()->count(),
+                    'devices'     => WhatsappDevice::withoutGlobalScopes()->count(),
+                    'blast_w'     => BlashDetail::where('type', 'whatsapp')
+                                        ->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
+                    'blast_e'     => BlashDetail::where('type', 'email')
+                                        ->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
+                    'scraping'    => Store::where('scrapping_id', '!=', null)
+                                        ->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
+                ];
+            },
+
+            // ── 2. CHANNEL: jumlah per platform ──
+            // SINKRON dgn: Cache::remember("admin_channels_{$monthYear}", 900, ...)
+            "admin_channels_{$monthYear}" => fn () => [
+                'waba'      => WhatsappKeyAccount::withoutGlobalScopes()->count(),
+                'wa_pers'   => WhatsappDevice::withoutGlobalScopes()->count(),
+                'instagram' => InstagramAccount::withoutGlobalScopes()->count(),
+                'messenger' => MessengerAccount::withoutGlobalScopes()->count(),
+                'telegram'  => TelegramKey::withoutGlobalScopes()->count(),
+                'livechat'  => LiveChatModel::withoutGlobalScopes()->count(),
+            ],
+
+            // ── 3. SUBSCRIPTION HEALTH ──
+            // SINKRON dgn: Cache::remember("admin_sub_health_{$monthYear}", 900, ...)
+            "admin_sub_health_{$monthYear}" => function () {
+                $totalBiz = Setting::withoutGlobalScopes()->whereNotNull('merchant_id')->count();
+                $aktif    = PackageTransaction::where('status', 'success')
+                    ->where('type', 'package')
+                    ->where('expire_date', '>=', now())
+                    ->distinct('business_id')->count('business_id');
+                return [
+                    'total'       => $totalBiz,
+                    'aktif'       => $aktif,
+                    'tanpa_paket' => max(0, $totalBiz - $aktif),
+                    'konversi'    => $totalBiz > 0 ? round($aktif / $totalBiz * 100) : 0,
+                ];
+            },
+
+            // ── 4. MRR 12 bulan ──
+            // SINKRON dgn: Cache::remember("admin_mrr_12m", 900, ...)
+            "admin_mrr_12m" => fn () =>
+                PackageTransaction::where('status', 'success')
+                    ->where('type', 'package')
+                    ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
+                    ->selectRaw("DATE_FORMAT(created_at,'%Y-%m') as ym, SUM(final_total) as total")
+                    ->groupBy('ym')->orderBy('ym')->get(),
+
+            // ── 5. SCRAPING per method ──
+            // SINKRON dgn: Cache::remember("admin_scrap_{$monthYear}", 900, ...)
+            "admin_scrap_{$monthYear}" => fn () =>
+                Scrapping::withoutGlobalScopes()
+                    ->whereBetween('created_at', [$monthStart, $monthEnd])
+                    ->selectRaw('scrapping_method, COUNT(*) as n')
+                    ->groupBy('scrapping_method')
+                    ->pluck('n', 'scrapping_method'),
+
+            // ── 6. AKTIVITAS range=30 (default) ──
+            // SINKRON dgn: Cache::remember("admin_activity_{$range}d_{$monthYear}", 900, ...)
+            "admin_activity_30d_{$monthYear}" => function () {
+                $since = now()->subDays(30)->toDateTimeString();
+                return [
+                    'blast_w'      => BlashDetail::where('type', 'whatsapp')->where('created_at', '>=', $since)->count(),
+                    'blast_e'      => BlashDetail::where('type', 'email')->where('created_at', '>=', $since)->count(),
+                    'scrap_maps'   => Scrapping::withoutGlobalScopes()->where('scrapping_method', 'gmaps')->where('created_at', '>=', $since)->count(),
+                    'scrap_group'  => Scrapping::withoutGlobalScopes()->where('scrapping_method', 'group')->where('created_at', '>=', $since)->count(),
+                    'scrap_kontak' => Scrapping::withoutGlobalScopes()->where('scrapping_method', 'contacts')->where('created_at', '>=', $since)->count(),
+                ];
+            },
+
+            // ── 7. AKTIVITAS range=7 (tab alternatif) ──
+            "admin_activity_7d_{$monthYear}" => function () {
+                $since = now()->subDays(7)->toDateTimeString();
+                return [
+                    'blast_w'      => BlashDetail::where('type', 'whatsapp')->where('created_at', '>=', $since)->count(),
+                    'blast_e'      => BlashDetail::where('type', 'email')->where('created_at', '>=', $since)->count(),
+                    'scrap_maps'   => Scrapping::withoutGlobalScopes()->where('scrapping_method', 'gmaps')->where('created_at', '>=', $since)->count(),
+                    'scrap_group'  => Scrapping::withoutGlobalScopes()->where('scrapping_method', 'group')->where('created_at', '>=', $since)->count(),
+                    'scrap_kontak' => Scrapping::withoutGlobalScopes()->where('scrapping_method', 'contacts')->where('created_at', '>=', $since)->count(),
+                ];
+            },
+
+            // ── 8. DATA & KONTAK ──
+            // SINKRON dgn: Cache::remember("admin_data_{$monthYear}", 900, ...)
+            "admin_data_{$monthYear}" => function () {
+                $thirtyDaysAgo = now()->subDays(30)->toDateTimeString();
+                return [
+                    'stores'      => Store::count(),
+                    'categories'  => Category::count(),
+                    'blashs'      => BlashDetail::where('created_at', '>=', $thirtyDaysAgo)->where('reports', null)->count(),
+                    'scrapp'      => Store::where('scrapping_id', '!=', null)->where('created_at', '>=', $thirtyDaysAgo)->count(),
+                    'sending'     => BlashDetail::where('reports', null)->where('created_at', '>=', $thirtyDaysAgo)->count(),
+                    'not_sending' => BlashDetail::where('reports', '!=', null)->where('created_at', '>=', $thirtyDaysAgo)->count(),
+                ];
+            },
+
+            // ── 9. CHURN RISK ──
+            // SINKRON dgn: Cache::remember("admin_churn_{$monthYear}", 900, ...)
+            "admin_churn_{$monthYear}" => function () {
+                $paidBizIds = PackageTransaction::where('status', 'success')
+                    ->where('type', 'package')
+                    ->where('expire_date', '>=', now())
+                    ->whereHas('package', fn($q) => $q->where('price', '>', 0))
+                    ->pluck('business_id')->unique()->values();
+                if ($paidBizIds->isEmpty()) return 0;
+                $aktif3d = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+                    ->whereIn('history_chats.business_id', $paidBizIds->all())
+                    ->where('history_chat_details.created_at', '>=', now()->subDays(3))
+                    ->distinct('history_chats.business_id')
+                    ->count('history_chats.business_id');
+                return max(0, $paidBizIds->count() - $aktif3d);
+            },
+
+        ]; // end homeJobs
+
+        // ────────────────────────────────────────────────────────────
+        // BLOK B — Key AJAX widgets (wAiStats, wActiveBiz, creditAiResponse)
+        // ────────────────────────────────────────────────────────────
+
+        $ajaxJobs = [
+
+            // ── 10. AI USAGE ──
             "admin_ai_usage_{$monthYear}" => function () use ($monthStart, $monthEnd) {
                 $row = DB::table(DB::raw('`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'))
                     ->whereBetween('created_at', [$monthStart, $monthEnd])
@@ -55,13 +205,13 @@ class WarmAdminDashboard extends Command
                 ];
             },
 
-            // ── 2. AI Credit Total (angka di kartu) ──
+            // ── 11. AI CREDIT TOTAL ──
             "admin_credit_ai_total_{$monthYear}" => fn () =>
                 DB::table(DB::raw('`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'))
                     ->whereBetween('created_at', [$monthStart, $monthEnd])
                     ->sum('credit_using'),
 
-            // ── 3. AI Top 5 per bisnis ──
+            // ── 12. AI TOP 5 per bisnis ──
             "admin_ai_top_{$monthYear}" => fn () =>
                 HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
                     ->whereBetween('history_chat_details.created_at', [$monthStart, $monthEnd])
@@ -70,9 +220,7 @@ class WarmAdminDashboard extends Command
                     ->groupBy('history_chats.business_id')
                     ->orderByDesc('n')->limit(5)->get(),
 
-            // ── 4. Bisnis aktif terkini (active-biz, 7 hari) ──
-            // OPTIMASI: pakai history_chats.last_message_at (1 row/conversation, bukan per-pesan)
-            // 111k rows (7 hari) vs 269k detail rows → jauh lebih ringan. Index idx_last_message_at dipakai.
+            // ── 13. BISNIS AKTIF 7 hari (history_chats, FORCE INDEX) ──
             "admin_active_biz" => fn () =>
                 DB::table(DB::raw('`history_chats` FORCE INDEX (`idx_last_message_at`)'))
                     ->where('last_message_at', '>=', now()->subDays(7))
@@ -81,16 +229,23 @@ class WarmAdminDashboard extends Command
                     ->groupBy('business_id')
                     ->orderByDesc('last_activity')->limit(10)->get(),
 
-            // ── 5. AI Credit Chart harian (response-ai) ──
+            // ── 14. AI CREDIT CHART harian ──
             "admin_credit_ai_{$monthYear}" => fn () =>
                 DB::table(DB::raw('`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'))
                     ->selectRaw("DATE(created_at) as date, sum(credit_using) as count")
                     ->whereBetween("created_at", [$monthStart, $monthEnd])
                     ->groupBy("date")->orderBy("date")->get(),
-        ];
 
-        $warmed = 0;
-        foreach ($adminJobs as $key => $fn) {
+        ]; // end ajaxJobs
+
+        // ────────────────────────────────────────────────────────────
+        // Eksekusi semua jobs (home dulu, AJAX kemudian)
+        // ────────────────────────────────────────────────────────────
+
+        $allJobs = array_merge($homeJobs, $ajaxJobs);
+        $warmed  = 0;
+
+        foreach ($allJobs as $key => $fn) {
             if ($force || !Cache::has($key)) {
                 try {
                     Cache::put($key, $fn(), 1800);
@@ -104,7 +259,7 @@ class WarmAdminDashboard extends Command
             }
         }
 
-        $this->info("✅ Admin warm selesai — {$warmed} key di-refresh.");
+        $this->info("✅ Admin warm selesai — {$warmed} key di-refresh dari " . count($allJobs) . " total.");
         return self::SUCCESS;
     }
 }
