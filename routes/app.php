@@ -119,6 +119,8 @@ Route::middleware('package_active')->group(function () {
         Route::get('pesan-masuk', [HomeController::class, 'pesanMasuk']);
         Route::get('broadcast-summary', [HomeController::class, 'broadcastSummary']);
         Route::get('broadcast-status', [HomeController::class, 'broadcastStatus']);
+        Route::get('summary',         [HomeController::class, 'wSummary']);
+        Route::get('crm-preview',     [HomeController::class, 'wCrmPreview']);
         Route::get('logs', [HomeController::class, 'logs']);
         Route::get('unreplied', [HomeController::class, 'unrepliedChats']);
     });

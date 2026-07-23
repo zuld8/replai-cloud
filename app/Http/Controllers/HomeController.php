@@ -86,15 +86,28 @@ class HomeController extends Controller
 
     public function home(Request $request)
     {
-        // FIX: Cache semua query dashboard 5 menit (300 detik)
-        // Data tidak harus real-time detik per detik untuk dashboard summary
+        // LAZY-LOAD: dokumen gak pernah nunggu query
+        // Cache::get = instant ([] jika cold-miss). Warm tiap 10 mnt ngisi key ini.
+        // JS fetch /app/dashboard/summary + /app/dashboard/crm-preview jika data kosong.
         $businessId = my_business();
         $merchantId = my_user()->merchant_id;
         $monthYear  = date('Y-m');
 
-        $summary = Cache::remember("home_summary_{$merchantId}_{$businessId}_{$monthYear}", 900, function () use ($businessId) {
-            // FIX: 4 query whereHas lambat (scan jutaan blash_details) → 3 query efisien
-            // Step 1: Ambil id broadcast bisnis ini dari blash_whatsapps (ratusan baris, bukan jutaan)
+        $summary     = Cache::get("home_summary_{$merchantId}_{$businessId}_{$monthYear}", []);
+        $crmMessages = Cache::get("home_crm_{$merchantId}_{$businessId}", ['newest' => collect([]), 'oldest' => collect([])]);
+        // $interactions dan $logs TIDAK dipakai di blade — dihapus dari komputasi sinkron
+
+        return view('home', ['page' => __('page.dashboard'), 'breadcumb' => false], compact('summary', 'crmMessages'));
+    }
+
+    // ── AJAX: summary KPI (warm-hit = instan, cold = query via Cache::remember) ──
+    public function wSummary()
+    {
+        $businessId = my_business();
+        $merchantId = my_user()->merchant_id;
+        $monthYear  = date('Y-m');
+
+        $data = Cache::remember("home_summary_{$merchantId}_{$businessId}_{$monthYear}", 1800, function () use ($businessId) {
             $monthStart = now()->startOfMonth();
             $monthEnd   = now()->endOfMonth();
             $since30    = now()->subDays(30);
@@ -104,20 +117,17 @@ class HomeController extends Controller
             $emailIds = $bw->where('use', 'email')->pluck('id')->all();
             $allIds   = $bw->pluck('id')->all();
 
-            // Step 2: COUNT blash_details bulan ini — whereIn pakai index blash_whatsapp_id (cepat)
             $blastW = empty($waIds)    ? 0 : BlashDetail::whereIn('blash_whatsapp_id', $waIds)
                           ->whereBetween('created_at', [$monthStart, $monthEnd])->count();
             $blastE = empty($emailIds) ? 0 : BlashDetail::whereIn('blash_whatsapp_id', $emailIds)
                           ->whereBetween('created_at', [$monthStart, $monthEnd])->count();
 
-            // Step 3: sending + not_sending dalam 1 query SUM (bukan 2 query terpisah)
             $snd = empty($allIds) ? null : \DB::table('blash_details')
                 ->whereIn('blash_whatsapp_id', $allIds)
                 ->where('created_at', '>=', $since30)
                 ->selectRaw('SUM(reports IS NULL) AS sending, SUM(reports IS NOT NULL) AS not_sending')
                 ->first();
 
-            // FIX P0 defense-in-depth: eksplisit business_id, tidak andalkan global scope
             return [
                 'unofficial'  => WhatsappDevice::where('business_id', $businessId)->count(),
                 'official'    => WhatsappKeyAccount::where('business_id', $businessId)->count(),
@@ -136,44 +146,16 @@ class HomeController extends Controller
                 'not_sending' => (int) ($snd->not_sending ?? 0),
             ];
         });
+        return response()->json($data);
+    }
 
-        $interactions = Cache::remember("home_interactions_{$merchantId}_{$monthYear}", 900, function () use ($merchantId) {
-            // OPTIMIZED: 4 queries → 1 GROUP BY query (saves ~1.8s)
-            $monthStart = now()->startOfMonth()->toDateString();
-            $monthEnd   = now()->endOfMonth()->toDateString();
+    // ── AJAX: CRM preview — 5 pesan baru + 5 belum dibalas ────────────────────
+    public function wCrmPreview()
+    {
+        $businessId = my_business();
+        $merchantId = my_user()->merchant_id;
 
-            // FIX P0 addendum: eksplisit merchant_id
-            $counts = HistoryChat::withoutGlobalScopes()
-                ->where('merchant_id', $merchantId)
-                ->selectRaw("
-                    status,
-                    COUNT(*) as total,
-                    SUM(CASE WHEN handled_by IS NOT NULL THEN 1 ELSE 0 END) as assigned
-                ")
-                ->whereBetween('created_at', [$monthStart, $monthEnd])
-                ->groupBy('status')
-                ->pluck('total', 'status');
-
-            $assignCount = HistoryChat::withoutGlobalScopes()
-                ->where('merchant_id', $merchantId)
-                ->whereBetween('created_at', [$monthStart, $monthEnd])
-                ->whereNotNull('handled_by')->count();
-
-            return [
-                'open'     => $counts['open'] ?? 0,
-                'pending'  => $counts['pending'] ?? 0,
-                'resolved' => $counts['resolved'] ?? 0,
-                'assign'   => $assignCount,
-            ];
-        });
-
-        $logs = Cache::remember("home_logs_{$merchantId}_{$monthYear}", 1800, function () use ($request) {  // 30 min — warm selalu refresh
-            return ['whatsapp' => $this->logsObserver->getData($request, 'whatsapp')->limit(10)->get(['description', 'error', 'type', 'status', 'created_at'])];
-        });
-
-        // CRM Messages: 5 newest + 5 oldest unanswered
-        $crmMessages = Cache::remember("home_crm_{$merchantId}_{$businessId}", 1800, function () { // 30 min — warm selalu refresh
-            // 5 newest unread messages (has unread count, sorted newest first)
+        $data = Cache::remember("home_crm_{$merchantId}_{$businessId}", 1800, function () {
             $newest = HistoryChat::with(['last_message'])
                 ->where('unread_count', '>', 0)
                 ->whereIn('status', ['open', 'pending'])
@@ -181,7 +163,6 @@ class HomeController extends Controller
                 ->limit(5)
                 ->get(['id', 'name', 'from_number', 'from', 'status', 'last_message_at', 'unread_count', 'avatar_url']);
 
-            // 5 oldest unread messages (has unread count, sorted oldest first)
             $oldest = HistoryChat::with(['last_message'])
                 ->where('unread_count', '>', 0)
                 ->whereIn('status', ['open', 'pending'])
@@ -191,44 +172,24 @@ class HomeController extends Controller
 
             return [
                 'newest' => $newest->map(function($chat) {
-                    // FIX: pakai last_message (hasOne desc) — tidak kena bug limit/order ASC
-                    $lastDetail = $chat->last_message;
-                    return [
-                        'id' => $chat->id,
-                        'name' => $chat->name ?? $chat->from_number,
-                        'phone' => $chat->from_number,
-                        'from' => $chat->from,
-                        'status' => $chat->status,
-                        'last_message' => $lastDetail->message ?? '-',
-                        'last_message_type' => $lastDetail->type ?? 'text',
-                        'last_message_at' => $chat->last_message_at,
-                        'unread' => $chat->unread_count ?? 0,
-                        'avatar' => $chat->avatar_url,
-                    ];
+                    $d = $chat->last_message;
+                    return ['id' => $chat->id, 'name' => $chat->name ?? $chat->from_number,
+                        'phone' => $chat->from_number, 'from' => $chat->from, 'status' => $chat->status,
+                        'last_message' => $d->message ?? '-', 'last_message_type' => $d->type ?? 'text',
+                        'last_message_at' => $chat->last_message_at, 'unread' => $chat->unread_count ?? 0, 'avatar' => $chat->avatar_url];
                 }),
                 'oldest' => $oldest->map(function($chat) {
-                    // FIX: pakai last_message (hasOne desc)
-                    $lastDetail = $chat->last_message;
-                    $waitTime = $chat->last_message_at 
-                        ? \Carbon\Carbon::parse($chat->last_message_at)->diffForHumans() 
+                    $d = $chat->last_message;
+                    $wait = $chat->last_message_at ? \Carbon\Carbon::parse($chat->last_message_at)->diffForHumans()
                         : ($chat->created_at ? \Carbon\Carbon::parse($chat->created_at)->diffForHumans() : '-');
-                    return [
-                        'id' => $chat->id,
-                        'name' => $chat->name ?? $chat->from_number,
-                        'phone' => $chat->from_number,
-                        'from' => $chat->from,
-                        'status' => $chat->status,
-                        'last_message' => $lastDetail->message ?? '-',
-                        'last_message_type' => $lastDetail->type ?? 'text',
-                        'last_message_at' => $chat->last_message_at,
-                        'wait_time' => $waitTime,
-                        'avatar' => $chat->avatar_url,
-                    ];
+                    return ['id' => $chat->id, 'name' => $chat->name ?? $chat->from_number,
+                        'phone' => $chat->from_number, 'from' => $chat->from, 'status' => $chat->status,
+                        'last_message' => $d->message ?? '-', 'last_message_type' => $d->type ?? 'text',
+                        'last_message_at' => $chat->last_message_at, 'wait_time' => $wait, 'avatar' => $chat->avatar_url];
                 }),
             ];
         });
-
-        return view('home', ['page' => __('page.dashboard'), 'breadcumb' => false], compact('summary', 'logs', 'interactions', 'crmMessages'));
+        return response()->json($data);
     }
 
     /**

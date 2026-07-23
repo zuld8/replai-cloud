@@ -243,11 +243,13 @@
                             <i class="bx bxl-whatsapp" style="font-size:22px;color:#fff;"></i>
                         </div>
                         <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">WA Personal</h6>
+                        <span id="kpi-unofficial">
                         @if(($summary['unofficial'] ?? 0) > 0)
                             <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['unofficial'])}}</h3>
                         @else
                             <span class="dash-connect-btn">Connect →</span>
                         @endif
+                        </span>
                     </div>
                 </div>
             </a>
@@ -258,11 +260,13 @@
                             <i class="bx bxl-whatsapp" style="font-size:22px;color:#fff;"></i>
                         </div>
                         <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">WABA</h6>
+                        <span id="kpi-official">
                         @if(($summary['official'] ?? 0) > 0)
                             <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['official'])}}</h3>
                         @else
                             <span class="dash-connect-btn">Connect →</span>
                         @endif
+                        </span>
                     </div>
                 </div>
             </a>
@@ -273,11 +277,13 @@
                             <i class="bx bxl-telegram" style="font-size:22px;color:#fff;"></i>
                         </div>
                         <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">Telegram</h6>
+                        <span id="kpi-telegram">
                         @if(($summary['telegram'] ?? 0) > 0)
                             <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['telegram'])}}</h3>
                         @else
                             <span class="dash-connect-btn">Connect →</span>
                         @endif
+                        </span>
                     </div>
                 </div>
             </a>
@@ -288,11 +294,13 @@
                             <i class="bx bxl-messenger" style="font-size:22px;color:#fff;"></i>
                         </div>
                         <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">Messenger</h6>
+                        <span id="kpi-messenger">
                         @if(($summary['messenger'] ?? 0) > 0)
                             <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['messenger'])}}</h3>
                         @else
                             <span class="dash-connect-btn">Connect →</span>
                         @endif
+                        </span>
                     </div>
                 </div>
             </a>
@@ -303,11 +311,13 @@
                             <i class="bx bxl-instagram" style="font-size:22px;color:#fff;"></i>
                         </div>
                         <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">Instagram</h6>
+                        <span id="kpi-instagram">
                         @if(($summary['instagram'] ?? 0) > 0)
                             <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['instagram'])}}</h3>
                         @else
                             <span class="dash-connect-btn">Connect →</span>
                         @endif
+                        </span>
                     </div>
                 </div>
             </a>
@@ -318,11 +328,13 @@
                             <i class="bx bx-chat" style="font-size:22px;color:#fff;"></i>
                         </div>
                         <h6 class="mb-1" style="font-size:0.68rem;color:#6b7280;font-weight:600;">Live Chat</h6>
+                        <span id="kpi-livechats">
                         @if(($summary['livechats'] ?? 0) > 0)
                             <h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{{number_format($summary['livechats'])}}</h3>
                         @else
                             <span class="dash-connect-btn">Connect →</span>
                         @endif
+                        </span>
                     </div>
                 </div>
             </a>
@@ -331,13 +343,14 @@
     
     <!-- Stat Mini Cards -->
     <div class="row g-2 mt-2">
-        <div class="col-4"><div class="card dash-stat-card mb-0"><div class="card-body py-2 px-2 text-center"><div class="stat-chip blue mx-auto mb-1">👥</div><small>CONTACT / LEADS</small><h5 class="c-blue">{{number_format($summary['stores'])}}</h5></div></div></div>
-        <div class="col-4"><div class="card dash-stat-card mb-0"><div class="card-body py-2 px-2 text-center"><div class="stat-chip pink mx-auto mb-1">🏷️</div><small>CATEGORY</small><h5 class="c-pink">{{number_format($summary['categories'])}}</h5></div></div></div>
+        <div class="col-4"><div class="card dash-stat-card mb-0"><div class="card-body py-2 px-2 text-center"><div class="stat-chip blue mx-auto mb-1">👥</div><small>CONTACT / LEADS</small><h5 class="c-blue" id="kpi-stores">{{number_format($summary['stores'] ?? 0)}}</h5></div></div></div>
+        <div class="col-4"><div class="card dash-stat-card mb-0"><div class="card-body py-2 px-2 text-center"><div class="stat-chip pink mx-auto mb-1">🏷️</div><small>CATEGORY</small><h5 class="c-pink" id="kpi-categories">{{number_format($summary['categories'] ?? 0)}}</h5></div></div></div>
         <div class="col-4">
             <a href="{{route('finetunnel')}}" class="text-decoration-none">
                 <div class="card dash-stat-card mb-0" style="transition:all 0.2s ease;">
                     <div class="card-body py-2 px-2 text-center">
                         <div class="stat-chip purple mx-auto mb-1">🤖</div><small class="text-muted" style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">AI AGENTS</small>
+                        <span id="kpi-finetunnels">
                         @if(($summary['finetunnels'] ?? 0) > 0)
                             <h5 class="mb-0 mt-1" style="font-weight:800;font-size:1.1rem;color:#5B3FB0;">{{number_format($summary['finetunnels'])}}</h5>
                         @else
@@ -347,6 +360,7 @@
                                 </span>
                             </div>
                         @endif
+                        </span>
                     </div>
                 </div>
             </a>
@@ -365,14 +379,14 @@
                     <div>
                         <div class="d-flex align-items-center gap-2">
                             <h6 class="mb-0 fw-700" style="color:var(--rp-navy);font-size:0.84rem;">5 Pesan Baru di CRM</h6>
-                            <span class="dash-hdr-badge blue">{{ count($crmMessages['newest'] ?? []) }} baru</span>
+                            <span class="dash-hdr-badge blue" id="crm-newest-badge">{{ count($crmMessages['newest'] ?? []) }} baru</span>
                         </div>
                         <small style="font-size:0.7rem;color:var(--rp-muted);">Pesan masuk terbaru yang perlu ditangani</small>
                     </div>
                 </div>
                 <a href="{{ route('crm') }}" class="btn-crm-outline">Buka CRM →</a>
             </div>
-            <div class="card-body p-0" style="max-height:290px;overflow-y:auto;">
+            <div class="card-body p-0" id="crm-newest-body" style="max-height:290px;overflow-y:auto;">
                 @forelse($crmMessages['newest'] ?? [] as $msg)
                 <a href="{{ url('app/crm/chat/' . $msg['id']) }}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;cursor:pointer;color:inherit;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                     <div class="flex-shrink-0" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0369A1,#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.75rem;">
@@ -449,7 +463,7 @@
                 </div>
                 <a href="{{ route('crm') }}" class="btn-crm-outline">Buka CRM →</a>
             </div>
-            <div class="card-body p-0" id="unrepliedBody" style="max-height:290px;overflow-y:auto;">
+            <div class="card-body p-0" id="crm-oldest-body" style="max-height:290px;overflow-y:auto;">
                 @forelse($crmMessages['oldest'] ?? [] as $msg)
                 <a href="{{ url('app/crm/chat/' . $msg['id']) }}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;cursor:pointer;color:inherit;" onmouseover="this.style.background='#FFFBEB'" onmouseout="this.style.background='transparent'">
                     <div class="flex-shrink-0" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.75rem;">
@@ -1455,5 +1469,142 @@ document.addEventListener('DOMContentLoaded', function() {
     if (defaultBtn) filterUnreplied(7, defaultBtn);
 });
 </script>
+
+
+<script>
+// ── LAZY-LOAD KPI & CRM (dokumen < 300ms, data nyusul async) ────────────────
+(function() {
+    // Cek apakah summary perlu di-fetch (warm miss = summary kosong / semua 0)
+    var summaryEmpty = !{{ json_encode(!empty($summary)) }};
+    var crmEmpty     = !{{ json_encode(!empty($crmMessages['newest'] ?? [])) }};
+
+    // ── Helper render platform card ──────────────────────────────────────────
+    function renderPlatformKpi(id, val) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = val > 0
+            ? '<h3 class="mb-0" style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">' + Number(val).toLocaleString('id-ID') + '</h3>'
+            : '<span class="dash-connect-btn">Connect →</span>';
+    }
+    function renderStatKpi(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = Number(val || 0).toLocaleString('id-ID');
+    }
+    function renderFinetunnel(val) {
+        var el = document.getElementById('kpi-finetunnels');
+        if (!el) return;
+        el.innerHTML = val > 0
+            ? '<h5 class="mb-0 mt-1" style="font-weight:800;font-size:1.1rem;color:#5B3FB0;">' + Number(val).toLocaleString('id-ID') + '</h5>'
+            : '<div class="mt-1"><span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;font-weight:700;color:#F59E0B;background:#FFFBEB;border:1px dashed #FCD34D;border-radius:20px;padding:3px 10px;"><i class="bx bx-plus" style="font-size:0.85rem;"></i> Buat</span></div>';
+    }
+
+    // ── Helper render CRM list item ──────────────────────────────────────────
+    function msgIcon(type, msg) {
+        var m = msg || '';
+        switch(type) {
+            case 'image':    return '📷 ' + (m || 'Foto');
+            case 'video':    return '🎥 ' + (m || 'Video');
+            case 'document': return '📄 ' + (m || 'Dokumen');
+            case 'audio':    return '🎵 ' + (m || 'Audio');
+            case 'sticker':  return '🎭 Stiker';
+            case 'contacts': return '📇 Kontak';
+            case 'location': return '📍 Lokasi';
+            default:         return m ? m.substring(0, 50) : '📎 Pesan';
+        }
+    }
+    function channelBadge(from) {
+        if (from === 'waba') return '<span style="font-size:0.6rem;background:#F0F9FF;color:#0EA5E9;padding:1px 5px;border-radius:4px;font-weight:600;">WABA</span>';
+        if (from === 'whatsapp') return '<span style="font-size:0.6rem;background:#F0FDF4;color:#16A34A;padding:1px 5px;border-radius:4px;font-weight:600;">WA</span>';
+        return '<span style="font-size:0.6rem;background:#F1F5F9;color:#64748B;padding:1px 5px;border-radius:4px;font-weight:600;">' + (from||'-').toUpperCase() + '</span>';
+    }
+    function timeAgo(ts) {
+        if (!ts) return '-';
+        var d = new Date(ts.replace(' ','T')); var now = new Date();
+        var s = Math.floor((now - d) / 1000);
+        if (s < 60) return s + ' dtk lalu';
+        if (s < 3600) return Math.floor(s/60) + ' mnt lalu';
+        if (s < 86400) return Math.floor(s/3600) + ' jam lalu';
+        return Math.floor(s/86400) + ' hr lalu';
+    }
+    function initials(name) { return (name||'?').substring(0,2).toUpperCase(); }
+
+    function renderNewestItem(msg) {
+        var unread = msg.unread > 0 ? '<span style="background:#0EA5E9;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;font-weight:700;">' + msg.unread + '</span>' : '';
+        return '<a href="/app/crm/chat/' + msg.id + '" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;cursor:pointer;color:inherit;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">'
+            + '<div class="flex-shrink-0" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0369A1,#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.75rem;">' + initials(msg.name) + '</div>'
+            + '<div class="flex-1" style="min-width:0;">'
+            + '<div class="d-flex justify-content-between align-items-center"><span class="fw-semibold text-truncate" style="font-size:0.82rem;color:#1e293b;max-width:160px;">' + (msg.name||'-') + '</span>'
+            + '<div class="d-flex align-items-center gap-1">' + unread + '<small class="text-muted" style="font-size:0.68rem;">' + timeAgo(msg.last_message_at) + '</small></div></div>'
+            + '<p class="mb-0 text-truncate" style="font-size:0.75rem;color:#6b7280;">' + msgIcon(msg.last_message_type, msg.last_message) + '</p>'
+            + '<div class="d-flex align-items-center gap-1 mt-1">' + channelBadge(msg.from) + '<span style="font-size:0.65rem;color:#9ca3af;">' + (msg.phone||'') + '</span></div>'
+            + '</div></a>';
+    }
+    function renderOldestItem(msg) {
+        return '<a href="/app/crm/chat/' + msg.id + '" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;cursor:pointer;color:inherit;" onmouseover="this.style.background='#FFFBEB'" onmouseout="this.style.background='transparent'">'
+            + '<div class="flex-shrink-0" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.75rem;">' + initials(msg.name) + '</div>'
+            + '<div class="flex-1" style="min-width:0;">'
+            + '<div class="d-flex justify-content-between align-items-center"><span class="fw-semibold text-truncate" style="font-size:0.82rem;color:#1e293b;max-width:160px;">' + (msg.name||'-') + '</span>'
+            + '<span style="font-size:0.68rem;color:#DC2626;font-weight:600;">🕐 ' + (msg.wait_time||'-') + '</span></div>'
+            + '<p class="mb-0 text-truncate" style="font-size:0.75rem;color:#6b7280;">' + msgIcon(msg.last_message_type, msg.last_message) + '</p>'
+            + '<div class="d-flex align-items-center gap-1 mt-1">' + channelBadge(msg.from) + '<span style="font-size:0.65rem;color:#9ca3af;">' + (msg.phone||'') + '</span></div>'
+            + '</div></a>';
+    }
+    var emptyNewest = '<div class="text-center py-4"><i class="bx bx-check-circle" style="font-size:2rem;color:#34D399;"></i><p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Semua pesan sudah dibaca 🎉</p></div>';
+    var emptyOldest = '<div class="text-center py-4"><i class="bx bx-check-circle" style="font-size:2rem;color:#34D399;"></i><p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Semua pesan sudah dibalas 🎉</p></div>';
+
+    // ── Fetch summary jika cache miss ──────────────────────────────────────────
+    if (summaryEmpty) {
+        var skeletonStyle = 'background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;display:inline-block;';
+        // Tampilkan shimmer skeleton di KPI spans
+        ['kpi-unofficial','kpi-official','kpi-telegram','kpi-messenger','kpi-instagram','kpi-livechats'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.innerHTML = '<span style="' + skeletonStyle + 'width:40px;height:20px;"></span>';
+        });
+        ['kpi-stores','kpi-categories'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.cssText = skeletonStyle + 'width:60px;height:20px;';
+        });
+        var ft = document.getElementById('kpi-finetunnels'); if (ft) ft.innerHTML = '<span style="' + skeletonStyle + 'width:40px;height:20px;"></span>';
+
+        fetch('/app/dashboard/summary', {headers:{'X-Requested-With':'XMLHttpRequest'}})
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(d) {
+                if (!d) return;
+                renderPlatformKpi('kpi-unofficial', d.unofficial || 0);
+                renderPlatformKpi('kpi-official',   d.official   || 0);
+                renderPlatformKpi('kpi-telegram',   d.telegram   || 0);
+                renderPlatformKpi('kpi-messenger',  d.messenger  || 0);
+                renderPlatformKpi('kpi-instagram',  d.instagram  || 0);
+                renderPlatformKpi('kpi-livechats',  d.livechats  || 0);
+                renderStatKpi('kpi-stores',      d.stores     || 0);
+                renderStatKpi('kpi-categories',  d.categories || 0);
+                renderFinetunnel(d.finetunnels || 0);
+            }).catch(function(){});
+    }
+
+    // ── Fetch CRM preview jika cache miss ─────────────────────────────────────
+    if (crmEmpty) {
+        var skSingle = '<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;"><div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;flex-shrink:0;"></div><div style="flex:1;"><div style="height:12px;background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;margin-bottom:6px;width:60%;"></div><div style="height:10px;background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;width:80%;"></div></div></div>';
+        var skel = skSingle + skSingle + skSingle;
+        var nb = document.getElementById('crm-newest-body'); if (nb) nb.innerHTML = skel;
+        var ob = document.getElementById('crm-oldest-body'); if (ob) ob.innerHTML = skel;
+
+        fetch('/app/dashboard/crm-preview', {headers:{'X-Requested-With':'XMLHttpRequest'}})
+            .then(function(r){ return r.ok ? r.json() : null; })
+            .then(function(d) {
+                if (!d) return;
+                var nb2 = document.getElementById('crm-newest-body');
+                if (nb2) {
+                    nb2.innerHTML = d.newest && d.newest.length ? d.newest.map(renderNewestItem).join('') : emptyNewest;
+                    var badge = document.getElementById('crm-newest-badge');
+                    if (badge) badge.textContent = (d.newest ? d.newest.length : 0) + ' baru';
+                }
+                var ob2 = document.getElementById('crm-oldest-body');
+                if (ob2) ob2.innerHTML = d.oldest && d.oldest.length ? d.oldest.map(renderOldestItem).join('') : emptyOldest;
+            }).catch(function(){});
+    }
+})();
+</script>
+<style>
+@keyframes shimmer { to { background-position: -200% 0; } }
+</style>
 
 @endsection
