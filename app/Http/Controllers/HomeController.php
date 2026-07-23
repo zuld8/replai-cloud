@@ -483,6 +483,27 @@ class HomeController extends Controller
             ", $ids);
             $totals = collect($totalsRaw)->keyBy('blash_whatsapp_id');
 
+            // FIX N+1: 1 query buat SEMUA device dari 5 broadcast sekaligus
+            // SEBELUM: 5× query berat (JOIN + GROUP BY ~50rb baris) = 27 detik
+            // SESUDAH: 1 query (GROUP BY blash_whatsapp_id, device_id) = < 2 detik
+            $devRaw = \DB::select("
+                SELECT bd.blash_whatsapp_id,
+                       bd.device_id,
+                       COALESCE(wd.name, wka.phone, 'Unknown')                       AS device_name,
+                       COALESCE(wd.phone, wka.phone, '-')                            AS device_phone,
+                       CASE WHEN wka.id IS NOT NULL THEN 'WABA' ELSE 'Personal' END AS device_type,
+                       COUNT(bd.id)                                                  AS total,
+                       SUM(bd.sending_status = 'yes')                               AS sent,
+                       SUM(bd.sending_status = 'no')                                AS failed
+                FROM blash_details bd
+                LEFT JOIN whatsapp_devices      wd  ON wd.id  = bd.device_id
+                LEFT JOIN whatsapp_key_accounts wka ON wka.id = bd.device_id
+                WHERE bd.blash_whatsapp_id IN ($placeholders) AND bd.type = 'whatsapp'
+                GROUP BY bd.blash_whatsapp_id, bd.device_id, device_name, device_phone, device_type
+            ", $ids);
+            // Kelompokin di PHP — O(n), zero DB round-trip tambahan
+            $devByBroadcast = collect($devRaw)->groupBy('blash_whatsapp_id');
+
             $result = [];
             foreach ($broadcasts as $b) {
                 $t      = $totals->get($b->id);
@@ -491,38 +512,21 @@ class HomeController extends Controller
                 $failed = (int) ($t->failed ?? 0);
                 $rate   = $total > 0 ? round($sent / $total * 100, 1) : 0;
 
-                // Per-device: scoped ke 1 broadcast → ringan
-                $devices = \DB::select("
-                    SELECT
-                        bd.device_id,
-                        COALESCE(wd.name, wka.phone, 'Unknown')                        AS device_name,
-                        COALESCE(wd.phone, wka.phone, '-')                             AS device_phone,
-                        CASE WHEN wka.id IS NOT NULL THEN 'WABA' ELSE 'Personal' END  AS device_type,
-                        COUNT(bd.id)                                                   AS total,
-                        SUM(CASE WHEN bd.sending_status = 'yes' THEN 1 ELSE 0 END)   AS sent,
-                        SUM(CASE WHEN bd.sending_status = 'no'  THEN 1 ELSE 0 END)   AS failed
-                    FROM blash_details bd
-                    LEFT JOIN whatsapp_devices      wd  ON wd.id  = bd.device_id
-                    LEFT JOIN whatsapp_key_accounts wka ON wka.id = bd.device_id
-                    WHERE bd.blash_whatsapp_id = ? AND bd.type = 'whatsapp'
-                    GROUP BY bd.device_id, device_name, device_phone, device_type
-                    ORDER BY sent DESC
-                ", [$b->id]);
-
-                $deviceData = [];
-                foreach ($devices as $d) {
-                    $dTotal = (int) $d->total;
-                    $dSent  = (int) $d->sent;
-                    $deviceData[] = [
-                        'name'        => $d->device_name,
-                        'phone'       => $d->device_phone,
-                        'device_type' => $d->device_type,
-                        'total'       => $dTotal,
-                        'sent'        => $dSent,
-                        'failed'      => (int) $d->failed,
-                        'rate'        => $dTotal > 0 ? round($dSent / $dTotal * 100, 1) : 0,
-                    ];
-                }
+                $deviceData = collect($devByBroadcast->get($b->id, []))
+                    ->map(function ($d) {
+                        $dTotal = (int) $d->total;
+                        $dSent  = (int) $d->sent;
+                        return [
+                            'name'        => $d->device_name,
+                            'phone'       => $d->device_phone,
+                            'device_type' => $d->device_type,
+                            'total'       => $dTotal,
+                            'sent'        => $dSent,
+                            'failed'      => (int) $d->failed,
+                            'rate'        => $dTotal > 0 ? round($dSent / $dTotal * 100, 1) : 0,
+                        ];
+                    })
+                    ->sortByDesc('sent')->values()->all();
 
                 $result[] = [
                     'id'         => $b->id,

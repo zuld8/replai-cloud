@@ -359,12 +359,47 @@ class WarmDashboardCache extends Command
         ", $ids);
         $totals = collect($totalsRaw)->keyBy('blash_whatsapp_id');
 
+        // FIX N+1: 1 query semua device dari 5 broadcast sekaligus (sama dgn HomeController)
+        $devRaw = DB::select("
+            SELECT bd.blash_whatsapp_id,
+                   bd.device_id,
+                   COALESCE(wd.name, wka.phone, 'Unknown')                       AS device_name,
+                   COALESCE(wd.phone, wka.phone, '-')                            AS device_phone,
+                   CASE WHEN wka.id IS NOT NULL THEN 'WABA' ELSE 'Personal' END AS device_type,
+                   COUNT(bd.id)                                                  AS total,
+                   SUM(bd.sending_status = 'yes')                               AS sent,
+                   SUM(bd.sending_status = 'no')                                AS failed
+            FROM blash_details bd
+            LEFT JOIN whatsapp_devices      wd  ON wd.id  = bd.device_id
+            LEFT JOIN whatsapp_key_accounts wka ON wka.id = bd.device_id
+            WHERE bd.blash_whatsapp_id IN ($placeholders) AND bd.type = 'whatsapp'
+            GROUP BY bd.blash_whatsapp_id, bd.device_id, device_name, device_phone, device_type
+        ", $ids);
+        $devByBroadcast = collect($devRaw)->groupBy('blash_whatsapp_id');
+
         $result = [];
         foreach ($broadcasts as $b) {
             $t      = $totals->get($b->id);
             $total  = (int) ($t->total  ?? 0);
             $sent   = (int) ($t->sent   ?? 0);
             $failed = (int) ($t->failed ?? 0);
+
+            $deviceData = collect($devByBroadcast->get($b->id, []))
+                ->map(function ($d) {
+                    $dTotal = (int) $d->total;
+                    $dSent  = (int) $d->sent;
+                    return [
+                        'name'        => $d->device_name,
+                        'phone'       => $d->device_phone,
+                        'device_type' => $d->device_type,
+                        'total'       => $dTotal,
+                        'sent'        => $dSent,
+                        'failed'      => (int) $d->failed,
+                        'rate'        => $dTotal > 0 ? round($dSent / $dTotal * 100, 1) : 0,
+                    ];
+                })
+                ->sortByDesc('sent')->values()->all();
+
             $result[] = [
                 'id'         => $b->id,
                 'name'       => $b->name,
@@ -374,7 +409,7 @@ class WarmDashboardCache extends Command
                 'failed'     => $failed,
                 'rate'       => $total > 0 ? round($sent / $total * 100, 1) : 0,
                 'created_at' => $b->created_at,
-                'devices'    => [],  // devices di-lazy load saat user klik detail
+                'devices'    => $deviceData,
             ];
         }
         return $result;
