@@ -13,7 +13,7 @@ class CleanupSoftDeletes extends Command
 
     // Tables with deleted_at column
     private $tables = [
-        'meta_accounts',
+        // 'meta_accounts', // JANGAN hapus — berisi access token WABA yang kritis
         'instagram_accounts',
         'messenger_accounts',
         'merchants',
