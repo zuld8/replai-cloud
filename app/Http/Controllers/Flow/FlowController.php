@@ -100,6 +100,7 @@ class FlowController extends Controller
      */
     public function update(Flow $flow)
     {
+        abort_if($flow->business_id !== (my_business()->id ?? null), 403, 'Akses ditolak.');
         $business_id  = my_business()->id ?? null;
         $wabaDevices  = WhatsappKeyAccount::where('business_id', $business_id)
                             ->where('status', 'active')
@@ -112,6 +113,7 @@ class FlowController extends Controller
      */
     public function edit(Request $request, Flow $flow)
     {
+        abort_if($flow->business_id !== (my_business()->id ?? null), 403, 'Akses ditolak.');
         $request->validate([
             'name'      => 'required|string|max:255',
             'keyword'   => 'required|string',
@@ -165,6 +167,7 @@ class FlowController extends Controller
      */
     public function delete(Flow $flow)
     {
+        abort_if($flow->business_id !== (my_business()->id ?? null), 403, 'Akses ditolak.');
         if ($flow->qris_image && file_exists(public_path($flow->qris_image))) {
             unlink(public_path($flow->qris_image));
         }
@@ -177,6 +180,7 @@ class FlowController extends Controller
      */
     public function toggleStatus(Flow $flow)
     {
+        abort_if($flow->business_id !== (my_business()->id ?? null), 403, 'Akses ditolak.');
         $flow->update(['status' => $flow->status === 'active' ? 'inactive' : 'active']);
         return response()->json(['status' => $flow->status]);
     }

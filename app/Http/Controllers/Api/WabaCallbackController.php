@@ -1307,7 +1307,7 @@ class WabaCallbackController extends Controller
         $message = $messageContent['message'];
 
         // Flow auto-reply — runs BEFORE chatbot, takes priority
-        $matchingFlow = $this->findMatchingFlow((string) $device->id, $message);
+        $matchingFlow = $this->findMatchingFlow((string) $device->id, $message, (string) $device->business_id); // SECURITY: pass business_id
         if ($matchingFlow) {
             return $this->processFlowReply($device, $histories, $matchingFlow);
         }
@@ -2130,7 +2130,8 @@ class WabaCallbackController extends Controller
     public function autoReplyMessage(WhatsappKeyAccount $device, $message, $name = '', $from, $type = 'personal')
     {
         // Check WABA chatbot: first try select_waba (general chatbot), then legacy select_device+meta_account_id (WABA-specific chatbot)
-        $chatBot = ChatBot::whereRaw("find_in_set(?, select_waba)", [$device->id])
+        $chatBot = ChatBot::where('business_id', $device->business_id) // SECURITY: isolasi antar-tenant
+            ->whereRaw("find_in_set(?, select_waba)", [$device->id])
             ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])
             ->with('template')
             ->first();
@@ -2714,13 +2715,14 @@ class WabaCallbackController extends Controller
     /**
      * Find a matching Flow for the given device + keyword
      */
-    private function findMatchingFlow(string $deviceId, string $message): ?Flow
+    private function findMatchingFlow(string $deviceId, string $message, string $businessId): ?Flow
     {
         if (empty(trim($message))) {
             return null;
         }
 
         return Flow::where('status', 'active')
+            ->where('business_id', $businessId) // SECURITY: isolasi antar-tenant
             ->whereRaw("find_in_set(?, select_waba)", [$deviceId])
             ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])
             ->first();

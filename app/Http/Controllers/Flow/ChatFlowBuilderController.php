@@ -160,12 +160,14 @@ class ChatFlowBuilderController extends Controller
 
     public function toggle(ChatFlow $chatFlow)
     {
+        abort_if($chatFlow->business_id !== (my_business()->id ?? null), 403, 'Akses ditolak.');
         $chatFlow->update(['status' => $chatFlow->status === 'active' ? 'inactive' : 'active']);
         return response()->json(['status' => 'ok', 'new_status' => $chatFlow->status]);
     }
 
     public function destroy(ChatFlow $chatFlow)
     {
+        abort_if($chatFlow->business_id !== (my_business()->id ?? null), 403, 'Akses ditolak.');
         $ids = $chatFlow->nodes()->pluck('id');
         ChatFlowOption::whereIn('node_id', $ids)->delete();
         ChatFlowSession::where('flow_id', $chatFlow->id)->delete();
@@ -176,6 +178,7 @@ class ChatFlowBuilderController extends Controller
 
     public function duplicate(ChatFlow $chatFlow)
     {
+        abort_if($chatFlow->business_id !== (my_business()->id ?? null), 403, 'Akses ditolak.');
         return DB::transaction(function () use ($chatFlow) {
             $chatFlow->load(['nodes.options']);
             $newFlow = $chatFlow->replicate();
