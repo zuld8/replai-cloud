@@ -155,5 +155,300 @@ class WarmDashboardCache extends Command
         }
 
         $this->info("✅ Done! Warmed {$warmedBiz} bisnis, " . count($warmedMerchant) . " merchant unik. Admin keys di-warm oleh dashboard:warm-admin.");
-        return self::SUCCESS;    }
+        return self::SUCCESS;
+    }
+
+    private function computeInteractionAnalysis(string $merchantId): mixed
+    {
+        // FIX P0 addendum: filter merchant eksplisit (CLI tanpa session → global scope no-op)
+        return HistoryChat::withoutGlobalScopes()
+            ->where('merchant_id', $merchantId)
+            ->selectRaw("
+            YEARWEEK(created_at, 1) as yearweek,
+            MIN(DATE(created_at)) as start_date,
+            COUNT(*) as count
+        ")
+            ->whereBetween('created_at', [
+                Carbon::now()->startOfMonth(),
+                Carbon::now()->endOfMonth(),
+            ])
+            ->groupBy('yearweek')
+            ->orderBy('start_date')
+            ->get();
+    }
+
+    private function computeInteractions(string $merchantId): mixed
+    {
+        // FIX P0 addendum: filter merchant eksplisit
+        return HistoryChat::withoutGlobalScopes()
+            ->where('merchant_id', $merchantId)
+            ->selectRaw('status, COUNT(*) as total')
+            ->whereBetween('created_at', [
+                Carbon::now()->startOfMonth(),
+                Carbon::now()->endOfMonth(),
+            ])
+            ->groupBy('status')
+            ->get();
+    }
+
+    private function computeAnaliss(string $merchantId): array
+    {
+        $senderData = $notSenderData = $dateData = [];
+
+        $blashData = BlashDetail::whereHas('parent', function ($q) use ($merchantId) {
+                $q->where('merchant_id', $merchantId);
+            })
+            ->selectRaw('LEFT(created_at, 10) as date,
+                SUM(CASE WHEN reports IS NULL THEN 1 ELSE 0 END) AS sending,
+                SUM(CASE WHEN reports IS NOT NULL THEN 1 ELSE 0 END) AS not_sending')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->groupBy('date')
+            ->get();
+
+        foreach ($blashData as $b) {
+            $dateData[]      = Carbon::parse($b->date, 'Asia/Jakarta')->setTimezone('Asia/Jakarta')->format('d, M Y');
+            $senderData[]    = (int) $b->sending;
+            $notSenderData[] = (int) $b->not_sending;
+        }
+
+        return ['analisis_blash' => ['sender' => $senderData, 'not_sender' => $notSenderData, 'date' => $dateData]];
+    }
+
+    private function computeSummary(string $businessId): array
+    {
+        // FIX: return array LENGKAP sesuai home() — semua key yang dipakai home.blade.php
+        $monthStart = now()->startOfMonth();
+        $monthEnd   = now()->endOfMonth();
+        $since30    = now()->subDays(30);
+
+        // Ambil id broadcast bisnis ini SEKALI (ratusan, bukan jutaan)
+        $bw       = DB::table('blash_whatsapps')->where('business_id', $businessId)->get(['id', 'use']);
+        $waIds    = $bw->where('use', 'whatsapp')->pluck('id')->all();
+        $emailIds = $bw->where('use', 'email')->pluck('id')->all();
+        $allIds   = $bw->pluck('id')->all();
+
+        $blastW = empty($waIds)    ? 0 : BlashDetail::whereIn('blash_whatsapp_id', $waIds)
+                      ->whereBetween('created_at', [$monthStart, $monthEnd])->count();
+        $blastE = empty($emailIds) ? 0 : BlashDetail::whereIn('blash_whatsapp_id', $emailIds)
+                      ->whereBetween('created_at', [$monthStart, $monthEnd])->count();
+        $snd = empty($allIds) ? null : DB::table('blash_details')
+            ->whereIn('blash_whatsapp_id', $allIds)
+            ->where('created_at', '>=', $since30)
+            ->selectRaw('SUM(reports IS NULL) AS sending, SUM(reports IS NOT NULL) AS not_sending')
+            ->first();
+
+        // Return WAJIB lengkap — semua key yang dipakai home.blade.php
+        // FIX P0: eksplisit where business_id — DB::table() tidak kena global scope,
+        //          jalan di CLI (tanpa session) → tanpa filter = count semua bisnis (tenant leak)
+        return [
+            'unofficial'  => DB::table('whatsapp_devices')->where('business_id', $businessId)->count(),
+            'official'    => DB::table('whatsapp_key_accounts')->where('business_id', $businessId)->count(),
+            'livechats'   => DB::table('live_chats')->where('business_id', $businessId)->count(),
+            'telegram'    => DB::table('telegram_keys')->where('business_id', $businessId)->count(),
+            'instagram'   => DB::table('instagram_accounts')->where('business_id', $businessId)->count(),
+            'messenger'   => DB::table('messenger_accounts')->where('business_id', $businessId)->count(),
+            'finetunnels' => DB::table('fine_tunnels')->where('business_id', $businessId)->count(),
+            'stores'      => DB::table('stores')->where('business_id', $businessId)->count(),
+            'categories'  => DB::table('categories')->where('business_id', $businessId)->count(),
+            'user'        => DB::table('users')->where('business_id', $businessId)->count(),
+            'blast_w'     => $blastW,
+            'blast_e'     => $blastE,
+            'scraping'    => DB::table('stores')->where('business_id', $businessId)
+                                ->whereNotNull('scrapping_id')
+                                ->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
+            'sending'     => (int) ($snd->sending     ?? 0),
+            'not_sending' => (int) ($snd->not_sending ?? 0),
+        ];
+    }
+
+    private function computeCrm(string $businessId): array
+    {
+        // 5 newest unread — pakai index idx_hc_crm_unread (business_id, status, unread_count, last_message_at)
+        $newest = HistoryChat::where('business_id', $businessId)
+            ->where('unread_count', '>', 0)
+            ->whereIn('status', ['open', 'pending'])
+            ->orderBy('last_message_at', 'desc')
+            ->limit(5)
+            ->get(['id', 'name', 'from_number', 'from', 'status', 'last_message_at', 'unread_count']);
+
+        // 5 oldest unread
+        $oldest = HistoryChat::where('business_id', $businessId)
+            ->where('unread_count', '>', 0)
+            ->whereIn('status', ['open', 'pending'])
+            ->orderBy('last_message_at', 'asc')
+            ->limit(5)
+            ->get(['id', 'name', 'from_number', 'from', 'status', 'last_message_at', 'unread_count', 'created_at']);
+
+        return ['newest' => $newest, 'oldest' => $oldest];
+    }
+
+    private function computeLabelLeads(string $businessId): array
+    {
+        $allLabelJson = HistoryChat::where('business_id', $businessId)
+            ->whereNotNull('label')
+            ->where('label', '!=', '[]')
+            ->where('label', '!=', 'null')
+            ->pluck('label');
+
+        $counts = [];
+        foreach ($allLabelJson as $raw) {
+            $items = is_array($raw) ? $raw : (json_decode($raw, true) ?? []);
+            foreach ($items as $item) {
+                $id = $item['id'] ?? null;
+                if ($id) $counts[$id] = ($counts[$id] ?? 0) + 1;
+            }
+        }
+
+        $labels = Label::where('business_id', $businessId)
+            ->select('id', 'name', 'color')
+            ->get()
+            ->map(fn($label) => [
+                'label' => $label->name,
+                'data'  => $counts[$label->id] ?? 0,
+                'color' => $label->color ?? '#0EA5E9',
+            ])
+            ->filter(fn($item) => $item['data'] > 0)
+            ->values();
+
+        return ['labels' => $labels];
+    }
+
+    private function computeBroadcastStatus(string $businessId): array
+    {
+        // Step 1: Ambil 5 broadcast terbaru (ringan, tidak sentuh blash_details)
+        $broadcasts = DB::select("
+            SELECT id, name, `use`, created_at
+            FROM blash_whatsapps
+            WHERE business_id = ?
+            ORDER BY created_at DESC
+            LIMIT 5
+        ", [$businessId]);
+
+        if (empty($broadcasts)) return [];
+
+        $ids          = array_map(fn($b) => $b->id, $broadcasts);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        // Step 2: Agregasi HANYA untuk 5 broadcast itu
+        $totalsRaw = DB::select("
+            SELECT blash_whatsapp_id,
+                   COUNT(*)                              AS total,
+                   SUM(sending_status = 'yes')           AS sent,
+                   SUM(sending_status = 'no')            AS failed
+            FROM blash_details
+            WHERE blash_whatsapp_id IN ($placeholders) AND type = 'whatsapp'
+            GROUP BY blash_whatsapp_id
+        ", $ids);
+        $totals = collect($totalsRaw)->keyBy('blash_whatsapp_id');
+
+        $result = [];
+        foreach ($broadcasts as $b) {
+            $t      = $totals->get($b->id);
+            $total  = (int) ($t->total  ?? 0);
+            $sent   = (int) ($t->sent   ?? 0);
+            $failed = (int) ($t->failed ?? 0);
+            $result[] = [
+                'id'         => $b->id,
+                'name'       => $b->name,
+                'use'        => $b->use,
+                'total'      => $total,
+                'sent'       => $sent,
+                'failed'     => $failed,
+                'rate'       => $total > 0 ? round($sent / $total * 100, 1) : 0,
+                'created_at' => $b->created_at,
+                'devices'    => [],  // devices di-lazy load saat user klik detail
+            ];
+        }
+        return $result;
+    }
+
+    private function computeStorage(string $businessId): float
+    {
+        $path = "uploads/folders/{$businessId}";
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        if (!$disk->exists($path)) return 0;
+
+        $abs = $disk->path($path);
+        // Cepat: du -sb (1 proses). Fallback ke allFiles kalau shell_exec tidak tersedia.
+        if (function_exists('shell_exec') && stripos(PHP_OS, 'WIN') === false) {
+            $out = @shell_exec('du -sb ' . escapeshellarg($abs) . ' 2>/dev/null');
+            if ($out && preg_match('/^(\d+)/', trim($out), $m)) {
+                return round(((int)$m[1]) / 1024 / 1024, 2);
+            }
+        }
+        // Fallback lambat — hanya jalan kalau du tidak tersedia (bukan Linux)
+        $total = 0;
+        foreach ($disk->allFiles($path) as $f) { $total += $disk->size($f); }
+        return round($total / 1024 / 1024, 2);
+    }
+
+    private function computePesanMasuk(string $businessId, int $days): array
+    {
+        $startDate = now()->subDays($days)->startOfDay()->toDateTimeString();
+        $endDate   = now()->endOfDay()->toDateTimeString();
+
+        $data = DB::select("
+            SELECT DATE(hcd.created_at) as date, COUNT(*) as total
+            FROM history_chat_details hcd
+            INNER JOIN history_chats hc ON hc.id = hcd.history_chat_id
+            WHERE hcd.`from` = 'user'
+              AND hc.business_id = ?
+              AND hcd.created_at >= ?
+              AND hcd.created_at <= ?
+            GROUP BY DATE(hcd.created_at)
+            ORDER BY date ASC
+        ", [$businessId, $startDate, $endDate]);
+
+        $dates = $totals = [];
+        $grandTotal = 0;
+        foreach ($data as $row) {
+            $dates[]  = Carbon::parse($row->date)->format('d M');
+            $totals[] = (int) $row->total;
+            $grandTotal += (int) $row->total;
+        }
+
+        return ['dates' => $dates, 'totals' => $totals, 'grand_total' => $grandTotal];
+    }
+
+    /**
+     * Hitung broadcast summary per bisnis per days.
+     * SINKRON dgn HomeController::broadcastSummary (query + return array SAMA).
+     */
+    private function computeBroadcastSummary(string $businessId, int $days): array
+    {
+        $startDate = now()->subDays($days)->startOfDay()->toDateTimeString();
+        $endDate   = now()->endOfDay()->toDateTimeString();
+
+        $data = \Illuminate\Support\Facades\DB::select("
+            SELECT DATE(bw.created_at) as date,
+                   SUM(CASE WHEN bd.sending_status = 'yes' THEN 1 ELSE 0 END) as sent,
+                   SUM(CASE WHEN bd.sending_status != 'yes' THEN 1 ELSE 0 END) as failed,
+                   COUNT(bd.id) as total
+            FROM blash_whatsapps bw
+            LEFT JOIN blash_details bd ON bd.blash_whatsapp_id = bw.id
+            WHERE bw.business_id = ?
+            AND bw.created_at >= ?
+            AND bw.created_at <= ?
+            GROUP BY DATE(bw.created_at)
+            ORDER BY date ASC
+        ", [$businessId, $startDate, $endDate]);
+
+        $dates = []; $sent = []; $failed = []; $grandSent = 0; $grandFailed = 0;
+        foreach ($data as $row) {
+            $dates[]     = \Carbon\Carbon::parse($row->date)->format('d M');
+            $sent[]      = (int) $row->sent;
+            $failed[]    = (int) $row->failed;
+            $grandSent  += (int) $row->sent;
+            $grandFailed += (int) $row->failed;
+        }
+
+        return [
+            'dates'        => $dates,
+            'sent'         => $sent,
+            'failed'       => $failed,
+            'grand_sent'   => $grandSent,
+            'grand_failed' => $grandFailed,
+        ];
+    }
+
 }
