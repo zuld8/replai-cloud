@@ -133,14 +133,14 @@ class WarmDashboardCache extends Command
                 } catch (\Throwable $e) { $this->warn("B5 bs {$businessId}: " . $e->getMessage()); }
             }
 
-            // B6. broadcast_summary — untuk days=7,30,90
-            foreach ([7, 30, 90] as $days) {
+            // B6. broadcast_summary — warm days=7,30 (90 jarang dibuka, skip)
+            // SINKRON dgn HomeController::broadcastSummary (cache key & TTL sama)
+            foreach ([7, 30] as $days) {
                 $keyBsum = "broadcast_summary_{$businessId}_{$days}";
                 if ($force || !Cache::has($keyBsum)) {
                     try {
-                        // broadcast_summary punya query sendiri — skip jika method belum ada
-                        // Cache::put($keyBsum, $this->computeBroadcastSummary($businessId, $days), 300);
-                    } catch (\Throwable $e) {}
+                        Cache::put($keyBsum, $this->computeBroadcastSummary($businessId, $days), 300);
+                    } catch (\Throwable $e) { $this->warn("B6 bs-sum {$businessId} {$days}d: " . $e->getMessage()); }
                 }
             }
 
