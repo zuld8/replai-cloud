@@ -6,8 +6,11 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Models\ChatBot\HistoryChat;
+use App\Models\ChatBot\HistoryChatDetail;
+use App\Models\ChatBot\FineTunnel;
 use App\Models\Blash\BlashDetail;
 use App\Models\Master\Label;
+use App\Models\Setting;
 use Carbon\Carbon;
 
 /**
@@ -149,6 +152,79 @@ class WarmDashboardCache extends Command
             } catch (\Throwable $e) { $this->warn("B7 storage {$businessId}: " . $e->getMessage()); }
 
             $warmedBiz++;
+        }
+
+        // ── C. Admin dashboard aggregate (sekali, bukan per-bisnis) ─────────────
+        // Key PERSIS sama dengan HomeController::wAiStats() + wActiveBiz() + creditAiResponse()
+        // TTL 1800s (30 mnt), warm interval 600s → selalu HIT, user tidak pernah nunggu query berat.
+        $this->info("Warming admin dashboard cache...");
+        $monthYear  = now()->format('Y-m');
+        $monthStart = now()->startOfMonth()->toDateTimeString();
+        $monthEnd   = now()->endOfMonth()->toDateTimeString();
+
+        $adminJobs = [
+            // AI usage — SUM per source bulan ini (FORCE INDEX → range bukan full-scan)
+            "admin_ai_usage_{$monthYear}" => function () use ($monthStart, $monthEnd) {
+                $row = DB::table(DB::raw('`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'))
+                    ->whereBetween('created_at', [$monthStart, $monthEnd])
+                    ->where('from', 'device')
+                    ->selectRaw("
+                        SUM(CASE WHEN source='bot' THEN 1 ELSE 0 END) as ai_replies,
+                        SUM(CASE WHEN source IN ('bot','flow') THEN 1 ELSE 0 END) as automated,
+                        COUNT(*) as total_out
+                    ")->first();
+                $total = (int)($row->total_out ?? 0);
+                $auto  = (int)($row->automated ?? 0);
+                return [
+                    'ai_replies' => (int)($row->ai_replies ?? 0),
+                    'automation' => $total > 0 ? round($auto / $total * 100) : 0,
+                    'training'   => FineTunnel::withoutGlobalScopes()->count(),
+                ];
+            },
+
+            // AI credit total bulan ini
+            "admin_credit_ai_total_{$monthYear}" => fn () =>
+                DB::table(DB::raw('`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'))
+                    ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('credit_using'),
+
+            // AI top 5 per bisnis bulan ini
+            "admin_ai_top_{$monthYear}" => fn () =>
+                HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+                    ->whereBetween('history_chat_details.created_at', [$monthStart, $monthEnd])
+                    ->where('history_chat_details.source', 'bot')
+                    ->selectRaw('history_chats.business_id, COUNT(*) as n')
+                    ->groupBy('history_chats.business_id')
+                    ->orderByDesc('n')->limit(5)->get(),
+
+            // Bisnis aktif terkini (7 hari) — TTL 1800 (sama dengan controller)
+            "admin_active_biz" => fn () =>
+                HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+                    ->where('history_chat_details.created_at', '>=', now()->subDays(7))
+                    ->selectRaw('history_chats.business_id,
+                                 MAX(history_chat_details.created_at) as last_activity,
+                                 COUNT(*) as chat_7d')
+                    ->groupBy('history_chats.business_id')
+                    ->orderByDesc('last_activity')->limit(10)->get(),
+
+            // AI credit chart bulan ini (response-ai endpoint)
+            "admin_credit_ai_{$monthYear}" => fn () =>
+                DB::table(DB::raw('`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'))
+                    ->selectRaw("DATE(created_at) as date, sum(credit_using) as count")
+                    ->whereBetween("created_at", [$monthStart, $monthEnd])
+                    ->groupBy("date")->orderBy("date")->get(),
+        ];
+
+        foreach ($adminJobs as $key => $fn) {
+            if ($force || !Cache::has($key)) {
+                try {
+                    Cache::put($key, $fn(), 1800);
+                    $this->line("  ✓ warmed: {$key}");
+                } catch (\Throwable $e) {
+                    $this->warn("  ADMIN {$key}: " . $e->getMessage());
+                }
+            } else {
+                $this->line("  · skip (hit): {$key}");
+            }
         }
 
         $this->info("✅ Done! Warmed {$warmedBiz} bisnis, " . count($warmedMerchant) . " merchant unik.");

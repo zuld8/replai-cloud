@@ -183,7 +183,10 @@ class HomeController extends Controller
         $monthEnd   = now()->endOfMonth()->toDateTimeString();
 
         $ai = Cache::remember("admin_ai_usage_{$monthYear}", 900, function () use ($monthStart, $monthEnd) {
-            $row = HistoryChatDetail::whereBetween('created_at', [$monthStart, $monthEnd])
+            // FORCE INDEX — MySQL cenderung full-scan karena from='device' selectivity rendah.
+            // idx_hcd_created_source (created_at,source) → nyempit ke bulan dulu, baru filter.
+            $row = DB::table(DB::raw('`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'))
+                ->whereBetween('created_at', [$monthStart, $monthEnd])
                 ->where('from', 'device')
                 ->selectRaw("
                     SUM(CASE WHEN source='bot' THEN 1 ELSE 0 END) as ai_replies,
@@ -200,7 +203,8 @@ class HomeController extends Controller
         });
 
         $aiCreditTotal = Cache::remember("admin_credit_ai_total_{$monthYear}", 900, fn () =>
-            HistoryChatDetail::whereBetween('created_at', [$monthStart, $monthEnd])->sum('credit_using')
+            DB::table(DB::raw('`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'))
+                ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('credit_using')
         );
 
         $aiTopRaw = Cache::remember("admin_ai_top_{$monthYear}", 900, fn () =>
@@ -235,7 +239,7 @@ class HomeController extends Controller
      */
     public function wActiveBiz()
     {
-        $activeBizRaw = Cache::remember("admin_active_biz", 300, fn () =>
+        $activeBizRaw = Cache::remember("admin_active_biz", 1800, fn () =>
             HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
                 ->where('history_chat_details.created_at', '>=', now()->subDays(7))
                 ->selectRaw('history_chats.business_id,
@@ -262,9 +266,11 @@ class HomeController extends Controller
     public function creditAiResponse()
     {
         $data = \Cache::remember("admin_credit_ai_" . date("Y-m"), 900, function () {
-            return \App\Models\ChatBot\HistoryChatDetail::selectRaw("
-                DATE(created_at) as date, sum(credit_using) as count
-            ")
+            // FORCE INDEX agar tidak full-scan 2.8jt baris
+            return \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw(
+                '`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'
+            ))
+                ->selectRaw("DATE(created_at) as date, sum(credit_using) as count")
                 ->whereBetween("created_at", [\Carbon\Carbon::now()->startOfMonth(), \Carbon\Carbon::now()->endOfMonth()])
                 ->groupBy("date")
                 ->orderBy("date")
