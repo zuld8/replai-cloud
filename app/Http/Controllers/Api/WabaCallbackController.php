@@ -333,6 +333,41 @@ class WabaCallbackController extends Controller
                             $cust = $echoMsg['to'] ?? null;
                             if (!$mid || !$cust) continue;
 
+                            // ── EDIT: update pesan ASLI, jangan buat baris baru ──
+                            if (($echoMsg['type'] ?? 'text') === 'edit') {
+                                $origId  = $echoMsg['edit']['original_message_id'] ?? null;
+                                $newText = $echoMsg['edit']['message']['text']['body']
+                                        ?? $echoMsg['edit']['message']['image']['caption']
+                                        ?? $echoMsg['edit']['message']['video']['caption']
+                                        ?? $echoMsg['edit']['message']['document']['caption']
+                                        ?? null;
+                                if ($origId && $newText !== null) {
+                                    $orig = \App\Models\ChatBot\HistoryChatDetail::where('messageid', $origId)
+                                        ->whereHas('history', fn($q) => $q->where('business_id', $device->business_id))
+                                        ->first();
+                                    if ($orig) {
+                                        $orig->update(['message' => $newText]);
+                                        Log::info('[smb_echo] edit pesan', ['orig_id' => $origId]);
+                                    }
+                                }
+                                continue; // skip create — pesan lama sudah diupdate
+                            }
+
+                            // ── REVOKE: tandai pesan dihapus ──
+                            if (($echoMsg['type'] ?? 'text') === 'revoke') {
+                                $origId = $echoMsg['revoke']['original_message_id'] ?? null;
+                                if ($origId) {
+                                    $orig = \App\Models\ChatBot\HistoryChatDetail::where('messageid', $origId)
+                                        ->whereHas('history', fn($q) => $q->where('business_id', $device->business_id))
+                                        ->first();
+                                    if ($orig) {
+                                        $orig->update(['message' => '🚫 Pesan ini dihapus', 'type' => 'text']);
+                                        Log::info('[smb_echo] revoke pesan', ['orig_id' => $origId]);
+                                    }
+                                }
+                                continue; // skip create
+                            }
+
                             // Dedup: sudah tersimpan (mis. dikirim via CRM/API)
                             if (\App\Models\ChatBot\HistoryChatDetail::where('messageid', $mid)->exists()) continue;
 
