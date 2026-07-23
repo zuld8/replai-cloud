@@ -70,14 +70,15 @@ class WarmAdminDashboard extends Command
                     ->groupBy('history_chats.business_id')
                     ->orderByDesc('n')->limit(5)->get(),
 
-            // ── 4. Bisnis aktif terkini (active-biz, 7 hari) ─ query paling berat ──
+            // ── 4. Bisnis aktif terkini (active-biz, 7 hari) ──
+            // OPTIMASI: pakai history_chats.last_message_at (1 row/conversation, bukan per-pesan)
+            // 111k rows (7 hari) vs 269k detail rows → jauh lebih ringan. Index idx_last_message_at dipakai.
             "admin_active_biz" => fn () =>
-                HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
-                    ->where('history_chat_details.created_at', '>=', now()->subDays(7))
-                    ->selectRaw('history_chats.business_id,
-                                 MAX(history_chat_details.created_at) as last_activity,
-                                 COUNT(*) as chat_7d')
-                    ->groupBy('history_chats.business_id')
+                DB::table(DB::raw('`history_chats` FORCE INDEX (`idx_last_message_at`)'))
+                    ->where('last_message_at', '>=', now()->subDays(7))
+                    ->whereNotNull('business_id')
+                    ->selectRaw('business_id, MAX(last_message_at) as last_activity, COUNT(*) as chat_7d')
+                    ->groupBy('business_id')
                     ->orderByDesc('last_activity')->limit(10)->get(),
 
             // ── 5. AI Credit Chart harian (response-ai) ──
