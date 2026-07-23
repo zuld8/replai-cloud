@@ -197,6 +197,14 @@ Schedule::command(RefreshInstagramTokens::class, ['--days' => 10])
 // Pre-warm dashboard cache tiap 10 menit — cegah cold-load 1 menit+ untuk semua merchant
 Schedule::command('dashboard:warm')
     ->everyTenMinutes()
-    ->withoutOverlapping(5)
+    ->withoutOverlapping(15) // naikkan ke 15 mnt — warm 57 bisnis bisa 5-10 mnt
     ->runInBackground()
     ->name('dashboard-warm');
+
+// Pre-warm admin dashboard widgets (ai-stats, active-biz, response-ai) tiap 5 menit.
+// Command ringan (~6 query), independen dari loop bisnis. TTL 1800 >> 5 mnt → selalu HIT.
+Schedule::command('dashboard:warm-admin')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(10) // lock 10 mnt — query active-biz bisa 1-2 mnt
+    ->runInBackground()
+    ->name('dashboard-warm-admin');
