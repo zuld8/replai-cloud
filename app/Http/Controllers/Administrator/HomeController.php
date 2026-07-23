@@ -98,68 +98,8 @@ class HomeController extends Controller
         $mrrPrevMonth = (int) ($mrr->count() >= 2 ? $mrr->slice(-2, 1)->first()->total ?? 0 : 0);
         $mrrGrowth    = $mrrPrevMonth > 0 ? round(($mrrThisMonth - $mrrPrevMonth) / $mrrPrevMonth * 100) : 0;
 
-        // ── AI USAGE (cached) ──
-        $ai = Cache::remember("admin_ai_usage_{$monthYear}", 900, function () use ($monthStart, $monthEnd) {
-            $row = HistoryChatDetail::whereBetween('created_at', [$monthStart, $monthEnd])
-                ->where('from', 'device')
-                ->selectRaw("
-                    SUM(CASE WHEN source='bot' THEN 1 ELSE 0 END) as ai_replies,
-                    SUM(CASE WHEN source IN ('bot','flow') THEN 1 ELSE 0 END) as automated,
-                    COUNT(*) as total_out
-                ")->first();
-            $total = (int)($row->total_out ?? 0);
-            $auto  = (int)($row->automated ?? 0);
-            return [
-                'ai_replies' => (int)($row->ai_replies ?? 0),
-                'automation' => $total > 0 ? round($auto / $total * 100) : 0,
-                'training'   => FineTunnel::withoutGlobalScopes()->count(),
-            ];
-        });
-
-        // AI credit total bulan ini (cached)
-        $aiCreditTotal = Cache::remember("admin_credit_ai_total_{$monthYear}", 900, fn () =>
-            HistoryChatDetail::whereBetween('created_at', [$monthStart, $monthEnd])->sum('credit_using')
-        );
-
-        // ── AI TOP 5 per bisnis (cached) ──
-        $aiTopRaw = Cache::remember("admin_ai_top_{$monthYear}", 900, fn () =>
-            HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
-                ->whereBetween('history_chat_details.created_at', [$monthStart, $monthEnd])
-                ->where('history_chat_details.source', 'bot')
-                ->selectRaw('history_chats.business_id, COUNT(*) as n')
-                ->groupBy('history_chats.business_id')
-                ->orderByDesc('n')->limit(5)->get()
-        );
-        $aiTopBizIds = $aiTopRaw->pluck('business_id')->filter()->values();
-        $aiTopBizMap = $aiTopBizIds->isNotEmpty()
-            ? Setting::withoutGlobalScopes()->whereIn('id', $aiTopBizIds)->pluck('name', 'id')
-            : collect();
-        $aiTopTotal  = max(1, $aiTopRaw->sum('n'));
-        $aiTop = $aiTopRaw->map(fn ($r) => [
-            'name'  => $aiTopBizMap[$r->business_id] ?? 'Bisnis',
-            'count' => (int)$r->n,
-            'pct'   => round($r->n / $aiTopTotal * 100),
-        ]);
-
-        // ── BISNIS AKTIF TERKINI top 10 (cached 5 mnt) ──
-        $activeBizRaw = Cache::remember("admin_active_biz", 300, fn () =>
-            HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
-                ->where('history_chat_details.created_at', '>=', now()->subDays(7))
-                ->selectRaw('history_chats.business_id,
-                             MAX(history_chat_details.created_at) as last_activity,
-                             COUNT(*) as chat_7d')
-                ->groupBy('history_chats.business_id')
-                ->orderByDesc('last_activity')->limit(10)->get()
-        );
-        $activeBizIds = $activeBizRaw->pluck('business_id')->filter()->values();
-        $activeBizMap = $activeBizIds->isNotEmpty()
-            ? Setting::withoutGlobalScopes()->whereIn('id', $activeBizIds)->get(['id', 'name'])->keyBy('id')
-            : collect();
-        $activeBiz = $activeBizRaw->map(fn ($r) => [
-            'biz'     => $activeBizMap[$r->business_id] ?? null,
-            'last'    => $r->last_activity,
-            'chat_7d' => (int)$r->chat_7d,
-        ]);
+        // ── AI USAGE + AI TOP + BISNIS AKTIF: di-lazy-load via AJAX (wAiStats/wActiveBiz) ──
+        // Tidak dihitung di sini agar halaman tidak menunggu query berat history_chat_details.
 
         // ── SCRAPING BY METHOD (cached) ──
         $scrap = Cache::remember("admin_scrap_{$monthYear}", 900, fn () =>
@@ -227,9 +167,96 @@ class HomeController extends Controller
 
         return view('admin.home', ['page' => __('page.dashboard'), 'breadcumb' => false], compact(
             'data', 'logs', 'summary', 'mustFollow', 'merchantNotPackage', 'notPayment', 'merchants',
-            'channels', 'sub', 'mrr', 'mrrThisMonth', 'mrrGrowth', 'ai', 'aiCreditTotal',
-            'aiTop', 'activeBiz', 'scrap', 'activity', 'range'
+            'channels', 'sub', 'mrr', 'mrrThisMonth', 'mrrGrowth',
+            'scrap', 'activity', 'range'
         ));
+    }
+
+    /**
+     * Lazy-load: AI stats + credit + top 5 per bisnis
+     * GET /administrator/dashboard/widgets/ai-stats
+     */
+    public function wAiStats()
+    {
+        $monthYear  = date('Y-m');
+        $monthStart = now()->startOfMonth()->toDateTimeString();
+        $monthEnd   = now()->endOfMonth()->toDateTimeString();
+
+        $ai = Cache::remember("admin_ai_usage_{$monthYear}", 900, function () use ($monthStart, $monthEnd) {
+            $row = HistoryChatDetail::whereBetween('created_at', [$monthStart, $monthEnd])
+                ->where('from', 'device')
+                ->selectRaw("
+                    SUM(CASE WHEN source='bot' THEN 1 ELSE 0 END) as ai_replies,
+                    SUM(CASE WHEN source IN ('bot','flow') THEN 1 ELSE 0 END) as automated,
+                    COUNT(*) as total_out
+                ")->first();
+            $total = (int)($row->total_out ?? 0);
+            $auto  = (int)($row->automated ?? 0);
+            return [
+                'ai_replies' => (int)($row->ai_replies ?? 0),
+                'automation' => $total > 0 ? round($auto / $total * 100) : 0,
+                'training'   => FineTunnel::withoutGlobalScopes()->count(),
+            ];
+        });
+
+        $aiCreditTotal = Cache::remember("admin_credit_ai_total_{$monthYear}", 900, fn () =>
+            HistoryChatDetail::whereBetween('created_at', [$monthStart, $monthEnd])->sum('credit_using')
+        );
+
+        $aiTopRaw = Cache::remember("admin_ai_top_{$monthYear}", 900, fn () =>
+            HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+                ->whereBetween('history_chat_details.created_at', [$monthStart, $monthEnd])
+                ->where('history_chat_details.source', 'bot')
+                ->selectRaw('history_chats.business_id, COUNT(*) as n')
+                ->groupBy('history_chats.business_id')
+                ->orderByDesc('n')->limit(5)->get()
+        );
+        $aiTopBizIds = $aiTopRaw->pluck('business_id')->filter()->values();
+        $aiTopBizMap = $aiTopBizIds->isNotEmpty()
+            ? Setting::withoutGlobalScopes()->whereIn('id', $aiTopBizIds)->pluck('name', 'id')
+            : collect();
+        $aiTopTotal  = max(1, $aiTopRaw->sum('n'));
+        $aiTop = $aiTopRaw->map(fn ($r) => [
+            'name'  => $aiTopBizMap[$r->business_id] ?? 'Bisnis',
+            'count' => (int)$r->n,
+            'pct'   => round($r->n / $aiTopTotal * 100),
+        ])->values();
+
+        return response()->json([
+            'ai'     => $ai,
+            'credit' => (int)$aiCreditTotal,
+            'top'    => $aiTop,
+        ]);
+    }
+
+    /**
+     * Lazy-load: Bisnis aktif terkini (top 10, 7 hari)
+     * GET /administrator/dashboard/widgets/active-biz
+     */
+    public function wActiveBiz()
+    {
+        $activeBizRaw = Cache::remember("admin_active_biz", 300, fn () =>
+            HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+                ->where('history_chat_details.created_at', '>=', now()->subDays(7))
+                ->selectRaw('history_chats.business_id,
+                             MAX(history_chat_details.created_at) as last_activity,
+                             COUNT(*) as chat_7d')
+                ->groupBy('history_chats.business_id')
+                ->orderByDesc('last_activity')->limit(10)->get()
+        );
+        $activeBizIds = $activeBizRaw->pluck('business_id')->filter()->values();
+        $activeBizMap = $activeBizIds->isNotEmpty()
+            ? Setting::withoutGlobalScopes()->whereIn('id', $activeBizIds)->get(['id', 'name'])->keyBy('id')
+            : collect();
+
+        $activeBiz = $activeBizRaw->map(fn ($r) => [
+            'id'      => $r->business_id,
+            'name'    => $activeBizMap[$r->business_id]->name ?? 'N/A',
+            'last'    => $r->last_activity,
+            'chat_7d' => (int)$r->chat_7d,
+        ])->values();
+
+        return response()->json(['active' => $activeBiz]);
     }
 
     public function creditAiResponse()

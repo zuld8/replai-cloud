@@ -143,7 +143,7 @@
 </div>
 
 {{-- ═══════════════════════════════════════════════════════
-     SEKSI 3 — PENGGUNAAN AI
+     SEKSI 3 — PENGGUNAAN AI (lazy-loaded via AJAX)
 ═══════════════════════════════════════════════════════ --}}
 <div class="d-flex align-items-center mb-2">
     <span class="text-uppercase fs-11 fw-semibold text-muted me-2 ls-1">✦ Penggunaan AI</span>
@@ -151,57 +151,37 @@
 </div>
 <div class="row g-3 mb-4">
 
-    {{-- AI Stats + Chart --}}
+    {{-- AI Stats + Chart (skeleton → diisi JS) --}}
     <div class="col-lg-7 col-12">
         <div class="card custom-card h-100">
             <div class="card-body p-3">
-                {{-- Stat row --}}
-                <div class="row g-2 mb-3">
-                    <div class="col-6 col-sm-3">
-                        <p class="text-muted mb-1 fs-11">AI Credit Terpakai</p>
-                        <h5 class="mb-0 fw-bold" style="color:#6a5ad0">{{ number_format($aiCreditTotal) }}</h5>
-                    </div>
-                    <div class="col-6 col-sm-3">
-                        <p class="text-muted mb-1 fs-11">Balasan AI</p>
-                        <h5 class="mb-0 fw-bold">{{ number_format($ai['ai_replies']) }}</h5>
-                    </div>
-                    <div class="col-6 col-sm-3">
-                        <p class="text-muted mb-1 fs-11">Otomatisasi</p>
-                        <h5 class="mb-0 fw-bold" style="color:#16A34A">{{ $ai['automation'] }}%</h5>
-                    </div>
-                    <div class="col-6 col-sm-3">
-                        <p class="text-muted mb-1 fs-11">AI Training</p>
-                        <h5 class="mb-0 fw-bold">{{ number_format($ai['training']) }}</h5>
-                    </div>
+                <div class="row g-2 mb-3" id="ai-stats-row">
+                    <div class="col-6 col-sm-3"><p class="text-muted mb-1 fs-11">AI Credit Terpakai</p>
+                        <h5 class="mb-0 fw-bold" style="color:#6a5ad0" id="ai-credit"><span class="sk-pulse">...</span></h5></div>
+                    <div class="col-6 col-sm-3"><p class="text-muted mb-1 fs-11">Balasan AI</p>
+                        <h5 class="mb-0 fw-bold" id="ai-replies"><span class="sk-pulse">...</span></h5></div>
+                    <div class="col-6 col-sm-3"><p class="text-muted mb-1 fs-11">Otomatisasi</p>
+                        <h5 class="mb-0 fw-bold" style="color:#16A34A" id="ai-automation"><span class="sk-pulse">...</span></h5></div>
+                    <div class="col-6 col-sm-3"><p class="text-muted mb-1 fs-11">AI Training</p>
+                        <h5 class="mb-0 fw-bold" id="ai-training"><span class="sk-pulse">...</span></h5></div>
                 </div>
-                <p class="text-muted fs-11 mb-1">Tren AI credit · 30 hari</p>
+                <p class="text-muted fs-11 mb-1">Tren AI credit · bulan ini</p>
                 <div id="responseAiChart"></div>
             </div>
         </div>
     </div>
 
-    {{-- AI Top 5 per bisnis --}}
+    {{-- AI Top 5 (skeleton → diisi JS) --}}
     <div class="col-lg-5 col-12">
         <div class="card custom-card h-100">
             <div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <p class="fw-semibold mb-0 fs-13">Konsumsi AI Terbesar</p>
-                    <span class="text-muted fs-11">total {{ number_format($aiTop->sum('count')) }}</span>
+                    <span class="text-muted fs-11" id="ai-top-total">loading...</span>
                 </div>
-                @foreach($aiTop as $ai_item)
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fs-12">{{ $ai_item['name'] }}</span>
-                        <span class="fs-12 text-muted">{{ $ai_item['pct'] }}%</span>
-                    </div>
-                    <div class="progress" style="height:6px;background:rgba(106,90,208,.15)">
-                        <div class="progress-bar" style="width:{{ $ai_item['pct'] }}%;background:#6a5ad0"></div>
-                    </div>
+                <div id="ai-top-list">
+                    <div class="sk-bar mb-3"></div><div class="sk-bar mb-3"></div><div class="sk-bar"></div>
                 </div>
-                @endforeach
-                @if($aiTop->isEmpty())
-                    <p class="text-muted fs-12 text-center py-3">Belum ada data bulan ini</p>
-                @endif
             </div>
         </div>
     </div>
@@ -339,36 +319,11 @@
                         <th class="fs-12 fw-semibold text-muted text-end pe-3">Chat 7h</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach($activeBiz as $ab)
-                    @php
-                        $biz  = $ab['biz'];
-                        $name = $biz->name ?? 'N/A';
-                        $init = strtoupper(mb_substr(trim($name), 0, 1)) . (mb_strlen(trim($name)) > 1 ? strtoupper(mb_substr(trim($name), mb_strpos($name, ' ') + 1, 1)) : '');
-                        $colors = ['#2E8DE1','#16A34A','#5B3FB0','#E0912F','#C0392B'];
-                        $color  = $colors[crc32($name) % count($colors)];
-                        $diff   = \Carbon\Carbon::parse($ab['last'])->diffForHumans();
-                    @endphp
-                    <tr>
-                        <td class="ps-3">
-                            <div class="d-flex align-items-center">
-                                <div class="rounded-circle me-2 d-flex align-items-center justify-content-center fw-bold text-white fs-11"
-                                     style="width:30px;height:30px;min-width:30px;background:{{ $color }}">{{ $init }}</div>
-                                <span class="fs-13">{{ $name }}</span>
-                            </div>
-                        </td>
-                        <td class="fs-12 {{ \Carbon\Carbon::parse($ab['last'])->diffInDays() >= 3 ? 'text-warning' : 'text-success' }}">
-                            {{ $diff }}
-                            @if(\Carbon\Carbon::parse($ab['last'])->diffInDays() >= 3)
-                            <span class="ms-1">⚠️</span>
-                            @endif
-                        </td>
-                        <td class="text-end pe-3 fs-13 fw-semibold">{{ number_format($ab['chat_7d']) }}</td>
-                    </tr>
-                    @endforeach
-                    @if($activeBiz->isEmpty())
-                    <tr><td colspan="3" class="text-center text-muted py-4">Belum ada data aktivitas 7 hari</td></tr>
-                    @endif
+                <tbody id="active-biz-tbody">
+                    <tr><td colspan="3" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                        <span class="text-muted fs-12">Memuat data...</span>
+                    </td></tr>
                 </tbody>
             </table>
         </div>
@@ -444,6 +399,13 @@
 
 @section('scripts')
 <script src="{{ asset('assets/libs/apexcharts/apexcharts.js') }}"></script>
+<style>
+.sk-pulse { display:inline-block; color:transparent; background:linear-gradient(90deg,rgba(255,255,255,.08) 25%,rgba(255,255,255,.18) 50%,rgba(255,255,255,.08) 75%);
+  background-size:200% 100%; animation:sk-shimmer 1.4s infinite; border-radius:4px; min-width:40px; }
+.sk-bar { height:18px; border-radius:4px; background:linear-gradient(90deg,rgba(255,255,255,.06) 25%,rgba(255,255,255,.14) 50%,rgba(255,255,255,.06) 75%);
+  background-size:200% 100%; animation:sk-shimmer 1.4s infinite; }
+@keyframes sk-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+</style>
 <script>
 // ── MRR Chart (12 bulan) ──
 (function () {
@@ -499,5 +461,84 @@
         })
         .catch(e => console.error('AI chart error', e));
 })();
+
+// ── LAZY LOAD: AI Stats + Bisnis Aktif ──
+const palette = ['#2E8DE1','#16A34A','#5B3FB0','#E0912F','#C0392B'];
+function bizColor(name) {
+    let h = 0; for (let c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+    return palette[Math.abs(h) % palette.length];
+}
+function fmtNum(n) { return n >= 1000000 ? (n/1000000).toFixed(1)+'jt' : n >= 1000 ? (n/1000).toFixed(1)+'k' : n.toLocaleString('id-ID'); }
+function diffHuman(dt) {
+    const s = (Date.now() - new Date(dt)) / 1000;
+    if (s < 60)    return 'baru saja';
+    if (s < 3600)  return Math.floor(s/60)   + ' mnt lalu';
+    if (s < 86400) return Math.floor(s/3600) + ' jam lalu';
+    return Math.floor(s/86400) + ' hari lalu';
+}
+
+// Fetch AI Stats (ai_replies, automation, training, credit, top 5)
+fetch('/administrator/dashboard/widgets/ai-stats')
+    .then(r => r.json())
+    .then(d => {
+        const ai = d.ai || {};
+        const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setEl('ai-credit',     (d.credit || 0).toLocaleString('id-ID'));
+        setEl('ai-replies',    (ai.ai_replies  || 0).toLocaleString('id-ID'));
+        setEl('ai-automation', (ai.automation  || 0) + '%');
+        setEl('ai-training',   (ai.training    || 0).toLocaleString('id-ID'));
+        // Top list
+        const top   = d.top || [];
+        const total = top.reduce((a, i) => a + i.count, 0);
+        setEl('ai-top-total', 'total ' + total.toLocaleString('id-ID'));
+        const topEl = document.getElementById('ai-top-list');
+        if (topEl) {
+            topEl.innerHTML = top.length === 0
+                ? '<p class="text-muted fs-12 text-center py-3">Belum ada data bulan ini</p>'
+                : top.map(t => `
+                    <div class="mb-3">
+                      <div class="d-flex justify-content-between mb-1">
+                        <span class="fs-12">${t.name}</span>
+                        <span class="fs-12 text-muted">${t.pct}%</span>
+                      </div>
+                      <div class="progress" style="height:6px;background:rgba(106,90,208,.15)">
+                        <div class="progress-bar" style="width:${t.pct}%;background:#6a5ad0"></div>
+                      </div>
+                    </div>`).join('');
+        }
+    })
+    .catch(e => console.error('AI stats error', e));
+
+// Fetch Bisnis Aktif (top 10, 7 hari)
+fetch('/administrator/dashboard/widgets/active-biz')
+    .then(r => r.json())
+    .then(d => {
+        const rows  = d.active || [];
+        const tbody = document.getElementById('active-biz-tbody');
+        if (!tbody) return;
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">Belum ada data aktivitas 7 hari</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(r => {
+            const name  = r.name || 'N/A';
+            const init  = name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+            const color = bizColor(name);
+            const diff  = diffHuman(r.last);
+            const daysAgo = (Date.now() - new Date(r.last)) / 86400000;
+            const cls   = daysAgo >= 3 ? 'text-warning' : 'text-success';
+            const warn  = daysAgo >= 3 ? ' ⚠️' : '';
+            return `<tr>
+              <td class="ps-3"><div class="d-flex align-items-center">
+                <div class="rounded-circle me-2 d-flex align-items-center justify-content-center fw-bold text-white fs-11"
+                     style="width:30px;height:30px;min-width:30px;background:${color}">${init}</div>
+                <span class="fs-13">${name}</span></div></td>
+              <td class="fs-12 ${cls}">${diff}${warn}</td>
+              <td class="text-end pe-3 fs-13 fw-semibold">${fmtNum(r.chat_7d)}</td>
+            </tr>`;
+        }).join('');
+    })
+    .catch(e => console.error('Active biz error', e));
+
 </script>
 @endsection

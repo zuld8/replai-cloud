@@ -32,6 +32,8 @@ Route::prefix('profile')->group(function () {
 Route::prefix('dashboard')->group(function () {
     Route::get('analisis', [HomeController::class, 'analiss']);
     Route::get('response-ai', [HomeController::class, 'creditAiResponse']);
+    Route::get('widgets/ai-stats',  [HomeController::class, 'wAiStats']);
+    Route::get('widgets/active-biz',[HomeController::class, 'wActiveBiz']);
 });
 
 Route::prefix('banks')->group(function () {
