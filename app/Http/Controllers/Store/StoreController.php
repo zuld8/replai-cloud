@@ -368,12 +368,18 @@ class StoreController extends Controller
                 $dupQuery->where('meta_account_id', $importMetaAccountId);
             }
 
-            // TAMBAHAN: phone+category_id dedup lintas akun WA
-            // Cegah: nomor sama + kategori sama = duplikat (walau beda akun WA)
-            $phoneCatSet = DB::table('stores')
-                ->where('business_id', $businessId)
+            // TAMBAHAN: phone+category_id dedup lintas akun WA & lintas business
+            // Scope ke merchant_id (lebih luas dari business_id) agar
+            // import dari business berbeda dalam merchant yang sama tetap di-dedup.
+            $phoneCatQuery = DB::table('stores')
                 ->whereNotNull('phone')
-                ->whereNotNull('category_id')
+                ->whereNotNull('category_id');
+            if ($merchantId) {
+                $phoneCatQuery->where('merchant_id', $merchantId);
+            } else {
+                $phoneCatQuery->where('business_id', $businessId);
+            }
+            $phoneCatSet = $phoneCatQuery
                 ->select('phone', 'category_id')
                 ->get()
                 ->mapWithKeys(fn($s) => [$s->phone . '|' . $s->category_id => true])
