@@ -305,7 +305,7 @@
     <div class="card-header d-flex align-items-center justify-content-between py-2">
         <div>
             <span class="fw-semibold fs-13">Bisnis Aktif Terkini</span>
-            <span class="text-muted fs-11 ms-2">· {{ $activeBiz->count() }} aktif (7h)</span>
+            <span class="text-muted fs-11 ms-2" id="active-biz-count">· <span class="sk-pulse">...</span> aktif (7h)</span>
         </div>
         <a href="/administrator/business" class="fs-12 text-primary">Lihat semua →</a>
     </div>
@@ -514,6 +514,8 @@ fetch('/administrator/dashboard/widgets/active-biz')
     .then(r => r.json())
     .then(d => {
         const rows  = d.active || [];
+        const cnt = document.getElementById('active-biz-count');
+        if (cnt) cnt.innerHTML = '· ' + rows.length + ' aktif (7h)';
         const tbody = document.getElementById('active-biz-tbody');
         if (!tbody) return;
         if (!rows.length) {
