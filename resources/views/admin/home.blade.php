@@ -1,304 +1,437 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="row">
-    <div class="col-lg-8 col-sm-12 mb-4">
-        <div class="card">
-            <div class="row row-bordered g-0">
-                <div class="col-12 card custom-card">
-                    <div class="card-header" style="display: block;">
-                        <div class="card-title mb-0">{{ __('dashboard.analysis_ai_usage') }}</div>
-                        <small class="card-subtitle">{{ __('dashboard.trend_ai_usage') }}</small>
-                    </div>
-                    <div class="card-body">
-                        <div id="responseAiChart"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!--/ Total Income -->
-    </div>
-    <div class="col-lg-4 col-sm-12 row p-0 m-0">
 
-        <div class="col-lg-6 ">
-            <div class="card">
-                <div class="card-body">
-                    <div class="flex-between mb-3">
-                        <span class="text-muted">{{ __('dashboard.merchants') }}</span>
-                    </div>
-                    <div class="d-flex align-items-end">
-                        <div class="flex-1">
-                            <h5 class="mb-2">{{number_format($summary['merchants'])}}</h5>
-                        </div>
-                        <span class="ms-2 avatar bg-primary-transparent">
-                            <i class="bx bx-buildings fs-22"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <div class="flex-between mb-3">
-                        <span class="text-muted">{{ __('dashboard.business') }}</span>
-                    </div>
-                    <div class="d-flex align-items-end">
-                        <div class="flex-1">
-                            <h5 class="mb-2">{{number_format($summary['business'])}}</h5>
-                        </div>
-                        <span class="ms-2 avatar bg-primary-transparent">
-                            <i class="bx bx-building fs-22"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <div class="flex-between mb-3">
-                        <span class="text-muted">{{ __('dashboard.package_name') }}</span>
-                    </div>
-                    <div class="d-flex align-items-end">
-                        <div class="flex-1">
-                            <h5 class="mb-2">{{number_format($summary['packages'])}}</h5>
-                        </div>
-                        <span class="ms-2 avatar bg-primary-transparent">
-                            <i class="bx bx-id-card fs-22"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <div class="flex-between mb-3">
-                        <span class="text-muted">{{ __('dashboard.earn_topup') }}</span>
-                    </div>
-                    <div class="d-flex align-items-end">
-                        <div class="flex-1">
-                            <h5 class="mb-2">{{number_format($summary['topup'])}}</h5>
-                        </div>
-                        <span class="ms-2 avatar bg-primary-transparent">
-                            <i class="bx bx-buildings fs-22"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <div class="flex-between mb-3">
-                        <span class="text-muted">{{ __('dashboard.human_agent') }}</span>
-                    </div>
-                    <div class="d-flex align-items-end">
-                        <div class="flex-1">
-                            <h5 class="mb-2">{{number_format($summary['users'])}}</h5>
-                        </div>
-                        <span class="ms-2 avatar bg-primary-transparent">
-                            <i class="bx bx-user-circle fs-22"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <div class="flex-between mb-3">
-                        <span class="text-muted">{{ __('dashboard.agent_ai') }}</span>
-                    </div>
-                    <div class="d-flex align-items-end">
-                        <div class="flex-1">
-                            <h5 class="mb-2">{{number_format($summary['finetunnels'])}}</h5>
-                        </div>
-                        <span class="ms-2 avatar bg-primary-transparent">
-                            <i class="bx bx-bot fs-22"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+{{-- ═══════════════════════════════════════════════════════
+     SEKSI 1 — RINGKASAN KPI
+═══════════════════════════════════════════════════════ --}}
+<div class="d-flex align-items-center mb-2 mt-1">
+    <span class="text-uppercase fs-11 fw-semibold text-muted me-2 ls-1">Ringkasan</span>
+    <div style="flex:1;height:1px;background:rgba(255,255,255,.08)"></div>
 </div>
+<div class="row g-3 mb-4">
 
-<div class="row">
-
-    <div class="col-lg-3 col-sm-6">
-        <div class="card-background flex-fill">
-            <div class="card custom-card">
-                <div class="card-body">
-                    <div class="d-flex">
-                        <div>
-                            <p class="fw-medium mb-1 text-muted">{{ __('dashboard.whatsapp_device') }}</p>
-                            <h5 class="mb-0">{{number_format($summary['devices'])}}</h5>
-                        </div>
-                        <div class="avatar avatar-md br-4 bg-primary-transparent ms-auto">
-                            <i class="bx bxl-whatsapp fs-20"></i>
-                        </div>
-                    </div>
-                </div>
+    {{-- Merchant --}}
+    <div class="col-6 col-md-4 col-lg">
+        <div class="card custom-card">
+            <div class="card-body p-3">
+                <p class="text-muted mb-1 fs-12">Merchant</p>
+                <h4 class="mb-0 fw-bold">{{ number_format($summary['merchants']) }}</h4>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-3 col-sm-6">
-        <div class="card-background flex-fill">
-            <div class="card custom-card">
-                <div class="card-body">
-                    <div class="d-flex">
-                        <div>
-                            <p class="fw-medium mb-1 text-muted">{{ __('dashboard.whatsapp_blast') }}</p>
-                            <h5 class="mb-0">{{number_format($summary['blast_w'])}}</h5>
-                        </div>
-                        <div class="avatar avatar-md br-4 bg-primary-transparent ms-auto">
-                            <i class="bx bx-send fs-20"></i>
-                        </div>
-                    </div>
-                </div>
+    {{-- Bisnis --}}
+    <div class="col-6 col-md-4 col-lg">
+        <div class="card custom-card">
+            <div class="card-body p-3">
+                <p class="text-muted mb-1 fs-12">Bisnis</p>
+                <h4 class="mb-0 fw-bold">{{ number_format($summary['business']) }}</h4>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-3 col-sm-6">
-        <div class="card-background flex-fill">
-            <div class="card custom-card">
-                <div class="card-body">
-                    <div class="d-flex">
-                        <div>
-                            <p class="fw-medium mb-1 text-muted">{{ __('dashboard.email_blast') }}</p>
-                            <h5 class="mb-0">{{number_format($summary['blast_e'])}}</h5>
-                        </div>
-                        <div class="avatar avatar-md br-4 bg-primary-transparent ms-auto">
-                            <i class="bx bx-envelope fs-20"></i>
-                        </div>
-                    </div>
-                </div>
+    {{-- Langganan Aktif (highlighted) --}}
+    <div class="col-6 col-md-4 col-lg">
+        <div class="card custom-card" style="border:1px solid #2E8DE1;background:rgba(46,141,225,.08)">
+            <div class="card-body p-3">
+                <p class="mb-1 fs-12" style="color:#2E8DE1">Langganan Aktif</p>
+                <h4 class="mb-0 fw-bold" style="color:#2E8DE1">{{ number_format($sub['aktif']) }}</h4>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-3 col-sm-6">
-        <div class="card-background flex-fill">
-            <div class="card custom-card">
-                <div class="card-body">
-                    <div class="d-flex">
-                        <div>
-                            <p class="fw-medium mb-1 text-muted">{{ __('dashboard.scraping') }}</p>
-                            <h5 class="mb-0">{{number_format($summary['scraping'])}}</h5>
-                        </div>
-                        <div class="avatar avatar-md br-4 bg-primary-transparent ms-auto">
-                            <i class="bx bx-map fs-20"></i>
-                        </div>
-                    </div>
-                </div>
+    {{-- Konversi --}}
+    <div class="col-6 col-md-4 col-lg">
+        <div class="card custom-card">
+            <div class="card-body p-3">
+                <p class="text-muted mb-1 fs-12">Konversi</p>
+                <h4 class="mb-0 fw-bold">{{ $sub['konversi'] }}%</h4>
+            </div>
+        </div>
+    </div>
+
+    {{-- Topup --}}
+    <div class="col-6 col-md-4 col-lg">
+        <div class="card custom-card">
+            <div class="card-body p-3">
+                <p class="text-muted mb-1 fs-12">Topup</p>
+                <h4 class="mb-0 fw-bold">Rp{{ $summary['topup'] >= 1000000 ? number_format($summary['topup']/1000000,1).'jt' : number_format($summary['topup']) }}</h4>
             </div>
         </div>
     </div>
 
 </div>
 
-<div class="row">
-    <div class="col-lg-6 col-sm-12 mb-4">
+{{-- ═══════════════════════════════════════════════════════
+     SEKSI 2 — MRR CHART + PERLU TINDAKAN
+═══════════════════════════════════════════════════════ --}}
+<div class="row g-3 mb-4">
+
+    {{-- MRR Chart --}}
+    <div class="col-lg-7 col-12">
         <div class="card custom-card h-100">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <div class="card-title m-0 me-2">{{ __('dashboard.expiring_packages') }}</div>
+            <div class="card-body p-3">
+                <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div>
+                        <p class="text-muted mb-1 fs-12">Pendapatan (MRR)</p>
+                        <h4 class="mb-0 fw-bold">
+                            Rp{{ $mrrThisMonth >= 1000000 ? number_format($mrrThisMonth/1000000,2).'jt' : number_format($mrrThisMonth) }}
+                            @if($mrrGrowth > 0)
+                                <span class="fs-12 ms-1" style="color:#16A34A">▲{{ $mrrGrowth }}%</span>
+                            @elseif($mrrGrowth < 0)
+                                <span class="fs-12 ms-1" style="color:#C0392B">▼{{ abs($mrrGrowth) }}%</span>
+                            @endif
+                        </h4>
+                    </div>
+                    <span class="badge" style="background:rgba(46,141,225,.15);color:#2E8DE1;font-size:11px">12 bln</span>
+                </div>
+                <div id="mrrChart"></div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Perlu Tindakan --}}
+    <div class="col-lg-5 col-12">
+        <div class="card custom-card h-100">
+            <div class="card-body p-3">
+                <p class="fw-semibold mb-3 fs-13">🔔 Perlu Tindakan</p>
+
+                {{-- Berbayar mulai sepi (churn proxy via mustFollow count) --}}
+                @if($mustFollow->count() > 0)
+                <div class="d-flex align-items-center justify-content-between mb-3 p-2 rounded" style="background:rgba(192,57,43,.08)">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2" style="color:#C0392B">⚠️</span>
+                        <span class="fs-12">{{ $mustFollow->count() }} segera habis</span>
+                    </div>
+                    <a href="/administrator/business" class="fs-12 fw-semibold" style="color:#E0912F">Ingatkan →</a>
+                </div>
+                @endif
+
+                {{-- Segera habis (< 7 hari) --}}
+                @php $semuaHabis = $mustFollow->count(); @endphp
+                <div class="d-flex align-items-center justify-content-between mb-3 p-2 rounded" style="background:rgba(224,145,47,.08)">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2" style="color:#E0912F">🕐</span>
+                        <span class="fs-12">{{ $semuaHabis }} segera habis (7 hari)</span>
+                    </div>
+                    <a href="/administrator/business" class="fs-12 fw-semibold" style="color:#E0912F">Ingatkan →</a>
+                </div>
+
+                {{-- Tanpa paket --}}
+                <div class="d-flex align-items-center justify-content-between mb-3 p-2 rounded" style="background:rgba(100,116,139,.08)">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">👤</span>
+                        <span class="fs-12">{{ number_format($sub['tanpa_paket']) }} tanpa paket</span>
+                    </div>
+                    <a href="/administrator/business" class="fs-12 fw-semibold text-primary">Hubungi →</a>
+                </div>
+
+                {{-- Belum bayar --}}
+                @if($notPayment->count() > 0)
+                <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background:rgba(91,63,176,.08)">
+                    <div class="d-flex align-items-center">
+                        <span class="me-2" style="color:#5B3FB0">💳</span>
+                        <span class="fs-12">{{ $notPayment->count() }} pending pembayaran</span>
+                    </div>
+                    <a href="/administrator/transaction" class="fs-12 fw-semibold" style="color:#5B3FB0">Cek →</a>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════
+     SEKSI 3 — PENGGUNAAN AI
+═══════════════════════════════════════════════════════ --}}
+<div class="d-flex align-items-center mb-2">
+    <span class="text-uppercase fs-11 fw-semibold text-muted me-2 ls-1">✦ Penggunaan AI</span>
+    <div style="flex:1;height:1px;background:rgba(255,255,255,.08)"></div>
+</div>
+<div class="row g-3 mb-4">
+
+    {{-- AI Stats + Chart --}}
+    <div class="col-lg-7 col-12">
+        <div class="card custom-card h-100">
+            <div class="card-body p-3">
+                {{-- Stat row --}}
+                <div class="row g-2 mb-3">
+                    <div class="col-6 col-sm-3">
+                        <p class="text-muted mb-1 fs-11">AI Credit Terpakai</p>
+                        <h5 class="mb-0 fw-bold" style="color:#6a5ad0">{{ number_format($aiCreditTotal) }}</h5>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <p class="text-muted mb-1 fs-11">Balasan AI</p>
+                        <h5 class="mb-0 fw-bold">{{ number_format($ai['ai_replies']) }}</h5>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <p class="text-muted mb-1 fs-11">Otomatisasi</p>
+                        <h5 class="mb-0 fw-bold" style="color:#16A34A">{{ $ai['automation'] }}%</h5>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <p class="text-muted mb-1 fs-11">AI Training</p>
+                        <h5 class="mb-0 fw-bold">{{ number_format($ai['training']) }}</h5>
+                    </div>
+                </div>
+                <p class="text-muted fs-11 mb-1">Tren AI credit · 30 hari</p>
+                <div id="responseAiChart"></div>
+            </div>
+        </div>
+    </div>
+
+    {{-- AI Top 5 per bisnis --}}
+    <div class="col-lg-5 col-12">
+        <div class="card custom-card h-100">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="fw-semibold mb-0 fs-13">Konsumsi AI Terbesar</p>
+                    <span class="text-muted fs-11">total {{ number_format($aiTop->sum('count')) }}</span>
+                </div>
+                @foreach($aiTop as $ai_item)
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fs-12">{{ $ai_item['name'] }}</span>
+                        <span class="fs-12 text-muted">{{ $ai_item['pct'] }}%</span>
+                    </div>
+                    <div class="progress" style="height:6px;background:rgba(106,90,208,.15)">
+                        <div class="progress-bar" style="width:{{ $ai_item['pct'] }}%;background:#6a5ad0"></div>
+                    </div>
+                </div>
+                @endforeach
+                @if($aiTop->isEmpty())
+                    <p class="text-muted fs-12 text-center py-3">Belum ada data bulan ini</p>
+                @endif
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{{-- ═══════════════════════════════════════════════════════
+     SEKSI 4 — CHANNEL TERDAFTAR
+═══════════════════════════════════════════════════════ --}}
+<div class="d-flex align-items-center mb-2">
+    <span class="text-uppercase fs-11 fw-semibold text-muted me-2 ls-1">Channel Terdaftar</span>
+    <div style="flex:1;height:1px;background:rgba(255,255,255,.08)"></div>
+</div>
+<div class="row g-3 mb-4">
+    @php
+    $channelList = [
+        ['icon'=>'bxl-whatsapp', 'label'=>'WA Business', 'val'=>$channels['waba'],      'color'=>'#25D366'],
+        ['icon'=>'bxl-whatsapp', 'label'=>'WA Personal', 'val'=>$channels['wa_pers'],   'color'=>'#25D366', 'opacity'=>'.7'],
+        ['icon'=>'bxl-instagram','label'=>'Instagram',   'val'=>$channels['instagram'],  'color'=>'#C13584'],
+        ['icon'=>'bxl-messenger','label'=>'Messenger',   'val'=>$channels['messenger'],  'color'=>'#0078FF'],
+        ['icon'=>'bxl-telegram', 'label'=>'Telegram',    'val'=>$channels['telegram'],   'color'=>'#0088CC'],
+        ['icon'=>'bx-chat',      'label'=>'Live Chat',   'val'=>$channels['livechat'],   'color'=>'#E0912F'],
+    ];
+    @endphp
+    @foreach($channelList as $ch)
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="card custom-card text-center">
+            <div class="card-body p-3">
+                <i class="bx {{ $ch['icon'] }} fs-28 mb-1" style="color:{{ $ch['color'] }};opacity:{{ $ch['opacity'] ?? '1' }}"></i>
+                <h5 class="mb-0 fw-bold">{{ number_format($ch['val']) }}</h5>
+                <p class="text-muted mb-0 fs-11">{{ $ch['label'] }}</p>
+            </div>
+        </div>
+    </div>
+    @endforeach
+</div>
+
+{{-- ═══════════════════════════════════════════════════════
+     SEKSI 5 — KESEHATAN LANGGANAN + AKTIVITAS
+═══════════════════════════════════════════════════════ --}}
+<div class="row g-3 mb-4">
+
+    {{-- Kesehatan Langganan --}}
+    <div class="col-lg-7 col-12">
+        <div class="card custom-card h-100">
+            <div class="card-body p-3">
+                <p class="fw-semibold mb-3 fs-13">Kesehatan Langganan</p>
+                @php
+                    $total   = max(1, $sub['total']);
+                    $pAktif  = round($sub['aktif'] / $total * 100);
+                    $pTanpa  = round($sub['tanpa_paket'] / $total * 100);
+                    $mustCnt = $mustFollow->count();
+                    $pMust   = round($mustCnt / $total * 100);
+                @endphp
+                <div class="progress mb-3" style="height:12px">
+                    <div class="progress-bar" style="width:{{ $pAktif }}%;background:#16A34A" title="Aktif: {{ $sub['aktif'] }}"></div>
+                    <div class="progress-bar" style="width:{{ $pMust }}%;background:#E0912F" title="Segera habis: {{ $mustCnt }}"></div>
+                    <div class="progress-bar" style="width:{{ $pTanpa }}%;background:#64748B" title="Tanpa paket: {{ $sub['tanpa_paket'] }}"></div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <span class="fs-12"><span class="badge me-1" style="background:#16A34A">●</span>Aktif · <strong>{{ $sub['aktif'] }}</strong></span>
+                    </div>
+                    <div class="col-6">
+                        <span class="fs-12"><span class="badge me-1" style="background:#E0912F">●</span>Segera habis · <strong>{{ $mustCnt }}</strong></span>
+                    </div>
+                    <div class="col-6">
+                        <span class="fs-12"><span class="badge me-1" style="background:#64748B">●</span>Tanpa paket · <strong>{{ $sub['tanpa_paket'] }}</strong></span>
+                    </div>
+                    <div class="col-6">
+                        <span class="fs-12">Total Bisnis · <strong>{{ $sub['total'] }}</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Aktivitas --}}
+    <div class="col-lg-5 col-12">
+        <div class="card custom-card h-100">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <p class="fw-semibold mb-0 fs-13">Aktivitas</p>
+                    <div class="d-flex gap-1">
+                        <a href="?range=7"  class="btn btn-sm {{ $range == 7  ? 'btn-primary' : 'btn-outline-secondary' }}" style="font-size:11px;padding:2px 8px">7h</a>
+                        <a href="?range=30" class="btn btn-sm {{ $range == 30 ? 'btn-primary' : 'btn-outline-secondary' }}" style="font-size:11px;padding:2px 8px">30h</a>
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <p class="text-muted mb-1 fs-11">Blast WA</p>
+                        <h6 class="fw-bold mb-0">{{ $activity['blast_w'] >= 1000 ? number_format($activity['blast_w']/1000,1).'k' : number_format($activity['blast_w']) }}</h6>
+                    </div>
+                    <div class="col-6">
+                        <p class="text-muted mb-1 fs-11">Blast Email</p>
+                        <h6 class="fw-bold mb-0">{{ $activity['blast_e'] >= 1000 ? number_format($activity['blast_e']/1000,1).'k' : number_format($activity['blast_e']) }}</h6>
+                    </div>
+                    <div class="col-4">
+                        <p class="text-muted mb-1 fs-11">Scrap Maps</p>
+                        <h6 class="fw-bold mb-0">{{ number_format($activity['scrap_maps']) }}</h6>
+                    </div>
+                    <div class="col-4">
+                        <p class="text-muted mb-1 fs-11">Scrap Grup</p>
+                        <h6 class="fw-bold mb-0">{{ number_format($activity['scrap_group']) }}</h6>
+                    </div>
+                    <div class="col-4">
+                        <p class="text-muted mb-1 fs-11">Scrap Kontak</p>
+                        <h6 class="fw-bold mb-0">{{ number_format($activity['scrap_kontak']) }}</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{{-- ═══════════════════════════════════════════════════════
+     SEKSI 6 — BISNIS AKTIF TERKINI
+═══════════════════════════════════════════════════════ --}}
+<div class="card custom-card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between py-2">
+        <div>
+            <span class="fw-semibold fs-13">Bisnis Aktif Terkini</span>
+            <span class="text-muted fs-11 ms-2">· {{ $activeBiz->count() }} aktif (7h)</span>
+        </div>
+        <a href="/administrator/business" class="fs-12 text-primary">Lihat semua →</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="fs-12 fw-semibold text-muted ps-3">Bisnis</th>
+                        <th class="fs-12 fw-semibold text-muted">Aktivitas Terakhir</th>
+                        <th class="fs-12 fw-semibold text-muted text-end pe-3">Chat 7h</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($activeBiz as $ab)
+                    @php
+                        $biz  = $ab['biz'];
+                        $name = $biz->name ?? 'N/A';
+                        $init = strtoupper(mb_substr(trim($name), 0, 1)) . (mb_strlen(trim($name)) > 1 ? strtoupper(mb_substr(trim($name), mb_strpos($name, ' ') + 1, 1)) : '');
+                        $colors = ['#2E8DE1','#16A34A','#5B3FB0','#E0912F','#C0392B'];
+                        $color  = $colors[crc32($name) % count($colors)];
+                        $diff   = \Carbon\Carbon::parse($ab['last'])->diffForHumans();
+                    @endphp
+                    <tr>
+                        <td class="ps-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle me-2 d-flex align-items-center justify-content-center fw-bold text-white fs-11"
+                                     style="width:30px;height:30px;min-width:30px;background:{{ $color }}">{{ $init }}</div>
+                                <span class="fs-13">{{ $name }}</span>
+                            </div>
+                        </td>
+                        <td class="fs-12 {{ \Carbon\Carbon::parse($ab['last'])->diffInDays() >= 3 ? 'text-warning' : 'text-success' }}">
+                            {{ $diff }}
+                            @if(\Carbon\Carbon::parse($ab['last'])->diffInDays() >= 3)
+                            <span class="ms-1">⚠️</span>
+                            @endif
+                        </td>
+                        <td class="text-end pe-3 fs-13 fw-semibold">{{ number_format($ab['chat_7d']) }}</td>
+                    </tr>
+                    @endforeach
+                    @if($activeBiz->isEmpty())
+                    <tr><td colspan="3" class="text-center text-muted py-4">Belum ada data aktivitas 7 hari</td></tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════
+     SEKSI 7 — PAKET SEGERA HABIS + BELUM BERLANGGANAN
+═══════════════════════════════════════════════════════ --}}
+<div class="row g-3 mb-4">
+    <div class="col-lg-6 col-12">
+        <div class="card custom-card h-100">
+            <div class="card-header py-2">
+                <div class="card-title mb-0 fs-13">{{ __('dashboard.expiring_packages') }}</div>
             </div>
             <div class="card-body">
-                <ul class="list-unstyled mb-0 font-weight-semibold">
-                    @foreach($mustFollow as $follow)
-
-                    <li class="list-item mb-4">
-                        <div class="flex-between">
-                            <div class="flex-1 d-flex align-items-center">
-                                <div class="flex-1 pos-relative">
-                                    <a aria-label="anchor" href="javscript:void(0);" class="masked-link"></a>
-                                    <h6 class="fs-14 mb-0">{{$follow->business->name ?? ''}}</h6>
-                                    <span class="fs-12 text-muted">{{$follow->business->merchant->name ?? ''}} </span>
-                                </div>
+                <ul class="list-unstyled mb-0">
+                    @forelse($mustFollow as $follow)
+                    <li class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fs-13 mb-0">{{ $follow->business->name ?? '' }}</h6>
+                                <span class="fs-11 text-muted">{{ $follow->business->merchant->name ?? '' }}</span>
                             </div>
-                            <div class="min-w-fit-content text-end">
-                                <a href="javascript:void(0);" class="d-block text-primary op-9"> {{$follow->last_expire_date}} </a>
-                                <span class="fs-12 tx-muted">{{$follow->package->name ?? ''}}</span>
+                            <div class="text-end">
+                                <a class="d-block fs-12 text-primary">{{ $follow->last_expire_date }}</a>
+                                <span class="fs-11 text-muted">{{ $follow->package->name ?? '' }}</span>
                             </div>
                         </div>
                     </li>
-                    @endforeach
+                    @empty
+                    <li class="text-muted text-center py-3 fs-12">Tidak ada paket yang segera habis</li>
+                    @endforelse
                 </ul>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-6 col-sm-12 mb-4">
+    <div class="col-lg-6 col-12">
         <div class="card custom-card h-100">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <div class="card-title m-0 me-2">{{ __('dashboard.unpaid') }}</div>
+            <div class="card-header py-2">
+                <div class="card-title mb-0 fs-13">{{ __('dashboard.business_not_subscribed') }}</div>
             </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush mb-0">
-                    @foreach($notPayment as $payment)
-                    <li class="list-group-item p-0 mb-2">
-                        <a href="javascript:void(0);">
-                            <div class="d-flex flex-wrap align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <div>
-                                        <p class="fw-semibold mb-0 fs-14">{{$payment->business->name ?? ''}} </p>
-                                        <span class="text-muted fs-12">{{$payment->type == 'package' ? ($payment->package->name ?? '') : 'TopUp' }}</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p class="mb-0 fw-semibold d-flex align-items-center fs-16">
-                                        {{number_format($payment->final_total)}}
-                                    </p>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-12 mb-4">
-        <div class="card custom-card h-100">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <div class="card-title m-0 me-2">{{ __('dashboard.business_not_subscribed') }}</div>
-            </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table text-nowrap table-hover border table-bordered">
-                        <thead class="border-top">
+                    <table class="table table-hover mb-0">
+                        <thead>
                             <tr>
-                                <th scope="row" class="border-bottom-0">{{ __('dashboard.business_name') }}</th>
-                                <th scope="row" class="border-bottom-0">{{ __('dashboard.merchants') }}</th>
-                                <th scope="row" class="border-bottom-0">{{ __('dashboard.owner') }}</th>
-                                <th scope="row" class="border-bottom-0">{{ __('dashboard.registration_date') }}</th>
+                                <th class="fs-12 text-muted ps-3">Bisnis</th>
+                                <th class="fs-12 text-muted">Merchant</th>
+                                <th class="fs-12 text-muted">Daftar</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($merchantNotPackage as $not)
+                            @forelse($merchantNotPackage as $not)
                             <tr>
-                                <td>
-                                    {{$not->name}}
-                                </td>
-                                <td>{{$not->merchant->name ?? ''}} </td>
-                                <td>{{$not->merchant->owner->name ?? ''}} </td>
-                                <td style="position: relative;">
-                                    {{$not->created_at->format('Y-m-d')}}
-                                </td>
+                                <td class="ps-3 fs-12">{{ $not->name }}</td>
+                                <td class="fs-12">{{ $not->merchant->name ?? '' }}</td>
+                                <td class="fs-12 text-muted">{{ $not->created_at->format('d M') }}</td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr><td colspan="3" class="text-center text-muted py-3 fs-12">Semua bisnis sudah berlangganan</td></tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -306,129 +439,65 @@
         </div>
     </div>
 </div>
+
 @endsection
 
 @section('scripts')
-<script src="{{asset('assets/libs/apexcharts/apexcharts.js')}}"></script>
+<script src="{{ asset('assets/libs/apexcharts/apexcharts.js') }}"></script>
 <script>
-    const responseAiChartEl = document.querySelector("#responseAiChart");
+// ── MRR Chart (12 bulan) ──
+(function () {
+    const mrrData = @json($mrr);
+    if (!mrrData || !mrrData.length) return;
+    const labels = mrrData.map(d => d.ym);
+    const values = mrrData.map(d => parseFloat(d.total) || 0);
 
-    let chart1;
+    new ApexCharts(document.querySelector("#mrrChart"), {
+        chart:  { type: 'area', height: 130, toolbar: { show: false }, sparkline: { enabled: true } },
+        series: [{ name: 'MRR', data: values }],
+        stroke: { width: 2, curve: 'smooth' },
+        colors: ['#2E8DE1'],
+        fill:   { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
+        dataLabels: { enabled: false },
+        tooltip: {
+            y: { formatter: v => 'Rp' + (v >= 1000000 ? (v/1000000).toFixed(2) + 'jt' : v.toLocaleString('id-ID')) }
+        },
+        xaxis: { categories: labels, labels: { show: false } },
+        yaxis: { labels: { show: false } },
+        grid:  { show: false },
+    }).render();
+})();
 
-    if (responseAiChartEl) {
-        fetch("/administrator/dashboard/response-ai")
-            .then((response) => response.json())
-            .then((data) => {
-                // Generate full date range for the current month
-                const now = new Date();
-                const daysInMonth = new Date(
-                    now.getFullYear(),
-                    now.getMonth() + 1,
-                    0
-                ).getDate();
-                const fullDates = Array.from({
-                        length: daysInMonth
-                    },
-                    (_, i) => {
-                        const day = i + 1;
-                        return `${now.getFullYear()}-${(now.getMonth() + 1)
-                        .toString()
-                        .padStart(2, "0")}-${day
-                        .toString()
-                        .padStart(2, "0")}`;
-                    }
-                );
+// ── AI Credit Chart (existing endpoint, reuse) ──
+(function () {
+    const el = document.querySelector("#responseAiChart");
+    if (!el) return;
 
-                // Map API data to a dictionary
-                const dataMap = data.reduce((acc, item) => {
-                    acc[item.date] = item.count;
-                    return acc;
-                }, {});
-
-                // Create final dataset with missing dates filled with 0
-                const categories = fullDates;
-                const seriesData = fullDates.map((date) => dataMap[date] || 0);
-
-                // Config untuk ApexCharts
-                const options = {
-                    chart: {
-                        height: 250,
-                        type: "area",
-                        toolbar: false,
-                        dropShadow: {
-                            enabled: true,
-                            top: 14,
-                            left: 2,
-                            blur: 3,
-                            color: "#7367F0",
-                            opacity: 0.15,
-                        },
-                    },
-                    series: [{
-                        name: "Interactions",
-                        data: seriesData,
-                    }, ],
-                    dataLabels: {
-                        enabled: false
-                    },
-                    stroke: {
-                        width: 3,
-                        curve: "smooth"
-                    },
-                    colors: ["#7367F0"],
-                    fill: {
-                        type: "gradient",
-                        gradient: {
-                            shade: "dark",
-                            shadeIntensity: 0.8,
-                            opacityFrom: 0.7,
-                            opacityTo: 0.25,
-                            stops: [0, 95, 100],
-                        },
-                    },
-                    grid: {
-                        show: true,
-                        borderColor: "#ebebeb"
-                    },
-                    xaxis: {
-                        categories: categories,
-                        labels: {
-                            style: {
-                                fontSize: "13px",
-                                colors: "#6e6b7b"
-                            },
-                        },
-                    },
-                    yaxis: {
-                        labels: {
-                            formatter: (val) => val.toLocaleString(),
-                            style: {
-                                fontSize: "13px",
-                                colors: "#6e6b7b"
-                            },
-                        },
-                    },
-                };
-
-                // Buat chart baru atau update jika sudah ada
-                if (chart1) {
-                    chart1.updateOptions(options);
-                } else {
-                    chart1 = new ApexCharts(responseAiChartEl, options);
-                    chart1.render();
-                }
-            })
-            .catch((error) => {
-                console.error("Error fetching interaction data:", error);
+    fetch("/administrator/dashboard/response-ai")
+        .then(r => r.json())
+        .then(data => {
+            const now = new Date();
+            const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const fullDates = Array.from({ length: days }, (_, i) => {
+                const d = i + 1;
+                return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             });
-    }
+            const map = data.reduce((a, i) => { a[i.date] = i.count; return a; }, {});
+            const series = fullDates.map(d => map[d] || 0);
 
-    // Fungsi untuk update warna chart
-    function marketCap() {
-        const myVarVal = "#FF5733"; // Ganti dengan warna yang diinginkan
-        chart1.updateOptions({
-            colors: ["rgb(" + myVarVal + ")"],
-        });
-    }
+            new ApexCharts(el, {
+                chart:  { height: 120, type: 'area', toolbar: { show: false }, sparkline: { enabled: false } },
+                series: [{ name: 'AI Credit', data: series }],
+                stroke: { width: 2, curve: 'smooth' },
+                colors: ['#7367F0'],
+                fill:   { type: 'gradient', gradient: { opacityFrom: 0.5, opacityTo: 0.05 } },
+                dataLabels: { enabled: false },
+                xaxis: { categories: fullDates, labels: { show: false } },
+                yaxis: { labels: { formatter: v => v.toLocaleString() } },
+                grid:  { borderColor: 'rgba(255,255,255,.05)' },
+            }).render();
+        })
+        .catch(e => console.error('AI chart error', e));
+})();
 </script>
 @endsection
