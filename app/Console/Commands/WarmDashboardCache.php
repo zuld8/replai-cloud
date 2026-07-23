@@ -151,6 +151,24 @@ class WarmDashboardCache extends Command
                 Cache::put($keySt, $this->computeStorage($businessId), 1800); // 30 menit
             } catch (\Throwable $e) { $this->warn("B7 storage {$businessId}: " . $e->getMessage()); }
 
+            // B8. home_logs — warm log terbaru per bisnis (TTL 1800 > interval 10 mnt)
+            // SINKRON dgn: Cache::remember("home_logs_{$merchantId}_{$monthYear}", 300, ...)
+            $keyLogs = "home_logs_{$merchantId}_{$monthYear}";
+            if ($force || !Cache::has($keyLogs)) {
+                try {
+                    Cache::put($keyLogs, $this->computeHomeLogs($merchantId, $businessId), 1800);
+                } catch (\Throwable $e) { $this->warn("B8 logs {$businessId}: " . $e->getMessage()); }
+            }
+
+            // B9. home_crm — warm preview pesan CRM (TTL 1800 > interval 10 mnt)
+            // SINKRON dgn: Cache::remember("home_crm_{$merchantId}_{$businessId}", 600, ...)
+            $keyCrm = "home_crm_{$merchantId}_{$businessId}";
+            if ($force || !Cache::has($keyCrm)) {
+                try {
+                    Cache::put($keyCrm, $this->computeHomeCrm($businessId), 1800);
+                } catch (\Throwable $e) { $this->warn("B9 crm {$businessId}: " . $e->getMessage()); }
+            }
+
             $warmedBiz++;
         }
 
@@ -451,4 +469,84 @@ class WarmDashboardCache extends Command
         ];
     }
 
+
+    /**
+     * Warm home_logs — sinkron dgn HomeController logs block.
+     * Key: "home_logs_{$merchantId}_{$monthYear}" (TTL 1800 di warm, 300 di home).
+     */
+    private function computeHomeLogs(string $merchantId, string $businessId): array
+    {
+        // Replika LogObserver::getData(request, 'whatsapp') + limit(10) + get()
+        // withoutGlobalScopes: CLI tidak punya session → scope FilterByBusinessScope no-op
+        return ['whatsapp' => \App\Models\Log::withoutGlobalScopes()
+            ->where('business_id', $businessId)
+            ->where('type', 'whatsapp')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get(['description', 'error', 'type', 'status', 'created_at'])
+        ];
+    }
+
+    /**
+     * Warm home_crm — sinkron dgn HomeController crmMessages block.
+     * Key: "home_crm_{$merchantId}_{$businessId}" (TTL 1800 di warm, 600 di home).
+     */
+    private function computeHomeCrm(string $businessId): array
+    {
+        // 5 newest unread — withoutGlobalScopes + eksplisit business_id (CLI safe)
+        $newest = HistoryChat::withoutGlobalScopes()
+            ->with(['last_message'])
+            ->where('business_id', $businessId)
+            ->where('unread_count', '>', 0)
+            ->whereIn('status', ['open', 'pending'])
+            ->orderBy('last_message_at', 'desc')
+            ->limit(5)
+            ->get(['id', 'name', 'from_number', 'from', 'status', 'last_message_at', 'unread_count', 'avatar_url']);
+
+        // 5 oldest unread — sama tapi ASC
+        $oldest = HistoryChat::withoutGlobalScopes()
+            ->with(['last_message'])
+            ->where('business_id', $businessId)
+            ->where('unread_count', '>', 0)
+            ->whereIn('status', ['open', 'pending'])
+            ->orderBy('last_message_at', 'asc')
+            ->limit(5)
+            ->get(['id', 'name', 'from_number', 'from', 'status', 'last_message_at', 'unread_count', 'avatar_url', 'created_at']);
+
+        return [
+            'newest' => $newest->map(function ($chat) {
+                $d = $chat->last_message;
+                return [
+                    'id'                => $chat->id,
+                    'name'              => $chat->name ?? $chat->from_number,
+                    'phone'             => $chat->from_number,
+                    'from'              => $chat->from,
+                    'status'            => $chat->status,
+                    'last_message'      => $d->message ?? '-',
+                    'last_message_type' => $d->type ?? 'text',
+                    'last_message_at'   => $chat->last_message_at,
+                    'unread'            => $chat->unread_count ?? 0,
+                    'avatar'            => $chat->avatar_url,
+                ];
+            }),
+            'oldest' => $oldest->map(function ($chat) {
+                $d = $chat->last_message;
+                $wait = $chat->last_message_at
+                    ? \Carbon\Carbon::parse($chat->last_message_at)->diffForHumans()
+                    : ($chat->created_at ? \Carbon\Carbon::parse($chat->created_at)->diffForHumans() : '-');
+                return [
+                    'id'                => $chat->id,
+                    'name'              => $chat->name ?? $chat->from_number,
+                    'phone'             => $chat->from_number,
+                    'from'              => $chat->from,
+                    'status'            => $chat->status,
+                    'last_message'      => $d->message ?? '-',
+                    'last_message_type' => $d->type ?? 'text',
+                    'last_message_at'   => $chat->last_message_at,
+                    'wait_time'         => $wait,
+                    'avatar'            => $chat->avatar_url,
+                ];
+            }),
+        ];
+    }
 }
