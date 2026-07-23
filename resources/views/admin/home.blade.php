@@ -97,14 +97,14 @@
             <div class="card-body p-3">
                 <p class="fw-semibold mb-3 fs-13">🔔 Perlu Tindakan</p>
 
-                {{-- Berbayar mulai sepi (churn proxy via mustFollow count) --}}
-                @if($mustFollow->count() > 0)
+                {{-- Berbayar mulai sepi (churn asli: aktif & berbayar tapi sepi 3 hari) --}}
+                @if($churn > 0)
                 <div class="d-flex align-items-center justify-content-between mb-3 p-2 rounded" style="background:rgba(192,57,43,.08)">
                     <div class="d-flex align-items-center">
                         <span class="me-2" style="color:#C0392B">⚠️</span>
-                        <span class="fs-12">{{ $mustFollow->count() }} segera habis</span>
+                        <span class="fs-12" style="color:#C0392B">{{ $churn }} berbayar mulai sepi</span>
                     </div>
-                    <a href="/administrator/business" class="fs-12 fw-semibold" style="color:#E0912F">Ingatkan →</a>
+                    <a href="/administrator/business" class="fs-12 fw-semibold" style="color:#C0392B">Follow-up →</a>
                 </div>
                 @endif
 
@@ -417,7 +417,8 @@
     new ApexCharts(document.querySelector("#mrrChart"), {
         chart:  { type: 'area', height: 130, toolbar: { show: false }, sparkline: { enabled: true } },
         series: [{ name: 'MRR', data: values }],
-        stroke: { width: 2, curve: 'smooth' },
+        stroke: { width: 2, curve: 'straight' },  // straight: apa adanya, bukan bell-curve simetris
+        markers: { size: 3 },
         colors: ['#2E8DE1'],
         fill:   { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
         dataLabels: { enabled: false },

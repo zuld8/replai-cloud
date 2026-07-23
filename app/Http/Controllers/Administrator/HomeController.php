@@ -135,6 +135,24 @@ class HomeController extends Controller
             ];
         });
 
+        // Churn risk: bisnis berbayar aktif yang sepi 3 hari terakhir
+        $churn = Cache::remember("admin_churn_{$monthYear}", 900, function () {
+            // Ambil bisnis berbayar aktif (price > 0, belum expired)
+            $paidBizIds = PackageTransaction::where('status', 'success')
+                ->where('type', 'package')
+                ->where('expire_date', '>=', now())
+                ->whereHas('package', fn($q) => $q->where('price', '>', 0))
+                ->pluck('business_id')->unique()->values();
+            if ($paidBizIds->isEmpty()) return 0;
+            // Hitung bisnis berbayar yg masih aktif (ada chat 3 hari)
+            $aktif3d = HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
+                ->whereIn('history_chats.business_id', $paidBizIds->all())
+                ->where('history_chat_details.created_at', '>=', now()->subDays(3))
+                ->distinct('history_chats.business_id')
+                ->count('history_chats.business_id');
+            return max(0, $paidBizIds->count() - $aktif3d); // berbayar TAPI sepi = churn risk
+        });
+
         $mustFollow = PackageTransaction::select('business_id', 'package_id', DB::raw('MAX(expire_date) as last_expire_date'))
             ->where('business_id', '!=', null)
             ->where('type', 'package')
@@ -168,7 +186,7 @@ class HomeController extends Controller
         return view('admin.home', ['page' => __('page.dashboard'), 'breadcumb' => false], compact(
             'data', 'logs', 'summary', 'mustFollow', 'merchantNotPackage', 'notPayment', 'merchants',
             'channels', 'sub', 'mrr', 'mrrThisMonth', 'mrrGrowth',
-            'scrap', 'activity', 'range'
+            'scrap', 'activity', 'range', 'churn'
         ));
     }
 
