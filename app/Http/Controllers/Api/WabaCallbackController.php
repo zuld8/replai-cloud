@@ -379,15 +379,24 @@ class WabaCallbackController extends Controller
                             );
                             if (!$history) continue;
 
-                            // Teks / caption sesuai tipe pesan
+                            // ── Reaction: route ke handleReaction, jangan buat bubble baru ──
                             $msgType = $echoMsg['type'] ?? 'text';
-                            $msgText = $echoMsg['text']['body']
-                                ?? $echoMsg['image']['caption']
-                                ?? $echoMsg['video']['caption']
-                                ?? $echoMsg['document']['caption']
-                                ?? ($msgType !== 'text' ? '[' . $msgType . ']' : '');
+                            if ($msgType === 'reaction') {
+                                $this->handleReaction(
+                                    $echoMsg['reaction'] ?? [],
+                                    $device->id,
+                                    $change['value']['metadata']['phone_number_id'] ?? ''
+                                );
+                                continue; // jangan buat baris baru
+                            }
 
-                            $echoDetail = $history->details()->create([
+                            // ── Ekstraksi teks/caption via parseMessageContent (reuse mesin inbound) ──
+                            $parsed  = $this->parseMessageContent($echoMsg);
+                            $msgText = $parsed['message'] ?? '';
+                            $msgType = $parsed['messageType'] ?? ($echoMsg['type'] ?? 'text');
+
+                            // Bangun data detail
+                            $detailData = [
                                 'from'            => 'device',    // arah keluar (dari bisnis)
                                 'source'          => 'echo_waba', // penanda: dikirim dari app WA Business
                                 'messageid'       => $mid,
@@ -395,7 +404,24 @@ class WabaCallbackController extends Controller
                                 'type'            => $msgType,
                                 'history_chat_id' => $history->id,
                                 'is_read'         => 'yes',
-                            ]);
+                                'extra'           => $parsed['extra'] ?? null, // kontak/lokasi
+                            ];
+
+                            // ── Download media kalau ada (reuse pipeline inbound) ──
+                            if (!empty($parsed['mediaId'])) {
+                                try {
+                                    $mediaInfo = $this->handleMediaDownload($device, $parsed, $msgType);
+                                    if ($mediaInfo['status']) {
+                                        $detailData['type']      = $mediaInfo['type'] ?? $msgType;
+                                        $detailData['file_path'] = $mediaInfo['path'] ?? null;
+                                    }
+                                } catch (\Throwable $mediaErr) {
+                                    // Gagal download media — fallback teks tetap tersimpan
+                                    Log::warning('[smb_echo] media download gagal: ' . $mediaErr->getMessage());
+                                }
+                            }
+
+                            $echoDetail = $history->details()->create($detailData);
 
                             // Naikkan percakapan ke atas list CRM
                             $history->update(['updated_at' => now()]);
