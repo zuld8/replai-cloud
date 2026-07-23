@@ -151,23 +151,21 @@ class WarmDashboardCache extends Command
                 Cache::put($keySt, $this->computeStorage($businessId), 1800); // 30 menit
             } catch (\Throwable $e) { $this->warn("B7 storage {$businessId}: " . $e->getMessage()); }
 
-            // B8. home_logs — warm log terbaru per bisnis (TTL 1800 > interval 10 mnt)
-            // SINKRON dgn: Cache::remember("home_logs_{$merchantId}_{$monthYear}", 300, ...)
+            // B8. home_logs — SELALU overwrite (TTL 300 di home() < 10mnt interval)
+            // home() set TTL=300 saat cold-miss → warm HARUS selalu override ke 1800
+            // JANGAN pakai Cache::has gate di sini (sama seperti B7 storage)
             $keyLogs = "home_logs_{$merchantId}_{$monthYear}";
-            if ($force || !Cache::has($keyLogs)) {
-                try {
-                    Cache::put($keyLogs, $this->computeHomeLogs($merchantId, $businessId), 1800);
-                } catch (\Throwable $e) { $this->warn("B8 logs {$businessId}: " . $e->getMessage()); }
-            }
+            try {
+                Cache::put($keyLogs, $this->computeHomeLogs($merchantId, $businessId), 1800);
+            } catch (\Throwable $e) { $this->warn("B8 logs {$businessId}: " . $e->getMessage()); }
 
-            // B9. home_crm — warm preview pesan CRM (TTL 1800 > interval 10 mnt)
-            // SINKRON dgn: Cache::remember("home_crm_{$merchantId}_{$businessId}", 600, ...)
+            // B9. home_crm — SELALU overwrite (TTL 600 di home() < 10mnt interval)
+            // home() set TTL=600 saat cold-miss → warm HARUS selalu override ke 1800
+            // JANGAN pakai Cache::has gate di sini (sama seperti B7 storage)
             $keyCrm = "home_crm_{$merchantId}_{$businessId}";
-            if ($force || !Cache::has($keyCrm)) {
-                try {
-                    Cache::put($keyCrm, $this->computeHomeCrm($businessId), 1800);
-                } catch (\Throwable $e) { $this->warn("B9 crm {$businessId}: " . $e->getMessage()); }
-            }
+            try {
+                Cache::put($keyCrm, $this->computeHomeCrm($businessId), 1800);
+            } catch (\Throwable $e) { $this->warn("B9 crm {$businessId}: " . $e->getMessage()); }
 
             $warmedBiz++;
         }
