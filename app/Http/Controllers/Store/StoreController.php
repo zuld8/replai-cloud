@@ -362,9 +362,22 @@ class StoreController extends Controller
                 ? preg_replace('/^(waba_|personal_)/', '', $rawMeta)
                 : null;
 
-            // Scope duplicate check ke business_id (bukan per akun WA)
-            // Nomor HP wajib unik per bisnis — import via 2 akun WA berbeda tetap ter-dedup
-            $dupQuery = DB::table('stores')->where('business_id', $businessId);
+            // Scope duplicate check per akun WA (perilaku asal)
+            $dupQuery = DB::table('stores')->where('merchant_id', $merchantId);
+            if ($importMetaAccountId) {
+                $dupQuery->where('meta_account_id', $importMetaAccountId);
+            }
+
+            // TAMBAHAN: phone+category_id dedup lintas akun WA
+            // Cegah: nomor sama + kategori sama = duplikat (walau beda akun WA)
+            $phoneCatSet = DB::table('stores')
+                ->where('business_id', $businessId)
+                ->whereNotNull('phone')
+                ->whereNotNull('category_id')
+                ->select('phone', 'category_id')
+                ->get()
+                ->mapWithKeys(fn($s) => [$s->phone . '|' . $s->category_id => true])
+                ->toArray();
 
             // phone => store_id map (biar bisa update kategori nanti)
             $existingMap    = (clone $dupQuery)->whereNotNull('phone')->pluck('id', 'phone')->toArray();
@@ -395,7 +408,13 @@ class StoreController extends Controller
                     $catName = strtoupper($d['category'] ?? 'UMUM');
                     $catId   = $existingCats[$catName] ?? null;
 
-                    // Duplikat phone: skip atau update kategori
+                    // Dedup phone+kategori lintas akun WA (prioritas — cegah visual duplikat)
+                    if ($phone !== null && $catId !== null && isset($phoneCatSet[$phone . '|' . $catId])) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    // Duplikat phone: skip atau update kategori (scope per akun WA)
                     if ($phone !== null && isset($existingMap[$phone])) {
                         if ($updateExisting && $catId) {
                             $catUpdates[$existingMap[$phone]] = $catId; // jadwalkan update
@@ -432,8 +451,11 @@ class StoreController extends Controller
                     $inserted++;
 
                     // Update memory set supaya chunk berikutnya tidak duplikat dalam file
-                    if ($phone !== null) { $existingMap[$phone] = $uuid; $existingPhones[$phone] = $uuid; }
-                    else $existingNames[$d['name']] = true;
+                    if ($phone !== null) {
+                        $existingMap[$phone] = $uuid;
+                        $existingPhones[$phone] = $uuid;
+                        if ($catId !== null) $phoneCatSet[$phone . '|' . $catId] = true;
+                    } else $existingNames[$d['name']] = true;
                 }
 
                 if (!empty($toInsert)) {
