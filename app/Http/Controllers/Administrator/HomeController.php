@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Administrator;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blash\BlashDetail;
-use App\Models\Category;
+use App\Models\Master\Category;
 use App\Models\ChatBot\FineTunnel;
 use App\Models\ChatBot\HistoryChatDetail;
 use App\Models\LiveChat as LiveChatModel;
-use App\Models\Merchant;
+use App\Models\Merchant\Merchant;
 use App\Models\Meta\InstagramAccount;
 use App\Models\Meta\MessengerAccount;
 use App\Models\Package\PackageTransaction;
