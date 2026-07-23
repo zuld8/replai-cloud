@@ -362,11 +362,9 @@ class StoreController extends Controller
                 ? preg_replace('/^(waba_|personal_)/', '', $rawMeta)
                 : null;
 
-            // Scope duplicate check to this WA account (allow same phone in different WA)
-            $dupQuery = DB::table('stores')->where('merchant_id', $merchantId);
-            if ($importMetaAccountId) {
-                $dupQuery->where('meta_account_id', $importMetaAccountId);
-            }
+            // Scope duplicate check ke business_id (bukan per akun WA)
+            // Nomor HP wajib unik per bisnis — import via 2 akun WA berbeda tetap ter-dedup
+            $dupQuery = DB::table('stores')->where('business_id', $businessId);
 
             // phone => store_id map (biar bisa update kategori nanti)
             $existingMap    = (clone $dupQuery)->whereNotNull('phone')->pluck('id', 'phone')->toArray();
