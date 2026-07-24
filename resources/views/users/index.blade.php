@@ -231,33 +231,34 @@ small.text-muted {
 }
 
 /* ── Header panel ─────────────────────────────────────────── */
-.agt-header{background:linear-gradient(145deg,#1E2A3B 0%,#162032 100%);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.agt-header{background:#fff;border:1px solid #E4EAF2;border-radius:14px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .agt-header-left{display:flex;align-items:center;gap:12px}
-.agt-header-icon{width:42px;height:42px;border-radius:11px;background:rgba(46,141,225,.15);color:#4BA3EF;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-.agt-header-title{font-size:1.05rem;font-weight:700;color:#F1F5F9;line-height:1.2}
-.agt-header-sub{font-size:.78rem;color:#94A3B8;margin-top:2px}
+.agt-header-icon{width:42px;height:42px;border-radius:11px;background:rgba(46,141,225,.1);color:#2E8DE1;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.agt-header-title{font-size:1.05rem;font-weight:700;color:#1E2A4A;line-height:1.2}
+.agt-header-sub{font-size:.78rem;color:#64748B;margin-top:2px}
 .agt-header-right{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .agt-quota{text-align:right;line-height:1.3}
-.agt-quota-label{font-size:.62rem;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
-.agt-quota-count{font-size:.82rem;color:#F1F5F9;font-weight:700}
-.agt-quota-bar{width:120px;height:5px;background:rgba(255,255,255,.12);border-radius:4px;overflow:hidden;margin-top:5px;margin-left:auto}
+.agt-quota-label{font-size:.62rem;color:#64748B;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.agt-quota-count{font-size:.82rem;color:#1E2A4A;font-weight:700}
+.agt-quota-bar{width:120px;height:5px;background:#E4EAF2;border-radius:4px;overflow:hidden;margin-top:5px;margin-left:auto}
 .agt-quota-fill{height:100%;background:#2E8DE1;border-radius:4px;transition:width .4s}
 .agt-quota-fill.full{background:#EF4444}
 
 /* ── Agent Cards v2 ─────────────────────────────────────── */
 .agt-card {
-    background: linear-gradient(145deg, #1E2A3B 0%, #162032 100%);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: #fff;
+    border: 1px solid #E4EAF2;
     border-radius: 14px;
     padding: 16px;
     position: relative;
     transition: border-color .2s, box-shadow .2s;
     height: 100%;
     box-sizing: border-box;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
 }
 .agt-card:hover {
-    border-color: rgba(46,141,225,0.35);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.28);
+    border-color: #2E8DE1;
+    box-shadow: 0 4px 16px rgba(46,141,225,0.12);
 }
 .agt-top { display: flex; gap: 12px; align-items: flex-start; }
 .agt-avatar {
@@ -268,52 +269,52 @@ small.text-muted {
 }
 .agt-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .agt-dot { position: absolute; bottom: 2px; right: 2px;
-    width: 11px; height: 11px; border-radius: 50%; border: 2px solid #1E2A3B; }
+    width: 11px; height: 11px; border-radius: 50%; border: 2px solid #fff; }
 .agt-dot-inline { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
 .agt-dot-on, .agt-dot-inline.agt-dot-on { background: #22C55E; }
 .agt-dot-off, .agt-dot-inline.agt-dot-off { background: #475569; }
 .agt-info { flex: 1; min-width: 0; }
 .agt-name-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 2px; }
-.agt-name { font-size: .9rem; font-weight: 700; color: #F1F5F9; line-height: 1.3; }
+.agt-name { font-size: .9rem; font-weight: 700; color: #1E2A4A; line-height: 1.3; }
 .agt-badge { font-size: .6rem; padding: 2px 6px; border-radius: 9px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; }
 .agt-badge-owner { background: rgba(251,191,36,0.15); color: #FBBF24; border: 1px solid rgba(251,191,36,0.3); }
 .agt-email { font-size: .71rem; color: #94A3B8; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .agt-role { font-size: .7rem; color: #2E8DE1; }
 .agt-menu { margin-left: auto; flex-shrink: 0; }
-.agt-menu-btn { background: none; border: none; color: #64748B; padding: 4px 6px;
+.agt-menu-btn { background: none; border: none; color: #94A3B8; padding: 4px 6px;
     border-radius: 6px; cursor: pointer; transition: all .15s; line-height: 1; }
-.agt-menu-btn:hover { background: rgba(255,255,255,0.08); color: #F1F5F9; }
-.agt-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 12px 0 9px; }
-.agt-channels-label { font-size: .59rem; font-weight: 700; color: #475569;
+.agt-menu-btn:hover { background: #F5F8FC; color: #1E2A4A; }
+.agt-divider { height: 1px; background: #E4EAF2; margin: 12px 0 9px; }
+.agt-channels-label { font-size: .59rem; font-weight: 700; color: #94A3B8;
     letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
 .agt-channel-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
 .agt-ch-icon { width: 30px; height: 30px; border-radius: 7px;
     display: flex; align-items: center; justify-content: center;
     font-size: .95rem; flex-shrink: 0; }
 .agt-ch-body { flex: 1; min-width: 0; }
-.agt-ch-name { font-size: .72rem; font-weight: 600; color: #CBD5E1; line-height: 1.3; }
-.agt-ch-ident { font-size: .67rem; color: #64748B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agt-ch-name { font-size: .72rem; font-weight: 600; color: #374151; line-height: 1.3; }
+.agt-ch-ident { font-size: .67rem; color: #94A3B8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agt-ch-status { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.agt-status-txt { font-size: .64rem; color: #64748B; white-space: nowrap; }
-.agt-ch-more { font-size: .64rem; color: #475569; margin-top: -2px; margin-bottom: 5px; }
+.agt-status-txt { font-size: .64rem; color: #94A3B8; white-space: nowrap; }
+.agt-ch-more { font-size: .64rem; color: #94A3B8; margin-top: -2px; margin-bottom: 5px; }
 .agt-footer { display: flex; justify-content: space-between; font-size: .64rem;
-    color: #475569; margin-top: 11px; padding-top: 9px;
-    border-top: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; gap: 4px; }
+    color: #94A3B8; margin-top: 11px; padding-top: 9px;
+    border-top: 1px solid #E4EAF2; flex-wrap: wrap; gap: 4px; }
 /* Kuota bar */
 .agt-quota-bar { background: rgba(255,255,255,0.1); border-radius: 4px; height: 5px; width: 100px; overflow: hidden; margin-top: 3px; }
 .agt-quota-fill { height: 100%; border-radius: 4px; background: #2E8DE1; transition: width .4s; }
 .agt-quota-fill.full { background: #EF4444; }
 /* Dropdown dark */
 .agt-card .dropdown-menu {
-    background: #1A2535; border: 1px solid rgba(255,255,255,0.1);
+    background: #fff; border: 1px solid #E4EAF2;
     border-radius: 10px; min-width: 155px; padding: 4px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
-.agt-card .dropdown-item { color: #CBD5E1; font-size: .78rem; border-radius: 6px; padding: 6px 10px; }
-.agt-card .dropdown-item:hover { background: rgba(255,255,255,0.07); color: #F1F5F9; }
-.agt-card .dropdown-item.text-danger { color: #F87171 !important; }
-.agt-card .dropdown-item.text-danger:hover { background: rgba(239,68,68,0.12); }
-.agt-card .dropdown-divider { border-color: rgba(255,255,255,0.07); margin: 3px 0; }
+.agt-card .dropdown-item { color: #374151; font-size: .78rem; border-radius: 6px; padding: 6px 10px; }
+.agt-card .dropdown-item:hover { background: #F5F8FC; color: #1E2A4A; }
+.agt-card .dropdown-item.text-danger { color: #EF4444 !important; }
+.agt-card .dropdown-item.text-danger:hover { background: #FEF2F2; }
+.agt-card .dropdown-divider { border-color: #E4EAF2; margin: 3px 0; }
 </style>
 @endsection
 
@@ -362,8 +363,8 @@ small.text-muted {
     <!-- Search -->
     <div class="col-12 mb-3">
         <div class="input-group" style="max-width:380px;">
-            <span class="input-group-text" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);"><i class="bx bx-search" style="color:#64748B;"></i></span>
-            <input type="text" class="form-control" id="searchUser" placeholder="Cari nama atau email..." style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:#F1F5F9;">
+            <span class="input-group-text bg-white"><i class="bx bx-search text-muted"></i></span>
+            <input type="text" class="form-control" id="searchUser" placeholder="Cari nama atau email...">
         </div>
     </div>
 
@@ -856,28 +857,26 @@ small.text-muted {
 {{-- Change Password Modal --}}
 <div class="modal fade" id="changePassModal" tabindex="-1" aria-labelledby="changePassModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-sm">
-        <div class="modal-content" style="background:#1E2A3B;border:1px solid rgba(255,255,255,0.1);border-radius:14px;">
-            <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.07);">
-                <h5 class="modal-title text-white" id="changePassModalLabel"><i class="bx bx-key me-2"></i>Reset Password</h5>
+        <div class="modal-content" style="border-radius:14px;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePassModalLabel"><i class="bx bx-key me-2"></i>Reset Password</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="changePassForm" method="POST">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label text-muted" style="font-size:.78rem;">Password Baru <span class="text-danger">*</span></label>
+                        <label class="form-label text-muted fs-13">Password Baru <span class="text-danger">*</span></label>
                         <input type="password" class="form-control" name="password" id="cpPassword" required minlength="8"
-                               style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);color:#F1F5F9;"
                                placeholder="Min. 8 karakter">
                     </div>
                     <div class="mb-2">
-                        <label class="form-label text-muted" style="font-size:.78rem;">Konfirmasi Password <span class="text-danger">*</span></label>
+                        <label class="form-label text-muted fs-13">Konfirmasi Password <span class="text-danger">*</span></label>
                         <input type="password" class="form-control" name="confirm" id="cpConfirm" required
-                               style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);color:#F1F5F9;"
                                placeholder="Ulangi password">
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07);">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary btn-sm"><i class="bx bx-save me-1"></i>Simpan</button>
                 </div>
