@@ -70,21 +70,7 @@ class UserController extends Controller
             $userLimit = null;
         }
         $userQuota = ['count' => count($users), 'limit' => $userLimit];
-        // Count chat per agen 7 hari — 1 query batch (tidak N+1)
-        $userIds2    = $users->pluck('id')->toArray();
-        $chatCount7d = [];
-        if (!empty($userIds2)) {
-            $chatRows = DB::table('history_chat_details')
-                ->whereIn('from', $userIds2)
-                ->where('created_at', '>=', now()->subDays(7))
-                ->selectRaw('`from` as user_id, COUNT(*) as cnt')
-                ->groupBy('from')
-                ->get();
-            foreach ($chatRows as $r) {
-                $chatCount7d[$r->user_id] = (int)$r->cnt;
-            }
-        }
-        return view('users.index', ['page' => __('page.user.page'), 'breadcumb' => false], compact('users', 'businesses', 'roles', 'platforms', 'platformMap', 'userQuota', 'chatCount7d'));
+        return view('users.index', ['page' => __('page.user.page'), 'breadcumb' => false], compact('users', 'businesses', 'roles', 'platforms', 'platformMap', 'userQuota'));
     }
 
 

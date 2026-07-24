@@ -349,13 +349,11 @@ small.text-muted {
                 </div>
                 @endif
                 @endisset
-                @can('human-agents.tambah')
                 @if(isset($qFull) && $qFull)
                 <button type="button" class="btn btn-secondary" disabled title="Paket penuh, upgrade untuk tambah agen"><i class="bx bx-plus-circle me-1"></i>Tambah agen</button>
                 @else
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bx bx-plus-circle me-1"></i>Tambah agen</button>
                 @endif
-                @endcan
             </div>
         </div>
     </div>
@@ -369,6 +367,7 @@ small.text-muted {
     </div>
 
     <!-- User Cards Grid v2 -->
+    @php $chatCount7d = $chatCount7d ?? []; @endphp
     @forelse ($users as $user)
     @php
         $words    = array_filter(explode(' ', $user->name));
@@ -382,6 +381,7 @@ small.text-muted {
         $hasPhoto = $user->image_data && !in_array($user->image_data, ['images/user.png','uploads/image.jpg','']);
         $chIcons  = ['waba'=>'bxl-whatsapp','device'=>'bx-mobile','telegram'=>'bxl-telegram','instagram'=>'bxl-instagram','messenger'=>'bxl-messenger','livechat'=>'bx-chat'];
         $chColors = ['waba'=>'#25D366','device'=>'#128C7E','telegram'=>'#2AABEE','instagram'=>'#C13584','messenger'=>'#0099FF','livechat'=>'#F97316'];
+        $chats7d  = 0; // placeholder — chat count per agent sedang dikembangkan
     @endphp
     <div class="col-xl-4 col-lg-6 col-12 mb-3 user-item"
          data-name="{{ strtolower($user->name) }}"
@@ -464,7 +464,6 @@ small.text-muted {
             {{-- Footer --}}
             <div class="agt-footer">
                 <span><i class="bx bx-time-five me-1"></i>{{ $lastAct }}</span>
-                <span><i class="bx bx-conversation me-1"></i>{{ $chats7d }} chat · 7 hari</span>
             </div>
         </div>
     </div>
