@@ -60,7 +60,31 @@ class UserController extends Controller
         }
         // Build platform map for card display (1 query per table, no N+1)
         $platformMap = $this->buildPlatformMap($users->pluck('id')->toArray());
-        return view('users.index', ['page' => __('page.user.page'), 'breadcumb' => true], compact('users', 'businesses', 'roles', 'platforms', 'platformMap'));
+        // Kuota agen
+        try {
+            $bizId2    = my_business();
+            $biz2      = \App\Models\Setting::where('id', $bizId2)->first(['id']);
+            $pkg2      = $biz2?->package_active;
+            $userLimit = ($pkg2 && $pkg2->limit_user_option === 'yes') ? (int)$pkg2->users_limit : null;
+        } catch (\Throwable $e) {
+            $userLimit = null;
+        }
+        $userQuota = ['count' => count($users), 'limit' => $userLimit];
+        // Count chat per agen 7 hari — 1 query batch (tidak N+1)
+        $userIds2    = $users->pluck('id')->toArray();
+        $chatCount7d = [];
+        if (!empty($userIds2)) {
+            $chatRows = DB::table('history_chat_details')
+                ->whereIn('from', $userIds2)
+                ->where('created_at', '>=', now()->subDays(7))
+                ->selectRaw('`from` as user_id, COUNT(*) as cnt')
+                ->groupBy('from')
+                ->get();
+            foreach ($chatRows as $r) {
+                $chatCount7d[$r->user_id] = (int)$r->cnt;
+            }
+        }
+        return view('users.index', ['page' => __('page.user.page'), 'breadcumb' => true], compact('users', 'businesses', 'roles', 'platforms', 'platformMap', 'userQuota', 'chatCount7d'));
     }
 
 
@@ -138,6 +162,10 @@ class UserController extends Controller
 
     public function changePassword(Request $request, User $user)
     {
+        // A2: Owner hanya bisa ganti password sendiri
+        $isOwner = $user->merchant && optional($user->merchant->owner)->id === $user->id;
+        abort_if($isOwner && auth()->id() !== $user->id, 403, 'Password owner hanya bisa diubah oleh owner sendiri.');
+
         $this->validate($request, [
             'password'      => 'required|min:8',
             'confirm'       => 'required'
@@ -161,7 +189,7 @@ class UserController extends Controller
     {
         $isAjax = request()->ajax();
 
-        if ($user->merchant && ($user->merchant->owner->id == $user->id)) {
+        if ($user->merchant && optional($user->merchant->owner)->id === $user->id) { // A6: null-safe
             $msg = 'Pengguna ini merupakan owner bisnis dan tidak dapat di hapus';
             return $isAjax
                 ? response()->json(['success' => false, 'message' => $msg])
@@ -312,19 +340,24 @@ class UserController extends Controller
     private function buildPlatformMap(array $userIds): array
     {
         if (empty($userIds)) return [];
-        $map = [];
-        $tables = [
-            'device'    => 'device_agents',
-            'waba'      => 'waba_agents',
-            'telegram'  => 'telegram_agents',
-            'instagram' => 'instagram_agents',
-            'messenger' => 'messenger_agents',
-            'livechat'  => 'live_chat_agents',
+        $map  = [];
+        // B: 6 query total (bukan N+1 per user) — ambil identitas + status per channel
+        $defs = [
+            'waba'      => ['pivot'=>'waba_agents',      'src'=>'whatsapp_key_accounts','fk'=>'waba_id',      'label'=>'WhatsApp Business', 'ident'=>'phone',      'status_col'=>'status'],
+            'device'    => ['pivot'=>'device_agents',    'src'=>'whatsapp_devices',     'fk'=>'device_id',    'label'=>'WhatsApp Personal', 'ident'=>'name',       'status_col'=>'status'],
+            'telegram'  => ['pivot'=>'telegram_agents',  'src'=>'telegram_keys',        'fk'=>'telegram_id',  'label'=>'Telegram',          'ident'=>'name',       'status_col'=>'status'],
+            'instagram' => ['pivot'=>'instagram_agents', 'src'=>'instagram_accounts',   'fk'=>'instagram_id', 'label'=>'Instagram',         'ident'=>'username',   'status_col'=>'status'],
+            'messenger' => ['pivot'=>'messenger_agents', 'src'=>'messenger_accounts',   'fk'=>'messenger_id', 'label'=>'Messenger',         'ident'=>'page_name',  'status_col'=>'status'],
+            'livechat'  => ['pivot'=>'live_chat_agents', 'src'=>'live_chats',           'fk'=>'livechat_id',  'label'=>'Live Chat',         'ident'=>'name',       'status_col'=>'type'],
         ];
-        foreach ($tables as $type => $table) {
-            $uids = DB::table($table)->whereIn('user_id', $userIds)->distinct()->pluck('user_id');
-            foreach ($uids as $uid) {
-                $map[$uid][$type] = true;
+        foreach ($defs as $type => $d) {
+            $rows = DB::table($d['pivot'].' as p')
+                ->join($d['src'].' as s', 's.id', '=', 'p.'.$d['fk'])
+                ->whereIn('p.user_id', $userIds)
+                ->select('p.user_id', DB::raw("s.{$d['ident']} as ident"), DB::raw("s.{$d['status_col']} as status"))
+                ->get();
+            foreach ($rows as $r) {
+                $map[$r->user_id][] = ['type'=>$type, 'label'=>$d['label'], 'ident'=>$r->ident ?? '', 'status'=>$r->status ?? ''];
             }
         }
         return $map;
@@ -396,24 +429,32 @@ class UserController extends Controller
 
     private function syncPlatformAgents($userId, $request)
     {
+        $bizId = my_business();
+        // A3: mapping field → pivot + FK + source table (untuk validasi ownership bisnis)
         $map = [
-            'devices'    => ['table' => 'device_agents',    'fk' => 'device_id'],
-            'wabas'      => ['table' => 'waba_agents',      'fk' => 'waba_id'],
-            'telegrams'  => ['table' => 'telegram_agents',  'fk' => 'telegram_id'],
-            'instagrams' => ['table' => 'instagram_agents', 'fk' => 'instagram_id'],
-            'messengers' => ['table' => 'messenger_agents', 'fk' => 'messenger_id'],
-            'livechats'  => ['table' => 'live_chat_agents', 'fk' => 'livechat_id'],
+            'devices'    => ['table'=>'device_agents',    'fk'=>'device_id',    'src'=>'whatsapp_devices'],
+            'wabas'      => ['table'=>'waba_agents',      'fk'=>'waba_id',      'src'=>'whatsapp_key_accounts'],
+            'telegrams'  => ['table'=>'telegram_agents',  'fk'=>'telegram_id',  'src'=>'telegram_keys'],
+            'instagrams' => ['table'=>'instagram_agents', 'fk'=>'instagram_id', 'src'=>'instagram_accounts'],
+            'messengers' => ['table'=>'messenger_agents', 'fk'=>'messenger_id', 'src'=>'messenger_accounts'],
+            'livechats'  => ['table'=>'live_chat_agents', 'fk'=>'livechat_id',  'src'=>'live_chats'],
         ];
         foreach ($map as $field => $cfg) {
             DB::table($cfg['table'])->where('user_id', $userId)->delete();
-            foreach ((array)$request->get($field, []) as $platformId) {
-                if (!$platformId) continue;
+            $requested = array_filter((array)$request->get($field, []));
+            if (empty($requested)) continue;
+            // A3: hanya insert ID yang BENAR milik bisnis ini (anti-IDOR)
+            $valid = DB::table($cfg['src'])
+                ->where('business_id', $bizId)
+                ->whereIn('id', $requested)
+                ->pluck('id')->all();
+            foreach ($valid as $platformId) {
                 DB::table($cfg['table'])->insert([
-                    'id'          => Str::uuid()->toString(),
-                    $cfg['fk']    => $platformId,
-                    'user_id'     => $userId,
-                    'created_at'  => now(),
-                    'updated_at'  => now(),
+                    'id'         => Str::uuid()->toString(),
+                    $cfg['fk']   => $platformId,
+                    'user_id'    => $userId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }

@@ -45,7 +45,12 @@ class UserObserver
             'password'          => Hash::make($request->password),
             'photo'             => $image,
             'email_verified_at' => now(),
-            'business_id'       => $request->business ? implode(",", $request->business) : my_user()->business_id,
+            // A4: filter business_id ke bisnis milik merchant ini (anti cross-tenant)
+            'business_id'       => (function() use ($request) {
+                                        $allowed = \App\Models\Setting::where('merchant_id', my_user()->merchant_id)
+                                            ->whereIn('id', (array)($request->business ?? []))->pluck('id')->all();
+                                        return !empty($allowed) ? implode(',', $allowed) : my_user()->business_id;
+                                    })(),
             'role'              => my_user()->role,
             'role_id'           => $request->role,
             'gender'            => $request->gender
@@ -58,7 +63,12 @@ class UserObserver
             'name'              => $request->name,
             'email'             => $request->email,
             'phone'             => $request->phone ?? '',
-            'business_id'       => $request->business ? implode(",", $request->business) : $user->business_id,
+            // A4: filter business_id ke bisnis milik merchant ini (anti cross-tenant)
+            'business_id'       => (function() use ($request, $user) {
+                                        $allowed = \App\Models\Setting::where('merchant_id', my_user()->merchant_id)
+                                            ->whereIn('id', (array)($request->business ?? []))->pluck('id')->all();
+                                        return !empty($allowed) ? implode(',', $allowed) : $user->business_id;
+                                    })(),
             'photo'             => $image != '' ? $image : $user->photo,
             'gender'            => $request->gender,
             'role_id'           => $request->role,

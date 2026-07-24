@@ -534,15 +534,16 @@ Route::middleware('package_active')->group(function () {
 
     // Users
     Route::prefix('users')->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('users');
+        Route::get('/',          [UserController::class, 'index'])         ->name('users');
         Route::get('components', [UserController::class, 'components']);
-        Route::get('update/{user}', [UserController::class, 'update'])->name('users.update');
-        Route::get('json/{user}', [UserController::class, 'getJson'])->name('users.json');
-        Route::get('create', [UserController::class, 'create'])->name('users.create');
-        Route::post('store', [UserController::class, 'store'])->name('users.store');
-        Route::post('edit/{user}', [UserController::class, 'edit'])->name('users.edit');
-        Route::post('change-password/{user}', [UserController::class, 'changePassword'])->name('users.password');
-        Route::get('delete/{user}', [UserController::class, 'delete'])->name('users.delete');
+        // A1: tambah permission middleware di semua route mutasi
+        Route::get('json/{user}',            [UserController::class, 'getJson'])        ->middleware('permission:human-agents.edit');
+        Route::get('update/{user}',          [UserController::class, 'update'])         ->middleware('permission:human-agents.edit')  ->name('users.update');
+        Route::get('create',                 [UserController::class, 'create'])         ->middleware('permission:human-agents.tambah')->name('users.create');
+        Route::post('store',                 [UserController::class, 'store'])          ->middleware('permission:human-agents.tambah')->name('users.store');
+        Route::post('edit/{user}',           [UserController::class, 'edit'])           ->middleware('permission:human-agents.edit')  ->name('users.edit');
+        Route::post('change-password/{user}',[UserController::class, 'changePassword']) ->middleware('permission:human-agents.edit')  ->name('users.password');
+        Route::post('delete/{user}',         [UserController::class, 'delete'])         ->middleware('permission:human-agents.hapus') ->name('users.delete'); // A5: POST
     });
 
     // ============================================

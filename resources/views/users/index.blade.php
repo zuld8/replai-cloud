@@ -229,17 +229,103 @@ small.text-muted {
         0 16px 40px rgba(0, 60, 180, 0.10),
         0 2px 8px rgba(0, 0, 0, 0.06) !important;
 }
+
+/* ── Agent Cards v2 ─────────────────────────────────────── */
+.agt-card {
+    background: linear-gradient(145deg, #1E2A3B 0%, #162032 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 16px;
+    position: relative;
+    transition: border-color .2s, box-shadow .2s;
+    height: 100%;
+    box-sizing: border-box;
+}
+.agt-card:hover {
+    border-color: rgba(46,141,225,0.35);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.28);
+}
+.agt-top { display: flex; gap: 12px; align-items: flex-start; }
+.agt-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.05rem; color: #fff;
+    flex-shrink: 0; position: relative; overflow: hidden;
+}
+.agt-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.agt-dot { position: absolute; bottom: 2px; right: 2px;
+    width: 11px; height: 11px; border-radius: 50%; border: 2px solid #1E2A3B; }
+.agt-dot-inline { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.agt-dot-on, .agt-dot-inline.agt-dot-on { background: #22C55E; }
+.agt-dot-off, .agt-dot-inline.agt-dot-off { background: #475569; }
+.agt-info { flex: 1; min-width: 0; }
+.agt-name-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 2px; }
+.agt-name { font-size: .9rem; font-weight: 700; color: #F1F5F9; line-height: 1.3; }
+.agt-badge { font-size: .6rem; padding: 2px 6px; border-radius: 9px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; }
+.agt-badge-owner { background: rgba(251,191,36,0.15); color: #FBBF24; border: 1px solid rgba(251,191,36,0.3); }
+.agt-email { font-size: .71rem; color: #94A3B8; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.agt-role { font-size: .7rem; color: #2E8DE1; }
+.agt-menu { margin-left: auto; flex-shrink: 0; }
+.agt-menu-btn { background: none; border: none; color: #64748B; padding: 4px 6px;
+    border-radius: 6px; cursor: pointer; transition: all .15s; line-height: 1; }
+.agt-menu-btn:hover { background: rgba(255,255,255,0.08); color: #F1F5F9; }
+.agt-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 12px 0 9px; }
+.agt-channels-label { font-size: .59rem; font-weight: 700; color: #475569;
+    letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+.agt-channel-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.agt-ch-icon { width: 30px; height: 30px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .95rem; flex-shrink: 0; }
+.agt-ch-body { flex: 1; min-width: 0; }
+.agt-ch-name { font-size: .72rem; font-weight: 600; color: #CBD5E1; line-height: 1.3; }
+.agt-ch-ident { font-size: .67rem; color: #64748B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agt-ch-status { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.agt-status-txt { font-size: .64rem; color: #64748B; white-space: nowrap; }
+.agt-ch-more { font-size: .64rem; color: #475569; margin-top: -2px; margin-bottom: 5px; }
+.agt-footer { display: flex; justify-content: space-between; font-size: .64rem;
+    color: #475569; margin-top: 11px; padding-top: 9px;
+    border-top: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; gap: 4px; }
+/* Kuota bar */
+.agt-quota-bar { background: rgba(255,255,255,0.1); border-radius: 4px; height: 5px; width: 100px; overflow: hidden; margin-top: 3px; }
+.agt-quota-fill { height: 100%; border-radius: 4px; background: #2E8DE1; transition: width .4s; }
+.agt-quota-fill.full { background: #EF4444; }
+/* Dropdown dark */
+.agt-card .dropdown-menu {
+    background: #1A2535; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; min-width: 155px; padding: 4px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.agt-card .dropdown-item { color: #CBD5E1; font-size: .78rem; border-radius: 6px; padding: 6px 10px; }
+.agt-card .dropdown-item:hover { background: rgba(255,255,255,0.07); color: #F1F5F9; }
+.agt-card .dropdown-item.text-danger { color: #F87171 !important; }
+.agt-card .dropdown-item.text-danger:hover { background: rgba(239,68,68,0.12); }
+.agt-card .dropdown-divider { border-color: rgba(255,255,255,0.07); margin: 3px 0; }
 </style>
 @endsection
 
 @section('button')
-<div class="btn-list">
+<div class="d-flex align-items-center gap-3">
+    @isset($userQuota)
+    @if($userQuota['limit'])
+    @php $qPct = min(100, round(($userQuota['count']/$userQuota['limit'])*100)); $qFull = $userQuota['count'] >= $userQuota['limit']; @endphp
+    <div class="text-end d-none d-sm-block" style="line-height:1.25;">
+        <div style="font-size:.67rem;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Kuota paket</div>
+        <div style="font-size:.8rem;color:#F1F5F9;font-weight:700;">{{ $userQuota['count'] }} / {{ $userQuota['limit'] }} terpakai</div>
+        <div class="agt-quota-bar"><div class="agt-quota-fill {{ $qFull ? 'full' : '' }}" style="width:{{ $qPct }}%;"></div></div>
+    </div>
+    @endisset
     @can('human-agents.tambah')
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-        <i class="bx bx-plus-circle me-1"></i>
-        {{__('auth.add_human_agent')}}
+    @if(isset($qFull) && $qFull)
+    <button type="button" class="btn btn-secondary" disabled title="Paket penuh, upgrade untuk tambah agen">
+        <i class="bx bx-plus-circle me-1"></i>Tambah agen
     </button>
+    @else
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+        <i class="bx bx-plus-circle me-1"></i>Tambah agen
+    </button>
+    @endif
     @endcan
+    @endif
 </div>
 @endsection
 
@@ -250,166 +336,111 @@ small.text-muted {
         <x-validation-component></x-validation-component>
     </div>
 
-    <!-- Stats Summary (Optional) -->
-    <div class="col-12 mb-4">
-        <div class="card custom-card">
-            <div class="card-body py-3">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <h5 class="mb-0">
-                            <i class="bx bx-group me-2 text-primary"></i>{{$page}}
-                        </h5>
-                        <small class="text-muted">{{__('auth.total_human_agents', ['count' => count($users)])}}</small>
-                    </div>
-                    <div class="col-md-6 text-md-end mt-2 mt-md-0">
-                        <div class="input-group w-auto d-inline-flex" style="max-width: 300px;">
-                            <span class="input-group-text bg-light">
-                                <i class="bx bx-search"></i>
-                            </span>
-                            <input type="text" class="form-control" id="searchUser" placeholder="{{__('auth.search_placeholder')}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Search -->
+    <div class="col-12 mb-3">
+        <div class="input-group" style="max-width:380px;">
+            <span class="input-group-text" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);"><i class="bx bx-search" style="color:#64748B;"></i></span>
+            <input type="text" class="form-control" id="searchUser" placeholder="Cari nama atau email..." style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:#F1F5F9;">
         </div>
     </div>
 
-    <!-- User Cards Grid -->
+    <!-- User Cards Grid v2 -->
     @forelse ($users as $user)
-    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4 user-item" data-name="{{strtolower($user->name)}}" data-email="{{strtolower($user->email)}}" data-user-id="{{ $user->id }}">
-        <div class="card custom-card user-card h-100">
-            <div class="card-body text-center p-4">
-                <!-- Avatar with Status — colored initials when no custom photo -->
-                <div class="avatar-wrapper mb-3" style="position:relative;display:inline-block;">
-                    @if($user->image_data !== 'images/user.png')
-                        <span class="avatar avatar-xxl avatar-rounded">
-                            <img src="{{asset($user->image_data)}}" alt="{{$user->name}}" class="rounded-circle" style="width:72px;height:72px;object-fit:cover;">
-                        </span>
+    @php
+        $words    = array_filter(explode(' ', $user->name));
+        $initials = strtoupper(substr(array_values($words)[0], 0, 1) . (count($words) > 1 ? substr(array_values($words)[1], 0, 1) : ''));
+        $palette  = ['#0EA5E9','#8B5CF6','#EC4899','#10B981','#3B82F6','#F59E0B','#06B6D4','#EF4444','#14B8A6','#F97316'];
+        $bgClr    = $palette[ord($user->name[0]) % count($palette)];
+        $isOwner  = $user->merchant && optional($user->merchant->owner)->id === $user->id;
+        $channels = $platformMap[$user->id] ?? [];
+        $chats7d  = $chatCount7d[$user->id] ?? 0;
+        $lastAct  = $user->updated_at ? \Carbon\Carbon::parse($user->updated_at)->diffForHumans() : '-';
+        $hasPhoto = $user->image_data && !in_array($user->image_data, ['images/user.png','uploads/image.jpg','']);
+        $chIcons  = ['waba'=>'bxl-whatsapp','device'=>'bx-mobile','telegram'=>'bxl-telegram','instagram'=>'bxl-instagram','messenger'=>'bxl-messenger','livechat'=>'bx-chat'];
+        $chColors = ['waba'=>'#25D366','device'=>'#128C7E','telegram'=>'#2AABEE','instagram'=>'#C13584','messenger'=>'#0099FF','livechat'=>'#F97316'];
+    @endphp
+    <div class="col-xl-4 col-lg-6 col-12 mb-3 user-item"
+         data-name="{{ strtolower($user->name) }}"
+         data-email="{{ strtolower($user->email) }}"
+         data-user-id="{{ $user->id }}">
+        <div class="agt-card">
+            {{-- Top: avatar + info + menu --}}
+            <div class="agt-top">
+                <div class="agt-avatar" style="background:{{ $bgClr }};">
+                    @if($hasPhoto)
+                        <img src="{{ asset($user->image_data) }}" alt="{{ $user->name }}">
                     @else
-                        @php
-                            $words    = array_filter(explode(' ', $user->name));
-                            $initials = strtoupper(substr(array_values($words)[0], 0, 1) . (count($words) > 1 ? substr(array_values($words)[1], 0, 1) : ''));
-                            $palette  = ['#0EA5E9','#8B5CF6','#EC4899','#10B981','#3B82F6','#F59E0B','#06B6D4','#EF4444','#14B8A6','#F97316'];
-                            $bg       = $palette[ord($user->name[0]) % count($palette)];
-                        @endphp
-                        <div style="width:72px;height:72px;border-radius:50%;background:{{$bg}};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.35rem;color:#fff;letter-spacing:-0.02em;box-shadow:0 6px 18px {{$bg}}66;flex-shrink:0;">
-                            {{$initials}}
-                        </div>
+                        {{ $initials }}
                     @endif
-                    <span class="avatar-status" style="position:absolute;bottom:3px;right:3px;width:11px;height:11px;border-radius:50%;background:#22C55E;border:2.5px solid #fff;display:block;"></span>
+                    <span class="agt-dot agt-dot-on"></span>
                 </div>
-
-                <!-- User Name -->
-                <h6 class="mb-1 fw-semibold" style="font-size:.93rem;font-weight:700;color:#1E293B;">
-                    {{$user->name}}
-                </h6>
-
-                <!-- Email -->
-                <p class="user-info-line mb-1" style="font-size:.73rem;color:#64748B;">
-                    <i class="bx bx-envelope me-1"></i>{{$user->email}}
-                </p>
-
-                <!-- Phone -->
-                @if($user->phone)
-                <p class="user-info-line mb-2" style="font-size:.73rem;color:#64748B;">
-                    <i class="bx bxl-whatsapp me-1"></i>{{$user->phone}}
-                </p>
-                @endif
-
-                <!-- Role Badge -->
-                @if($user->role === 'admin')
-                <div class="mb-2">
-                    <span class="badge bg-danger-transparent">
-                        <i class="bx bx-shield me-1"></i>Super Admin
-                    </span>
+                <div class="agt-info">
+                    <div class="agt-name-row">
+                        <span class="agt-name">{{ $user->name }}</span>
+                        @if($isOwner)<span class="agt-badge agt-badge-owner"><i class="bx bx-crown"></i> Owner</span>@endif
+                    </div>
+                    <div class="agt-email" title="{{ $user->email }}">{{ $user->email }}</div>
+                    <div class="agt-role">
+                        @if($user->role === 'admin')<i class="bx bx-shield me-1"></i>Administrator
+                        @elseif($user->role_access)<i class="bx bx-user-check me-1"></i>{{ $user->role_access->name }}
+                        @else<i class="bx bx-user me-1"></i>Agen
+                        @endif
+                    </div>
                 </div>
-                @elseif($user->role_access)
-                <div class="mb-2">
-                    <span class="badge bg-primary-transparent">
-                        <i class="bx bx-user-check me-1"></i>{{$user->role_access->name}}
-                    </span>
-                </div>
-                @endif
-
-                <!-- Gender Badge -->
-                <div class="mb-3">
-                    @if($user->gender == 'male')
-                    <span class="badge gender-badge" style="background:#1D4ED8!important;color:#fff!important;font-size:.69rem;padding:.3em .75em;border-radius:20px;font-weight:600;">
-                        <i class="bx bx-male me-1"></i>{{__('auth.male')}}
-                    </span>
-                    @else
-                    <span class="badge gender-badge" style="background:#DB2777!important;color:#fff!important;font-size:.69rem;padding:.3em .75em;border-radius:20px;font-weight:600;">
-                        <i class="bx bx-female me-1"></i>{{__('auth.female')}}
-                    </span>
-                    @endif
-                </div>
-
-                <!-- Platform Chips -->
-                @php $userPlatformMap = $platformMap[$user->id] ?? []; @endphp
-                @if(!empty($userPlatformMap))
-                <hr class="card-divider">
-                <div class="platform-chips">
-                    @if(isset($userPlatformMap['device']))
-                    <span class="platform-chip pchip-device" title="WhatsApp Personal">
-                        <span class="pc-dot"></span>WA
-                    </span>
-                    @endif
-                    @if(isset($userPlatformMap['waba']))
-                    <span class="platform-chip pchip-waba" title="WhatsApp Business API">
-                        <span class="pc-dot"></span>WABA
-                    </span>
-                    @endif
-                    @if(isset($userPlatformMap['telegram']))
-                    <span class="platform-chip pchip-telegram" title="Telegram">
-                        <span class="pc-dot"></span>TG
-                    </span>
-                    @endif
-                    @if(isset($userPlatformMap['instagram']))
-                    <span class="platform-chip pchip-instagram" title="Instagram DM">
-                        <span class="pc-dot"></span>IG
-                    </span>
-                    @endif
-                    @if(isset($userPlatformMap['messenger']))
-                    <span class="platform-chip pchip-messenger" title="Facebook Messenger">
-                        <span class="pc-dot"></span>FB
-                    </span>
-                    @endif
-                    @if(isset($userPlatformMap['livechat']))
-                    <span class="platform-chip pchip-livechat" title="Live Chat">
-                        <span class="pc-dot"></span>Chat
-                    </span>
-                    @endif
-                </div>
-                @endif
-
-                <!-- Action Buttons --> 
-                <div class="btn-list d-flex gap-2 justify-content-center" style="margin-top:14px!important;">
-                 
-                    <button type="button"
-                            class="btn btn-outline-primary btn-sm flex-fill"
-                            title="{{__('auth.edit')}}"
-                            onclick="openEditModal('{{ $user->id }}')">
-                        <i class="bx bx-edit-alt me-1"></i>{{__('auth.edit')}}
+                {{-- ⋮ kebab menu --}}
+                <div class="agt-menu dropdown">
+                    <button class="agt-menu-btn" data-bs-toggle="dropdown" aria-expanded="false" id="agtMenu-{{ $user->id }}">
+                        <i class="bx bx-dots-vertical-rounded" style="font-size:1.2rem;"></i>
                     </button>
-                   
-                        @if($user->merchant)
-                            @if($user->merchant->owner->id != $user->id && my_user()->id != $user->id)
-                            <a href="{{route('users.delete', $user->id)}}" 
-                               class="btn btn-outline-danger btn-sm deletebutton"
-                               title="{{__('auth.delete')}}">
-                                <i class="bx bx-trash"></i>
-                            </a>
-                            @endif
-                        @else
-                            @if(my_user()->id != $user->id)
-                            <a href="{{route('users.delete', $user->id)}}" 
-                               class="btn btn-outline-danger btn-sm deletebutton"
-                               title="{{__('auth.delete')}}">
-                                <i class="bx bx-trash"></i>
-                            </a>
-                            @endif
-                        @endif 
-                </div> 
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="agtMenu-{{ $user->id }}">
+                        @can('human-agents.edit')
+                        <li><a class="dropdown-item" href="#" onclick="openEditModal('{{ $user->id }}'); return false;"><i class="bx bx-edit-alt me-2"></i>Edit</a></li>
+                        @if(!$isOwner || auth()->id() === $user->id)
+                        <li><a class="dropdown-item" href="#" onclick="openPasswordModal('{{ $user->id }}'); return false;"><i class="bx bx-key me-2"></i>Reset Password</a></li>
+                        @endif
+                        @endcan
+                        @can('human-agents.hapus')
+                        @if(!$isOwner && my_user()->id !== $user->id)
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger deletebutton" href="#"
+                               data-delete-url="{{ route('users.delete', $user->id) }}"
+                               data-delete-token="{{ csrf_token() }}"><i class="bx bx-trash me-2"></i>Hapus</a></li>
+                        @endif
+                        @endcan
+                    </ul>
+                </div>
+            </div>
+
+            {{-- Channels --}}
+            @if(!empty($channels))
+            <div class="agt-divider"></div>
+            <div class="agt-channels-label">KANAL YANG DIPEGANG</div>
+            @php $shownCh = array_slice($channels, 0, 3); $moreCh = count($channels) - 3; @endphp
+            @foreach($shownCh as $ch)
+            @php
+                $icon     = $chIcons[$ch['type']] ?? 'bx-plug';
+                $color    = $chColors[$ch['type']] ?? '#64748B';
+                $isActive = in_array($ch['status'] ?? '', ['active','CONNECTED','all','chatbot','ai']);
+            @endphp
+            <div class="agt-channel-row">
+                <div class="agt-ch-icon" style="background:{{ $color }}22;color:{{ $color }};"><i class="bx {{ $icon }}"></i></div>
+                <div class="agt-ch-body">
+                    <div class="agt-ch-name">{{ $ch['label'] }}</div>
+                    @if($ch['ident'])<div class="agt-ch-ident">{{ $ch['ident'] }}</div>@endif
+                </div>
+                <div class="agt-ch-status">
+                    <span class="agt-dot-inline {{ $isActive ? 'agt-dot-on' : 'agt-dot-off' }}"></span>
+                    <span class="agt-status-txt">{{ $isActive ? 'Aktif' : 'Nonaktif' }}</span>
+                </div>
+            </div>
+            @endforeach
+            @if($moreCh > 0)<div class="agt-ch-more">+{{ $moreCh }} kanal lainnya</div>@endif
+            @endif
+
+            {{-- Footer --}}
+            <div class="agt-footer">
+                <span><i class="bx bx-time-five me-1"></i>{{ $lastAct }}</span>
+                <span><i class="bx bx-conversation me-1"></i>{{ $chats7d }} chat · 7 hari</span>
             </div>
         </div>
     </div>
@@ -799,6 +830,40 @@ small.text-muted {
     </div>
 </div>
 
+{{-- Change Password Modal --}}
+<div class="modal fade" id="changePassModal" tabindex="-1" aria-labelledby="changePassModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content" style="background:#1E2A3B;border:1px solid rgba(255,255,255,0.1);border-radius:14px;">
+            <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.07);">
+                <h5 class="modal-title text-white" id="changePassModalLabel"><i class="bx bx-key me-2"></i>Reset Password</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="changePassForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted" style="font-size:.78rem;">Password Baru <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" name="password" id="cpPassword" required minlength="8"
+                               style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);color:#F1F5F9;"
+                               placeholder="Min. 8 karakter">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label text-muted" style="font-size:.78rem;">Konfirmasi Password <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" name="confirm" id="cpConfirm" required
+                               style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);color:#F1F5F9;"
+                               placeholder="Ulangi password">
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07);">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="bx bx-save me-1"></i>Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 </div>
 @endsection
 
@@ -830,16 +895,30 @@ small.text-muted {
             }
         });
 
-        // Delete — SIMPLE native confirm + window.location (diagnostic)
+        // Delete — A5: POST fetch (bukan GET)
         $(document).off('click.deleteuser');
         $('.deletebutton').off('click').on('click', function(e) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            var url = $(this).attr('href');
-            console.log('[DELETE] url:', url, 'btn:', this);
-            if (!url) { alert('ERROR: URL kosong!'); return; }
+            var url   = $(this).data('delete-url');
+            var token = $(this).data('delete-token');
+            if (!url) return;
             if (window.confirm('Hapus pengguna ini? Tindakan tidak dapat dibatalkan.')) {
-                window.location.assign(url);
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRF-TOKEN': token,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: '_token=' + encodeURIComponent(token)
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) { location.reload(); }
+                    else { alert(data.message || 'Gagal menghapus pengguna'); }
+                })
+                .catch(function() { alert('Gagal menghapus pengguna'); });
             }
         });
     });
@@ -1210,6 +1289,14 @@ small.text-muted {
 <script>
 // ── Edit User Modal Logic ───────────────────────────────────────────────────
 let editCurrentUserId = null;
+
+function openPasswordModal(userId) {
+    var baseUrl = '{{ url("/app/users/change-password") }}/' + userId;
+    document.getElementById('changePassForm').action = baseUrl;
+    document.getElementById('cpPassword').value = '';
+    document.getElementById('cpConfirm').value  = '';
+    new bootstrap.Modal(document.getElementById('changePassModal')).show();
+}
 
 function openEditModal(userId) {
     editCurrentUserId = userId;
