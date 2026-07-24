@@ -230,6 +230,20 @@ small.text-muted {
         0 2px 8px rgba(0, 0, 0, 0.06) !important;
 }
 
+/* ── Header panel ─────────────────────────────────────────── */
+.agt-header{background:linear-gradient(145deg,#1E2A3B 0%,#162032 100%);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.agt-header-left{display:flex;align-items:center;gap:12px}
+.agt-header-icon{width:42px;height:42px;border-radius:11px;background:rgba(46,141,225,.15);color:#4BA3EF;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.agt-header-title{font-size:1.05rem;font-weight:700;color:#F1F5F9;line-height:1.2}
+.agt-header-sub{font-size:.78rem;color:#94A3B8;margin-top:2px}
+.agt-header-right{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.agt-quota{text-align:right;line-height:1.3}
+.agt-quota-label{font-size:.62rem;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.agt-quota-count{font-size:.82rem;color:#F1F5F9;font-weight:700}
+.agt-quota-bar{width:120px;height:5px;background:rgba(255,255,255,.12);border-radius:4px;overflow:hidden;margin-top:5px;margin-left:auto}
+.agt-quota-fill{height:100%;background:#2E8DE1;border-radius:4px;transition:width .4s}
+.agt-quota-fill.full{background:#EF4444}
+
 /* ── Agent Cards v2 ─────────────────────────────────────── */
 .agt-card {
     background: linear-gradient(145deg, #1E2A3B 0%, #162032 100%);
@@ -304,29 +318,6 @@ small.text-muted {
 @endsection
 
 @section('button')
-<div class="d-flex align-items-center gap-3">
-    @isset($userQuota)
-    @if($userQuota['limit'])
-    @php $qPct = min(100, round(($userQuota['count']/$userQuota['limit'])*100)); $qFull = $userQuota['count'] >= $userQuota['limit']; @endphp
-    <div class="text-end d-none d-sm-block" style="line-height:1.25;">
-        <div style="font-size:.67rem;color:#94A3B8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Kuota paket</div>
-        <div style="font-size:.8rem;color:#F1F5F9;font-weight:700;">{{ $userQuota['count'] }} / {{ $userQuota['limit'] }} terpakai</div>
-        <div class="agt-quota-bar"><div class="agt-quota-fill {{ $qFull ? 'full' : '' }}" style="width:{{ $qPct }}%;"></div></div>
-    </div>
-    @endisset
-    @can('human-agents.tambah')
-    @if(isset($qFull) && $qFull)
-    <button type="button" class="btn btn-secondary" disabled title="Paket penuh, upgrade untuk tambah agen">
-        <i class="bx bx-plus-circle me-1"></i>Tambah agen
-    </button>
-    @else
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-        <i class="bx bx-plus-circle me-1"></i>Tambah agen
-    </button>
-    @endif
-    @endcan
-    @endif
-</div>
 @endsection
 
 @section('content')
@@ -334,6 +325,38 @@ small.text-muted {
     <!-- Header Info -->
     <div class="col-12 mb-3">
         <x-validation-component></x-validation-component>
+    </div>
+
+    {{-- HEADER PANEL --}}
+    <div class="col-12 mb-3">
+        <div class="agt-header">
+            <div class="agt-header-left">
+                <span class="agt-header-icon"><i class="bx bx-group"></i></span>
+                <div>
+                    <div class="agt-header-title">Kelola pengguna</div>
+                    <div class="agt-header-sub">Human agent yang bisa balas chat di CRM</div>
+                </div>
+            </div>
+            <div class="agt-header-right">
+                @isset($userQuota)
+                @if($userQuota['limit'])
+                @php $qPct = min(100, round(($userQuota['count']/$userQuota['limit'])*100)); $qFull = $userQuota['count'] >= $userQuota['limit']; @endphp
+                <div class="agt-quota">
+                    <div class="agt-quota-label">Kuota paket</div>
+                    <div class="agt-quota-count">{{ $userQuota['count'] }} / {{ $userQuota['limit'] }} terpakai</div>
+                    <div class="agt-quota-bar"><div class="agt-quota-fill {{ $qFull ? 'full' : '' }}" style="width:{{ $qPct }}%"></div></div>
+                </div>
+                @endif
+                @endisset
+                @can('human-agents.tambah')
+                @if(isset($qFull) && $qFull)
+                <button type="button" class="btn btn-secondary" disabled title="Paket penuh, upgrade untuk tambah agen"><i class="bx bx-plus-circle me-1"></i>Tambah agen</button>
+                @else
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bx bx-plus-circle me-1"></i>Tambah agen</button>
+                @endif
+                @endcan
+            </div>
+        </div>
     </div>
 
     <!-- Search -->

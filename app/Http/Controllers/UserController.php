@@ -84,7 +84,7 @@ class UserController extends Controller
                 $chatCount7d[$r->user_id] = (int)$r->cnt;
             }
         }
-        return view('users.index', ['page' => __('page.user.page'), 'breadcumb' => true], compact('users', 'businesses', 'roles', 'platforms', 'platformMap', 'userQuota', 'chatCount7d'));
+        return view('users.index', ['page' => __('page.user.page'), 'breadcumb' => false], compact('users', 'businesses', 'roles', 'platforms', 'platformMap', 'userQuota', 'chatCount7d'));
     }
 
 
