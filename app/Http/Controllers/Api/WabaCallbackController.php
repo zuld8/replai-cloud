@@ -2876,11 +2876,15 @@ class WabaCallbackController extends Controller
             return null;
         }
 
-        return Flow::where('status', 'active')
-            ->where('business_id', $businessId) // SECURITY: isolasi antar-tenant
+        // FIX: matching di PHP via matchChatbot() - preg_quote + batas kata,
+        // aman dari crash (keyword ada [ ) * dll) & tidak salah-picu ('ya' di 'saya').
+        $candidates = Flow::where('status', 'active')
+            ->where('business_id', $businessId) // SECURITY: isolasi antar-tenant (TETAP)
             ->whereRaw("find_in_set(?, select_waba)", [$deviceId])
-            ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])
-            ->first();
+            ->orderBy('created_at')
+            ->get();
+
+        return $this->matchChatbot($message, $candidates); // reuse helper yg sama dgn Chatbot
     }
 
     /**
