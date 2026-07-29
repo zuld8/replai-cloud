@@ -74,8 +74,11 @@
 @endsection
 
 @section('content')
-<form id="ft-form" action="<?= route(" method="POST" enctype="multipart/form-data">
+<form id="ft-form" action="{{ route(\'finetunnel.edit\', $fineTunnel->id) }}" method="POST" enctype="multipart/form-data">
 @csrf
+{{-- Variable alias agar $finetunnel = $fineTunnel dari controller --}}
+@php $finetunnel = $fineTunnel ?? $finetunnel ?? null; @endphp
+
 
 {{-- ════ HEADER ════ --}}
 <div class="d-flex align-items-start align-items-sm-center flex-column flex-sm-row justify-content-between gap-3 mb-3">
@@ -749,7 +752,7 @@
                 Kalau pelanggan menyebut kata ini, serahkan ke agen
             </label>
             <textarea name="term_condition" class="form-control mb-1" rows="2"
-                placeholder="complaint, refund, mau bicara dengan orang">{{ $finetunnel->term_condition }}</textarea>
+                placeholder="complaint, refund, mau bicara dengan orang">{{ old('term_condition', $fineTunnel->transfer_condition) }}</textarea>
             <small class="text-muted d-block mb-4">Pisahkan dengan koma. Contoh: refund, mau bicara, komplain</small>
 
             <label class="form-label fw-semibold mb-2 d-flex align-items-center flex-wrap gap-2">
