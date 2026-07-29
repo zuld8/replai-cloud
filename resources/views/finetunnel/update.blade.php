@@ -1,196 +1,221 @@
 @extends('layouts.app')
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('assets/libs/dropify/css/dropify.min.css')}}">
-<link href="{{asset('assets/libs/select2/select2.css')}}" rel="stylesheet">
-<link href="{{asset('assets/css/pages/ai_agent.css')}}" rel="stylesheet">
-@endsection
-
-@section('button')
-<div class="btn-list">
-    <a href="{{ route('finetunnel') }}" class="btn btn-primary">
-        <i class="bx bx-chevron-left"></i>
-        {{ __('finetunnel.back_to') }}
-    </a>
-</div>
+<style>
+/* ═══ FineTunnel Redesign — 2026-07-30 ═══ */
+.ft-header-name {
+    font-size:1.1rem; font-weight:700;
+    background:transparent; border:none;
+    border-bottom:2px solid rgba(255,255,255,.12);
+    color:inherit; padding:2px 6px; min-width:180px; max-width:320px;
+}
+.ft-header-name:focus {
+    outline:none; border-bottom-color:#2E8DE1;
+    background:rgba(46,141,225,.08); border-radius:4px 4px 0 0;
+}
+.ft-credit-chip {
+    display:inline-flex; align-items:center; gap:5px;
+    background:rgba(46,141,225,.12); border:1px solid rgba(46,141,225,.28);
+    border-radius:20px; padding:3px 12px; font-size:.82rem;
+    color:#2E8DE1; font-weight:600; white-space:nowrap;
+}
+.ft-step-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:28px; height:28px; border-radius:50%;
+    font-size:.8rem; font-weight:700;
+    background:#2E8DE1; color:#fff; flex-shrink:0; margin-top:2px;
+}
+.ft-step-badge.warn { background:#F59E0B; }
+.ft-step-title { display:flex; align-items:flex-start; gap:10px; margin-bottom:1rem; }
+.ft-step-title h6 { margin:0; font-weight:700; font-size:.95rem; line-height:1.3; }
+.ft-guard-notice {
+    background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.28);
+    border-radius:8px; padding:10px 14px; font-size:.81rem;
+    color:#F59E0B; margin-top:14px;
+}
+.ft-chip-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px; border-radius:20px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.05);
+    color:#94A3B8; font-size:.82rem; cursor:pointer;
+    transition:all .2s; line-height:1; text-decoration:none;
+}
+.ft-chip-btn:hover { background:rgba(46,141,225,.15); border-color:rgba(46,141,225,.4); color:#2E8DE1; }
+.ft-chip-btn.ft-active { background:rgba(46,141,225,.2); border-color:#2E8DE1; color:#2E8DE1; }
+.ft-chip-count {
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:20px; height:20px; border-radius:10px;
+    background:rgba(46,141,225,.3); font-size:.72rem; font-weight:700; padding:0 5px;
+}
+.ft-rag-bar { height:5px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden; }
+.ft-rag-fill { height:100%; background:linear-gradient(90deg,#2E8DE1,#5B3FB0); border-radius:3px; transition:width .5s; }
+.ft-label-chip {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 11px; border-radius:16px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.12); font-size:.8rem;
+    transition:all .2s; user-select:none;
+}
+.ft-label-chip.selected { background:rgba(91,63,176,.2); border-color:#5B3FB0; color:#a78bfa; }
+.ft-adv-toggle { cursor:pointer; user-select:none; }
+.ft-adv-toggle:hover .card-body { opacity:.85; }
+.ft-adv-icon { transition:transform .25s; }
+.ft-adv-toggle[aria-expanded="true"] .ft-adv-icon { transform:rotate(180deg); }
+.ft-step3-card { border-left:3px solid #F59E0B !important; }
+.ft-n-inline { width:72px; display:inline-block !important; text-align:center; }
+.ft-tpl-btn {
+    background:rgba(91,63,176,.1); border:1px solid rgba(91,63,176,.25);
+    border-radius:8px; color:#a78bfa; font-size:.78rem;
+    padding:4px 10px; cursor:pointer; transition:all .2s; white-space:nowrap;
+}
+.ft-tpl-btn:hover { background:rgba(91,63,176,.25); }
+@media (min-width:992px) { .ft-chat-sticky { position:sticky; top:74px; } }
+</style>
 @endsection
 
 @section('content')
-<form action="<?= route('finetunnel.edit', $fineTunnel->id); ?>" method="POST" enctype="multipart/form-data">
-    @csrf
-    <div class="row">
-        <div class="col-12">
-            <x-validation-component></x-validation-component>
+<form id="ft-form" action="<?= route(" method="POST" enctype="multipart/form-data">
+@csrf
+
+{{-- ════ HEADER ════ --}}
+<div class="d-flex align-items-start align-items-sm-center flex-column flex-sm-row justify-content-between gap-3 mb-3">
+    <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+             style="width:44px;height:44px;background:linear-gradient(135deg,#2E8DE1,#5B3FB0)">
+            <i class="bx bx-bot text-white" style="font-size:1.3rem"></i>
+        </div>
+        <div>
+            <input type="text" name="name" class="ft-header-name"
+                   value="{{ $finetunnel->name }}" placeholder="Nama AI Agent" required>
+            <div class="text-muted" style="font-size:.78rem;padding-left:6px;margin-top:2px">Agen AI · aktif</div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-xl-7 col-sm-12 row">
-            <div class="card mb-4 col-12">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="bx bx-cog me-2"></i>{{ __('finetunnel.ai_agent_config') }}
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Nama AI Agent -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            <i class="bx bx-bot me-1"></i>{{ __('finetunnel.ai_agent_name') }}
-                            <span class="text-danger">*</span>
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bx bx-rename"></i>
-                            </span>
-                            <input class="form-control" name="name" value="<?= old('name', $fineTunnel->name); ?>" type="text" placeholder="{{ __('finetunnel.ai_agent_name') }}" required>
-                        </div>
-                        <small class="text-muted">
-                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.name_to_identify_ai_agent') }}
-                        </small>
-                    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        @isset($credit)
+        <span class="ft-credit-chip">
+            <i class="bx bx-coin-stack"></i>
+            Kredit AI: {{ number_format($credit) }}
+        </span>
+        @endisset
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="bx bx-save me-1"></i>Simpan
+        </button>
+    </div>
+</div>
+<p class="text-muted small mb-4">
+    <i class="bx bx-sparkles me-1" style="color:#2E8DE1"></i>
+    Cukup isi 3 hal: <strong>siapa AI-nya</strong>, apa yang dia tahu, dan kapan menyerahkan ke manusia.
+</p>
 
-                    <!-- Model AI -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            <i class="bx bx-chip me-1"></i>{{ __('finetunnel.model_ai') }}
-                            <span class="text-danger">*</span>
-                            <i class="bx bx-info-circle ms-1" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="right" data-bs-html="true" title="<span>{{ __('finetunnel.ai_model_tooltip') }}</span>"></i>
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bx bx-brain"></i>
-                            </span>
-                            <select class="form-control" name="model_ai" id="modelAi" required>
-                                <option value="standart" @if($fineTunnel->model_ai == 'standart') selected @endif>{{ __('finetunnel.standard') }}</option>
-                                <option value="advanced" @if($fineTunnel->model_ai == 'advanced') selected @endif>{{ __('finetunnel.advanced') }}</option>
-                            </select>
-                        </div>
-                        <small class="text-muted">
-                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.ai_model_selection_guide') }}
-                        </small>
-                    </div>
+<div class="row g-3">
+{{-- ════ KOLOM KIRI ════ --}}
+<div class="col-lg-7">
 
-                    <!-- AI History Limit -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            <i class="bx bx-history me-1"></i>{{ __('finetunnel.ai_history_limit') }}
-                            <span class="text-danger">*</span>
-                            <i class="bx bx-info-circle ms-1" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="right" data-bs-html="true" title="<span>{{ __('finetunnel.ai_history_tooltip') }}</span>"></i>
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bx bx-message-square-detail"></i>
-                            </span>
-                            <input class="form-control" name="history_limit" value="<?= old('history_limit', $fineTunnel->history_limit); ?>" type="number" min="1" max="100" required>
-                            <span class="input-group-text">{{ __('finetunnel.messages') }}</span>
-                        </div>
-                        <small class="text-muted">
-                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.ai_history_limit_info') }}
-                        </small>
-                    </div>
-
-                    <!-- AI Context Limit -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            <i class="bx bx-library me-1"></i>{{ __('finetunnel.ai_context_limit') }}
-                            <span class="text-danger">*</span>
-                            <i class="bx bx-info-circle ms-1" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="right" data-bs-html="true" title="<span>{{ __('finetunnel.ai_context_tooltip') }}</span>"></i>
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bx bx-book-content"></i>
-                            </span>
-                            <input class="form-control" name="context_limit" value="<?= old('context_limit', $fineTunnel->context_limit); ?>" type="number" min="1" max="50" required>
-                            <span class="input-group-text">{{ __('finetunnel.context') }}</span>
-                        </div>
-                        <small class="text-muted">
-                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.ai_context_limit_info') }}
-                        </small>
-                    </div>
-
-                    <!-- Delay Respon AI -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            <i class="bx bx-time-five me-1"></i>{{ __('finetunnel.ai_response_delay') }}
-                            <span class="text-danger">*</span>
-                            <i class="bx bx-info-circle ms-1" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="right" data-bs-html="true" title="<span>{{ __('finetunnel.ai_delay_tooltip') }}</span>"></i>
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bx bx-timer"></i>
-                            </span>
-                            <input class="form-control" name="delay" value="<?= old('delay', $fineTunnel->delay); ?>" type="number" min="0" max="60" required>
-                            <span class="input-group-text">{{ __('finetunnel.seconds') }}</span>
-                        </div>
-                        <small class="text-muted">
-                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.ai_response_delay_info_seconds') }}
-                        </small>
-                    </div>
-
-                    <!-- Message Limit -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            <i class="bx bx-message-square-minus me-1"></i>{{ __('finetunnel.message_limit') }}
-                            <span class="text-danger">*</span>
-                            <i class="bx bx-info-circle ms-1" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="right" data-bs-html="true" title="<span>{{ __('finetunnel.ai_message_limit_tooltip') }}</span>"></i>
-                        </label>
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bx bx-hash"></i>
-                            </span>
-                            <input class="form-control" name="message_limit" value="<?= old('message_limit', $fineTunnel->message_limit); ?>" type="number" min="1" required>
-                            <span class="input-group-text">{{ __('finetunnel.messages') }}</span>
-                        </div>
-                        <small class="text-muted">
-                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.message_limit_before_handover') }}
-                        </small>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="bx bx-save me-1"></i>{{ __('finetunnel.save_training_data') }}
-                    </button>
+    {{-- ─── STEP 1: Siapa AI kamu ─── --}}
+    <div class="card custom-card mb-3">
+        <div class="card-body">
+            <div class="ft-step-title">
+                <span class="ft-step-badge">1</span>
+                <div>
+                    <h6>Siapa AI kamu</h6>
+                    <span class="text-muted" style="font-size:.8rem">Sifat, gaya bicara, dan info produk yang boleh disampaikan.</span>
                 </div>
             </div>
-            <div class="col-12">
-                <div class="card custom-card">
-                    <div class="card-body p-0">
-                        <div class="border-block-end-dashed bg-white rounded-2 p-2">
-                            <ul class="nav nav-pills justify-content-center nav-style-2 mb-3" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link active" data-bs-toggle="tab" role="tab" href="#general-information" aria-selected="true">
-                                        <i class="bx bx-bot me-1"></i>{{ __('finetunnel.ai_behaviour') }}
-                                    </a>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link" data-bs-toggle="tab" role="tab" href="#follow-ups" aria-selected="false">
-                                        <i class="bx bx-time me-1"></i>{{ __('finetunnel.follow_up') }}
-                                    </a>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link" data-bs-toggle="tab" role="tab" href="#documents" aria-selected="false">
-                                        <i class="bx bx-book me-1"></i>{{ __('finetunnel.ai_data_training') }}
-                                    </a>
-                                </li>
-                                @if($courierStatus)
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link" data-bs-toggle="tab" role="tab" href="#courier-data" aria-selected="false">
-                                        <i class="bx bx-package me-1"></i>{{ __('finetunnel.courier_data') }}
-                                    </a>
-                                </li>
-                                @endif
-                                @if($gsheet)
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link" data-bs-toggle="tab" role="tab" href="#g-sheet" aria-selected="false">
-                                        <i class="bx bx-spreadsheet me-1"></i>{{ __('finetunnel.google_sheet') }}
-                                    </a>
-                                </li>
-                                @endif
-                            </ul>
-                        </div>
 
-                        <div class="p-4">
-                            <div class="tab-content">
+            {{-- Template presets --}}
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+                <span class="text-muted" style="font-size:.78rem">Mulai dari template:</span>
+                <button type="button" class="ft-tpl-btn" onclick="ftApplyTpl('toko')">&#x1F6D2; Toko Online</button>
+                <button type="button" class="ft-tpl-btn" onclick="ftApplyTpl('kelas')">&#x1F4DA; Kelas/e-course</button>
+                <button type="button" class="ft-tpl-btn" onclick="ftApplyTpl('booking')">&#x1F4C5; Reservasi</button>
+            </div>
+
+            <label class="form-label fw-semibold mb-1">Karakter &amp; info AI</label>
+            <div class="text-muted mb-2" style="font-size:.8rem">Sifat, gaya bicara, harga, dan info yang boleh AI sampaikan ke pelanggan.</div>
+            <textarea id="ft-description" name="description" class="form-control mb-3" rows="6"
+                placeholder="Contoh: Kamu adalah CS yang ramah untuk toko Baju Anak Murah. Harga kaos mulai Rp35.000.">{{ $finetunnel->description }}</textarea>
+
+            <label class="form-label fw-semibold mb-1">Pesan sambutan pertama</label>
+            <input type="text" name="welcome_message" class="form-control mb-3"
+                   value="{{ $finetunnel->welcome_message }}"
+                   placeholder="Halo! Selamat datang &#x1F44B; Ada yang bisa saya bantu?">
+
+            <label class="form-label fw-semibold mb-1">
+                Gambar sambutan
+                <span class="text-muted fw-normal ms-1" style="font-size:.8rem">(opsional)</span>
+            </label>
+            <input type="file" name="image" class="form-control mb-2" accept="image/*">
+            @if($finetunnel->image)
+            <div class="mb-3 d-flex align-items-center gap-3">
+                <img src="{{ asset('storage/'.$finetunnel->image) }}" class="rounded"
+                     style="max-height:60px;max-width:120px;object-fit:cover;opacity:.8" alt="">
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" name="remove_image" id="ft-removeImg" value="1">
+                    <label class="form-check-label text-muted" for="ft-removeImg" style="font-size:.8rem">Hapus gambar ini</label>
+                </div>
+            </div>
+            @endif
+
+            <div class="ft-guard-notice">
+                <i class="bx bx-shield-alt-2 me-1"></i>
+                <strong>Pengaman otomatis:</strong>
+                AI tak menjanjikan harga/diskon di luar info ini &amp; menyerahkan ke agen bila ragu.
+            </div>
+        </div>
+    </div>
+
+    {{-- ─── STEP 2: Apa yang AI tahu ─── --}}
+    <div class="card custom-card mb-3">
+        <div class="card-body">
+            <div class="ft-step-title">
+                <span class="ft-step-badge">2</span>
+                <div>
+                    <h6>Apa yang AI tahu</h6>
+                    <span class="text-muted" style="font-size:.8rem">Klik sumber di bawah untuk menambah pengetahuan AI.</span>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mb-3" id="ft-chips">
+                <button type="button" class="ft-chip-btn" data-ft-tab="#documents">
+                    <i class="bx bx-file-blank"></i> Dokumen
+                    @if(isset($ragDocuments) && $ragDocuments->count() > 0)
+                    <span class="ft-chip-count">{{ $ragDocuments->count() }}</span>
+                    @endif
+                </button>
+                <button type="button" class="ft-chip-btn" data-ft-tab="#g-sheet">
+                    <i class="bx bx-table"></i> Google Sheet
+                </button>
+                <button type="button" class="ft-chip-btn" data-ft-tab="#follow-ups">
+                    <i class="bx bx-time-five"></i> Follow up
+                    @if(isset($finetunnel->follow_ups) && $finetunnel->follow_ups->count() > 0)
+                    <span class="ft-chip-count">{{ $finetunnel->follow_ups->count() }}</span>
+                    @endif
+                </button>
+                <button type="button" class="ft-chip-btn" data-ft-tab="#courier-data">
+                    <i class="bx bx-package"></i> Ongkir
+                </button>
+            </div>
+
+            @php
+                $ftUsed = isset($ragStorageUsed) ? $ragStorageUsed : (isset($usedStorage) ? $usedStorage : null);
+                $ftMax  = isset($maxRagStorage)  ? $maxRagStorage  : (isset($maxStorage)  ? $maxStorage  : null);
+                $ftPct  = ($ftMax && $ftMax > 0) ? min(100, round($ftUsed / $ftMax * 100)) : 0;
+            @endphp
+            @if($ftUsed !== null && $ftMax !== null)
+            <div class="mb-3">
+                <div class="ft-rag-bar mb-1">
+                    <div class="ft-rag-fill" style="width:{{ $ftPct }}%"></div>
+                </div>
+                <small class="text-muted">
+                    {{ round($ftUsed/1024/1024,1) }} dari {{ round($ftMax/1024/1024,1) }} MB dokumen terpakai
+                </small>
+            </div>
+            @endif
+
+
+
+            {{-- Tab panes (dipreserve dari blade asli) --}}
+<div class="tab-content">
                                 <!-- Tab AI Behaviour -->
                                 <div class="tab-pane fade active show" id="general-information" role="tabpanel">
                                     <!-- Gaya Bicara dengan Character Counter -->
@@ -706,14 +731,143 @@
                                 </div>
                                 @endif
                             </div>
-                        </div>
+        </div>
+    </div>
+
+    {{-- ─── STEP 3: Kapan diserahkan ke manusia ─── --}}
+    <div class="card custom-card ft-step3-card mb-3">
+        <div class="card-body">
+            <div class="ft-step-title">
+                <span class="ft-step-badge warn">3</span>
+                <div>
+                    <h6>Kapan diserahkan ke manusia</h6>
+                    <span class="text-muted" style="font-size:.8rem">Agar AI tidak menangani terlalu lama atau kasus di luar kemampuannya.</span>
+                </div>
+            </div>
+
+            <label class="form-label fw-semibold mb-1">
+                Kalau pelanggan menyebut kata ini, serahkan ke agen
+            </label>
+            <textarea name="term_condition" class="form-control mb-1" rows="2"
+                placeholder="complaint, refund, mau bicara dengan orang">{{ $finetunnel->term_condition }}</textarea>
+            <small class="text-muted d-block mb-4">Pisahkan dengan koma. Contoh: refund, mau bicara, komplain</small>
+
+            <label class="form-label fw-semibold mb-2 d-flex align-items-center flex-wrap gap-2">
+                Atau setelah AI balas
+                <input type="number" name="message_limit"
+                       class="form-control ft-n-inline" min="0" max="9999"
+                       value="{{ $finetunnel->message_limit ?? 0 }}">
+                kali, serahkan ke agen
+            </label>
+            <small class="text-muted d-block mb-4">Isi 0 = tidak ada batas otomatis</small>
+
+            <label class="form-label fw-semibold mb-2">Agen yang dihubungi saat serah terima</label>
+<select class="form-control users" name="agent[]" multiple="multiple">
+                                            @foreach ($users as $user)
+                                            <option value="<?= $user->id; ?>" {{ in_array($user->id, explode(',',$fineTunnel->agent)) ? 'selected' : '' }}>
+                                                <?= $user->name; ?>
+                                            </option>
+                                            @endforeach
+                                        </select>
+        </div>
+    </div>
+
+    {{-- ─── AUTO LABEL ─── --}}
+    @if(isset($labels) && $labels->count() > 0)
+    <div class="card custom-card mb-3">
+        <div class="card-body">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="fw-semibold me-2" style="font-size:.88rem">
+                    <i class="bx bx-purchase-tag-alt me-1" style="color:#5B3FB0"></i>Auto label
+                </span>
+@foreach ($labels as $label)
+                                            <div class="col-xl-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="{{$label->id}}" name="label[]" id="label-{{$label->id}}" {{ in_array($label->id, $selectedLabels) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="label-{{$label->id}}">
+                                                        {{$label->name}}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ─── PENGATURAN LANJUTAN ─── --}}
+    <div class="card custom-card ft-adv-toggle mb-1"
+         role="button"
+         data-bs-toggle="collapse" data-bs-target="#ft-adv"
+         aria-expanded="false">
+        <div class="card-body py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <span class="fw-semibold">
+                    <i class="bx bx-slider-alt me-2 text-muted"></i>Pengaturan lanjutan
+                </span>
+                <div class="text-muted" style="font-size:.78rem;margin-top:2px">
+                    Model AI, ingatan, kedalaman baca dokumen, jeda balas — sudah diatur aman
+                </div>
+            </div>
+            <i class="bx bx-chevron-down ft-adv-icon text-muted" style="font-size:1.2rem"></i>
+        </div>
+    </div>
+    <div class="collapse mb-3" id="ft-adv">
+        <div class="card custom-card" style="border-top-left-radius:0;border-top-right-radius:0;border-top:none">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Model AI</label>
+                        <select name="model_ai" class="form-select">
+                            <option value="basic" {{ ($finetunnel->model_ai ?? 'basic') === 'basic' ? 'selected' : '' }}>
+                                Standard — hemat kredit
+                            </option>
+                            <option value="advanced" {{ ($finetunnel->model_ai ?? '') === 'advanced' ? 'selected' : '' }}>
+                                Advanced — lebih pintar, lebih boros
+                            </option>
+                        </select>
+                        <small class="text-muted">Standard = hemat; Advanced = lebih pintar</small>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold mb-1 d-flex align-items-center gap-2 flex-wrap">
+                            Ingat
+                            <input type="number" name="history_limit"
+                                   class="form-control ft-n-inline" min="1" max="100"
+                                   value="{{ $finetunnel->history_limit ?? 20 }}">
+                            pesan terakhir
+                        </label>
+                        <small class="text-muted">Lebih banyak = lebih ingat konteks (1–100)</small>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold mb-1 d-flex align-items-center gap-2 flex-wrap">
+                            Kedalaman baca dokumen
+                            <input type="number" name="context_limit"
+                                   class="form-control ft-n-inline" min="1" max="100"
+                                   value="{{ $finetunnel->context_limit ?? 10 }}">
+                        </label>
+                        <small class="text-muted">Seberapa dalam AI menggali info dari dokumenmu (1–100)</small>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold mb-1 d-flex align-items-center gap-2 flex-wrap">
+                            Jeda balas
+                            <input type="number" name="delay"
+                                   class="form-control ft-n-inline" min="0" max="60"
+                                   value="{{ $finetunnel->delay ?? 1 }}">
+                            detik
+                        </label>
+                        <small class="text-muted">Waktu tunggu sebelum AI membalas (0–60 detik)</small>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-xl-5 col-lg-5 sticky-column">
-            <div class="chat-test-container" id="chatTestContainer">
+</div>{{-- /col-lg-7 --}}
+
+{{-- ════ KOLOM KANAN: TES CHAT ════ --}}
+<div class="col-lg-5">
+    <div class="ft-chat-sticky">
+        <div class="chat-test-container" id="chatTestContainer">
                 <div class="chat-test-box">
                     <div class="chat-header">
                         <h6 class="mb-1">
@@ -745,70 +899,11 @@
                     </div>
                 </div>
             </div>
-        </div>
-
     </div>
-</form>
-
-<!-- Language Strings (Hidden) -->
-<div id="lang-strings" class="d-none">
-    <span id="lang-uploading">{{ __('finetunnel.uploading') }}</span>
-    <span id="lang-processing-document">{{ __('finetunnel.processing_document') }}</span>
-    <span id="lang-upload-failed">{{ __('finetunnel.upload_failed') }}</span>
-    <span id="lang-please-fill-ai-behaviour">{{ __('finetunnel.please_fill_ai_behaviour') }}</span>
-    <span id="lang-connection-error">{{ __('finetunnel.connection_error') }}</span>
-    <span id="lang-error-title">{{ __('finetunnel.error_title') }}</span>
-    <span id="lang-error-processing-request">{{ __('finetunnel.error_processing_request') }}</span>
-    <span id="lang-connection-error-title">{{ __('finetunnel.connection_error_title') }}</span>
-    <span id="lang-server-connection-failed">{{ __('finetunnel.server_connection_failed') }}</span>
-    <span id="lang-clear-chat-confirm-title">{{ __('finetunnel.clear_chat_confirm_title') }}</span>
-    <span id="lang-clear-chat-confirm-text">{{ __('finetunnel.clear_chat_confirm_text') }}</span>
-    <span id="lang-yes-delete">{{ __('finetunnel.yes_delete') }}</span>
-    <span id="lang-cancel">{{ __('finetunnel.cancel') }}</span>
-    <span id="lang-success">{{ __('finetunnel.success') }}</span>
-    <span id="lang-chat-cleared">{{ __('finetunnel.chat_cleared') }}</span>
-    <span id="lang-js-preview-welcome">{{ __('finetunnel.js_preview_welcome') }}</span>
-    <span id="lang-js-type-message-start">{{ __('finetunnel.js_type_message_start') }}</span>
-    <span id="lang-js-start-conversation">{{ __('finetunnel.js_start_conversation') }}</span>
-    <span id="lang-js-fill-character-first">{{ __('finetunnel.js_fill_character_first') }}</span>
-    <span id="lang-search-product-badge">{{ __('finetunnel.search_product_badge') }}</span>
-    <span id="lang-other-badge">{{ __('finetunnel.other_badge') }}</span>
-    <span id="lang-cart-badge">{{ __('finetunnel.cart_badge') }}</span>
-    <span id="lang-checkout-badge">{{ __('finetunnel.checkout_badge') }}</span>
-    <span id="lang-check-shipping-badge">{{ __('finetunnel.check_shipping_badge') }}</span>
-    <span id="lang-no-documents-yet">{{ __('finetunnel.no_documents_yet') }}</span>
-    <span id="lang-upload-in-progress-warning">{{ __('finetunnel.upload_in_progress_warning') }}</span>
-    <span id="lang-enter-url-first">{{ __('finetunnel.enter_url_first') }}</span>
-    <span id="lang-invalid-url-format">{{ __('finetunnel.invalid_url_format') }}</span>
-    <span id="lang-loading">{{ __('finetunnel.loading') }}</span>
-    <span id="lang-no-data-to-preview">{{ __('finetunnel.no_data_to_preview') }}</span>
-    <span id="lang-preview">{{ __('finetunnel.preview') }}</span>
-    <span id="lang-select-human-agent">{{ __('finetunnel.select_human_agent') }}</span>
-    <span id="lang-select-province">{{ __('finetunnel.select_province') }}</span>
-    <span id="lang-select-city">{{ __('finetunnel.select_city') }}</span>
-    <span id="lang-select-district">{{ __('finetunnel.select_district') }}</span>
-    <span id="lang-select-village">{{ __('finetunnel.select_village') }}</span>
-    <span id="lang-new-followup">{{ __('finetunnel.new_followup') }}</span>
-    <span id="lang-delete">{{ __('finetunnel.delete') }}</span>
-    <span id="lang-prompt-text-follow-up">{{ __('finetunnel.prompt_text_follow_up') }}</span>
-    <span id="lang-follow-up-message-placeholder">{{ __('finetunnel.follow_up_message_placeholder') }}</span>
-    <span id="lang-message-sent-by-ai">{{ __('finetunnel.message_sent_by_ai') }}</span>
-    <span id="lang-delay-limit">{{ __('finetunnel.delay_limit') }}</span>
-    <span id="lang-minutes-unit">{{ __('finetunnel.minutes_unit') }}</span>
-    <span id="lang-delay-before-send">{{ __('finetunnel.delay_before_send') }}</span>
-    <span id="lang-exact-label">{{ __('finetunnel.exact_label') }}</span>
-    <span id="lang-handoff-label">{{ __('finetunnel.handoff_label') }}</span>
-    <span id="lang-new-gsheet">{{ __('finetunnel.new_gsheet') }}</span>
-    <span id="lang-google-sheet-url">{{ __('finetunnel.google_sheet_url') }}</span>
-    <span id="lang-gsheet-url-placeholder">{{ __('finetunnel.gsheet_url_placeholder') }}</span>
-    <span id="lang-validate">{{ __('finetunnel.validate') }}</span>
-    <span id="lang-status">{{ __('finetunnel.status') }}</span>
-    <span id="lang-active-status">{{ __('finetunnel.active_status') }}</span>
-    <span id="lang-inactive-status">{{ __('finetunnel.inactive_status') }}</span>
-    <span id="lang-preview-data">{{ __('finetunnel.preview_data') }}</span>
-    <span id="lang-gsheet-toggle">{{ __('finetunnel.gsheet_toggle') }}</span>
-    <span id="lang-show-guide">{{ __('finetunnel.show_guide') }}</span>
 </div>
+
+</div>{{-- /row --}}
+</form>
 @endsection
 
 @section('scripts')
@@ -2171,5 +2266,74 @@
                 button.innerHTML = `<i class="bx bx-show"></i> ${trans.preview}`;
             });
     }
+</script>
+<script>
+/* ── FineTunnel Redesign JS ── */
+
+// Chip → Tab trigger
+document.querySelectorAll('.ft-chip-btn[data-ft-tab]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var href = this.getAttribute('data-ft-tab');
+        // Deactivate semua chips
+        document.querySelectorAll('.ft-chip-btn').forEach(function(b) {
+            b.classList.remove('ft-active');
+        });
+        this.classList.add('ft-active');
+
+        // Trigger bootstrap tab
+        var trigger = document.querySelector('[data-bs-toggle="tab"][href="' + href + '"]');
+        if (!trigger) {
+            trigger = document.querySelector('[data-bs-toggle="tab"][data-bs-target="' + href + '"]');
+        }
+        if (trigger) {
+            try { bootstrap.Tab.getOrCreateInstance(trigger).show(); } catch(e) { console.warn(e); }
+        }
+    });
+});
+
+// Advanced settings chevron rotate
+var ftAdvEl = document.getElementById('ft-adv');
+var ftAdvToggle = document.querySelector('.ft-adv-toggle');
+if (ftAdvEl && ftAdvToggle) {
+    ftAdvEl.addEventListener('show.bs.collapse', function() {
+        ftAdvToggle.setAttribute('aria-expanded','true');
+    });
+    ftAdvEl.addEventListener('hide.bs.collapse', function() {
+        ftAdvToggle.setAttribute('aria-expanded','false');
+    });
+}
+
+// Label chip visual toggle
+document.querySelectorAll('.ft-label-chip input[type=checkbox]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        this.closest('.ft-label-chip').classList.toggle('selected', this.checked);
+    });
+    if (cb.checked) cb.closest('.ft-label-chip').classList.add('selected');
+});
+
+
+const ftTemplates = {
+    toko: {
+        description: "Kamu adalah CS toko online yang ramah dan responsif.\nTugas: bantu pelanggan cari produk, cek harga, pilih ukuran/warna, dan bantu proses order.\nSelalu jawab singkat dan sopan. Gunakan emoji sesekali \u{1F60A}\nJangan pernah menjanjikan harga di luar yang tertulis di atas.",
+        welcome: "Halo! Selamat datang di toko kami \u{1F44B} Ada yang bisa saya bantu hari ini?"
+    },
+    kelas: {
+        description: "Kamu adalah asisten kelas online / e-course yang antusias dan informatif.\nTugas: bantu calon peserta memahami kurikulum, jadwal, harga, dan cara daftar.\nJawab dengan semangat. Detail teknis \u2192 alihkan ke tim kami.\nJangan menjanjikan diskon yang tidak ada di informasi di atas.",
+        welcome: "Hai! Saya asisten program kami \u{1F393} Ada pertanyaan seputar kelas atau cara daftar?"
+    },
+    booking: {
+        description: "Kamu adalah asisten reservasi yang membantu tamu merencanakan kunjungan.\nTugas: bantu cek ketersediaan, jelaskan paket, bantu isi form reservasi.\nJawab dengan hangat dan profesional. Konfirmasi final \u2192 arahkan ke admin kami.\nJangan menjanjikan ketersediaan yang belum dikonfirmasi.",
+        welcome: "Halo! Saya siap bantu proses reservasi Anda \u{1F4C5} Kapan rencana kunjungan Anda?"
+    }
+};
+function ftApplyTpl(type) {
+    var t = ftTemplates[type];
+    if (!t) return;
+    var desc = document.getElementById('ft-description');
+    var wel = document.querySelector('[name="welcome_message"]');
+    if (desc) { desc.value = t.description; desc.focus(); }
+    if (wel) wel.value = t.welcome;
+}
+
 </script>
 @endsection
