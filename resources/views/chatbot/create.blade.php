@@ -69,6 +69,14 @@
                             {{__('chatbot.choose_whatsapp_device')}}
                         </small>
                     </div>
+                <div class="col-lg-12 mb-3">
+                    <label class="form-label fw-semibold">Tipe Kecocokan Keyword</label>
+                    <select name="match_type" class="form-control">
+                        <option value="contains">Mengandung kata (contains)</option>
+                        <option value="exact">Sama persis (exact)</option>
+                    </select>
+                    <small class="text-muted">Pilih <b>Sama persis</b> agar hanya cocok jika pesan tepat sama dengan keyword.</small>
+                </div>
 
                     <!-- Livechat -->
                     <div class="col-lg-6 mb-4">

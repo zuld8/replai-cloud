@@ -249,49 +249,63 @@ class ChatBotController extends Controller
 
             if (count($import[0]) > 0) {
 
-
                 try {
 
                     DB::beginTransaction();
 
+                    // FIX 4: cek limit paket sebelum import
+                    $bizId     = my_business();
+                    $limitOk   = $this->chatBotObserver->checkLimit();
+                    $maxBot    = (int)(optional(\App\Models\Setting::find($bizId)?->package_active)->chatbot_limit ?? 999999);
+                    $current   = ChatBot::where('business_id', $bizId)->count();
+
                     foreach ($import[0] as $d) {
                         if ($d['keyword'] != null) {
 
+                            // Stop jika sudah di batas paket
+                            if (!$limitOk || ($maxBot > 0 && $current >= $maxBot)) break;
 
-                            $text           = null;
-                            $deviceID       = WhatsappDevice::where('id', explode(",", $d['device']))->pluck("id")->toArray();
+                            $text     = null;
+
+                            // FIX 4: whereIn + scope tenant (bukan where('id', array) yg salah)
+                            $deviceIds = array_filter(array_map('trim', explode(',', (string)($d['device'] ?? ''))));
+                            $deviceID  = WhatsappDevice::where('business_id', $bizId)
+                                            ->whereIn('id', $deviceIds)
+                                            ->pluck("id")->toArray();
 
                             if ($d['method'] == 'template') {
-                                $text       = MessageTemplate::find($d['template']);
+                                // FIX 4: scope template ke tenant yang sama
+                                $text = MessageTemplate::where('business_id', $bizId)->find($d['template']);
                             }
 
                             if ($d['method'] == 'text') {
-                                $text       = $d['text'];
+                                $text = $d['text'];
                             }
 
                             if ($text != null && count($deviceID) > 0) {
                                 ChatBot::create([
-                                    'keyword'           => $d['keyword'],
-                                    'select_device'     => implode(",", $deviceID),
-                                    'reply_method'      => $d['method'],
-                                    'template_id'       => $d['method'] == 'template' ? $text->id : null,
-                                    'message'           => $d['method'] == 'text' ? $text : null
+                                    'keyword'       => $d['keyword'],
+                                    'select_device' => implode(",", $deviceID),
+                                    'reply_method'  => $d['method'],
+                                    'template_id'   => $d['method'] == 'template' ? $text->id : null,
+                                    'message'       => $d['method'] == 'text' ? $text : null
                                 ]);
+                                $current++;
                             }
                         }
                     }
 
                     DB::commit();
 
-                    return redirect()->back()->with(['flash'    => __('general.success_import')]);
+                    return redirect()->back()->with(['flash' => __('general.success_import')]);
                 } catch (\Exception $e) {
 
                     DB::rollBack();
 
-                    return redirect()->back()->with(['gagal'    => $e->getMessage()]);
+                    return redirect()->back()->with(['gagal' => $e->getMessage()]);
                 }
             } else {
-                return redirect()->back()->with(['gagal'    => __('general.file_not_reader')]);
+                return redirect()->back()->with(['gagal' => __('general.file_not_reader')]);
             }
         }
     }

@@ -1434,16 +1434,57 @@ class WabaCallbackController extends Controller
         }
 
         $followUps = $device->finetunnel ? $device->finetunnel->follow_ups->count() : 0;
+        $method    = $reply['method'] ?? 'text';
 
         $replyMessage = $histories->details()->create([
             'history_chat_id' => $histories->id,
-            'from' => 'device',
-            'source'            => 'bot',
-            'is_follow_up' => $followUps > 0 ? 'no' : 'yes',
-            'message' => $reply['message_text'],
+            'from'            => 'device',
+            'source'          => 'bot',
+            'is_follow_up'    => $followUps > 0 ? 'no' : 'yes',
+            'message'         => $reply['message_text'],
         ]);
 
-        $this->sendTextMessageToUser($device, $histories, $reply['message_text'], $replyMessage);
+        // FIX 3: cabangkan pengiriman berdasarkan reply method
+        if ($method === 'template') {
+            // Kirim template WABA — buildTemplateChatbot sudah dikerjakan di autoReplyMessage
+            try {
+                $msgVars = $this->getMessageVariables($device);
+                $store   = $histories->store; // Store model untuk sendTemplateMessage
+                if ($store) {
+                    $send = $this->whatsappServiceObserver->sendTemplateMessage(
+                        $store,
+                        $reply['message'],   // struktur template dari buildTemplateChatbot
+                        $msgVars
+                    );
+                    if (!empty($send['messageid'])) {
+                        $replyMessage->update(['messageid' => $send['messageid']]);
+                    }
+                } else {
+                    // Fallback: kirim teks preview jika store belum ada
+                    $this->sendTextMessageToUser($device, $histories, $reply['message_text'], $replyMessage);
+                }
+            } catch (\Exception $e) {
+                // Jangan crash — fallback ke teks agar tidak senyap
+                $this->sendTextMessageToUser($device, $histories, $reply['message_text'], $replyMessage);
+            }
+        } elseif ($method === 'image' && !empty($reply['message']['images'])) {
+            // Kirim tiap gambar dari chatbot image list
+            $caption = $reply['message']['caption'] ?? '';
+            $msgVars = $this->getMessageVariables($device);
+            foreach ($reply['message']['images'] as $imgUrl) {
+                try {
+                    $this->whatsappServiceObserver->sendMediaMessage(
+                        $histories->from_number, 'image', $imgUrl,
+                        $caption, null, $msgVars
+                    );
+                } catch (\Exception $e) {
+                    // Lanjut ke gambar berikutnya jika gagal
+                }
+            }
+        } else {
+            // text (default) — juga fallback jika method tidak dikenal
+            $this->sendTextMessageToUser($device, $histories, $reply['message_text'], $replyMessage);
+        }
 
         return $replyMessage;
     }
@@ -2188,53 +2229,106 @@ class WabaCallbackController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function autoReplyMessage(WhatsappKeyAccount $device, $message, $name = '', $from, $type = 'personal')
+    public function autoReplyMessage(WhatsappKeyAccount $device, $message, $name = '', $from = null, $type = 'personal')
     {
-        // Check WABA chatbot: first try select_waba (general chatbot), then legacy select_device+meta_account_id (WABA-specific chatbot)
-        $chatBot = ChatBot::where('business_id', $device->business_id) // SECURITY: isolasi antar-tenant
-            ->whereRaw("find_in_set(?, select_waba)", [$device->id])
-            ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])
-            ->with('template')
-            ->first();
+        // FIX 1: PHP-side matching — aman dari keyword regex crash + false-positive substring
+        // Ambil semua chatbot device ini dalam 1 query yang sudah scoped per tenant
+        $candidates = ChatBot::where('business_id', $device->business_id) // SECURITY: isolasi antar-tenant (WAJIB)
+            ->where(function ($q) use ($device) {
+                $q->whereRaw("find_in_set(?, select_waba)", [$device->id])
+                  ->orWhereRaw("find_in_set(?, select_device)", [$device->id]);
+            })
+            ->with(['template', 'details'])
+            ->orderBy('created_at')
+            ->get();
+
+        $chatBot = $this->matchChatbot($message, $candidates);
 
         if (!$chatBot) {
-            $chatBot = ChatBot::whereRaw("find_in_set(?,select_device)", [$device->id])->where('meta_account_id', '!=', null)->with('template')
-                ->whereRaw("? REGEXP REPLACE(keyword, ', ', '|')", [$message])->first();
+            return ['status' => false, 'message' => null];
         }
 
-        if (!$chatBot) {
-            return array(
-                'status'    => false,
-                'message'   => null
-            );
-        }
-
+        // FIX 3: aktifkan reply method text / template / image
         if ($chatBot->reply_method == 'text') {
-            $messageText = str_replace('{name}', $name ?? '', $chatBot->message);
-
-            return array(
-                'status'        => true,
-                'message_text'  => $messageText,
-                'method'        => $chatBot->reply_method,
-                'message'       => array(
-                    'text'          => $messageText
-                )
-            );
+            $messageText = str_replace('{name}', $name ?? '', $chatBot->message ?? '');
+            return [
+                'status'       => true,
+                'method'       => 'text',
+                'message_text' => $messageText,
+                'message'      => ['text' => $messageText],
+            ];
         }
 
-        if ($chatBot->reply_method == 'template') {
-
-            // $templateBuilder = $this->whatsappTemplateServiceObserver->buildTemplateChatbot($chatBot);
-            // $file           = $chatBot->template->image != null ? asset($chatBot->template->image) : '';
-            // $messageText    = $chatBot->template->message ?? '';
-            // $messageData    = $this->whatsappServiceObserver->formatDataMessage($messageText, $file, $chatBot->template->type_content, json_decode($chatBot->template->button_or_list, true));
-            // return array(
-            //     'status'        => true,
-            //     'method'        => $chatBot->reply_method,
-            //     'message_text'  => $templateBuilder,
-            //     'message'       => $messageData
-            // );
+        if ($chatBot->reply_method == 'template' && $chatBot->template) {
+            // Bangun struktur template WABA dari metadata chatbot
+            $templateBuilder = $this->whatsappTemplateServiceObserver->buildTemplateChatbot($chatBot);
+            $messageText     = $chatBot->template->message ?? 'Template: ' . ($chatBot->template->name ?? '');
+            return [
+                'status'       => true,
+                'method'       => 'template',
+                'message_text' => $messageText,
+                'message'      => $templateBuilder,
+                'chatbot'      => $chatBot,
+            ];
         }
+
+        if ($chatBot->reply_method == 'image') {
+            $images = $chatBot->details->pluck('url')->filter()->values()->all();
+            return [
+                'status'       => true,
+                'method'       => 'image',
+                'message_text' => $chatBot->message ?? '',
+                'message'      => ['images' => $images, 'caption' => $chatBot->message ?? ''],
+            ];
+        }
+
+        // Fallback aman — method tidak dikenal, tidak crash, tidak senyap
+        return ['status' => false, 'message' => null];
+    }
+
+    /**
+     * Cocokkan pesan ke chatbot yang paling relevan (PHP-side, aman dari regex crash)
+     * - preg_quote: keyword apapun aman (tidak bisa crash MySQL REGEXP)
+     * - batas kata (?<!\w)…(?!\w): 'ya' tidak nyangkut di 'saya'/'biaya'
+     * - skor: exact > contains; keyword lebih panjang lebih spesifik (deterministik)
+     */
+    private function matchChatbot(string $message, $candidates)
+    {
+        $msg = mb_strtolower(trim($message));
+        $best = null;
+        $bestScore = -1;
+
+        foreach ($candidates as $bot) {
+            $mode = $bot->match_type ?? 'contains'; // default contains (FIX 2 opsional)
+            $keywords = array_filter(array_map('trim', explode(',', (string)$bot->keyword)));
+
+            foreach ($keywords as $kw) {
+                $k = mb_strtolower($kw);
+                if ($k === '') continue;
+
+                $hit = false; $score = 0;
+
+                if ($mode === 'exact') {
+                    if ($msg === $k) {
+                        $hit = true;
+                        $score = 1000 + mb_strlen($k); // exact selalu menang vs contains
+                    }
+                } else {
+                    // contains dengan batas kata — anti false-positive
+                    if (preg_match('/(?<!\w)' . preg_quote($k, '/') . '(?!\w)/u', $msg)) {
+                        $hit = true;
+                        $score = 100 + mb_strlen($k); // keyword lebih panjang = lebih spesifik
+                    }
+                }
+
+                if ($hit && $score > $bestScore) {
+                    $bestScore = $score;
+                    $best = $bot;
+                }
+            }
+        }
+
+        return $best;
     }
 
 

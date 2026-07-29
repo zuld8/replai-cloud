@@ -42,7 +42,8 @@ class ChatBotObserver
             'select_waba'       => !empty($request->wabas) ? implode(",", $request->wabas) : null,
             'reply_method'      => $request->method,
             'template_id'       => $request->method == 'template' ? $request->template : null,
-            'message'           => $request->method == 'text' ? $request->message : null
+            'message'           => $request->method == 'text' ? $request->message : null,
+            'match_type'        => $request->match_type ?? 'contains'
         ]);
     }
 
@@ -101,7 +102,8 @@ class ChatBotObserver
             'select_waba'       => !empty($request->wabas) ? implode(",", $request->wabas) : null,
             'reply_method'      => $request->method,
             'template_id'       => $request->method == 'template' ? $request->template : null,
-            'message'           => $request->method == 'text' ? $request->message : null
+            'message'           => $request->method == 'text' ? $request->message : null,
+            'match_type'        => $request->match_type ?? 'contains'
         ]);
     }
 

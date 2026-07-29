@@ -32,7 +32,8 @@ class ChatBot extends Model
         'metadata',
         'file',
         'select_waba',
-        'meta_account_id'
+        'meta_account_id',
+        'match_type'
     ];
 
     /**
