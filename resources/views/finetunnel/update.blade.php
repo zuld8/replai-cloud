@@ -74,7 +74,7 @@
 @endsection
 
 @section('content')
-<form id="ft-form" action="{{ route(\'finetunnel.edit\', $fineTunnel->id) }}" method="POST" enctype="multipart/form-data">
+<form id="ft-form" action="{{ route('finetunnel.edit', $fineTunnel->id) }}" method="POST" enctype="multipart/form-data">
 @csrf
 {{-- Variable alias agar $finetunnel = $fineTunnel dari controller --}}
 @php $finetunnel = $fineTunnel ?? $finetunnel ?? null; @endphp
@@ -2213,16 +2213,16 @@ document.querySelectorAll('.ft-label-chip input[type=checkbox]').forEach(functio
 
 const ftTemplates = {
     toko: {
-        description: "Kamu adalah CS toko online yang ramah dan responsif.\nTugas: bantu pelanggan cari produk, cek harga, pilih ukuran/warna, dan bantu proses order.\nSelalu jawab singkat dan sopan. Gunakan emoji sesekali \u{1F60A}\nJangan pernah menjanjikan harga di luar yang tertulis di atas.",
-        welcome: "Halo! Selamat datang di toko kami \u{1F44B} Ada yang bisa saya bantu hari ini?"
+        description: "Kamu adalah CS toko online yang ramah dan responsif.\nTugas: bantu pelanggan cari produk, cek harga, pilih ukuran/warna, dan bantu proses order.\nSelalu jawab singkat dan sopan. Gunakan emoji sesekali 😊\nJangan pernah menjanjikan harga di luar yang tertulis di atas.",
+        welcome: "Halo! Selamat datang di toko kami 👋 Ada yang bisa saya bantu hari ini?"
     },
     kelas: {
         description: "Kamu adalah asisten kelas online / e-course yang antusias dan informatif.\nTugas: bantu calon peserta memahami kurikulum, jadwal, harga, dan cara daftar.\nJawab dengan semangat. Detail teknis \u2192 alihkan ke tim kami.\nJangan menjanjikan diskon yang tidak ada di informasi di atas.",
-        welcome: "Hai! Saya asisten program kami \u{1F393} Ada pertanyaan seputar kelas atau cara daftar?"
+        welcome: "Hai! Saya asisten program kami 🎓 Ada pertanyaan seputar kelas atau cara daftar?"
     },
     booking: {
         description: "Kamu adalah asisten reservasi yang membantu tamu merencanakan kunjungan.\nTugas: bantu cek ketersediaan, jelaskan paket, bantu isi form reservasi.\nJawab dengan hangat dan profesional. Konfirmasi final \u2192 arahkan ke admin kami.\nJangan menjanjikan ketersediaan yang belum dikonfirmasi.",
-        welcome: "Halo! Saya siap bantu proses reservasi Anda \u{1F4C5} Kapan rencana kunjungan Anda?"
+        welcome: "Halo! Saya siap bantu proses reservasi Anda 📅 Kapan rencana kunjungan Anda?"
     }
 };
 function ftApplyTpl(type) {
