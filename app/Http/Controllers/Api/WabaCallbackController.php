@@ -1619,6 +1619,19 @@ class WabaCallbackController extends Controller
      */
     private function processAIReply(WhatsappKeyAccount $device, Setting $settings, $histories, array $messageContent): mixed
     {
+        // FIX 1: enforce message_limit → handover ke agen setelah N balasan AI
+        $limit = (int) ($device->finetunnel->message_limit ?? 0);
+        if ($limit > 0) {
+            $botReplies = $histories->details()->where('source', 'bot')->count();
+            if ($botReplies >= $limit) {
+                if ($histories->takeover === 'no') {
+                    $histories->update(['takeover' => 'yes']);
+                    $this->notifyAgents($device, $histories, 'Batas pesan AI tercapai — percakapan dialihkan ke agen.');
+                }
+                return null; // stop: jangan balas AI lagi setelah batas tercapai
+            }
+        }
+
         $fineTunnel     = $device->finetunnel;
         $conversations  = $histories->details_desc->take($fineTunnel->history_limit)->sortBy('created_at');
 
@@ -2040,15 +2053,16 @@ class WabaCallbackController extends Controller
         }
 
         $keywords = array_map('trim', explode(',', $termCondition));
-        $term_text = strtolower($message);
-
+        // FIX 3: word-boundary matching — hindari substring false positive (mis. "cs" di "success")
+        $term_text = mb_strtolower($message);
         foreach ($keywords as $keyword) {
-            if (stripos($term_text, strtolower($keyword)) === false) {
-                continue;
+            $k = trim(mb_strtolower($keyword));
+            if ($k === '') continue;
+            if (preg_match('/(?<!\w)' . preg_quote($k, '/') . '(?!\w)/u', $term_text)) {
+                $histories->update(['takeover' => 'yes']);
+                $this->notifyAgents($device, $histories, 'Kata kunci transfer ditemukan: "' . $k . '"');
+                break;
             }
-
-            $histories->update(['takeover' => 'yes']);
-            break;
         }
     }
 

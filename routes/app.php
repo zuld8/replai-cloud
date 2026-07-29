@@ -293,7 +293,7 @@ Route::middleware('package_active')->group(function () {
             Route::post('store', [FineTunnelController::class, 'store'])->name('finetunnel.store');
             Route::post('/{fineTunnel}/documents/upload', [FineTunnelController::class, 'uploadRagDocument'])->name('finetunnel.documents.upload');
             Route::post('edit/{fineTunnel}', [FineTunnelController::class, 'edit'])->name('finetunnel.edit');
-            Route::get('delete/{fineTunnel}', [FineTunnelController::class, 'delete'])->name('finetunnel.delete');
+            Route::post('delete/{fineTunnel}', [FineTunnelController::class, 'delete'])->name('finetunnel.delete'); // FIX 4: POST
             Route::delete('/documents/{document}', [FineTunnelController::class, 'deleteRagDocument'])->name('finetunnel.documents.delete');
 
             Route::prefix('gsheet')->group(function () {

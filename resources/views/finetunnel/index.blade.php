@@ -20,11 +20,10 @@
         <div class="card mb-4 position-relative">
             <!-- Tombol Hapus di pojok kanan atas -->
             <div class="position-absolute top-0 end-0 p-3">
-                <a href="{{route('finetunnel.delete',$finetunnel->id)}}"
-                    class="btn btn-sm btn-icon btn-outline-danger rounded-pill"
-                    onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
-                    <i class="bx bx-trash"></i>
-                </a>
+                <form action="{{ route('finetunnel.delete', $finetunnel->id) }}" method="POST" onsubmit="return confirm('Hapus AI Agent ini?')" style="display:inline">
+    @csrf
+    <button type="submit" class="btn btn-sm btn-icon btn-outline-danger rounded-pill"><i class="bx bx-trash"></i></button>
+</form>
             </div>
 
             <div class="card-body text-center py-4">

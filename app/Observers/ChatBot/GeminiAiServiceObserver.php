@@ -46,7 +46,7 @@ class GeminiAiServiceObserver
         $conversationHistory = $this->buildConversationHistory($conversations);
 
         // Build prompt with intent detection instruction
-        $systemPrompt = $description . $this->getIntentDetectionPrompt();
+        $systemPrompt = $description . ai_guardrail() . $this->getIntentDetectionPrompt();
 
         // Select model based on mode and media
         $model = $this->selectModel($modeAi, $usingMedia);
