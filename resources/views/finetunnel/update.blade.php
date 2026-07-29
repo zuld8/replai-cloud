@@ -139,7 +139,7 @@
                 placeholder="Contoh: Kamu adalah CS yang ramah untuk toko Baju Anak Murah. Harga kaos mulai Rp35.000.">{{ $finetunnel->description }}</textarea>
 
             <label class="form-label fw-semibold mb-1">Pesan sambutan pertama</label>
-            <input type="text" name="welcome_message" class="form-control mb-3"
+            <input type="text" id="welcomeMessage" name="welcome_message" class="form-control mb-3"
                    value="{{ $finetunnel->welcome_message }}"
                    placeholder="Halo! Selamat datang &#x1F44B; Ada yang bisa saya bantu?">
 
@@ -717,7 +717,7 @@
                 <div class="row g-3">
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Model AI</label>
-                        <select name="model_ai" class="form-select">
+                        <select name="model_ai" id="modelAi" class="form-select">
                             <option value="basic" {{ ($finetunnel->model_ai ?? 'basic') === 'basic' ? 'selected' : '' }}>
                                 Standard — hemat kredit
                             </option>
@@ -1385,7 +1385,7 @@
         });
 
         // Character counter
-        const descriptionTextarea = document.getElementById('ai-description');
+        const descriptionTextarea = document.getElementById('ft-description');
 
         // Chat functionality
         const chatMessages = document.getElementById('chatMessages');
@@ -1552,7 +1552,7 @@
             }
 
             const welcomeMessage = document.getElementById('welcomeMessage').value;
-            const description = document.getElementById('ai-description').value;
+            const description = document.getElementById('ft-description').value;
             const modelAi = document.getElementById('modelAi').value;
             const fineTunnelId = '{{$fineTunnel->id}}';
 
@@ -1805,7 +1805,7 @@
         });
 
         // Character Counter
-        const textarea = document.getElementById('ai-description');
+        const textarea = document.getElementById('ft-description');
         const charCount = document.getElementById('charCount');
         const counterDiv = charCount.parentElement;
 
