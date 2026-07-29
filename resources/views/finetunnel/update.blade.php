@@ -219,110 +219,6 @@
 
             {{-- Tab panes (dipreserve dari blade asli) --}}
 <div class="tab-content">
-                                <!-- Tab AI Behaviour -->
-                                <div class="tab-pane fade active show" id="general-information" role="tabpanel">
-                                    <!-- Gaya Bicara dengan Character Counter -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bx bx-message-square-edit me-1"></i>{{ __('finetunnel.speech_style') }}
-                                        </label>
-                                        <small class="d-block text-muted mb-2">
-                                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.speech_style_description') }}
-                                        </small>
-                                        <textarea
-                                            id="ai-description"
-                                            class="form-control"
-                                            name="description"
-                                            style="height: 300px; resize: vertical;"
-                                            maxlength="15000"
-                                            placeholder="{{ __('finetunnel.describe_ai_character') }}">{{ old('description', $fineTunnel->description) }}</textarea>
-                                        <div class="d-flex justify-content-between align-items-center mt-1">
-                                            <small class="text-muted">
-                                                <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.describe_ai_character_detail') }}
-                                            </small>
-                                            <div class="character-counter">
-                                                <span id="charCount">0</span> / 15,000 {{ __('finetunnel.character_count') }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Welcome Message -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bx bx-message-dots me-1"></i>{{ __('finetunnel.welcome_message') }}
-                                        </label>
-                                        <small class="d-block text-muted mb-2">
-                                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.welcome_message_desc') }}
-                                        </small>
-                                        <textarea class="form-control" id="welcomeMessage" style="height: 100px; resize: vertical;" name="welcome_message" placeholder="{{ __('finetunnel.welcome_message_placeholder') }}">{{old('welcome_message',$fineTunnel->welcome_message)}}</textarea>
-                                        <small class="d-block text-muted mb-2">
-                                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.welcome_message_name_info') }}
-                                        </small>
-                                    </div>
-
-                                    <!-- Welcome Image -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bx bx-image me-1"></i>{{ __('finetunnel.welcome_message_image') }}
-                                        </label>
-                                        <input class="dropify" type="file" id="image" name="image" data-default-file="{{asset($fineTunnel->welcome_image)}}" accept="image/*">
-                                        <small class="text-muted d-block mt-2">
-                                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.welcome_message_image_info') }}
-                                        </small>
-                                    </div>
-
-                                    <!-- Transfer Conditions -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bx bx-transfer me-1"></i>{{ __('finetunnel.agent_transfer_condition') }}
-                                        </label>
-                                        <small class="d-block text-muted mb-2">
-                                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.agent_transfer_condition_desc') }}
-                                        </small>
-                                        <textarea class="form-control" style="height: 100px; resize: vertical;" name="term_condition" placeholder="{{ __('finetunnel.agent_transfer_condition_placeholder') }}">{{old('term_condition',$fineTunnel->transfer_condition)}}</textarea>
-                                    </div>
-
-                                    <!-- Pilih Human Agent -->
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">
-                                            <i class="bx bx-group me-1"></i>{{ __('finetunnel.choose_human_agent') }}
-                                        </label>
-                                        <small class="d-block text-muted mb-2">
-                                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.choose_human_agent_desc') }}
-                                        </small>
-                                        <select class="form-control users" name="agent[]" multiple="multiple">
-                                            @foreach ($users as $user)
-                                            <option value="<?= $user->id; ?>" {{ in_array($user->id, explode(',',$fineTunnel->agent)) ? 'selected' : '' }}>
-                                                <?= $user->name; ?>
-                                            </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <!-- Label Otomatis -->
-                                    <div class="mb-3">
-                                        <p class="form-label fw-semibold">
-                                            <i class="bx bx-purchase-tag me-1"></i>{{ __('finetunnel.auto_label_ai') }}
-                                        </p>
-                                        <small class="d-block text-muted mb-2">
-                                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.auto_label_ai_desc') }}
-                                        </small>
-                                        @php $selectedLabels = explode(',', $fineTunnel->label); @endphp
-                                        <div class="row gy-3">
-                                            @foreach ($labels as $label)
-                                            <div class="col-xl-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" value="{{$label->id}}" name="label[]" id="label-{{$label->id}}" {{ in_array($label->id, $selectedLabels) ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="label-{{$label->id}}">
-                                                        {{$label->name}}
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <!-- Tab Follow Up -->
                                 <div class="tab-pane fade" id="follow-ups" role="tabpanel">
                                     <div class="alert alert-success mb-3" role="alert">
@@ -403,7 +299,7 @@
                                 </div>
 
                                 <!-- Tab Data Training -->
-                                <div class="tab-pane fade" id="documents" role="tabpanel">
+                                <div class="tab-pane fade show active" id="documents" role="tabpanel">
                                     <div class="alert alert-info mb-3" role="alert">
                                         <div class="d-flex align-items-start">
                                             <i class="bx bx-info-circle fs-20 me-2"></i>
