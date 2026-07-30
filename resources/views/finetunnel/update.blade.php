@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('styles')
+<link rel="stylesheet" href="{{ asset('assets/css/pages/ai_agent.css') }}">
 <link href="{{asset('assets/libs/select2/select2.css')}}" rel="stylesheet">
 <style>
 /* ═══ FineTunnel Redesign — 2026-07-30 ═══ */
@@ -103,6 +104,23 @@
 #documents #uploadPlaceholder{padding:.4rem 0 !important}
 #documents #uploadPlaceholder .bx-cloud-upload{font-size:24px !important}
 #documents #uploadPlaceholder p{margin-bottom:.25rem !important}
+</style>
+
+<style>
+/* Override theme: Test Chat Panel */
+.chat-test-box .chat-header{background:#fff!important;display:flex!important;align-items:center!important;gap:10px!important;padding:11px 13px!important;border-bottom:1px solid #eef0f5!important;border-radius:0!important}
+.chat-test-box{border-radius:14px!important;overflow:hidden!important;border:1px solid #e6e9f0!important;box-shadow:0 2px 10px rgba(20,30,60,.05)!important;background:#fff!important}
+.ct-ava{position:relative!important;width:34px!important;height:34px!important;border-radius:50%!important;background:#eaf2fd!important;display:flex!important;align-items:center!important;justify-content:center!important;color:#2E8DE1!important;font-size:19px!important;flex:none!important}
+.ct-dot{position:absolute!important;right:-1px!important;bottom:-1px!important;width:10px!important;height:10px!important;border-radius:50%!important;background:#1fbf75!important;border:2px solid #fff!important}
+.ct-title{font-size:13px!important;font-weight:600!important;line-height:1.2!important;color:#1e293b!important}
+.ct-sub{font-size:11px!important;color:#1fbf75!important;line-height:1.2!important}
+.ct-clear-ic{border:none!important;background:transparent!important;color:#98a2b3!important;font-size:17px!important;cursor:pointer!important;padding:4px!important}
+.chat-test-box .chat-messages{padding:12px!important;display:flex!important;flex-direction:column!important;gap:8px!important;min-height:200px!important;max-height:360px!important;overflow-y:auto!important;background:#f7f9fc!important;height:auto!important}
+.chat-test-box .chat-input-area{padding:10px 12px!important;border-top:1px solid #eef0f5!important;background:#fff!important}
+.chat-test-box .chat-input-group{display:flex!important;align-items:center!important;gap:7px!important;background:#f7f9fc!important;border:1px solid #e6e9f0!important;border-radius:22px!important;padding:4px 4px 4px 14px!important}
+.chat-test-box .chat-input-group input{flex:1!important;border:none!important;background:transparent!important;font-size:12.5px!important;outline:none!important;padding:6px 0!important;box-shadow:none!important;width:auto!important}
+.chat-test-box .chat-input-group button{width:32px!important;height:32px!important;flex:none!important;border-radius:50%!important;background:#2E8DE1!important;border:none!important;color:#fff!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:16px!important}
+.ct-foot{display:flex!important;justify-content:space-between!important;margin-top:8px!important;font-size:10.5px!important;color:#98a2b3!important}
 </style>
 @endsection
 
