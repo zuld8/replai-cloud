@@ -137,6 +137,7 @@
             <div class="text-muted mb-2" style="font-size:.8rem">Sifat, gaya bicara, harga, dan info yang boleh AI sampaikan ke pelanggan.</div>
             <textarea id="ft-description" name="description" class="form-control mb-3" rows="6"
                 placeholder="Contoh: Kamu adalah CS yang ramah untuk toko Baju Anak Murah. Harga kaos mulai Rp35.000.">{{ $finetunnel->description }}</textarea>
+            <div class="text-end text-muted mb-3" style="font-size:.75rem"><span id="charCount">0</span> / 15.000</div>
 
             <label class="form-label fw-semibold mb-1">Pesan sambutan pertama</label>
             <input type="text" id="welcomeMessage" name="welcome_message" class="form-control mb-3"
