@@ -1003,7 +1003,7 @@ class FineTunnelController extends Controller
     /**
      * Detect Intent with Gemini
      */
-    private function detectIntentWithGemini($message, $geminiKey, $conversations, $validated, $ragContext = \'\')
+    private function detectIntentWithGemini($message, $geminiKey, $conversations, $validated, $ragContext = '')
     {
         try {
             // System prompt tanpa RAG
@@ -1140,7 +1140,7 @@ class FineTunnelController extends Controller
     /**
      * Handle Question with Gemini
      */
-    private function handleQuestionWithGemini($message, $geminiKey, $conversations, $validated, $ragContext = \'\')
+    private function handleQuestionWithGemini($message, $geminiKey, $conversations, $validated, $ragContext = '')
     {
         try {
             // System prompt tanpa RAG
