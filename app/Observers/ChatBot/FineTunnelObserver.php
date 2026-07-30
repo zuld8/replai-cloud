@@ -39,6 +39,8 @@ class FineTunnelObserver
         return FineTunnel::create([
             'name'                      => $request->name,
             'description'               => $description,
+            'knowledge_manual'           => $request->knowledge_manual,
+            'knowledge_manual'           => $request->knowledge_manual,
             'welcome_message'           => $request->welcome_message,
             'transfer_condition'        => $request->term_condition,
             'welcome_image'             => $image,

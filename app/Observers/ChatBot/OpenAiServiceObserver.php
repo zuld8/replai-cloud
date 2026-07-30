@@ -71,6 +71,12 @@ class OpenAiServiceObserver
             $description .= "Berikut data dari google sheet sebagai tambahan informasi :" . $this->formatAllDataForGPT($dataFromSheets);
         }
 
+        if (!empty($fineTunnel->knowledge_manual)) {
+            $description .= "\n=== INFORMASI / PENGETAHUAN (dari pemilik) ===\n"
+                          . $fineTunnel->knowledge_manual
+                          . "\n=== AKHIR INFORMASI ===\n\n";
+        }
+
         if (!$usingMedia && $modeAi == 'advanced') {
             $modeAi = 'standart';
         }
