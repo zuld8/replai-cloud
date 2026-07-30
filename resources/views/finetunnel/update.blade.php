@@ -228,7 +228,7 @@
             {{-- Tab panes (dipreserve dari blade asli) --}}
 <div class="tab-content">
                                 <!-- Tab Follow Up -->
-                                <div class="tab-pane fade" id="follow-ups" role="tabpanel">
+                                <div class="tab-pane fade" id="follow-ups" role="tabpanel" style="display:none">
                                     <div class="alert alert-success mb-3" role="alert">
                                         <div class="d-flex align-items-start">
                                             <i class="bx bx-info-circle fs-20 me-2"></i>
@@ -417,7 +417,7 @@
 
                                 <!-- Tab Courier -->
                                 @if($courierStatus)
-                                <div class="tab-pane fade" id="courier-data" role="tabpanel">
+                                <div class="tab-pane fade" id="courier-data" role="tabpanel" style="display:none">
                                     <div class="row">
                                         <div class="col-lg-6 col-sm-12 mb-3">
                                             <label class="form-label fw-semibold">
@@ -529,7 +529,7 @@
 
                                 <!-- Tab Google Sheet -->
                                 @if($gsheet)
-                                <div class="tab-pane fade" id="g-sheet" role="tabpanel">
+                                <div class="tab-pane fade" id="g-sheet" role="tabpanel" style="display:none">
                                     <div class="alert alert-primary mb-3" role="alert">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <h6 class="alert-heading mb-0">
@@ -2190,28 +2190,41 @@ document.querySelectorAll('.ft-chip-btn[data-ft-tab]').forEach(function(btn) {
         });
         this.classList.add('ft-active');
 
-        // FIX chip-step2: toggle pane langsung (nav-link lama tidak ada setelah redesign)
+        // FIX chip-step2: toggle pane langsung (paksa display — tidak andalkan CSS Bootstrap)
         var content = document.querySelector('.tab-content');
         if (content) {
             content.querySelectorAll('.tab-pane').forEach(function(p) {
                 p.classList.remove('show', 'active');
+                p.style.display = 'none';                 // paksa sembunyi
             });
             var pane = document.querySelector(href);
-            if (pane) pane.classList.add('show', 'active');
+            if (pane) {
+                pane.classList.add('show', 'active');
+                pane.style.display = 'block';             // paksa tampil
+            }
         }
     });
 });
 // Default: aktifkan chip Dokumen & pane-nya saat halaman load
 (function() {
-    var docsBtn = document.querySelector('.ft-chip-btn[data-ft-tab]');
-    if (docsBtn) docsBtn.classList.add('ft-active');
-    // Pastikan pane pertama (documents) show active
-    var firstPane = document.querySelector('.tab-content .tab-pane');
-    if (firstPane) {
-        if (!firstPane.classList.contains('active')) {
-            firstPane.classList.add('show', 'active');
-        }
+    // Sembunyikan SEMUA pane dulu (paksa — tidak andalkan CSS Bootstrap tab)
+    var content = document.querySelector('.tab-content');
+    if (!content) return;
+    content.querySelectorAll('.tab-pane').forEach(function(p) {
+        p.classList.remove('show', 'active');
+        p.style.display = 'none';
+    });
+    // Tampilkan HANYA #documents
+    var def = document.getElementById('documents') || content.querySelector('.tab-pane');
+    if (def) {
+        def.classList.add('show', 'active');
+        def.style.display = 'block';
     }
+    // Aktifkan chip Dokumen
+    document.querySelectorAll('.ft-chip-btn').forEach(function(b) { b.classList.remove('ft-active'); });
+    var docsBtn = document.querySelector('.ft-chip-btn[data-ft-tab="#documents"]')
+               || document.querySelector('.ft-chip-btn[data-ft-tab]');
+    if (docsBtn) docsBtn.classList.add('ft-active');
 })();
 
 // Advanced
