@@ -447,7 +447,7 @@
                                         @foreach($fineTunnel->gsheets as $sheet)
                                         <div class="cardsheet d-flex align-items-center gap-2 p-2 rounded mb-1" id="datasheet-{{$sheet->id}}" style="background:var(--bs-light,#f5f5f9)">
                                             <i class="bx bx-table" style="font-size:20px;color:#0f9349"></i>
-                                            <input type="url" class="form-control form-control-sm border-0 bg-transparent flex-grow-1 p-0" name="url[]" value="{{$sheet->url}}" required placeholder="{{ __(\"finetunnel.gsheet_url_placeholder\") }}" style="min-width:0">
+                                            <input type="url" class="form-control form-control-sm border-0 bg-transparent flex-grow-1 p-0" name="url[]" value="{{$sheet->url}}" required placeholder="{{ __('finetunnel.gsheet_url_placeholder') }}" style="min-width:0">
                                             <select class="form-select form-select-sm" name="status_sheet[]" style="width:auto">
                                                 <option value="yes" @if($sheet->status=='yes') selected @endif>Aktif</option>
                                                 <option value="no" @if($sheet->status=='no') selected @endif>Nonaktif</option>
