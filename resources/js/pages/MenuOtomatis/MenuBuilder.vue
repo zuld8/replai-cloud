@@ -1044,6 +1044,22 @@ export default {
     },
 
     async renderMermaid() {
+
+            if (!window.mermaid) {
+                this.mermaidError = 'Mermaid belum dimuat (cek koneksi internet).';
+                this.mermaidReady = true;
+                return;
+            }
+            if (!this._mermaidInit) {
+                window.mermaid.initialize({
+                    startOnLoad: false,
+                    securityLevel: 'loose',
+                    theme: 'base',
+                    logLevel: 'error',
+                    themeVariables: { fontSize: '13px', fontFamily: 'Inter, system-ui, sans-serif' }
+                });
+                this._mermaidInit = true;
+            }
       this.mermaidReady = false;
       this.mermaidError = '';
       const container = this.$refs.mermaidContainer;
