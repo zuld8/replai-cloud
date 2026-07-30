@@ -2687,6 +2687,19 @@ class WabaCallbackController extends Controller
                     Log::warning("WABA message failed: {$wamid}", ['error' => $errorInfo]);
                 }
 
+                // --- DELIVERY STATUS → history_chat_details (CRM pesan) ---
+                // Cegah backward transition (read jangan ketimpa delivered)
+                \App\Models\ChatBot\HistoryChatDetail::where('messageid', $wamid)
+                    ->where(function ($q) use ($deliveryStatus) {
+                        $q->whereNull('delivery_status')
+                          ->orWhereIn('delivery_status', $this->getAllowedTransitions($deliveryStatus));
+                    })
+                    ->update([
+                        'delivery_status' => $deliveryStatus,
+                        'delivery_error'  => $errorInfo,
+                        'updated_at'      => now(),
+                    ]);
+
                 // --- PRICING CAPTURE (capture-only, zero-risk — P1) ---
                 $pricing = $statusUpdate['pricing'] ?? null;
                 if ($pricing) {
