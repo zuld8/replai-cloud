@@ -90,6 +90,13 @@
 #courier-data .col-lg-6,#courier-data .col-sm-12{margin-bottom:.4rem !important}
 #courier-data .form-label{font-size:.8rem;margin-bottom:.12rem}
 #follow-ups .card-body{padding:.65rem}
+/* storage box tipis + sembunyiin baris Max/Total (sudah ada di info RAG atas) */
+#documents .upload-area .bg-light.rounded{padding:.5rem .7rem !important;margin-top:.5rem !important}
+#documents .upload-area .bg-light.rounded .border-top{display:none !important}
+/* dropzone lebih pendek */
+#documents #uploadPlaceholder{padding:.4rem 0 !important}
+#documents #uploadPlaceholder .bx-cloud-upload{font-size:24px !important}
+#documents #uploadPlaceholder p{margin-bottom:.25rem !important}
 </style>
 @endsection
 
