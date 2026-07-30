@@ -532,8 +532,9 @@ class FineTunnelController extends Controller
 
             return redirect()->route('finetunnel')->with(['flash'    => __('general.success_update')]);
         } catch (\Exception $e) {
-
             DB::rollBack();
+            Log::error('FineTunnel edit gagal: ' . $e->getMessage(), ['finetunnel_id' => $fineTunnel->id]);
+            return back()->withInput()->with(['flash' => 'Gagal menyimpan perubahan, silakan coba lagi.']);
         }
     }
 

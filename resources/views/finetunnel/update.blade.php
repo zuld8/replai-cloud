@@ -400,110 +400,54 @@
                                 <!-- Tab Courier -->
                                 @if($courierStatus)
                                 <div class="tab-pane fade" id="courier-data" role="tabpanel" style="display:none">
-                                    <div class="row">
                                     <div class="text-muted mb-2" style="font-size:.8rem"><i class="bx bx-map-pin me-1"></i>Alamat asal pengiriman — buat AI hitung ongkir otomatis.</div>
-                                        <div class="col-lg-6 col-sm-12 mb-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bx bx-map me-1"></i>{{__('sidebar.state')}}
-                                            </label>
+                                    <div class="row g-2">
+                                        <div class="col-lg-6 col-sm-12 mb-2">
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-map me-1"></i>{{__("sidebar.state")}}</label>
                                             <select class="form-control provinces" name="province">
-                                                <option value="">{{__('master.directory.choose_state')}}</option>
+                                                <option value="">{{__("master.directory.choose_state")}}</option>
                                                 @foreach ($provinces as $province)
-                                                <option value="<?= $province->id; ?>" @if(($fineTunnel->subdistrict->district->city->province_id ?? '') == $province->id) selected @endif><?= $province->name; ?></option>
+                                                <option value="{{ $province->id }}" @if(($fineTunnel->subdistrict->district->city->province_id ?? '') == $province->id) selected @endif>{{ $province->name }}</option>
                                                 @endforeach
                                             </select>
-                                            <small class="text-muted">
-                                                <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.origin_province_info') }}
-                                            </small>
                                         </div>
-
-                                        <div class="col-lg-6 col-sm-12 mb-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bx bx-building me-1"></i>{{__('sidebar.city')}}
-                                            </label>
+                                        <div class="col-lg-6 col-sm-12 mb-2">
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-building me-1"></i>{{__("sidebar.city")}}</label>
                                             <select class="form-control cities" name="city">
                                                 <option value="<?= $fineTunnel->subdistrict->district->city->id ?? ''; ?>">
-                                                    <?= $fineTunnel->subdistrict->district->city->type ?? __('finetunnel.select_city_option'); ?>
-                                                    <?= $fineTunnel->subdistrict->district->city->name ?? ''; ?>
+                                                    <?= ($fineTunnel->subdistrict->district->city->type ?? '') . ' ' . ($fineTunnel->subdistrict->district->city->name ?? __("finetunnel.select_city_option")); ?>
                                                 </option>
                                             </select>
-                                            <small class="text-muted">
-                                                <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.origin_city_info') }}
-                                            </small>
                                         </div>
-
-                                        <div class="col-lg-6 col-sm-12 mb-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bx bx-map-pin me-1"></i>{{__('sidebar.district')}}
-                                            </label>
+                                        <div class="col-lg-6 col-sm-12 mb-2">
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-map-pin me-1"></i>{{__("sidebar.district")}}</label>
                                             <select class="form-control districts" name="district">
-                                                <option value="<?= $fineTunnel->subdistrict->district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->district->name ?? __('master.directory.choose_district'); ?></option>
+                                                <option value="<?= $fineTunnel->subdistrict->district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->district->name ?? __("master.directory.choose_district"); ?></option>
                                             </select>
-                                            <small class="text-muted">
-                                                <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.origin_district_info') }}
-                                            </small>
                                         </div>
-
-                                        <div class="col-lg-6 col-sm-12 mb-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bx bx-current-location me-1"></i>{{ __('finetunnel.origin_subdistrict_label') }}
-                                            </label>
+                                        <div class="col-lg-6 col-sm-12 mb-2">
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-current-location me-1"></i>{{ __("finetunnel.origin_subdistrict_label") }}</label>
                                             <select class="form-control subdistricts" name="sub_district_id">
-                                                <option value="<?= $fineTunnel->sub_district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->name ?? __('finetunnel.origin_subdistrict_placeholder'); ?></option>
+                                                <option value="<?= $fineTunnel->sub_district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->name ?? __("finetunnel.origin_subdistrict_placeholder"); ?></option>
                                             </select>
-                                            <small class="text-muted">
-                                                <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.origin_subdistrict_info') }}
-                                            </small>
                                         </div>
-
-                                        <div class="col-lg-6 col-sm-12 mb-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bx bx-package me-1"></i>{{ __('finetunnel.input_weight') }}
-                                            </label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">
-                                                    <i class="bx bx-calculator"></i>
-                                                </span>
-                                                <input type="text" class="form-control" placeholder="{{ __('finetunnel.input_weight_placeholder') }}" name="weight" value="{{old('weight',(int)$fineTunnel->weight)}}">
-                                                <span class="input-group-text">{{ __('finetunnel.weight_unit') }}</span>
-                                            </div>
-                                            <small class="text-muted">
-                                                <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.weight_info') }}
-                                            </small>
-                                        </div>
-
-                                        <div class="col-12 mb-3">
-                                            <div class="alert alert-primary" role="alert">
-                                                <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.courier_integration_note') }}
+                                        <div class="col-lg-6 col-sm-12 mb-2">
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-package me-1"></i>{{ __("finetunnel.input_weight") }}</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="bx bx-calculator"></i></span>
+                                                <input type="text" class="form-control" placeholder="{{ __("finetunnel.input_weight_placeholder") }}" name="weight" value="{{old("weight",(int)$fineTunnel->weight)}}">
+                                                <span class="input-group-text">{{ __("finetunnel.weight_unit") }}</span>
                                             </div>
                                         </div>
-
-                                        <div class="col-12">
-                                            <div class="table-responsive">
-                                                <table class="table table-hover table-bordered">
-                                                    <thead class="table-light">
-                                                        <tr>
-                                                            <th><i class="bx bx-package me-1"></i>{{ __('finetunnel.courier_name') }}</th>
-                                                            <th class="text-center" width="100"><i class="bx bx-check-square me-1"></i>{{ __('finetunnel.courier_status') }}</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach ($couriers as $courier)
-                                                        <tr>
-                                                            <td>
-                                                                <div class="fw-semibold">{{$courier->name}} - {{$courier->service}}</div>
-                                                            </td>
-                                                            <td class="text-center">
-                                                                <div class="form-check d-flex justify-content-center">
-                                                                    <input class="form-check-input" type="checkbox" name="couriers[]" value="<?= $courier->code; ?>" @if(check_courier($courier->code,$fineTunnel->id)) checked @endif id="courier-{{$courier->code}}">
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
+                                    </div>
+                                    <div class="mt-2 mb-2" style="font-size:.8rem"><i class="bx bx-info-circle me-1 text-primary"></i>{{ __("finetunnel.courier_integration_note") }}</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach ($couriers as $courier)
+                                        <label class="d-inline-flex align-items-center gap-2 mb-0" style="border:1px solid #e0e0e0;border-radius:8px;padding:.35rem .7rem;cursor:pointer;font-size:.82rem">
+                                            <input class="form-check-input mt-0" type="checkbox" name="couriers[]" value="<?= $courier->code; ?>" @if(check_courier($courier->code,$fineTunnel->id)) checked @endif id="courier-{{$courier->code}}">
+                                            <span class="fw-semibold">{{$courier->name}} - {{$courier->service}}</span>
+                                        </label>
+                                        @endforeach
                                     </div>
                                 </div>
                                 @else
