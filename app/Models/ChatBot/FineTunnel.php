@@ -24,6 +24,7 @@ class FineTunnel extends Model
     protected $fillable = [
         'name',
         'description',
+        'knowledge_manual',
         'filejson',
         'fine_tunnel_id',
         'status',

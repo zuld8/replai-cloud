@@ -32,6 +32,11 @@ class GeminiAiServiceObserver
         $media = null
     ) {
         $description = $fineTunnel->description . PHP_EOL . PHP_EOL;
+        if (!empty($fineTunnel->knowledge_manual)) {
+            $description .= "\n=== INFORMASI / PENGETAHUAN (dari pemilik) ===\n"
+                          . $fineTunnel->knowledge_manual
+                          . "\n=== AKHIR INFORMASI ===\n\n";
+        }
         $usingMedia = $media !== null;
         
         // Build training from Google Sheets
@@ -90,6 +95,11 @@ class GeminiAiServiceObserver
         $media = null
     ) {
         $description = $fineTunnel->description . PHP_EOL . PHP_EOL;
+        if (!empty($fineTunnel->knowledge_manual)) {
+            $description .= "\n=== INFORMASI / PENGETAHUAN (dari pemilik) ===\n"
+                          . $fineTunnel->knowledge_manual
+                          . "\n=== AKHIR INFORMASI ===\n\n";
+        }
         $usingMedia = $media !== null;
 
         // Build training from Google Sheets

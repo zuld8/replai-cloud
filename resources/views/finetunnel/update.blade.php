@@ -133,8 +133,8 @@
                 <button type="button" class="ft-tpl-btn" onclick="ftApplyTpl('booking')">&#x1F4C5; Reservasi</button>
             </div>
 
-            <label class="form-label fw-semibold mb-1">Karakter &amp; info AI</label>
-            <div class="text-muted mb-2" style="font-size:.8rem">Sifat, gaya bicara, harga, dan info yang boleh AI sampaikan ke pelanggan.</div>
+            <label class="form-label fw-semibold mb-1">Karakter AI</label>
+            <div class="text-muted mb-2" style="font-size:.8rem">Cara AI membalas: gaya bicara, sifat, nada. (Fakta/harga/jadwal taruh di &ldquo;Pengetahuan&rdquo; Step 2.)</div>
             <textarea id="ft-description" name="description" class="form-control mb-3" rows="6"
                 placeholder="Contoh: Kamu adalah CS yang ramah untuk toko Baju Anak Murah. Harga kaos mulai Rp35.000.">{{ $finetunnel->description }}</textarea>
             <div class="text-end text-muted mb-3" style="font-size:.75rem"><span id="charCount">0</span> / 15.000</div>
@@ -179,6 +179,13 @@
                 </div>
             </div>
 
+            <label class="form-label fw-semibold mb-1">Pengetahuan (ketik manual)</label>
+            <div class="text-muted mb-2" style="font-size:.8rem">Tulis fakta, FAQ, harga, atau jadwal langsung. AI pakai ini untuk menjawab tanpa perlu upload file.</div>
+            <textarea name="knowledge_manual" class="form-control mb-3" rows="6"
+                placeholder="Contoh:&#10;- Harga e-course Rp299.000&#10;- Kelas mulai tiap Sabtu 09.00&#10;- Sertifikat dikirim H+3">{{ $finetunnel->knowledge_manual }}</textarea>
+
+            <label class="form-label fw-semibold mb-1 mt-2">Sumber file &amp; data</label>
+            <div class="text-muted mb-2" style="font-size:.8rem">Upload dokumen atau sambungkan sumber data eksternal.</div>
             <div class="d-flex flex-wrap gap-2 mb-3" id="ft-chips">
                 <button type="button" class="ft-chip-btn ft-active" data-ft-tab="#documents">
                     <i class="bx bx-file-blank"></i> Dokumen
