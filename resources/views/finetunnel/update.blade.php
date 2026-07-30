@@ -179,7 +179,7 @@
             </div>
 
             <div class="d-flex flex-wrap gap-2 mb-3" id="ft-chips">
-                <button type="button" class="ft-chip-btn" data-ft-tab="#documents">
+                <button type="button" class="ft-chip-btn ft-active" data-ft-tab="#documents">
                     <i class="bx bx-file-blank"></i> Dokumen
                     @if(isset($ragDocuments) && $ragDocuments->count() > 0)
                     <span class="ft-chip-count">{{ $ragDocuments->count() }}</span>
@@ -2180,18 +2180,31 @@ document.querySelectorAll('.ft-chip-btn[data-ft-tab]').forEach(function(btn) {
         });
         this.classList.add('ft-active');
 
-        // Trigger bootstrap tab
-        var trigger = document.querySelector('[data-bs-toggle="tab"][href="' + href + '"]');
-        if (!trigger) {
-            trigger = document.querySelector('[data-bs-toggle="tab"][data-bs-target="' + href + '"]');
-        }
-        if (trigger) {
-            try { bootstrap.Tab.getOrCreateInstance(trigger).show(); } catch(e) { console.warn(e); }
+        // FIX chip-step2: toggle pane langsung (nav-link lama tidak ada setelah redesign)
+        var content = document.querySelector('.tab-content');
+        if (content) {
+            content.querySelectorAll('.tab-pane').forEach(function(p) {
+                p.classList.remove('show', 'active');
+            });
+            var pane = document.querySelector(href);
+            if (pane) pane.classList.add('show', 'active');
         }
     });
 });
+// Default: aktifkan chip Dokumen & pane-nya saat halaman load
+(function() {
+    var docsBtn = document.querySelector('.ft-chip-btn[data-ft-tab]');
+    if (docsBtn) docsBtn.classList.add('ft-active');
+    // Pastikan pane pertama (documents) show active
+    var firstPane = document.querySelector('.tab-content .tab-pane');
+    if (firstPane) {
+        if (!firstPane.classList.contains('active')) {
+            firstPane.classList.add('show', 'active');
+        }
+    }
+})();
 
-// Advanced settings chevron rotate
+// Advanced
 var ftAdvEl = document.getElementById('ft-adv');
 var ftAdvToggle = document.querySelector('.ft-adv-toggle');
 if (ftAdvEl && ftAdvToggle) {
