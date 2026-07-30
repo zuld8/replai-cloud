@@ -298,58 +298,24 @@
                                     </div>
                                     <div id="listFollowUps">
                                         @foreach ($fineTunnel->follow_ups as $index => $follow)
-                                        <div class="card mb-3" id="followUp-{{$follow->id}}">
-                                            <div class="card-header d-flex justify-content-between align-items-center">
-                                                <h6 class="mb-0"><i class="bx bx-time-five me-1"></i>{{ __('finetunnel.follow_up') }}</h6>
-                                                <button type="button" class="btn btn-outline-danger btn-sm removeFollowUp" data-id="{{$follow->id}}">
-                                                    <i class="bx bx-trash"></i> {{ __('finetunnel.delete') }}
-                                                </button>
+                                        <div class="card mb-2" id="followUp-{{$follow->id}}">
+                                          <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                              <span class="fw-semibold" style="font-size:.85rem"><i class="bx bx-time-five me-1 text-primary"></i>Follow up</span>
+                                              <button type="button" class="btn btn-outline-danger btn-sm removeFollowUp" data-id="{{$follow->id}}" style="padding:.1rem .45rem"><i class="bx bx-trash"></i></button>
                                             </div>
-                                            <div class="card-body">
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-semibold">
-                                                        <i class="bx bx-message-square-detail me-1"></i>{{ __('finetunnel.prompt_text_follow_up') }}
-                                                        <span class="text-danger">*</span>
-                                                    </label>
-                                                    <textarea class="form-control" name="prompt[]" required rows="5" placeholder="{{ __('finetunnel.follow_up_message_placeholder') }}">{{ $follow->text }}</textarea>
-                                                    <small class="text-muted">
-                                                        <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.message_sent_by_ai') }}
-                                                    </small>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-semibold">
-                                                        <i class="bx bx-timer me-1"></i>{{ __('finetunnel.delay_limit') }}
-                                                        <span class="text-danger">*</span>
-                                                    </label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">
-                                                            <i class="bx bx-time-five"></i>
-                                                        </span>
-                                                        <input type="number" class="form-control" name="delay_followups[]" required min="1" value="{{$follow->delay}}">
-                                                        <span class="input-group-text">{{ __('finetunnel.minutes_unit') }}</span>
-                                                    </div>
-                                                    <small class="text-muted">
-                                                        <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.delay_before_send') }}
-                                                    </small>
-                                                </div>
-                                                <div class="form-check mb-2">
-                                                    <input type="hidden" name="exact[{{$index}}]" value="no">
-                                                    <input class="form-check-input" type="checkbox" @if($follow->exact == 'yes') checked @endif name="exact[{{$index}}]" id="exact-{{$follow->id}}">
-                                                    <label class="form-check-label" for="exact-{{$follow->id}}">
-                                                        <i class="bx bx-lock me-1"></i>{{ __('finetunnel.exact_label') }}
-                                                    </label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input type="hidden" name="handoff[{{$index}}]" value="no">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        @if($follow->handoff == 'yes') checked @endif
-                                                    name="handoff[{{$index}}]"
-                                                    id="handoff-{{$follow->id}}">
-                                                    <label class="form-check-label" for="handoff-{{$follow->id}}">
-                                                        <i class="bx bx-user-check me-1"></i>{{ __('finetunnel.handoff_label') }}
-                                                    </label>
-                                                </div>
+                                            <textarea class="form-control mb-2" name="prompt[]" required rows="2" placeholder="Pesan follow up, mis. Halo Kak, masih minat? &#x1F60A;">{{ $follow->text }}</textarea>
+                                            <div class="d-flex align-items-center flex-wrap gap-3" style="font-size:.8rem">
+                                              <span class="d-inline-flex align-items-center gap-1">Kirim setelah
+                                                <input type="number" class="form-control form-control-sm" name="delay_followups[]" required min="1" value="{{ $follow->delay }}" style="width:78px"> menit</span>
+                                              <label class="d-inline-flex align-items-center gap-1 mb-0" style="cursor:pointer">
+                                                <input type="hidden" name="exact[{{$index}}]" value="no">
+                                                <input class="form-check-input mt-0" type="checkbox" @if($follow->exact=='yes') checked @endif name="exact[{{$index}}]" id="exact-{{$follow->id}}"> Kirim apa adanya</label>
+                                              <label class="d-inline-flex align-items-center gap-1 mb-0" style="cursor:pointer">
+                                                <input type="hidden" name="handoff[{{$index}}]" value="no">
+                                                <input class="form-check-input mt-0" type="checkbox" @if($follow->handoff=='yes') checked @endif name="handoff[{{$index}}]" id="handoff-{{$follow->id}}"> Alihkan ke agen</label>
                                             </div>
+                                          </div>
                                         </div>
                                         @endforeach
                                     </div>
@@ -435,6 +401,7 @@
                                 @if($courierStatus)
                                 <div class="tab-pane fade" id="courier-data" role="tabpanel" style="display:none">
                                     <div class="row">
+                                    <div class="text-muted mb-2" style="font-size:.8rem"><i class="bx bx-map-pin me-1"></i>Alamat asal pengiriman — buat AI hitung ongkir otomatis.</div>
                                         <div class="col-lg-6 col-sm-12 mb-3">
                                             <label class="form-label fw-semibold">
                                                 <i class="bx bx-map me-1"></i>{{__('sidebar.state')}}
@@ -1919,61 +1886,26 @@
 
         $("#addFollowUp").click(function() {
             followUpCount++;
-            let html = `
-                <div class="card mb-3" id="followUp-new-${followUpCount}">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="bx bx-time-five me-1"></i>${trans.newFollowup}</h6>
-                        <button type="button" class="btn btn-outline-danger btn-sm removeFollowUp" data-id="new-${followUpCount}">
-                            <i class="bx bx-trash"></i> ${trans.delete}
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="bx bx-message-square-detail me-1"></i>${trans.promptTextFollowUp}
-                                <span class="text-danger">*</span>
-                            </label>
-                            <textarea class="form-control" name="prompt[]" required rows="5" placeholder="${trans.followUpMessagePlaceholder}"></textarea>
-                            <small class="text-muted">
-                                <i class="bx bx-info-circle me-1"></i>${trans.messageSentByAi}
-                            </small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="bx bx-timer me-1"></i>${trans.delayLimit}
-                                <span class="text-danger">*</span>
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bx bx-time-five"></i>
-                                </span>
-                                <input type="number" class="form-control" name="delay_followups[]" required min="1" value="720">
-                                <span class="input-group-text">${trans.minutesUnit}</span>
-                            </div>
-                            <small class="text-muted">
-                                <i class="bx bx-info-circle me-1"></i>${trans.delayBeforeSend}
-                            </small>
-                        </div>
-                        <div class="form-check mb-2">
-                            <input type="hidden" name="exact[${followUpCount}]" value="no">
-                            <input class="form-check-input" type="checkbox"
-                                name="exact[${followUpCount}]"
-                                id="exact-new-${followUpCount}">
-                            <label class="form-check-label" for="exact-new-${followUpCount}">
-                                <i class="bx bx-lock me-1"></i>${trans.exactLabel}
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input type="hidden" name="handoff[${followUpCount}]" value="no">
-                            <input class="form-check-input" type="checkbox"
-                                name="handoff[${followUpCount}]"
-                                id="handoff-new-${followUpCount}">
-                            <label class="form-check-label" for="handoff-new-${followUpCount}">
-                                <i class="bx bx-user-check me-1"></i>${trans.handoffLabel}
-                            </label>
-                        </div>
-                    </div>
-                </div>`;
+                let html = `
+<div class="card mb-2" id="followUp-new-${followUpCount}">
+  <div class="card-body p-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="fw-semibold" style="font-size:.85rem"><i class="bx bx-time-five me-1 text-primary"></i>Follow up</span>
+      <button type="button" class="btn btn-outline-danger btn-sm removeFollowUp" data-id="new-${followUpCount}" style="padding:.1rem .45rem"><i class="bx bx-trash"></i></button>
+    </div>
+    <textarea class="form-control mb-2" name="prompt[]" required rows="2" placeholder="Pesan follow up, mis. Halo Kak, masih minat? 😊"></textarea>
+    <div class="d-flex align-items-center flex-wrap gap-3" style="font-size:.8rem">
+      <span class="d-inline-flex align-items-center gap-1">Kirim setelah
+        <input type="number" class="form-control form-control-sm" name="delay_followups[]" required min="1" value="720" style="width:78px"> menit</span>
+      <label class="d-inline-flex align-items-center gap-1 mb-0" style="cursor:pointer">
+        <input type="hidden" name="exact[${followUpCount}]" value="no">
+        <input class="form-check-input mt-0" type="checkbox" name="exact[${followUpCount}]" id="exact-new-${followUpCount}"> Kirim apa adanya</label>
+      <label class="d-inline-flex align-items-center gap-1 mb-0" style="cursor:pointer">
+        <input type="hidden" name="handoff[${followUpCount}]" value="no">
+        <input class="form-check-input mt-0" type="checkbox" name="handoff[${followUpCount}]" id="handoff-new-${followUpCount}"> Alihkan ke agen</label>
+    </div>
+  </div>
+</div>`;
             $("#listFollowUps").append(html);
         });
 
