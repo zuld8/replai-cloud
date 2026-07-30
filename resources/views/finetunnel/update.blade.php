@@ -679,6 +679,7 @@
                 <span class="fw-semibold me-2" style="font-size:.88rem">
                     <i class="bx bx-purchase-tag-alt me-1" style="color:#5B3FB0"></i>Auto label
                 </span>
+@php $selectedLabels = explode(',', $finetunnel->label ?? ''); @endphp
 @foreach ($labels as $label)
                                             <div class="col-xl-6">
                                                 <div class="form-check">
