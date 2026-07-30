@@ -62,7 +62,6 @@
 .ft-adv-toggle:hover .card-body { opacity:.85; }
 .ft-adv-icon { transition:transform .25s; }
 .ft-adv-toggle[aria-expanded="true"] .ft-adv-icon { transform:rotate(180deg); }
-.ft-step3-card { border-left:3px solid #F59E0B !important; }
 .ft-n-inline { width:72px; display:inline-block !important; text-align:center; }
 .ft-tpl-btn {
     background:rgba(91,63,176,.1); border:1px solid rgba(91,63,176,.25);
@@ -477,40 +476,38 @@
     </div>
 
     {{-- ─── STEP 3: Kapan diserahkan ke manusia ─── --}}
-    <div class="card custom-card ft-step3-card mb-3">
+    <div class="card custom-card mb-3">
         <div class="card-body">
-            <div class="ft-step-title">
+            <div class="ft-step-title mb-2">
                 <span class="ft-step-badge warn">3</span>
                 <div>
-                    <h6>Kapan diserahkan ke manusia</h6>
-                    <span class="text-muted" style="font-size:.8rem">Agar AI tidak menangani terlalu lama atau kasus di luar kemampuannya.</span>
+                    <h6 class="mb-0">Kapan diserahkan ke manusia</h6>
+                    <span class="text-muted" style="font-size:.78rem">Biar AI tak menangani kasus di luar kemampuannya.</span>
                 </div>
             </div>
-
-            <label class="form-label fw-semibold mb-1">
-                Kalau pelanggan menyebut kata ini, serahkan ke agen
-            </label>
-            <textarea name="term_condition" class="form-control mb-1" rows="2"
-                placeholder="complaint, refund, mau bicara dengan orang">{{ old('term_condition', $fineTunnel->transfer_condition) }}</textarea>
-            <small class="text-muted d-block mb-4">Pisahkan dengan koma. Contoh: refund, mau bicara, komplain</small>
-
-            <label class="form-label fw-semibold mb-2 d-flex align-items-center flex-wrap gap-2">
-                Atau setelah AI balas
-                <input type="number" name="message_limit"
-                       class="form-control ft-n-inline" min="0" max="9999"
-                       value="{{ $finetunnel->message_limit ?? 0 }}">
-                kali, serahkan ke agen
-            </label>
-            <small class="text-muted d-block mb-4">Isi 0 = tidak ada batas otomatis</small>
-
-            <label class="form-label fw-semibold mb-2">Agen yang dihubungi saat serah terima</label>
-<select class="form-control users" name="agent[]" multiple="multiple">
-                                            @foreach ($users as $user)
-                                            <option value="<?= $user->id; ?>" {{ in_array($user->id, explode(',',$fineTunnel->agent)) ? 'selected' : '' }}>
-                                                <?= $user->name; ?>
-                                            </option>
-                                            @endforeach
-                                        </select>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label fw-semibold mb-1" style="font-size:.85rem">Kata kunci pemicu serah ke agen</label>
+                    <textarea name="term_condition" class="form-control" rows="2" placeholder="refund, mau bicara dengan orang, komplain">{{ old('term_condition', $fineTunnel->transfer_condition) }}</textarea>
+                    <small class="text-muted">Pisahkan dengan koma.</small>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold mb-1 d-flex align-items-center gap-2 flex-wrap" style="font-size:.85rem">
+                        Batas balasan AI
+                        <input type="number" name="message_limit" class="form-control ft-n-inline" min="0" max="9999" value="{{ $finetunnel->message_limit ?? 0 }}">
+                        balasan
+                    </label>
+                    <small class="text-muted">0 = tanpa batas otomatis</small>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold mb-1" style="font-size:.85rem">Agen yang dihubungi</label>
+                    <select class="form-control users" name="agent[]" multiple="multiple">
+                        @foreach ($users as $user)
+                        <option value="{{ $user->id }}" {{ in_array($user->id, explode(',',$fineTunnel->agent)) ? 'selected' : '' }}>{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 

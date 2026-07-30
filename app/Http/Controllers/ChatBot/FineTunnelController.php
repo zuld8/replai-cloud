@@ -445,8 +445,8 @@ class FineTunnelController extends Controller
             'model_ai'          => 'required|in:standart,advanced',
             'history_limit'     => 'required|numeric|min:1',
             'context_limit'     => 'required|numeric|min:1',
-            'delay'             => 'required|numeric|min:1',
-            'message_limit'     => 'required|numeric|min:1',
+            'delay'             => 'required|numeric|min:0',
+            'message_limit'     => 'required|numeric|min:0',
         ]);
 
         $validationCheck = $this->fineTunnelObserver->checkLimit();
@@ -479,8 +479,8 @@ class FineTunnelController extends Controller
             'model_ai'          => 'required|in:standart,advanced',
             'history_limit'     => 'required|numeric|min:1',
             'context_limit'     => 'required|numeric|min:1',
-            'delay'             => 'required|numeric|min:1',
-            'message_limit'     => 'required|numeric|min:1',
+            'delay'             => 'required|numeric|min:0',
+            'message_limit'     => 'required|numeric|min:0',
             'description'       => 'required|max:15000',
             'image'             => 'mimes:jpg,jpeg,png,webp',
         ]);
