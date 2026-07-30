@@ -324,78 +324,32 @@
 
                                 <!-- Tab Data Training -->
                                 <div class="tab-pane fade show active ft-pane-on" id="documents" role="tabpanel">
-                                    <div class="alert alert-info d-flex align-items-center gap-2 mb-2" role="alert" style="font-size:.76rem">
-                                        <i class="bx bx-info-circle"></i>
-                                        <span>Dokumen jadi sumber pengetahuan AI. PDF/Word/Excel/CSV &middot; maks <span id="maxFileSizeText">-</span>/file, total <span id="maxTotalSizeText">-</span>.</span>
-                                    </div>
-
-                                    <!-- Upload Area -->
-                                    <div class="card mb-3">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">
-                                                <i class="bx bx-cloud-upload me-1"></i>{{ __('finetunnel.upload_document') }}
-                                            </h6>
+                                    <div class="upload-area" id="uploadArea">
+                                        <input type="file" id="ragDocumentInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv" style="display:none">
+                                        <div id="uploadPlaceholder" class="d-flex align-items-center gap-2 p-2 rounded" style="background:var(--bs-light,#f5f5f9)">
+                                            <i class="bx bx-cloud-upload" style="font-size:22px;color:#696cff"></i>
+                                            <div class="flex-grow-1" style="line-height:1.2">
+                                                <div class="fw-semibold" style="font-size:.85rem">Tarik file / klik untuk upload</div>
+                                                <div class="text-muted" style="font-size:.72rem">PDF·Word·Excel·CSV · maks <span id="maxFileSizeText">-</span>/file, total <span id="maxTotalSizeText">-</span></div>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="selectFileBtn"><i class="bx bx-folder-open me-1"></i>Pilih file</button>
                                         </div>
-                                        <div class="card-body">
-                                            <div class="upload-area" id="uploadArea">
-                                                <input type="file"
-                                                    id="ragDocumentInput"
-                                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
-                                                    style="display: none;">
-                                                <div class="text-center py-2" id="uploadPlaceholder">
-                                                    <i class="bx bx-cloud-upload" style="font-size: 28px; color: #696cff;"></i>
-                                                    <p class="mt-3 mb-2"><strong>{{ __('finetunnel.drag_drop_or_click') }}</strong></p>
-                                                    <p class="text-muted small mb-3">{{ __('finetunnel.supported_formats_list') }}</p>
-                                                    <button type="button" class="btn btn-primary" id="selectFileBtn">
-                                                        <i class="bx bx-folder-open me-1"></i>{{ __('finetunnel.select_file') }}
-                                                    </button>
-                                                </div>
-
-                                                <!-- Progress Area -->
-                                                <div id="uploadProgress" style="display: none;">
-                                                    <div class="text-center py-4">
-                                                        <div class="spinner-border text-primary mb-3" role="status">
-                                                            <span class="visually-hidden">Loading...</span>
-                                                        </div>
-                                                        <p class="mb-1"><strong id="uploadStatusText">{{ __('finetunnel.processing') }}</strong></p>
-                                                        <p class="text-muted small" id="uploadFileName"></p>
-                                                        <div class="progress mt-3" style="height: 20px;">
-                                                            <div class="progress-bar progress-bar-striped progress-bar-animated"
-                                                                id="progressBar"
-                                                                role="progressbar"
-                                                                style="width: 0%">
-                                                                <span id="progressText">0%</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                        <div id="uploadProgress" style="display:none">
+                                            <div class="d-flex align-items-center gap-2 p-2">
+                                                <div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading…</span></div>
+                                                <div class="flex-grow-1">
+                                                    <div style="font-size:.8rem"><strong id="uploadStatusText">Memproses…</strong> <span class="text-muted" id="uploadFileName"></span></div>
+                                                    <div class="progress mt-1" style="height:6px"><div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar" style="width:0%"><span id="progressText" class="visually-hidden">0%</span></div></div>
                                                 </div>
                                             </div>
-
-                                            <!-- Storage Info -->
-                                            <div class="mt-2 p-2 bg-light rounded">
-                                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <span class="text-muted small">
-                                                        <i class="bx bx-hdd me-1"></i>{{ __('finetunnel.storage_used') }}
-                                                    </span>
-                                                    <span class="fw-bold" id="storageInfo">0 MB / 0 MB</span>
-                                                </div>
-                                                <div class="progress" style="height: 8px;">
-                                                    <div class="progress-bar"
-                                                        id="storageBar"
-                                                        role="progressbar"
-                                                        style="width: 0%">
-                                                    </div>
-                                                </div>
-
-                                            </div>
-
                                         </div>
                                     </div>
-
-                                    <!-- Documents List -->
-                                    <div id="ragDocumentsList">
-                                        <!-- Will be populated by JavaScript -->
+                                    <div class="d-flex align-items-center gap-2 mt-2">
+                                        <span class="text-muted" style="font-size:.72rem"><i class="bx bx-hdd"></i> Storage</span>
+                                        <div class="progress flex-grow-1" style="height:5px"><div class="progress-bar" id="storageBar" role="progressbar" style="width:0%"></div></div>
+                                        <span class="fw-semibold" style="font-size:.72rem" id="storageInfo">0 / 0</span>
                                     </div>
+                                    <div id="ragDocumentsList" class="mt-2"></div>
                                 </div>
 
                                 <!-- Tab Courier -->
@@ -404,16 +358,16 @@
                                     <div class="text-muted mb-2" style="font-size:.8rem"><i class="bx bx-map-pin me-1"></i>Alamat asal pengiriman — buat AI hitung ongkir otomatis.</div>
                                     <div class="row g-2">
                                         <div class="col-lg-6 col-sm-12 mb-2">
-                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-map me-1"></i>{{__("sidebar.state")}}</label>
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-map me-1"></i>Provinsi</label>
                                             <select class="form-control provinces" name="province">
-                                                <option value="">{{__("master.directory.choose_state")}}</option>
+                                                <option value="">Pilih provinsi</option>
                                                 @foreach ($provinces as $province)
                                                 <option value="{{ $province->id }}" @if(($fineTunnel->subdistrict->district->city->province_id ?? '') == $province->id) selected @endif>{{ $province->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
                                         <div class="col-lg-6 col-sm-12 mb-2">
-                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-building me-1"></i>{{__("sidebar.city")}}</label>
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-building me-1"></i>Kota</label>
                                             <select class="form-control cities" name="city">
                                                 <option value="<?= $fineTunnel->subdistrict->district->city->id ?? ''; ?>">
                                                     <?= ($fineTunnel->subdistrict->district->city->type ?? '') . ' ' . ($fineTunnel->subdistrict->district->city->name ?? __("finetunnel.select_city_option")); ?>
@@ -421,19 +375,19 @@
                                             </select>
                                         </div>
                                         <div class="col-lg-6 col-sm-12 mb-2">
-                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-map-pin me-1"></i>{{__("sidebar.district")}}</label>
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-map-pin me-1"></i>Kecamatan</label>
                                             <select class="form-control districts" name="district">
                                                 <option value="<?= $fineTunnel->subdistrict->district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->district->name ?? __("master.directory.choose_district"); ?></option>
                                             </select>
                                         </div>
                                         <div class="col-lg-6 col-sm-12 mb-2">
-                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-current-location me-1"></i>{{ __("finetunnel.origin_subdistrict_label") }}</label>
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-current-location me-1"></i>Kelurahan / Desa</label>
                                             <select class="form-control subdistricts" name="sub_district_id">
                                                 <option value="<?= $fineTunnel->sub_district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->name ?? __("finetunnel.origin_subdistrict_placeholder"); ?></option>
                                             </select>
                                         </div>
                                         <div class="col-lg-6 col-sm-12 mb-2">
-                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-package me-1"></i>{{ __("finetunnel.input_weight") }}</label>
+                                            <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-package me-1"></i>Berat default (gram)</label>
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text"><i class="bx bx-calculator"></i></span>
                                                 <input type="text" class="form-control" placeholder="{{ __("finetunnel.input_weight_placeholder") }}" name="weight" value="{{old("weight",(int)$fineTunnel->weight)}}">
@@ -441,7 +395,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="mt-2 mb-2" style="font-size:.8rem"><i class="bx bx-info-circle me-1 text-primary"></i>{{ __("finetunnel.courier_integration_note") }}</div>
+                                    <div class="mt-2 mb-2" style="font-size:.8rem"><i class="bx bx-info-circle me-1 text-primary"></i>Centang kurir yang mau diaktifkan:</div>
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach ($couriers as $courier)
                                         <label class="d-inline-flex align-items-center gap-2 mb-0" style="border:1px solid #e0e0e0;border-radius:8px;padding:.35rem .7rem;cursor:pointer;font-size:.82rem">
@@ -466,108 +420,39 @@
                                 <!-- Tab Google Sheet -->
                                 @if($gsheet)
                                 <div class="tab-pane fade" id="g-sheet" role="tabpanel" style="display:none">
-                                    <div class="alert alert-primary mb-3" role="alert">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <h6 class="alert-heading mb-0">
-                                                <i class="bx bx-book-open me-1"></i>{{ __('finetunnel.gsheet_guide') }}
-                                            </h6>
-                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleGuide()">
-                                                <i class="bx bx-chevron-down" id="toggleIcon"></i> <span id="toggleText">{{ __('finetunnel.gsheet_toggle') }}</span>
-                                            </button>
-                                        </div>
-                                        <div id="guideContent" style="display:none">
-                                            <hr>
-                                            <div class="row small">
+                                    <div class="d-flex gap-2 mb-2">
+                                        <input type="text" class="form-control form-control-sm" id="newSheetUrl" placeholder="Tempel link Google Sheet (Publish to web)…">
+                                        <button class="btn btn-primary btn-sm" type="button" id="addGSheet"><i class="bx bx-plus"></i> Tambah</button>
+                                    </div>
+                                    <details class="mb-2" style="font-size:.76rem">
+                                        <summary style="cursor:pointer;color:#2E8DE1;font-weight:600"><i class="bx bx-help-circle me-1"></i>Lihat cara publish sheet</summary>
+                                        <div class="alert alert-light border mt-2 mb-0 small">
+                                            <div class="row">
                                                 <div class="col-md-6">
-                                                    <h6 class="fw-bold mt-2">{{ __('finetunnel.gsheet_step1') }}</h6>
-                                                    <ul>
-                                                        <li>{{ __('finetunnel.gsheet_step1_a') }}</li>
-                                                        <li>{{ __('finetunnel.gsheet_step1_b') }}</li>
-                                                        <li>{{ __('finetunnel.gsheet_step1_c') }}</li>
-                                                    </ul>
-                                                    <h6 class="fw-bold mt-2">{{ __('finetunnel.gsheet_step2') }}</h6>
-                                                    <ul>
-                                                        <li>{{ __('finetunnel.gsheet_step2_b') }}</li>
-                                                        <li>{{ __('finetunnel.gsheet_step2_c') }}</li>
-                                                        <li>{{ __('finetunnel.gsheet_step2_d') }}</li>
-                                                    </ul>
+                                                    <div class="fw-bold">{{ __("finetunnel.gsheet_step1") }}</div>
+                                                    <ul class="mb-2"><li>{{ __("finetunnel.gsheet_step1_a") }}</li><li>{{ __("finetunnel.gsheet_step1_b") }}</li><li>{{ __("finetunnel.gsheet_step1_c") }}</li></ul>
+                                                    <div class="fw-bold">{{ __("finetunnel.gsheet_step2") }}</div>
+                                                    <ul class="mb-0"><li>{{ __("finetunnel.gsheet_step2_b") }}</li><li>{{ __("finetunnel.gsheet_step2_c") }}</li><li>{{ __("finetunnel.gsheet_step2_d") }}</li></ul>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <h6 class="fw-bold mt-2">{{ __('finetunnel.gsheet_step3') }}</h6>
-                                                    <ul>
-                                                        <li>{{ __('finetunnel.gsheet_step3_a') }}</li>
-                                                        <li>{{ __('finetunnel.gsheet_step3_c') }}</li>
-                                                    </ul>
-                                                    <h6 class="fw-bold mt-2">{{ __('finetunnel.gsheet_realtime') }}</h6>
-                                                    <ul>
-                                                        <li>{{ __('finetunnel.gsheet_realtime_a') }}</li>
-                                                        <li>{{ __('finetunnel.gsheet_realtime_b') }}</li>
-                                                    </ul>
+                                                    <div class="fw-bold">{{ __("finetunnel.gsheet_step3") }}</div>
+                                                    <ul class="mb-2"><li>{{ __("finetunnel.gsheet_step3_a") }}</li><li>{{ __("finetunnel.gsheet_step3_c") }}</li></ul>
+                                                    <div class="fw-bold">{{ __("finetunnel.gsheet_realtime") }}</div>
+                                                    <ul class="mb-0"><li>{{ __("finetunnel.gsheet_realtime_a") }}</li><li>{{ __("finetunnel.gsheet_realtime_b") }}</li></ul>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div class="d-flex justify-content-end mb-3">
-                                        <button class="btn btn-outline-primary" type="button" id="addGSheet">
-                                            <i class="bx bx-plus-circle me-1"></i>{{ __('finetunnel.add_gsheet') }}
-                                        </button>
-                                    </div>
+                                    </details>
                                     <div id="listGsheet">
                                         @foreach($fineTunnel->gsheets as $sheet)
-                                        <div class="card mb-3 cardsheet" id="datasheet-{{$sheet->id}}">
-                                            <div class="card-header d-flex justify-content-between align-items-center">
-                                                <h6 class="mb-0"><i class="bx bx-spreadsheet me-1"></i>{{ __('finetunnel.google_sheet') }}</h6>
-                                                <button type="button" class="btn btn-outline-danger btn-sm removeSheet" data-id="{{$sheet->id}}">
-                                                    <i class="bx bx-trash"></i> {{ __('finetunnel.delete') }}
-                                                </button>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-semibold">
-                                                        <i class="bx bx-link-alt me-1"></i>{{ __('finetunnel.google_sheet_url') }}
-                                                        <span class="text-danger">*</span>
-                                                    </label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">
-                                                            <i class="bx bx-globe"></i>
-                                                        </span>
-                                                        <input type="url" class="form-control" name="url[]" value="{{$sheet->url}}" required placeholder="{{ __('finetunnel.gsheet_url_placeholder') }}">
-                                                        <button type="button" class="btn btn-outline-primary" onclick="validateUrl(this)">
-                                                            <i class="bx bx-check-circle"></i> {{ __('finetunnel.validate') }}
-                                                        </button>
-                                                    </div>
-                                                    <div id="urlValidation" class="mt-2"></div>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-semibold">
-                                                        <i class="bx bx-toggle-right me-1"></i>{{ __('finetunnel.status') }}
-                                                    </label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text">
-                                                            <i class="bx bx-info-square"></i>
-                                                        </span>
-                                                        <select class="form-control" name="status_sheet[]">
-                                                            <option value="yes" @if($sheet->status == 'yes') selected @endif>{{ __('finetunnel.active_status') }}</option>
-                                                            <option value="no" @if($sheet->status == 'no') selected @endif>{{ __('finetunnel.inactive_status') }}</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div id="previewContainer" class="mt-3" style="display: none;">
-                                                    <h6><i class="bx bx-show me-1"></i>{{ __('finetunnel.preview_data') }}</h6>
-                                                    <div class="table-responsive">
-                                                        <table class="table table-sm table-bordered" id="previewTable">
-                                                            <thead class="table-light"></thead>
-                                                            <tbody></tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="card-footer text-end">
-                                                <button type="button" class="btn btn-info btn-sm me-2" onclick="previewData(this)">
-                                                    <i class="bx bx-show"></i> {{ __('finetunnel.preview') }}
-                                                </button>
-                                            </div>
+                                        <div class="cardsheet d-flex align-items-center gap-2 p-2 rounded mb-1" id="datasheet-{{$sheet->id}}" style="background:var(--bs-light,#f5f5f9)">
+                                            <i class="bx bx-table" style="font-size:20px;color:#0f9349"></i>
+                                            <input type="url" class="form-control form-control-sm border-0 bg-transparent flex-grow-1 p-0" name="url[]" value="{{$sheet->url}}" required placeholder="{{ __(\"finetunnel.gsheet_url_placeholder\") }}" style="min-width:0">
+                                            <select class="form-select form-select-sm" name="status_sheet[]" style="width:auto">
+                                                <option value="yes" @if($sheet->status=='yes') selected @endif>Aktif</option>
+                                                <option value="no" @if($sheet->status=='no') selected @endif>Nonaktif</option>
+                                            </select>
+                                            <button type="button" class="btn btn-sm btn-outline-danger removeSheet" data-id="{{$sheet->id}}"><i class="bx bx-trash"></i></button>
                                         </div>
                                         @endforeach
                                     </div>
@@ -1878,64 +1763,18 @@
             $("#listFollowUps").append(html);
         });
 
-        $("#addGSheet").click(function() {
+        $("#addGSheet").click(function () {
+            var url = ($("#newSheetUrl").val() || '').trim();
             sheetCount++;
-            let html = `
-                <div class="card mb-3 cardsheet" id="datasheet-new-${sheetCount}">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="bx bx-spreadsheet me-1"></i>${trans.newGsheet}</h6>
-                        <button type="button" class="btn btn-outline-danger btn-sm removeSheet" data-id="new-${sheetCount}">
-                            <i class="bx bx-trash"></i> ${trans.delete}
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="bx bx-link-alt me-1"></i>${trans.googleSheetUrl}
-                                <span class="text-danger">*</span>
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bx bx-globe"></i>
-                                </span>
-                                <input type="url" class="form-control" name="url[]" required placeholder="${trans.gsheetUrlPlaceholder}">
-                                <button type="button" class="btn btn-outline-primary" onclick="validateUrl(this)">
-                                    <i class="bx bx-check-circle"></i> ${trans.validate}
-                                </button>
-                            </div>
-                            <div id="urlValidation" class="mt-2"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="bx bx-toggle-right me-1"></i>${trans.status}
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bx bx-info-square"></i>
-                                </span>
-                                <select class="form-control" name="status_sheet[]">
-                                    <option value="yes">${trans.activeStatus}</option>
-                                    <option value="no">${trans.inactiveStatus}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div id="previewContainer" class="mt-3" style="display: none;">
-                            <h6><i class="bx bx-show me-1"></i>${trans.previewData}</h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered" id="previewTable">
-                                    <thead class="table-light"></thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer text-end">
-                        <button type="button" class="btn btn-info btn-sm me-2" onclick="previewData(this)">
-                            <i class="bx bx-show"></i> ${trans.preview}
-                        </button>
-                    </div>
+            var html = `
+                <div class="cardsheet d-flex align-items-center gap-2 p-2 rounded mb-1" id="datasheet-new-${sheetCount}" style="background:var(--bs-light,#f5f5f9)">
+                    <i class="bx bx-table" style="font-size:20px;color:#0f9349"></i>
+                    <input type="url" class="form-control form-control-sm border-0 bg-transparent flex-grow-1 p-0" name="url[]" value="${url}" required placeholder="Link Google Sheet…" style="min-width:0">
+                    <select class="form-select form-select-sm" name="status_sheet[]" style="width:auto"><option value="yes">Aktif</option><option value="no">Nonaktif</option></select>
+                    <button type="button" class="btn btn-sm btn-outline-danger removeSheet" data-id="new-${sheetCount}"><i class="bx bx-trash"></i></button>
                 </div>`;
             $("#listGsheet").append(html);
+            $("#newSheetUrl").val('');
         });
 
         // Remove handlers
