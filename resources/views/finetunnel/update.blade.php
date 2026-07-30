@@ -375,8 +375,8 @@
                                                     id="ragDocumentInput"
                                                     accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
                                                     style="display: none;">
-                                                <div class="text-center py-5" id="uploadPlaceholder">
-                                                    <i class="bx bx-cloud-upload" style="font-size: 48px; color: #696cff;"></i>
+                                                <div class="text-center py-2" id="uploadPlaceholder">
+                                                    <i class="bx bx-cloud-upload" style="font-size: 28px; color: #696cff;"></i>
                                                     <p class="mt-3 mb-2"><strong>{{ __('finetunnel.drag_drop_or_click') }}</strong></p>
                                                     <p class="text-muted small mb-3">{{ __('finetunnel.supported_formats_list') }}</p>
                                                     <button type="button" class="btn btn-primary" id="selectFileBtn">
@@ -405,7 +405,7 @@
                                             </div>
 
                                             <!-- Storage Info -->
-                                            <div class="mt-3 p-3 bg-light rounded">
+                                            <div class="mt-2 p-2 bg-light rounded">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <span class="text-muted small">
                                                         <i class="bx bx-hdd me-1"></i>{{ __('finetunnel.storage_used') }}
@@ -420,29 +420,6 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- Package Limits Info -->
-                                                <div class="mt-3 pt-3 border-top">
-                                                    <div class="row g-2 small">
-                                                        <div class="col-6">
-                                                            <div class="d-flex align-items-center">
-                                                                <i class="bx bx-file me-2 text-primary"></i>
-                                                                <div>
-                                                                    <div class="text-muted">Max per File</div>
-                                                                    <strong id="maxPerUploadInfo">-</strong>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-6">
-                                                            <div class="d-flex align-items-center">
-                                                                <i class="bx bx-layer me-2 text-success"></i>
-                                                                <div>
-                                                                    <div class="text-muted">Total Limit</div>
-                                                                    <strong id="maxTotalRagInfo">-</strong>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
 
                                         </div>
@@ -575,10 +552,10 @@
                                                 <i class="bx bx-book-open me-1"></i>{{ __('finetunnel.gsheet_guide') }}
                                             </h6>
                                             <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleGuide()">
-                                                <i class="bx bx-chevron-up" id="toggleIcon"></i> <span id="toggleText">{{ __('finetunnel.gsheet_toggle') }}</span>
+                                                <i class="bx bx-chevron-down" id="toggleIcon"></i> <span id="toggleText">{{ __('finetunnel.gsheet_toggle') }}</span>
                                             </button>
                                         </div>
-                                        <div id="guideContent">
+                                        <div id="guideContent" style="display:none">
                                             <hr>
                                             <div class="row small">
                                                 <div class="col-md-6">
