@@ -1809,17 +1809,19 @@
         // Character Counter
         const textarea = document.getElementById('ft-description');
         const charCount = document.getElementById('charCount');
-        const counterDiv = charCount.parentElement;
+        if (textarea && charCount) {
+            const counterDiv = charCount.parentElement;
 
-        function updateCharCount() {
-            const length = textarea.value.length;
-            charCount.textContent = length.toLocaleString();
-            counterDiv.classList.remove('warning', 'danger');
-            if (length > 13500) counterDiv.classList.add('danger');
-            else if (length > 12000) counterDiv.classList.add('warning');
+            function updateCharCount() {
+                const length = textarea.value.length;
+                charCount.textContent = length.toLocaleString();
+                counterDiv.classList.remove('warning', 'danger');
+                if (length > 13500) counterDiv.classList.add('danger');
+                else if (length > 12000) counterDiv.classList.add('warning');
+            }
+            textarea.addEventListener('input', updateCharCount);
+            updateCharCount();
         }
-        textarea.addEventListener('input', updateCharCount);
-        updateCharCount();
 
         // Regional Selection
         $(".provinces").on("change", function() {
