@@ -286,8 +286,8 @@
                                     <details class="mb-2" style="font-size:.76rem">
                                         <summary style="cursor:pointer;color:#0f9349;font-weight:600"><i class="bx bx-info-circle me-1"></i>Panduan Follow Up</summary>
                                         <div class="alert alert-success mt-2 mb-0" role="alert">
-                                            <p class="mb-0 small">{ __('finetunnel.follow_up_desc_1') } { __('finetunnel.follow_up_desc_2') }</p>
-                                            <p class="mb-0 small"><strong>{ __('finetunnel.follow_up_warning') }</strong> { __('finetunnel.follow_up_warning_text') }</p>
+                                            <p class="mb-0 small">{{ __('finetunnel.follow_up_desc_1')}} {{ __('finetunnel.follow_up_desc_2')}}</p>
+                                            <p class="mb-0 small"><strong>{{ __('finetunnel.follow_up_warning')}}</strong> {{ __('finetunnel.follow_up_warning_text')}}</p>
                                         </div>
                                     </details>
                                     <div class="d-flex justify-content-end mb-3">
