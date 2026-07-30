@@ -91,9 +91,10 @@
 #courier-data .col-lg-6,#courier-data .col-sm-12{margin-bottom:.4rem !important}
 /* select2 Ongkir: kotak konsisten walau kosong */
 #courier-data .select2-container{width:100%!important}
-#courier-data .select2-selection--single{height:38px!important;border:1px solid #d9dee3!important;border-radius:.375rem!important;display:flex!important;align-items:center;padding:0 .75rem!important;background:#fff}
-#courier-data .select2-selection--single .select2-selection__rendered{padding:0!important;line-height:1.5!important;color:#697a8d}
-#courier-data .select2-selection--single .select2-selection__arrow{height:36px!important;top:1px}
+#courier-data .select2-selection--single{height:38px!important;border:1px solid #d9dee3!important;border-radius:.375rem!important;display:flex!important;align-items:center;padding:0 .75rem!important;padding-right:2.2rem!important;background:#fff;position:relative}
+#courier-data .select2-selection--single .select2-selection__rendered{display:flex;align-items:center;width:100%;padding:0!important;line-height:1.5!important;color:#697a8d}
+#courier-data .select2-selection--single .select2-selection__clear{position:absolute!important;right:1.7rem;top:50%;transform:translateY(-50%);margin:0!important;font-size:17px;line-height:1;color:#a1acb8;font-weight:400}
+#courier-data .select2-selection--single .select2-selection__arrow{right:.5rem!important;height:36px!important;top:1px}
 #courier-data .form-label{font-size:.8rem;margin-bottom:.12rem}
 #follow-ups .card-body{padding:.65rem}
 /* storage box tipis + sembunyiin baris Max/Total (sudah ada di info RAG atas) */
