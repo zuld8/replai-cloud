@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('styles')
+<link href="{{asset('assets/libs/select2/select2.css')}}" rel="stylesheet">
 <style>
 /* ═══ FineTunnel Redesign — 2026-07-30 ═══ */
 .ft-header-name {
