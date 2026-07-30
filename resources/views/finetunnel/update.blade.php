@@ -70,6 +70,9 @@
 }
 .ft-tpl-btn:hover { background:rgba(91,63,176,.25); }
 @media (min-width:992px) { .ft-chat-sticky { position:sticky; top:74px; } }
+/* Step 2 panes — HANYA yang aktif tampil, kalahkan CSS apapun */
+#ft-know-panes > .tab-pane { display: none !important; }
+#ft-know-panes > .tab-pane.ft-pane-on { display: block !important; }
 </style>
 @endsection
 
@@ -226,7 +229,7 @@
 
 
             {{-- Tab panes (dipreserve dari blade asli) --}}
-<div class="tab-content">
+<div class="tab-content" id="ft-know-panes">
                                 <!-- Tab Follow Up -->
                                 <div class="tab-pane fade" id="follow-ups" role="tabpanel" style="display:none">
                                     <div class="alert alert-success mb-3" role="alert">
@@ -307,7 +310,7 @@
                                 </div>
 
                                 <!-- Tab Data Training -->
-                                <div class="tab-pane fade show active" id="documents" role="tabpanel">
+                                <div class="tab-pane fade show active ft-pane-on" id="documents" role="tabpanel">
                                     <div class="alert alert-info mb-3" role="alert">
                                         <div class="d-flex align-items-start">
                                             <i class="bx bx-info-circle fs-20 me-2"></i>
@@ -2180,51 +2183,33 @@
 <script>
 /* ── FineTunnel Redesign JS ── */
 
-// Chip → Tab trigger
-document.querySelectorAll('.ft-chip-btn[data-ft-tab]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        var href = this.getAttribute('data-ft-tab');
-        // Deactivate semua chips
-        document.querySelectorAll('.ft-chip-btn').forEach(function(b) {
-            b.classList.remove('ft-active');
-        });
-        this.classList.add('ft-active');
+// Step 2 chip handler — bulletproof: pakai class ft-pane-on + CSS !important
+(function () {
+    var chips = document.querySelectorAll('.ft-chip-btn[data-ft-tab]');
+    var wrap  = document.getElementById('ft-know-panes');
+    if (!wrap) return;
 
-        // FIX chip-step2: toggle pane langsung (paksa display — tidak andalkan CSS Bootstrap)
-        var content = document.querySelector('.tab-content');
-        if (content) {
-            content.querySelectorAll('.tab-pane').forEach(function(p) {
-                p.classList.remove('show', 'active');
-                p.style.display = 'none';                 // paksa sembunyi
-            });
-            var pane = document.querySelector(href);
-            if (pane) {
-                pane.classList.add('show', 'active');
-                pane.style.display = 'block';             // paksa tampil
-            }
-        }
-    });
-});
-// Default: aktifkan chip Dokumen & pane-nya saat halaman load
-(function() {
-    // Sembunyikan SEMUA pane dulu (paksa — tidak andalkan CSS Bootstrap tab)
-    var content = document.querySelector('.tab-content');
-    if (!content) return;
-    content.querySelectorAll('.tab-pane').forEach(function(p) {
-        p.classList.remove('show', 'active');
-        p.style.display = 'none';
-    });
-    // Tampilkan HANYA #documents
-    var def = document.getElementById('documents') || content.querySelector('.tab-pane');
-    if (def) {
-        def.classList.add('show', 'active');
-        def.style.display = 'block';
+    function showPane(href) {
+        wrap.querySelectorAll(':scope > .tab-pane').forEach(function (p) {
+            p.classList.remove('ft-pane-on', 'show', 'active');
+        });
+        var pane = wrap.querySelector(href);
+        if (pane) pane.classList.add('ft-pane-on', 'show', 'active');
     }
-    // Aktifkan chip Dokumen
-    document.querySelectorAll('.ft-chip-btn').forEach(function(b) { b.classList.remove('ft-active'); });
-    var docsBtn = document.querySelector('.ft-chip-btn[data-ft-tab="#documents"]')
-               || document.querySelector('.ft-chip-btn[data-ft-tab]');
+
+    chips.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            chips.forEach(function (b) { b.classList.remove('ft-active'); });
+            this.classList.add('ft-active');
+            showPane(this.getAttribute('data-ft-tab'));
+        });
+    });
+
+    // default saat load: Dokumen
+    document.querySelectorAll('.ft-chip-btn').forEach(function (b) { b.classList.remove('ft-active'); });
+    var docsBtn = document.querySelector('.ft-chip-btn[data-ft-tab="#documents"]') || chips[0];
     if (docsBtn) docsBtn.classList.add('ft-active');
+    showPane('#documents');
 })();
 
 // Advanced
