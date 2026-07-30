@@ -370,20 +370,20 @@
                                             <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-building me-1"></i>Kota</label>
                                             <select class="form-control cities" name="city">
                                                 <option value="<?= $fineTunnel->subdistrict->district->city->id ?? ''; ?>">
-                                                    <?= ($fineTunnel->subdistrict->district->city->type ?? '') . ' ' . ($fineTunnel->subdistrict->district->city->name ?? __("finetunnel.select_city_option")); ?>
+                                                    <?= ($fineTunnel->subdistrict->district->city->type ?? '') . ' ' . ($fineTunnel->subdistrict->district->city->name ?? 'Pilih kota'); ?>
                                                 </option>
                                             </select>
                                         </div>
                                         <div class="col-lg-6 col-sm-12 mb-2">
                                             <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-map-pin me-1"></i>Kecamatan</label>
                                             <select class="form-control districts" name="district">
-                                                <option value="<?= $fineTunnel->subdistrict->district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->district->name ?? __("master.directory.choose_district"); ?></option>
+                                                <option value="<?= $fineTunnel->subdistrict->district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->district->name ?? 'Pilih kecamatan'; ?></option>
                                             </select>
                                         </div>
                                         <div class="col-lg-6 col-sm-12 mb-2">
                                             <label class="form-label fw-semibold mb-1" style="font-size:.8rem"><i class="bx bx-current-location me-1"></i>Kelurahan / Desa</label>
                                             <select class="form-control subdistricts" name="sub_district_id">
-                                                <option value="<?= $fineTunnel->sub_district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->name ?? __("finetunnel.origin_subdistrict_placeholder"); ?></option>
+                                                <option value="<?= $fineTunnel->sub_district_id ?? ''; ?>"><?= $fineTunnel->subdistrict->name ?? 'Pilih kelurahan / desa'; ?></option>
                                             </select>
                                         </div>
                                         <div class="col-lg-6 col-sm-12 mb-2">
@@ -1113,9 +1113,9 @@
         // Get Status Badge
         function getStatusBadge(status) {
             const badges = {
-                'completed': '<span class="badge bg-success">Completed</span>',
-                'processing': '<span class="badge bg-warning">Processing</span>',
-                'failed': '<span class="badge bg-danger">Failed</span>'
+                'completed': '<span class="badge bg-label-success">Selesai</span>',
+                'processing': '<span class="badge bg-label-warning">Diproses</span>',
+                'failed': '<span class="badge bg-label-danger">Gagal</span>'
             };
             return badges[status] || '<span class="badge bg-secondary">' + status + '</span>';
         }
@@ -1671,7 +1671,7 @@
                 $('.cities').select2({
                     placeholder: trans.selectCity,
                     allowClear: true,
-                    width: '100%'
+                    width: '100%',
                     ajax: {
                         url: `/app/master/components/cities?province=${$(this).val()}`,
                         dataType: 'json',
@@ -1694,7 +1694,7 @@
                 $('.districts').select2({
                     placeholder: trans.selectDistrict,
                     allowClear: true,
-                    width: '100%'
+                    width: '100%',
                     ajax: {
                         url: `/app/master/components/districts?city=${$(this).val()}`,
                         dataType: 'json',
@@ -1717,7 +1717,7 @@
                 $('.subdistricts').select2({
                     placeholder: trans.selectVillage,
                     allowClear: true,
-                    width: '100%'
+                    width: '100%',
                     ajax: {
                         url: `/app/master/components/subdistricts?district=${$(this).val()}`,
                         dataType: 'json',
