@@ -145,7 +145,7 @@
 
 <div class="row g-3">
 {{-- ════ KOLOM KIRI ════ --}}
-<div class="col-lg-7">
+<div class="col-lg-8">
 
     {{-- ─── STEP 1: Siapa AI kamu ─── --}}
     <div class="card custom-card mb-3">
@@ -602,43 +602,39 @@
         </div>
     </div>
 
-</div>{{-- /col-lg-7 --}}
+</div>{{-- /col-lg-8 --}}
 
 {{-- ════ KOLOM KANAN: TES CHAT ════ --}}
-<div class="col-lg-5">
+<div class="col-lg-4">
     <div class="ft-chat-sticky">
         <div class="chat-test-container" id="chatTestContainer">
-                <div class="chat-test-box">
-                    <div class="chat-header">
-                        <h6 class="mb-1">
-                            <i class="bx bx-message-square-dots me-1"></i> {{ __('finetunnel.test_chat_ai') }}
-                        </h6>
-                        <small class="text-muted">
-                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.test_chat_ai_desc') }}
-                        </small>
+            <div class="chat-test-box">
+                <div class="chat-header">
+                    <div class="ct-ava"><i class="bx bx-bot"></i><span class="ct-dot"></span></div>
+                    <div class="flex-grow-1">
+                        <div class="ct-title">{{ __('finetunnel.test_chat_ai') }}</div>
+                        <div class="ct-sub">Online &middot; {{ __('finetunnel.test_chat_ai_desc') }}</div>
                     </div>
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="text-center text-muted py-5" id="sampleData">
-                            <i class="bx bx-message-dots" style="font-size: 48px;"></i>
-                            <p class="mt-2">{{ __('finetunnel.test_chat_ai_empty') }}</p>
-                        </div>
+                    <button type="button" class="ct-clear-ic" id="clearChat" title="{{ __('finetunnel.clear_chat') }}"><i class="bx bx-refresh"></i></button>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="text-center text-muted py-4" id="sampleData">
+                        <i class="bx bx-message-dots" style="font-size:34px;opacity:.5"></i>
+                        <p class="mt-2 mb-0" style="font-size:.8rem">{{ __('finetunnel.test_chat_ai_empty') }}</p>
                     </div>
-                    <div class="chat-input-area">
-                        <div class="chat-input-group">
-                            <input type="text" class="form-control" id="chatInput" placeholder="{{ __('finetunnel.test_chat_ai_placeholder') }}" autocomplete="off">
-                            <button type="button" class="btn btn-primary" id="sendMessage">
-                                <i class="bx bx-send"></i>
-                            </button>
-                        </div>
-                        <small class="text-muted d-block mt-2">
-                            <i class="bx bx-info-circle me-1"></i>{{ __('finetunnel.test_chat_ai_hint') }}
-                        </small>
-                        <button type="button" class="btn btn-sm btn-outline-danger mt-2 w-100" id="clearChat">
-                            <i class="bx bx-trash"></i> {{ __('finetunnel.clear_chat') }}
-                        </button>
+                </div>
+                <div class="chat-input-area">
+                    <div class="chat-input-group">
+                        <input type="text" id="chatInput" placeholder="{{ __('finetunnel.test_chat_ai_placeholder') }}" autocomplete="off">
+                        <button type="button" id="sendMessage"><i class="bx bx-up-arrow-alt"></i></button>
+                    </div>
+                    <div class="ct-foot">
+                        <span><i class="bx bx-coin"></i> ~30 kredit / balasan</span>
+                        <span id="clearChatFoot" style="cursor:pointer"><i class="bx bx-trash"></i> Bersihkan</span>
                     </div>
                 </div>
             </div>
+        </div>
     </div>
 </div>
 

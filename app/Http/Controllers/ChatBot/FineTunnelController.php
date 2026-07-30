@@ -427,7 +427,9 @@ class FineTunnelController extends Controller
         }
 
 
-        return view('finetunnel.update', ['page' => __('page.fine_tunnel.edit'), 'breadcumb' => true], compact('fineTunnel', 'labels', 'couriers', 'courierStatus', 'provinces', 'users', 'gsheet'));
+        $credit = ($business->package_active->sisa_credit ?? 0) + ($business->package_active_topup->sisa_credit ?? 0);
+
+        return view('finetunnel.update', ['page' => __('page.fine_tunnel.edit'), 'breadcumb' => true], compact('fineTunnel', 'labels', 'couriers', 'courierStatus', 'provinces', 'users', 'gsheet', 'credit'));
     }
 
 
@@ -729,7 +731,7 @@ class FineTunnelController extends Controller
 
             // 🆕 GET RAG CONTEXT - HANYA UNTUK OPENAI
             $ragContext = '';
-            if ($aiOption === 'chatgpt' && !empty($validated['fine_tunnel_id'])) {
+            if (!empty($validated['fine_tunnel_id'])) {
                 $fineTunnel = FineTunnel::find($validated['fine_tunnel_id']);
                 if ($fineTunnel) {
                     $conversationsData = [];
@@ -890,7 +892,7 @@ class FineTunnelController extends Controller
     private function detectIntent($message, $apiKey, $conversations, $validated, $ragContext = '', $aiOption = 'chatgpt')
     {
         if ($aiOption === 'gemini') {
-            return $this->detectIntentWithGemini($message, $apiKey, $conversations, $validated);
+            return $this->detectIntentWithGemini($message, $apiKey, $conversations, $validated, $ragContext);
         }
 
         return $this->detectIntentWithOpenAI($message, $apiKey, $conversations, $validated, $ragContext);
@@ -1001,11 +1003,11 @@ class FineTunnelController extends Controller
     /**
      * Detect Intent with Gemini
      */
-    private function detectIntentWithGemini($message, $geminiKey, $conversations, $validated)
+    private function detectIntentWithGemini($message, $geminiKey, $conversations, $validated, $ragContext = \'\')
     {
         try {
             // System prompt tanpa RAG
-            $systemPrompt = $this->buildSystemPrompt($validated, '');
+            $systemPrompt = $this->buildSystemPrompt($validated, $ragContext);
             $systemPrompt .= PHP_EOL . PHP_EOL . prompt_detect_intent();
 
             // Build contents
@@ -1129,7 +1131,7 @@ class FineTunnelController extends Controller
     private function handleQuestionIntent($message, $apiKey, $conversations, $validated, $ragContext = '', $aiOption = 'chatgpt')
     {
         if ($aiOption === 'gemini') {
-            return $this->handleQuestionWithGemini($message, $apiKey, $conversations, $validated);
+            return $this->handleQuestionWithGemini($message, $apiKey, $conversations, $validated, $ragContext);
         }
 
         return $this->handleQuestionWithOpenAI($message, $apiKey, $conversations, $validated, $ragContext);
@@ -1138,11 +1140,11 @@ class FineTunnelController extends Controller
     /**
      * Handle Question with Gemini
      */
-    private function handleQuestionWithGemini($message, $geminiKey, $conversations, $validated)
+    private function handleQuestionWithGemini($message, $geminiKey, $conversations, $validated, $ragContext = \'\')
     {
         try {
             // System prompt tanpa RAG
-            $systemPrompt = $this->buildSystemPrompt($validated, '');
+            $systemPrompt = $this->buildSystemPrompt($validated, $ragContext);
             $systemPrompt .= " Jika kamu ingin mengirim link, kirim HANYA teks link-nya saja, misalnya: https://whatsmail.org. Jangan tambahkan karakter seperti [], {}, (), <>, atau markdown apapun di sekitarnya.";
 
             // Build contents
