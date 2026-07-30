@@ -166,11 +166,10 @@ class GeminiAiServiceObserver
     private function selectModel(string $modeAi, bool $usingMedia): string
     {
         if ($modeAi === 'advanced') {
-            return $usingMedia ? 'gemini-1.5-pro-latest' : 'gemini-1.5-pro-latest';
+            return 'gemini-3-flash';
         }
-        
-        // Standard mode
-        return $usingMedia ? 'gemini-2.5-flash' : 'gemini-2.5-flash';
+        return 'gemini-3.1-flash-lite';
+    
     }
 
     /**

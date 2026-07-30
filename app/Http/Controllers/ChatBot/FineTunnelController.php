@@ -1063,8 +1063,8 @@ class FineTunnelController extends Controller
 
             // Determine model
             $model = ($validated['model_ai'] ?? 'standart') === 'standart'
-                ? 'gemini-2.5-flash'
-                : 'gemini-1.5-pro-latest';
+                ? 'gemini-3.1-flash-lite'
+                : 'gemini-3-flash';
 
             // Call Gemini API
             $response = Http::timeout(60)->withHeaders([
@@ -1179,8 +1179,8 @@ class FineTunnelController extends Controller
 
             // Determine model
             $model = ($validated['model_ai'] ?? 'standart') === 'standart'
-                ? 'gemini-2.5-flash'
-                : 'gemini-1.5-pro-latest';
+                ? 'gemini-3.1-flash-lite'
+                : 'gemini-3-flash';
 
             // Call Gemini API
             $requestData = [
