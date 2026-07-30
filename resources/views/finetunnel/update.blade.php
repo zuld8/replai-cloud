@@ -89,6 +89,11 @@
 #documents #uploadPlaceholder .mb-3{margin-bottom:.4rem !important}
 #documents .card-body{padding:.65rem}
 #courier-data .col-lg-6,#courier-data .col-sm-12{margin-bottom:.4rem !important}
+/* select2 Ongkir: kotak konsisten walau kosong */
+#courier-data .select2-container{width:100%!important}
+#courier-data .select2-selection--single{height:38px!important;border:1px solid #d9dee3!important;border-radius:.375rem!important;display:flex!important;align-items:center;padding:0 .75rem!important;background:#fff}
+#courier-data .select2-selection--single .select2-selection__rendered{padding:0!important;line-height:1.5!important;color:#697a8d}
+#courier-data .select2-selection--single .select2-selection__arrow{height:36px!important;top:1px}
 #courier-data .form-label{font-size:.8rem;margin-bottom:.12rem}
 #follow-ups .card-body{padding:.65rem}
 /* storage box tipis + sembunyiin baris Max/Total (sudah ada di info RAG atas) */
