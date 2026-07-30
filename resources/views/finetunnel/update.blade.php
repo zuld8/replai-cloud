@@ -128,12 +128,39 @@
                 </div>
             </div>
 
-            {{-- Template presets --}}
-            <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-                <span class="text-muted" style="font-size:.78rem">Mulai dari template:</span>
-                <button type="button" class="ft-tpl-btn" onclick="ftApplyTpl('toko')">&#x1F6D2; Toko Online</button>
-                <button type="button" class="ft-tpl-btn" onclick="ftApplyTpl('kelas')">&#x1F4DA; Kelas/e-course</button>
-                <button type="button" class="ft-tpl-btn" onclick="ftApplyTpl('booking')">&#x1F4C5; Reservasi</button>
+            {{-- Template presets (9 chip) + Builder persona --}}
+            <div class="mb-1" style="font-size:12px;color:#6c757d;">Mulai dari template <span class="text-muted">(klik &rarr; karakter keisi)</span></div>
+            <div class="d-flex flex-wrap gap-2 mb-3" id="ft-templates">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-tpl="toko"><i class="bx bx-cart"></i> Toko Online</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-tpl="ecourse"><i class="bx bx-book"></i> Kelas / e-Course</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-tpl="reservasi"><i class="bx bx-calendar-check"></i> Reservasi</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-tpl="cs"><i class="bx bx-headphone"></i> CS / Bantuan</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-tpl="donasi"><i class="bx bx-donate-heart"></i> Donasi</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-tpl="properti"><i class="bx bx-home"></i> Properti</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-tpl="klinik"><i class="bx bx-plus-medical"></i> Klinik</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-tpl="fnb"><i class="bx bx-restaurant"></i> Resto / F&amp;B</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-tpl="jasa"><i class="bx bx-briefcase"></i> Jasa</button>
+            </div>
+
+            {{-- Builder persona ringkas --}}
+            <div class="row g-2 mb-2">
+              <div class="col-md-6"><label class="fs-12 text-muted">Nama / panggilan AI</label>
+                <input type="text" id="pb-nama" class="form-control form-control-sm" placeholder="Kak Rina"></div>
+              <div class="col-md-6"><label class="fs-12 text-muted">Perannya sebagai</label>
+                <input type="text" id="pb-peran" class="form-control form-control-sm" placeholder="CS &amp; admin"></div>
+            </div>
+            <div class="d-flex flex-wrap gap-3 mb-2">
+              <div><div class="fs-12 text-muted mb-1">Gaya bicara</div>
+                <div id="pb-gaya" class="d-flex flex-wrap gap-1">
+                  <span class="pb-chip" data-v="ramah">Ramah</span><span class="pb-chip" data-v="ringkas">Ringkas</span>
+                  <span class="pb-chip" data-v="formal">Formal</span><span class="pb-chip" data-v="santai">Santai</span>
+                  <span class="pb-chip" data-v="emoji">Pakai emoji</span>
+                </div></div>
+              <div><div class="fs-12 text-muted mb-1">Panggil customer</div>
+                <div id="pb-panggil" class="d-flex gap-1">
+                  <span class="pb-chip pb-radio" data-v="Kak">Kak</span><span class="pb-chip pb-radio" data-v="Bapak/Ibu">Bapak/Ibu</span><span class="pb-chip pb-radio" data-v="Kamu">Kamu</span>
+                </div></div>
+              <div class="align-self-end"><button type="button" id="pb-apply" class="btn btn-sm btn-outline-primary"><i class="bx bx-refresh"></i> Susun karakter</button></div>
             </div>
 
             <label class="form-label fw-semibold mb-1">Karakter AI</label>
