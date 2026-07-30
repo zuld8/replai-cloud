@@ -248,7 +248,7 @@
                     @endif
                 </button>
                 <button type="button" class="ft-chip-btn" data-ft-tab="#g-sheet">
-                    <i class="bx bx-table"></i> Google Sheet
+                    <i class="bx bx-table"></i> Google Sheet @if(!$gsheet)<i class="bx bx-lock-alt text-warning ms-1" title="Fitur paket — belum aktif"></i>@endif
                 </button>
                 <button type="button" class="ft-chip-btn" data-ft-tab="#follow-ups">
                     <i class="bx bx-time-five"></i> Follow up
@@ -257,7 +257,7 @@
                     @endif
                 </button>
                 <button type="button" class="ft-chip-btn" data-ft-tab="#courier-data">
-                    <i class="bx bx-package"></i> Ongkir
+                    <i class="bx bx-package"></i> Ongkir @if(!$courierStatus)<i class="bx bx-lock-alt text-warning ms-1" title="Fitur paket — belum aktif"></i>@endif
                 </button>
             </div>
 
@@ -506,6 +506,14 @@
                                         </div>
                                     </div>
                                 </div>
+                                @else
+                                <div class="tab-pane fade" id="courier-data" role="tabpanel" style="display:none">
+                                    <div class="text-center py-4">
+                                        <i class="bx bx-lock-alt text-warning" style="font-size:34px"></i>
+                                        <p class="fw-semibold mb-1 mt-2">Fitur Cek Ongkir belum aktif</p>
+                                        <p class="text-muted mb-0" style="font-size:.85rem">Fitur ini belum termasuk paket langgananmu.<br>Upgrade paket untuk mengaktifkan hitung ongkir otomatis.</p>
+                                    </div>
+                                </div>
                                 @endif
 
                                 <input type="hidden" id="sheetCount" value="{{ count($fineTunnel->gsheets) }}" />
@@ -617,6 +625,14 @@
                                             </div>
                                         </div>
                                         @endforeach
+                                    </div>
+                                </div>
+                                @else
+                                <div class="tab-pane fade" id="g-sheet" role="tabpanel" style="display:none">
+                                    <div class="text-center py-4">
+                                        <i class="bx bx-lock-alt text-warning" style="font-size:34px"></i>
+                                        <p class="fw-semibold mb-1 mt-2">Fitur Google Sheet belum aktif</p>
+                                        <p class="text-muted mb-0" style="font-size:.85rem">Fitur ini belum termasuk paket langgananmu.<br>Upgrade paket untuk menyambungkan Google Sheet.</p>
                                     </div>
                                 </div>
                                 @endif
