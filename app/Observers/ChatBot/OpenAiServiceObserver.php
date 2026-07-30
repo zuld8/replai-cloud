@@ -274,7 +274,7 @@ class OpenAiServiceObserver
         if ($description) {
             $messages[] = [
                 'role'    => 'system',
-                'content' => $description . " Jika kamu ingin mengirim link, kirim HANYA teks link-nya saja, misalnya: https://whatsmail.org. Jangan tambahkan karakter seperti [], {}, (), <>, atau markdown apapun di sekitarnya."
+                'content' => $description . ai_guardrail()
             ];
         }
 

@@ -111,7 +111,6 @@ class GeminiAiServiceObserver
         }
 
         // Add link formatting instruction
-        $description .= " Jika kamu ingin mengirim link, kirim HANYA teks link-nya saja, misalnya: https://whatsmail.org. Jangan tambahkan karakter seperti [], {}, (), <>, atau markdown apapun di sekitarnya.";
 
         // Build conversation history
         $conversationHistory = $this->buildConversationHistory($conversations);
@@ -181,7 +180,9 @@ class GeminiAiServiceObserver
         string $message, 
         $media
     ): array {
-        $contents = [];
+        
+            $description .= ai_guardrail();
+            $contents = [];
 
         // Add system prompt as first user message
         if (!empty($systemPrompt)) {

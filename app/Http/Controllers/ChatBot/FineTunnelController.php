@@ -1145,7 +1145,6 @@ class FineTunnelController extends Controller
         try {
             // System prompt tanpa RAG
             $systemPrompt = $this->buildSystemPrompt($validated, $ragContext);
-            $systemPrompt .= " Jika kamu ingin mengirim link, kirim HANYA teks link-nya saja, misalnya: https://whatsmail.org. Jangan tambahkan karakter seperti [], {}, (), <>, atau markdown apapun di sekitarnya.";
 
             // Build contents
             $contents = [];
@@ -1337,7 +1336,6 @@ class FineTunnelController extends Controller
 
             // System prompt with RAG
             $systemPrompt = $this->buildSystemPrompt($validated, $ragContext);
-            $systemPrompt .= " Jika kamu ingin mengirim link, kirim HANYA teks link-nya saja, misalnya: https://whatsmail.org. Jangan tambahkan karakter seperti [], {}, (), <>, atau markdown apapun di sekitarnya.";
 
             $messages[] = [
                 'role' => 'system',
@@ -1533,7 +1531,7 @@ class FineTunnelController extends Controller
             $prompt .= "\n\n=== INFORMASI DARI DOKUMEN ===\n";
             $prompt .= $ragContext;
             $prompt .= "\n=== AKHIR INFORMASI DOKUMEN ===\n";
-            $prompt .= "\nGunakan informasi di atas untuk menjawab pertanyaan user jika relevan. Jika informasi tidak cukup, jawab berdasarkan pengetahuan umummu.\n\n";
+            $prompt .= "\nGunakan informasi di atas untuk menjawab pertanyaan user jika relevan. Jawab HANYA dari informasi di atas. Kalau tidak ada, jangan mengarang.\n\n";
         }
 
         // Add data training
@@ -1555,6 +1553,8 @@ class FineTunnelController extends Controller
             }
         }
 
+        
+        $prompt .= ai_guardrail();
         return $prompt;
     }
 
