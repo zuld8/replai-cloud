@@ -1734,27 +1734,32 @@
 
         $('.users').select2({
             placeholder: trans.selectHumanAgent,
-            allowClear: true
+            allowClear: true,
+            width: '100%'
         });
 
         $('.provinces').select2({
             placeholder: trans.selectProvince,
-            allowClear: true
+            allowClear: true,
+            width: '100%'
         });
 
         $('.cities').select2({
             placeholder: trans.selectCity,
-            allowClear: true
+            allowClear: true,
+            width: '100%'
         });
 
         $('.districts').select2({
             placeholder: trans.selectDistrict,
-            allowClear: true
+            allowClear: true,
+            width: '100%'
         });
 
         $('.subdistricts').select2({
             placeholder: trans.selectVillage,
-            allowClear: true
+            allowClear: true,
+            width: '100%'
         });
 
         // Character Counter
@@ -1781,6 +1786,7 @@
                 $('.cities').select2({
                     placeholder: trans.selectCity,
                     allowClear: true,
+                    width: '100%'
                     ajax: {
                         url: `/app/master/components/cities?province=${$(this).val()}`,
                         dataType: 'json',
@@ -1803,6 +1809,7 @@
                 $('.districts').select2({
                     placeholder: trans.selectDistrict,
                     allowClear: true,
+                    width: '100%'
                     ajax: {
                         url: `/app/master/components/districts?city=${$(this).val()}`,
                         dataType: 'json',
@@ -1825,6 +1832,7 @@
                 $('.subdistricts').select2({
                     placeholder: trans.selectVillage,
                     allowClear: true,
+                    width: '100%'
                     ajax: {
                         url: `/app/master/components/subdistricts?district=${$(this).val()}`,
                         dataType: 'json',
