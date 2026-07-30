@@ -559,7 +559,7 @@
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Model AI</label>
                         <select name="model_ai" id="modelAi" class="form-select">
-                            <option value="basic" {{ ($finetunnel->model_ai ?? 'basic') === 'basic' ? 'selected' : '' }}>
+                            <option value="standart" {{ ($finetunnel->model_ai ?? 'basic') === 'basic' ? 'selected' : '' }}>
                                 Standard — hemat kredit
                             </option>
                             <option value="advanced" {{ ($finetunnel->model_ai ?? '') === 'advanced' ? 'selected' : '' }}>
