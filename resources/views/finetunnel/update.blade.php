@@ -73,6 +73,9 @@
 /* Step 2 panes — HANYA yang aktif tampil, kalahkan CSS apapun */
 #ft-know-panes > .tab-pane { display: none !important; }
 #ft-know-panes > .tab-pane.ft-pane-on { display: block !important; }
+.pb-chip{font-size:11.5px;padding:3px 10px;border:1px solid #d1d5db;border-radius:20px;cursor:pointer;color:#475569;user-select:none;display:inline-block;transition:all .18s}
+.pb-chip:hover{border-color:#2E8DE1}
+.pb-chip.on{background:#e0edff;border-color:#2E8DE1;color:#185FA5}
 </style>
 @endsection
 
