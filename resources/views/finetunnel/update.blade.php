@@ -76,6 +76,20 @@
 .pb-chip{font-size:11.5px;padding:3px 10px;border:1px solid #d1d5db;border-radius:20px;cursor:pointer;color:#475569;user-select:none;display:inline-block;transition:all .18s}
 .pb-chip:hover{border-color:#2E8DE1}
 .pb-chip.on{background:#e0edff;border-color:#2E8DE1;color:#185FA5}
+/* ---- Step 2 ringkas ---- */
+#ft-know-panes .alert{padding:.55rem .8rem;font-size:.76rem;margin-bottom:.6rem}
+#ft-know-panes .alert .alert-heading{font-size:.8rem;margin-bottom:.1rem}
+#ft-know-panes .card{margin-bottom:.5rem}
+#ft-know-panes .card-header{padding:.45rem .9rem}
+#ft-know-panes .card-header h6{font-size:.83rem}
+#documents #uploadPlaceholder{padding:.7rem 0 !important}
+#documents #uploadPlaceholder .bx-cloud-upload{font-size:30px !important}
+#documents #uploadPlaceholder .mt-3{margin-top:.3rem !important}
+#documents #uploadPlaceholder .mb-3{margin-bottom:.4rem !important}
+#documents .card-body{padding:.65rem}
+#courier-data .col-lg-6,#courier-data .col-sm-12{margin-bottom:.4rem !important}
+#courier-data .form-label{font-size:.8rem;margin-bottom:.12rem}
+#follow-ups .card-body{padding:.65rem}
 </style>
 @endsection
 
@@ -262,18 +276,13 @@
 <div class="tab-content" id="ft-know-panes">
                                 <!-- Tab Follow Up -->
                                 <div class="tab-pane fade" id="follow-ups" role="tabpanel" style="display:none">
-                                    <div class="alert alert-success mb-3" role="alert">
-                                        <div class="d-flex align-items-start">
-                                            <i class="bx bx-info-circle fs-20 me-2"></i>
-                                            <div>
-                                                <h6 class="alert-heading mb-1">{{ __('finetunnel.follow_up_instruction') }}</h6>
-                                                <p class="mb-0 small">
-                                                    {{ __('finetunnel.follow_up_desc_1') }} {{ __('finetunnel.follow_up_desc_2') }}
-                                                    <br><strong>{{ __('finetunnel.follow_up_warning') }}</strong> {{ __('finetunnel.follow_up_warning_text') }}
-                                                </p>
-                                            </div>
+                                    <details class="mb-2" style="font-size:.76rem">
+                                        <summary style="cursor:pointer;color:#0f9349;font-weight:600"><i class="bx bx-info-circle me-1"></i>Panduan Follow Up</summary>
+                                        <div class="alert alert-success mt-2 mb-0" role="alert">
+                                            <p class="mb-0 small">{ __('finetunnel.follow_up_desc_1') } { __('finetunnel.follow_up_desc_2') }</p>
+                                            <p class="mb-0 small"><strong>{ __('finetunnel.follow_up_warning') }</strong> { __('finetunnel.follow_up_warning_text') }</p>
                                         </div>
-                                    </div>
+                                    </details>
                                     <div class="d-flex justify-content-end mb-3">
                                         <button class="btn btn-outline-primary" type="button" id="addFollowUp">
                                             <i class="bx bx-plus-circle me-1"></i>{{ __('finetunnel.add_follow_up') }}
@@ -341,19 +350,9 @@
 
                                 <!-- Tab Data Training -->
                                 <div class="tab-pane fade show active ft-pane-on" id="documents" role="tabpanel">
-                                    <div class="alert alert-info mb-3" role="alert">
-                                        <div class="d-flex align-items-start">
-                                            <i class="bx bx-info-circle fs-20 me-2"></i>
-                                            <div>
-                                                <h6 class="alert-heading mb-1">{{ __('finetunnel.rag_document_info') }}</h6>
-                                                <p class="mb-0 small">
-                                                    {{ __('finetunnel.rag_document_desc') }}
-                                                    <br><strong>{{ __('finetunnel.supported_formats') }}</strong> PDF, Word (DOC/DOCX), Excel (XLS/XLSX), CSV
-                                                    <br><strong>{{ __('finetunnel.max_file_size') }}</strong> <span id="maxFileSizeText">-</span>
-                                                    <br><strong>{{ __('finetunnel.max_total_size') }}</strong> <span id="maxTotalSizeText">-</span>
-                                                </p>
-                                            </div>
-                                        </div>
+                                    <div class="alert alert-info d-flex align-items-center gap-2 mb-2" role="alert" style="font-size:.76rem">
+                                        <i class="bx bx-info-circle"></i>
+                                        <span>Dokumen jadi sumber pengetahuan AI. PDF/Word/Excel/CSV &middot; maks <span id="maxFileSizeText">-</span>/file, total <span id="maxTotalSizeText">-</span>.</span>
                                     </div>
 
                                     <!-- Upload Area -->
