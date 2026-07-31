@@ -101,12 +101,15 @@ class WhatsappWabaController extends Controller
     public function fetchQuality(Request $request, MetaAccount $meta)
     {
         $detail   = json_decode($meta->details, true) ?? [];
+        $force    = $request->boolean('force');
+
+        // FIX Carbon 3: diffInMinutes() signed (negatif) → abs() biar TTL bener
         $cacheAge = isset($detail['waba_quality_updated_at'])
-            ? now()->diffInMinutes($detail['waba_quality_updated_at'])
+            ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($detail['waba_quality_updated_at'])))
             : 999;
 
-        // Use cache if less than 6 hours old
-        if ($cacheAge < 360 && !empty($detail['waba_quality_cache'])) {
+        // Use cache if less than 6 hours old AND not forced
+        if (!$force && $cacheAge < 360 && !empty($detail['waba_quality_cache'])) {
             return response()->json([
                 'cached' => true,
                 'data'   => $detail['waba_quality_cache'],

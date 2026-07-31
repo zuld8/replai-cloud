@@ -159,9 +159,10 @@
                             <span class="val" data-q="tier">{{ $tierLabel }}</span>
                         </div>
                         @if($lastUpdated)
-                        <div class="info-row">
+                        <div class="info-row" style="align-items:center;">
                             <span class="lbl">Terakhir Diperbarui</span>
-                            <span class="val empty" style="font-style:normal;">{{ \Carbon\Carbon::parse($lastUpdated)->format('d M Y, H:i') }}</span>
+                            <span class="val empty" style="font-style:normal;" data-q="updated">{{ \Carbon\Carbon::parse($lastUpdated)->format('d M Y, H:i') }}</span>
+                            <button onclick="fetchWabaQuality(true)" title="Refresh dari Meta" style="margin-left:8px;background:none;border:1px solid #cbd5e1;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:12px;color:#2E8DE1;" id="btnRefreshQuality">↻ Refresh</button>
                         </div>
                         @endif
 
@@ -232,9 +233,12 @@ const TIER_MAP = {
     'TIER_UNLIMITED': 'Tidak Terbatas'
 };
 
-function fetchWabaQuality() {
+function fetchWabaQuality(force = false) {
     const metaId = '{{ $meta->id }}';
-    fetch('/app/waba/update/' + metaId + '/quality', {
+    const btn    = document.getElementById('btnRefreshQuality');
+    if (btn && force) { btn.textContent = '↻ ...'; btn.disabled = true; }
+
+    fetch('/app/waba/update/' + metaId + '/quality' + (force ? '?force=1' : ''), {
         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
     })
     .then(r => r.ok ? r.json() : null)
@@ -252,9 +256,17 @@ function fetchWabaQuality() {
         set('phone',   d.display_phone_number || '-');
         set('quality', qLabel, qColor);
         set('tier',    TIER_MAP[d.messaging_limit_tier] || d.messaging_limit_tier || '-');
-        if (json.updated_at) set('updated', json.updated_at);
+        if (json.updated_at) {
+            // Format: "31 Jul 2026, 11:05"
+            const dt = new Date(json.updated_at.replace(' ', 'T'));
+            const fmt = dt.toLocaleString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+            set('updated', fmt.replace('.', ':'));
+        }
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => {
+        if (btn && force) { btn.textContent = '↻ Refresh'; btn.disabled = false; }
+    });
 }
 
 
