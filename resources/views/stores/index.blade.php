@@ -121,7 +121,7 @@
 <!-- Modal Import — Modern Drag & Drop -->
 <div class="modal fade" id="modalImport" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
-        <form action="<?= route('stores.import'); ?>" enctype="multipart/form-data" method="post"
+        <form id="importForm" action="<?= route('stores.import'); ?>" enctype="multipart/form-data" method="post"
             class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
             @csrf
             <input type="hidden" name="meta_account_id" id="importMetaAccountId" value="">
@@ -751,6 +751,23 @@ function openFileDialog() {
     if (!metaId) return;
     document.getElementById('importFileInput').click();
 }
+
+// Layer 1: Disable tombol Import saat form submit — cegah double-click race
+(function() {
+    const form = document.getElementById('importForm');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        const btn = document.getElementById('importSubmitBtn');
+        if (!btn) return;
+        if (btn.dataset.busy === '1') {
+            e.preventDefault();  // blokir submit kedua
+            return false;
+        }
+        btn.dataset.busy = '1';
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bx bx-loader-alt bx-spin me-1"></i>Mengimpor…';
+    });
+})();
 </script>
 
 @endsection

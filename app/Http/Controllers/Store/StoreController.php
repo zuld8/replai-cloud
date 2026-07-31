@@ -334,6 +334,13 @@ class StoreController extends Controller
         $skipped     = 0;   // duplicate skip counter
         $totalRows   = count($rows); // only counts non-empty rows
 
+        // Layer 2: Lock atomik per merchant — cegah double-submit race
+        $lockKey = 'store-import:' . ($merchantId ?? $businessId ?? 'guest');
+        $lock    = \Illuminate\Support\Facades\Cache::lock($lockKey, 600);
+        if (!$lock->get()) {
+            return redirect()->back()->with(['gagal' => '⏳ Masih ada proses import berjalan. Tunggu sampai selesai lalu coba lagi.']);
+        }
+
         try {
             // -----------------------------------------------
             // 1. Pre-cache semua categories (1 query saja)
@@ -465,7 +472,7 @@ class StoreController extends Controller
                 }
 
                 if (!empty($toInsert)) {
-                    DB::table('stores')->insert($toInsert);
+                    DB::table('stores')->insertOrIgnore($toInsert); // Layer 3c: rem DB duplikat
                 }
             }
 
@@ -490,6 +497,9 @@ class StoreController extends Controller
 
         } catch (\Exception $e) {
             return redirect()->back()->with(['gagal' => 'Import gagal: ' . $e->getMessage()]);
+        } finally {
+            // Layer 2: Selalu lepas lock (sukses maupun gagal)
+            if (isset($lock)) $lock->release();
         }
     }
 
