@@ -389,27 +389,23 @@ class GeminiAiServiceObserver
      */
     public function calculateCompletions(string $modelAi, int $inputTokens, int $outputTokens): int
     {
-        // Gemini pricing is different from OpenAI
-        // Adjust based on your pricing model
-        
-        $settingConfiguration = InternalSetting::first([
-            'credit_token_basic', 
-            'credit_token_advance'
-        ]);
-
+        $settingConfiguration = InternalSetting::first(['credit_token_basic', 'credit_token_advance']);
         $totalTokens = $inputTokens + $outputTokens;
-        
-        if ($modelAi === 'standard') {
-            $tokensPerCredit = $settingConfiguration->credit_token_basic ?? 250;
-            return ceil($totalTokens / $tokensPerCredit);
-        }
-        
+
         if ($modelAi === 'advanced') {
+            // Model advanced → pakai tarif advance
             $tokensPerCredit = $settingConfiguration->credit_token_advance ?? 100;
-            return ceil($totalTokens / $tokensPerCredit);
+        } else {
+            // 'standart' + default/model lain → pakai tarif basic
+            $tokensPerCredit = $settingConfiguration->credit_token_basic ?? 250;
         }
 
-        return 0;
+        // Jaga-jaga bagi nol
+        if ($tokensPerCredit <= 0) {
+            $tokensPerCredit = 250;
+        }
+
+        return (int) ceil($totalTokens / $tokensPerCredit);
     }
 
     /**
