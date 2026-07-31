@@ -55,7 +55,6 @@ class OpenAiServiceObserver
                 $description .= "\n\n=== INFORMASI DARI DOKUMEN ===\n";
                 $description .= $ragContext;
                 $description .= "\n=== AKHIR INFORMASI DOKUMEN ===\n";
-                $description .= "\nGunakan informasi di atas untuk menjawab pertanyaan user jika relevan. Jika informasi tidak cukup, jawab berdasarkan pengetahuan umummu.";
             }
         }
 
