@@ -51,7 +51,7 @@ class GeminiAiServiceObserver
         $conversationHistory = $this->buildConversationHistory($conversations);
 
         // Build prompt with intent detection instruction
-        $systemPrompt = $description . ai_guardrail() . $this->getIntentDetectionPrompt();
+        $systemPrompt = ($description ?? '') . ai_guardrail() . $this->getIntentDetectionPrompt();
 
         // Select model based on mode and media
         $model = $this->selectModel($modeAi, $usingMedia);
@@ -181,7 +181,7 @@ class GeminiAiServiceObserver
         $media
     ): array {
         
-            $description .= ai_guardrail();
+            $description = ($description ?? '') . ai_guardrail();
             $contents = [];
 
         // Add system prompt as first user message

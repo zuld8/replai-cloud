@@ -84,7 +84,7 @@ class OpenAiServiceObserver
         if ($description) {
             $messages[] = [
                 'role'    => 'system',
-                'content' => $description . ai_guardrail() . prompt_detect_intent()
+                'content' => ($description ?? '') . ai_guardrail() . prompt_detect_intent()
             ];
         }
 
@@ -274,7 +274,7 @@ class OpenAiServiceObserver
         if ($description) {
             $messages[] = [
                 'role'    => 'system',
-                'content' => $description . ai_guardrail()
+                'content' => ($description ?? '') . ai_guardrail()
             ];
         }
 
