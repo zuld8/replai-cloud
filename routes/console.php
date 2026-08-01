@@ -107,6 +107,17 @@ Schedule::job(new ScrappingGroupJob)
             ->where('scrapping_method', 'group')
             ->exists();
     });
+
+// Scraping kontak dari member grup WhatsApp
+// Proses satu grup per menit, Node.js callback ke /api-app/scrapping/callback/{id}/{business}
+Schedule::job(new ScrappingContactOnGroupJob)
+    ->everyMinute()
+    ->withoutOverlapping(5)
+    ->when(function () {
+        return WhatsappGroup::withoutGlobalScopes()
+            ->where('scraping', 'yes')
+            ->exists();
+    });
     
 
 // Auto-register pending WABA phone numbers (every 10 minutes)
