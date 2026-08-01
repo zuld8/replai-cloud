@@ -376,7 +376,7 @@
                             <div class="template-search">
                                 <input type="text" v-model="templatePanel.search" @input="searchTemplates" placeholder="Search templates..." />
                             </div>
-                            <div class="template-list" v-if="!templatePanel.loading">
+                            <div class="template-list" v-if="!templatePanel.loading" @touchmove.stop>
                                 <div class="template-item" v-for="tmpl in templatePanel.list" :key="tmpl.id"
                                     @click="selectTemplate(tmpl)">
                                     <div class="template-item-header">
@@ -5515,30 +5515,29 @@ export default {
         top: auto !important;
         height: 75vh !important;
         max-height: 75vh !important;
-        overflow-y: auto !important;      /* PANEL yang scroll, sama seperti desktop */
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
+        overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain;
         border-radius: 16px 16px 0 0;
         z-index: 100000;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
-        /* Tidak perlu flex — panel scroll langsung */
+        /* panel scroll langsung, sama seperti desktop */
     }
     .template-list {
-        max-height: none !important;      /* hapus batas tinggi list */
-        overflow-y: visible !important;   /* list tidak scroll, panel yang scroll */
+        max-height: none !important;
+        overflow: visible !important;
     }
-    /* header + search tetap sticky di dalam panel (sudah ada di desktop, pertahankan) */
     .template-panel-header {
         position: sticky !important;
         top: 0 !important;
-        background: white !important;
         z-index: 2 !important;
+        background: white !important;
     }
     .template-search {
         position: sticky !important;
         top: 52px !important;
-        background: white !important;
         z-index: 2 !important;
+        background: white !important;
     }
 }
 
