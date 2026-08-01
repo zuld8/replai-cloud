@@ -443,6 +443,7 @@ Route::middleware('package_active')->group(function () {
         Route::get('detail/{group}', [WhatsappGroupScrappingController::class, 'detail'])->name('group.detail');
         Route::post('status/{group}', [WhatsappGroupScrappingController::class, 'changeStatus']);
         Route::get('delete/{group}', [WhatsappGroupScrappingController::class, 'delete'])->name('group.delete');
+        Route::get('export/{group}', [WhatsappGroupScrappingController::class, 'export'])->name('group.export');
     });
 
     // ============================================
