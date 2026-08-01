@@ -998,12 +998,22 @@ async function getGroupMembers(session, dataid, business) {
         const group = groups[dataid];
         const metadata = await session.groupMetadata(dataid);
 
+        // Filter @lid (WhatsApp Linked ID — bukan nomor HP asli, tidak bisa dipakai)
+        // Hanya proses @s.whatsapp.net yang berisi nomor HP sesungguhnya
+        const phoneParticipants = metadata.participants.filter(p =>
+            p.id.endsWith('@s.whatsapp.net')
+        );
+
         const membersRaw = await Promise.all(
-            metadata.participants.map(async (p) => ({
+            phoneParticipants.map(async (p) => ({
                 wa_id: p.id.split("@")[0],
                 name: await getName(session, p.id),
             }))
         );
+
+        if (membersRaw.length === 0) {
+            console.log(`[getGroupMembers] Grup ${dataid}: semua peserta @lid (privasi), tidak ada nomor HP.`);
+        }
 
         const chunkSize = 50;
         for (let i = 0; i < membersRaw.length; i += chunkSize) {
