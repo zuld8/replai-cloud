@@ -998,21 +998,50 @@ async function getGroupMembers(session, dataid, business) {
         const group = groups[dataid];
         const metadata = await session.groupMetadata(dataid);
 
-        // Filter @lid (WhatsApp Linked ID — bukan nomor HP asli, tidak bisa dipakai)
-        // Hanya proses @s.whatsapp.net yang berisi nomor HP sesungguhnya
-        const phoneParticipants = metadata.participants.filter(p =>
-            p.id.endsWith('@s.whatsapp.net')
-        );
+        // Bangun peta LID → nomor HP dari contacts store session
+        // WhatsApp menyimpan mapping @lid ke @s.whatsapp.net di sini
+        const contacts = session.contacts || {};
+        const lidToPhone = {};
+        for (const [jid, contact] of Object.entries(contacts)) {
+            if (jid.endsWith('@s.whatsapp.net')) {
+                // contact.lid berisi @lid JID-nya
+                if (contact.lid) {
+                    lidToPhone[contact.lid] = jid.split('@')[0];
+                }
+            }
+        }
 
-        const membersRaw = await Promise.all(
-            phoneParticipants.map(async (p) => ({
-                wa_id: p.id.split("@")[0],
-                name: await getName(session, p.id),
-            }))
-        );
+        const membersRaw = [];
+        for (const p of metadata.participants) {
+            let waId = null;
+
+            if (p.id.endsWith('@s.whatsapp.net')) {
+                // Nomor HP langsung tersedia
+                waId = p.id.split('@')[0];
+            } else if (p.id.endsWith('@lid')) {
+                // Coba resolve dari contacts store
+                const resolved = lidToPhone[p.id];
+                if (resolved) {
+                    waId = resolved;
+                } else {
+                    // Tidak bisa resolve: anggota aktifkan privasi nomor HP
+                    continue;
+                }
+            } else {
+                continue; // Format tidak dikenal, skip
+            }
+
+            // Validasi: nomor HP harus 7-15 digit murni angka
+            if (!/^[0-9]{7,15}$/.test(waId)) continue;
+
+            const name = await getName(session, p.id);
+            membersRaw.push({ wa_id: waId, name });
+        }
 
         if (membersRaw.length === 0) {
-            console.log(`[getGroupMembers] Grup ${dataid}: semua peserta @lid (privasi), tidak ada nomor HP.`);
+            console.log(`[getGroupMembers] Grup ${dataid}: semua anggota @lid dengan privasi aktif, tidak ada nomor HP yang bisa diekstrak.`);
+        } else {
+            console.log(`[getGroupMembers] Grup ${dataid}: ${membersRaw.length} nomor HP ditemukan.`);
         }
 
         const chunkSize = 50;
