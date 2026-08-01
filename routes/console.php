@@ -18,6 +18,7 @@ use App\Jobs\SendWhatsappJob;
 use App\Jobs\UpsellCampaignSchedulerJob; 
 use App\Models\Blash\BlashWhatsapp;
 use App\Models\Store\Scrapping;
+use App\Models\Store\WhatsappGroup;
 use Illuminate\Support\Facades\Schedule;
 
 // Clear stale broadcast:creating locks (10-min TTL sometimes causes stuck broadcasts)
