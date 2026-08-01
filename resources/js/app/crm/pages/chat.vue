@@ -5513,24 +5513,41 @@ export default {
         right: 0 !important;
         bottom: 0 !important;
         top: auto !important;
+        height: 80vh !important;          /* FIX: height pasti (bukan max-height) */
         max-height: 80vh !important;
         border-radius: 16px 16px 0 0;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
         z-index: 100000;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
     }
-    .template-panel-header { flex: 0 0 auto; }
-    .template-search { position: static; }
+    .template-panel-header {
+        flex: 0 0 auto !important;
+        min-height: 0;
+    }
+    .template-search {
+        position: static !important;
+        flex: 0 0 auto !important;
+    }
     .template-list {
+        flex: 1 1 0 !important;           /* FIX: basis 0 bukan auto */
+        min-height: 0 !important;         /* FIX KUNCI: tanpa ini flexbox gak scroll */
         max-height: none !important;
-        flex: 1 1 auto;
-        overflow-y: auto;
+        height: 100% !important;
+        overflow-y: scroll !important;    /* scroll paksa (bukan auto) */
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;              /* pastiin touch scroll aktif */
     }
     .template-params,
-    .template-detail { flex: 1 1 auto; overflow-y: auto; }
+    .template-detail {
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
+        overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
 }
 
 </style>
