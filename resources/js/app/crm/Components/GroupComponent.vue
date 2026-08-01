@@ -1477,22 +1477,30 @@ export default {
         });
         // Realtime flip icon bot saat agen lain ambil alih (FIX 4b)
         socket.on("takeover-changed", (data) => {
-            if (this.merchantId && data.merchant_id === this.merchantId) {
-                const idx = this.chats.list.findIndex(c => c.id === data.conversation_id);
+            // Type-safe: id bisa integer dari DB, conversation_id bisa string dari URL
+            const isMine = this.merchantId && String(data.merchant_id) === String(this.merchantId);
+            if (isMine) {
+                const idx = this.chats.list.findIndex(c => String(c.id) === String(data.conversation_id));
                 if (idx !== -1) {
-                    this.$set(this.chats.list[idx], 'takeover', data.takeover);
+                    // splice lebih reliable daripada $set untuk Vue 2 array reactivity
+                    const updated = Object.assign({}, this.chats.list[idx], { takeover: data.takeover });
+                    this.chats.list.splice(idx, 1, updated);
                 }
             }
         });
         // local-takeover: sidebar flip langsung saat agen klik Ambil Alih
         this._localTakeoverHandler = (e) => {
-            const i = this.chats.list.findIndex(c => c.id === e.detail.chatid);
-            if (i !== -1) this.$set(this.chats.list[i], 'takeover', e.detail.takeover);
+            // Type-safe: params dari URL = string, c.id dari API bisa integer
+            const i = this.chats.list.findIndex(c => String(c.id) === String(e.detail.chatid));
+            if (i !== -1) {
+                const updated = Object.assign({}, this.chats.list[i], { takeover: e.detail.takeover });
+                this.chats.list.splice(i, 1, updated);
+            }
         };
         window.addEventListener('local-takeover', this._localTakeoverHandler);
     },
 
-    beforeUnmount() {
+    beforeDestroy() {
         document.removeEventListener('click', this.closeDropdownOutside);
 
         socket.off("update-chat-list");
