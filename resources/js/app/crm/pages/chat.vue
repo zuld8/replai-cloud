@@ -78,7 +78,7 @@
                         <span class="d-none d-sm-inline">{{ detail.takeover ? 'Bot Nonaktif' : 'Bot Aktif' }}</span>
                     </button>
                     <select class="status-select" v-model="detail.status" @change="changeStatus">
-                        <option value="open">Terbuka</option>
+                        <option value="open">Aktif</option>
                         <option value="resolved">Selesai</option>
                         <option value="block">Blokir</option>
                     </select>
@@ -102,7 +102,7 @@
                             <div class="burger-item">
                                 <i class="bx bx-transfer-alt"></i>
                                 <select class="burger-status-select" v-model="detail.status" @change="changeStatus; mobileBurgerOpen=false">
-                                    <option value="open">Terbuka</option>
+                                    <option value="open">Aktif</option>
                                     <option value="resolved">Selesai</option>
                                     <option value="block">Blokir</option>
                                 </select>
