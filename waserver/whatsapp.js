@@ -23,6 +23,41 @@ import { Readable } from "stream";
 // Maps for session management
 const sessions = new Map();
 const retries = new Map();
+
+// ================================================================
+// Contacts Cache — Persist nama WA ke disk supaya bertahan setelah restart
+// ================================================================
+function saveContactsCache(sessionId, contacts) {
+    try {
+        const cachePath = join(dirname, 'sessions', sessionId, 'contacts-cache.json');
+        const data = {};
+        Object.entries(contacts).forEach(([jid, c]) => {
+            if (c && (c.name || c.notify || c.verifiedName)) {
+                data[jid] = {
+                    id: c.id,
+                    name: c.name || null,
+                    notify: c.notify || null,
+                    verifiedName: c.verifiedName || null
+                };
+            }
+        });
+        fs.writeFileSync(cachePath, JSON.stringify(data));
+    } catch (e) {
+        // Silent fail — jangan crash bot
+    }
+}
+
+function loadContactsCache(sessionId) {
+    try {
+        const cachePath = join(dirname, 'sessions', sessionId, 'contacts-cache.json');
+        if (fs.existsSync(cachePath)) {
+            return JSON.parse(fs.readFileSync(cachePath, 'utf-8'));
+        }
+    } catch (e) {}
+    return {};
+}
+// ================================================================
+
 const sessionsDir = (subDir = "") => {
     return join(dirname, "sessions", subDir ? subDir : "");
 };
@@ -201,6 +236,9 @@ const createSession = async (
             contacts.forEach((contact) => {
                 session.contacts[contact.id] = contact;
             });
+            // [FIX] Simpan semua contacts ke disk (bertahan setelah restart)
+            saveContactsCache(sessionId, session.contacts);
+            console.log(`[contacts.set] Tersimpan ${contacts.length} kontak ke cache disk — session ${sessionId}`);
         }
     });
 
@@ -217,6 +255,8 @@ const createSession = async (
                     session.contacts[update.id] = update;
                 }
             });
+            // [FIX] Simpan perubahan kontak ke disk
+            saveContactsCache(sessionId, session.contacts);
         }
     });
 
@@ -361,6 +401,25 @@ async function handleIncomingMessage(sock, sessionId, messageUpdate) {
 
         const contactJid = message.key.remoteJid;
         let contactName = pushName || contactJid.split("@")[0];
+
+        // [FIX] Simpan pushName ke session.contacts supaya getName() bisa pakai
+        if (pushName) {
+            const session = sessions.get(sessionId);
+            if (session) {
+                // Untuk grup: sendernya adalah key.participant
+                // Untuk DM: sendernya adalah key.remoteJid
+                const senderJid = message.key.participant || (!message.key.fromMe ? contactJid : null);
+                if (senderJid && senderJid.endsWith('@s.whatsapp.net')) {
+                    if (!session.contacts[senderJid]) {
+                        session.contacts[senderJid] = { id: senderJid };
+                    }
+                    // 'notify' adalah WA push name (nama yang user set sendiri di WA)
+                    session.contacts[senderJid].notify = pushName;
+                    // Simpan ke disk supaya bertahan setelah restart
+                    saveContactsCache(sessionId, session.contacts);
+                }
+            }
+        }
 
         // Periksa apakah pesan ini adalah reply ke pesan lain
         if (messageUpdate.type == "notify") {
@@ -1111,6 +1170,15 @@ async function getName(session, jid) {
         // Cache the contact
         if (!session.contacts) {
             session.contacts = {};
+        // [FIX] Load contacts dari disk cache (supaya nama tersedia setelah restart)
+        try {
+            const cachedContacts = loadContactsCache(sessionId);
+            Object.assign(session.contacts, cachedContacts);
+            const cachedCount = Object.keys(cachedContacts).length;
+            if (cachedCount > 0) {
+                console.log(`[contacts-cache] Loaded ${cachedCount} cached contacts untuk session ${sessionId}`);
+            }
+        } catch (e) {}
         }
         if (name && contact) {
             session.contacts[jid] = contact;
