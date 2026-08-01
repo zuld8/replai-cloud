@@ -143,7 +143,7 @@ app.post("/trigger-whatsapp", triggerAuth, (req, res) => {
     });
 });
 
-app.post('/trigger-takeover', authenticate, (req, res) => {
+app.post('/trigger-takeover', triggerAuth, (req, res) => {
     const data = req.body;
     // Emit ke semua agen — frontend filter by merchant_id
     io.emit('takeover-changed', data);
