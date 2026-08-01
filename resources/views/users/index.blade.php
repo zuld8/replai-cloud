@@ -497,7 +497,8 @@ small.text-muted {
         $hue2     = ($hue1 + 40) % 360;
         $bgGradient = "linear-gradient(135deg, hsl({$hue1}, 80%, 50%), hsl({$hue2}, 80%, 50%))";
         
-        $isOwner  = $user->merchant && optional($user->merchant->owner)->id === $user->id;
+        // FIX: cek owner_id langsung (bukan via relasi owner() yang bisa null)
+                $isOwner  = $user->merchant && (string)$user->merchant->owner_id === (string)$user->id;
         $channels = $platformMap[$user->id] ?? [];
         $hasPhoto = $user->image_data && !in_array($user->image_data, ['images/user.png','uploads/image.jpg','']);
     @endphp
