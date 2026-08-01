@@ -2309,6 +2309,10 @@ export default {
                 this.detail.detail.resolved_by = response.data.detail.resolved_by;
                 this.detail.detail.resolved_at = response.data.detail.resolved_at;
                 this.detail.takeover = false;
+                // Dispatch ke sidebar: bot aktif kembali setelah resolved
+                window.dispatchEvent(new CustomEvent('local-takeover', {
+                    detail: { chatid: this.$route.params.chatid, takeover: 'no' }
+                }));
             } catch (error) {
                 console.error(error);
             }
