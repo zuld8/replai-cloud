@@ -280,6 +280,9 @@ class GroupScrappingController extends Controller
                         'merchant_id'       => $group->merchant_id,
                         'business_id'       => $group->business_id,
                     ]);
+                } elseif ($name && !$checkStore->wa_username) {
+                    // Update wa_username jika sebelumnya kosong dan sekarang nama tersedia
+                    $checkStore->update(['wa_username' => $name]);
                 }
             }
         }
