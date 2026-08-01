@@ -72,6 +72,7 @@ class ContactListResource extends JsonResource
                 : $this->image_data,
             'is_pinned'    => (bool) ($this->is_pinned_for_user ?? false),
             'is_archived'   => (bool) ($this->is_archived ?? false),
+            'takeover'      => $this->takeover,         // FIX: bot aktif indicator di sidebar
             'lead_source'        => $this->lead_source,
             'lead_source_detail' => $this->lead_source_detail
                 ? json_decode($this->lead_source_detail, true) : null,

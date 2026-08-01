@@ -143,6 +143,15 @@ app.post("/trigger-whatsapp", triggerAuth, (req, res) => {
     });
 });
 
+app.post('/trigger-takeover', authenticate, (req, res) => {
+    const data = req.body;
+    // Emit ke semua agen — frontend filter by merchant_id
+    io.emit('takeover-changed', data);
+    res.json({ status: 'ok' });
+});
+
+
+
 app.listen(portexpress, hostexpress, () => {
     console.log(`Express server running on http://${hostexpress}:${portexpress}`);
 });

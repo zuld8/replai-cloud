@@ -36,6 +36,8 @@ use App\Services\Platform\InstagramService;
 use App\Services\Platform\MesaangerService;
 use App\Services\Platform\TelegramService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 
 class CrmController extends Controller
@@ -576,6 +578,20 @@ class CrmController extends Controller
             'takeover'          => $request->takeover == true ? 'yes' : 'no'
         ]);
 
+
+        // FIX 4b: emit takeover-changed ke semua agen via Express
+        try {
+            $expressUrl = config('services.express.url') . '/trigger-takeover';
+            Http::withHeaders(['x-api-key' => config('services.express.api_key')])
+                ->timeout(5)
+                ->post($expressUrl, [
+                    'conversation_id' => $history->id,
+                    'merchant_id'     => $history->merchant_id ?? my_business(),
+                    'takeover'        => $history->fresh()->takeover,
+                ]);
+        } catch (\Throwable $emitErr) {
+            Log::warning('emit takeover-changed gagal: ' . $emitErr->getMessage());
+        }
         return response()->json([
             'handled'       => array(
                 'id'            => $history->handled->id ?? '',
