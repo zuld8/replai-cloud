@@ -3697,7 +3697,7 @@ export default {
     background: white;
     border-radius: 12px 12px 0 0;
     box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-    max-height: 420px;
+    max-height: 70vh;
     overflow-y: auto;
     z-index: 999;
     animation: slideUp 0.2s ease;
@@ -3762,7 +3762,7 @@ export default {
 }
 
 .template-list {
-    max-height: 280px;
+    max-height: 55vh;
     overflow-y: auto;
 }
 
@@ -5504,4 +5504,33 @@ export default {
 .emoji-picker-wrapper ::v-deep .emoji-mart-bar:last-child {
     display: none !important;
 }
+
+/* ── Mobile: template panel jadi bottom-sheet (keyboard-safe) ── */
+@media (max-width: 992px) {
+    .template-panel {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        max-height: 80vh !important;
+        border-radius: 16px 16px 0 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 100000;
+        box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
+    }
+    .template-panel-header { flex: 0 0 auto; }
+    .template-search { position: static; }
+    .template-list {
+        max-height: none !important;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .template-params,
+    .template-detail { flex: 1 1 auto; overflow-y: auto; }
+}
+
 </style>
