@@ -273,8 +273,9 @@ class GroupScrappingController extends Controller
 
                 if (!$checkStore) {
                     Store::create([
-                        'name'              => $name != '' ? $name : $request->group_name . ' - ' . $waId,
+                        'name'              => $request->group_name . ' - ' . $waId,
                         'phone'             => $waId,
+                        'wa_username'       => $name ?: null,   // nama WA asli jika tersedia
                         'whatsapp_group_id' => $group->id,
                         'merchant_id'       => $group->merchant_id,
                         'business_id'       => $group->business_id,

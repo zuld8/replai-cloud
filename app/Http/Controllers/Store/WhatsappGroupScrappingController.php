@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Models\Store\WhatsappGroup;
+use App\Models\Store\Store;
+use Illuminate\Support\Str;
 use App\Observers\Store\StoreObserver;
 use App\Observers\Store\WhatsappGroupObserver;
 use Illuminate\Http\Request;
@@ -152,6 +154,45 @@ class WhatsappGroupScrappingController extends Controller
     | 5. Components
     |--------------------------------------------------------------------------
     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Export CSV
+    |--------------------------------------------------------------------------
+    */
+
+    public function export(WhatsappGroup $group)
+    {
+        $stores   = Store::where('whatsapp_group_id', $group->id)
+                        ->get(['name', 'phone', 'wa_username']);
+
+        $filename = Str::slug($group->name) . '-kontak.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate',
+        ];
+
+        $callback = function () use ($stores, $group) {
+            $file = fopen('php://output', 'w');
+            // UTF-8 BOM supaya Excel bisa baca huruf khusus
+            fwrite($file, "\xEF\xBB\xBF");
+            fputcsv($file, ['Nama WA', 'Nomor Telepon', 'Grup']);
+            foreach ($stores as $store) {
+                fputcsv($file, [
+                    $store->wa_username ?: '',
+                    $store->phone,
+                    $group->name,
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     public function components(Request $request)
     {
         $groups     = $this->whatsappGroupObserver->getData($request)->get(['id', 'name']);
