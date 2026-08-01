@@ -1644,7 +1644,7 @@ class WabaCallbackController extends Controller
         // Hitung RAG context dari dokumen FineTunnel
         $ragContext = '';
         try {
-            if ($fineTunnel) {
+            if ($fineTunnel && $fineTunnel->documents()->exists()) {
                 $chunks = app(\App\Services\ChatBot\RagService::class)
                             ->searchSimilarChunks($fineTunnel, $messageContent['message'] ?? '', [], 5);
                 foreach ($chunks as $item) {
