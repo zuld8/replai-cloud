@@ -5513,35 +5513,32 @@ export default {
         right: 0 !important;
         bottom: 0 !important;
         top: auto !important;
-        height: 78vh !important;
-        max-height: 85vh !important;
-        display: flex !important;
-        flex-direction: column !important;
-        overflow: hidden !important;
+        height: 75vh !important;
+        max-height: 75vh !important;
+        overflow-y: auto !important;      /* PANEL yang scroll, sama seperti desktop */
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
         border-radius: 16px 16px 0 0;
         z-index: 100000;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
-    }
-    .template-panel-header,
-    .template-search {
-        flex: 0 0 auto !important;
-        position: static !important;
+        /* Tidak perlu flex — panel scroll langsung */
     }
     .template-list {
-        flex: 1 1 auto !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-        touch-action: pan-y;
+        max-height: none !important;      /* hapus batas tinggi list */
+        overflow-y: visible !important;   /* list tidak scroll, panel yang scroll */
     }
-    .template-detail,
-    .template-params {
-        flex: 1 1 auto !important;
-        min-height: 0 !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch;
+    /* header + search tetap sticky di dalam panel (sudah ada di desktop, pertahankan) */
+    .template-panel-header {
+        position: sticky !important;
+        top: 0 !important;
+        background: white !important;
+        z-index: 2 !important;
+    }
+    .template-search {
+        position: sticky !important;
+        top: 52px !important;
+        background: white !important;
+        z-index: 2 !important;
     }
 }
 
