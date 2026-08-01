@@ -29,7 +29,8 @@ class GeminiAiServiceObserver
         string $message = '',
         $conversations = null,
         string $modeAi = 'standard',
-        $media = null
+        $media = null,
+        string $ragContext = ''
     ) {
         $description = $fineTunnel->description . PHP_EOL . PHP_EOL;
         if (!empty($fineTunnel->knowledge_manual)) {
@@ -38,6 +39,10 @@ class GeminiAiServiceObserver
                           . "\n=== AKHIR INFORMASI ===\n\n";
         }
         $usingMedia = $media !== null;
+
+        if (!empty($ragContext)) {
+            $description .= "\n=== INFORMASI DARI DOKUMEN ===\n" . $ragContext . "\n=== AKHIR DOKUMEN ===\n";
+        }
         
         // Build training from Google Sheets
         $dataFromSheets = $this->getGoogleSheetsData($fineTunnel);
@@ -92,7 +97,8 @@ class GeminiAiServiceObserver
         string $message = '',
         $conversations = null,
         string $modeAi = 'standard',
-        $media = null
+        $media = null,
+        string $ragContext = ''
     ) {
         $description = $fineTunnel->description . PHP_EOL . PHP_EOL;
         if (!empty($fineTunnel->knowledge_manual)) {
@@ -101,6 +107,10 @@ class GeminiAiServiceObserver
                           . "\n=== AKHIR INFORMASI ===\n\n";
         }
         $usingMedia = $media !== null;
+
+        if (!empty($ragContext)) {
+            $description .= "\n=== INFORMASI DARI DOKUMEN ===\n" . $ragContext . "\n=== AKHIR DOKUMEN ===\n";
+        }
 
         // Build training from Google Sheets
         $dataFromSheets = $this->getGoogleSheetsData($fineTunnel);

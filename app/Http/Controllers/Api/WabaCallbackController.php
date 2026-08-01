@@ -1497,7 +1497,8 @@ class WabaCallbackController extends Controller
         string $message,
         $conversations,
         string $model_ai,
-        $image_path
+        $image_path,
+        string $ragContext = ''
     ): array {
         $gemini_key = $this->generalSetting->open_ai_key ?? null;
 
@@ -1512,7 +1513,8 @@ class WabaCallbackController extends Controller
                 $message,
                 $conversations,
                 $model_ai,
-                $image_path
+                $image_path,
+                $ragContext
             );
 
             if ($intent_response->status() !== 200) {
@@ -1549,7 +1551,7 @@ class WabaCallbackController extends Controller
     /**
      * Detect intent - UPDATED WITH GEMINI SUPPORT
      */
-    private function detectIntent($fineTunnel, $conversations, array $messageContent): array
+    private function detectIntent($fineTunnel, $conversations, array $messageContent, string $ragContext = ''): array
     {
         $message = $messageContent['message'] ?? '';
         $image_path = $messageContent['messageType'] === 'image' ? ($messageContent['path'] ?? null) : null;
@@ -1562,7 +1564,8 @@ class WabaCallbackController extends Controller
                 $message,
                 $conversations,
                 $model_ai,
-                $image_path
+                $image_path,
+                $ragContext
             );
         }
 
@@ -1571,7 +1574,8 @@ class WabaCallbackController extends Controller
             $message,
             $conversations,
             $model_ai,
-            $image_path
+            $image_path,
+            $ragContext
         );
     }
 
@@ -1583,7 +1587,8 @@ class WabaCallbackController extends Controller
         string $message,
         $conversations,
         string $model_ai,
-        $image_path
+        $image_path,
+        string $ragContext = ''
     ): array {
         $intent_response = $this->openAiServiceObserver->detectIntent(
             $fineTunnel,
@@ -1591,7 +1596,8 @@ class WabaCallbackController extends Controller
             $message,
             $conversations,
             $model_ai,
-            $image_path
+            $image_path,
+            $ragContext
         );
 
         if ($intent_response->status() !== 200) {
@@ -1635,7 +1641,23 @@ class WabaCallbackController extends Controller
         $fineTunnel     = $device->finetunnel;
         $conversations  = $histories->details_desc->take($fineTunnel->history_limit)->sortBy('created_at');
 
-        $intentData = $this->detectIntent($fineTunnel, $conversations, $messageContent);
+        // Hitung RAG context dari dokumen FineTunnel
+        $ragContext = '';
+        try {
+            if ($fineTunnel) {
+                $chunks = app(\App\Services\ChatBot\RagService::class)
+                            ->searchSimilarChunks($fineTunnel, $messageContent['message'] ?? '', [], 5);
+                foreach ($chunks as $item) {
+                    if (($item['similarity'] ?? 0) < 0.4) continue;
+                    $ragContext .= "[Dokumen: {$item['chunk']->document->filename}]\n{$item['chunk']->content}\n\n";
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Webhook RAG error: ' . $e->getMessage());
+            $ragContext = '';
+        }
+
+        $intentData = $this->detectIntent($fineTunnel, $conversations, $messageContent, $ragContext);
 
         if (!$intentData['success']) {
             return null;

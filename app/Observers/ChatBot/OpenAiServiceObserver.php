@@ -32,6 +32,7 @@ class OpenAiServiceObserver
         $conversations = null,
         String $modeAi = 'standart',
         $media = null,
+        string $ragContext = ''
     ) {
 
         $messages           = [];
@@ -49,11 +50,11 @@ class OpenAiServiceObserver
         }
 
         if ($message != '') {
-            $ragContext = $this->getRagContext($fineTunnel, $message, $conversationsData);
+            $internalRagContext = $this->getRagContext($fineTunnel, $message, $conversationsData);
  
-            if (!empty($ragContext)) {
+            if (!empty($internalRagContext)) {
                 $description .= "\n\n=== INFORMASI DARI DOKUMEN ===\n";
-                $description .= $ragContext;
+                $description .= $internalRagContext;
                 $description .= "\n=== AKHIR INFORMASI DOKUMEN ===\n";
             }
         }
@@ -74,6 +75,10 @@ class OpenAiServiceObserver
             $description .= "\n=== INFORMASI / PENGETAHUAN (dari pemilik) ===\n"
                           . $fineTunnel->knowledge_manual
                           . "\n=== AKHIR INFORMASI ===\n\n";
+        }
+
+        if (!empty($ragContext)) {
+            $description .= "\n=== INFORMASI DARI DOKUMEN ===\n" . $ragContext . "\n=== AKHIR DOKUMEN ===\n";
         }
 
         if (!$usingMedia && $modeAi == 'advanced') {

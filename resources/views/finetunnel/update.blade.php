@@ -521,7 +521,7 @@
                     <label class="form-label fw-semibold mb-1" style="font-size:.85rem">Agen yang dihubungi</label>
                     <select class="form-control users" name="agent[]" multiple="multiple">
                         @foreach ($users as $user)
-                        <option value="{{ $user->id }}" {{ in_array($user->id, explode(',',$fineTunnel->agent)) ? 'selected' : '' }}>{{ $user->name }}</option>
+                        <option value="{{ $user->id }}" {{ in_array($user->id, explode(',',$fineTunnel->agent)) ? 'selected' : '' }}>{{ preg_replace('/[\x{FFFD}\x{0000}-\x{001F}]/u', '', $user->name) }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -543,7 +543,7 @@
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" value="{{$label->id}}" name="label[]" id="label-{{$label->id}}" {{ in_array($label->id, $selectedLabels) ? 'checked' : '' }}>
                                                     <label class="form-check-label" for="label-{{$label->id}}">
-                                                        {{$label->name}}
+                                                        {{ preg_replace('/[\x{FFFD}\x{0000}-\x{001F}]/u', '', $label->name) }}
                                                     </label>
                                                 </div>
                                             </div>
