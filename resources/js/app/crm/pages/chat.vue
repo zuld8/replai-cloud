@@ -2321,8 +2321,10 @@ export default {
                 });
                 this.detail.takeover = response.data.status;
                     // Sync sidebar langsung
+                    // Normalize: takeover bisa boolean(true) atau string('yes') dari response
+                    const newTakeover = (response.data.status === true || response.data.status === 'yes') ? 'yes' : 'no';
                     window.dispatchEvent(new CustomEvent('local-takeover', {
-                        detail: { chatid: this.$route.params.chatid, takeover: response.data.status }
+                        detail: { chatid: this.$route.params.chatid, takeover: newTakeover }
                     }));
                 this.detail.handled = response.data.handled;
                 this.detail.detail.assignment_by = response.data.detail.assignment_by;

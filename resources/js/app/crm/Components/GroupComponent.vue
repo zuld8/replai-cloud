@@ -1475,6 +1475,15 @@ export default {
             } else {
             }
         });
+        // Realtime flip icon bot saat agen lain ambil alih (FIX 4b)
+        socket.on("takeover-changed", (data) => {
+            if (this.merchantId && data.merchant_id === this.merchantId) {
+                const idx = this.chats.list.findIndex(c => c.id === data.conversation_id);
+                if (idx !== -1) {
+                    this.$set(this.chats.list[idx], 'takeover', data.takeover);
+                }
+            }
+        });
         // local-takeover: sidebar flip langsung saat agen klik Ambil Alih
         this._localTakeoverHandler = (e) => {
             const i = this.chats.list.findIndex(c => c.id === e.detail.chatid);
@@ -1487,6 +1496,7 @@ export default {
         document.removeEventListener('click', this.closeDropdownOutside);
 
         socket.off("update-chat-list");
+        socket.off("takeover-changed");
         window.removeEventListener('local-takeover', this._localTakeoverHandler);
         window.removeEventListener("socket-reconnected");
     },
