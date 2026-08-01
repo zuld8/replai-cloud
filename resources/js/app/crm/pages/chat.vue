@@ -5513,40 +5513,35 @@ export default {
         right: 0 !important;
         bottom: 0 !important;
         top: auto !important;
-        height: 80vh !important;          /* FIX: height pasti (bukan max-height) */
-        max-height: 80vh !important;
-        border-radius: 16px 16px 0 0;
+        height: 78vh !important;
+        max-height: 85vh !important;
         display: flex !important;
         flex-direction: column !important;
         overflow: hidden !important;
+        border-radius: 16px 16px 0 0;
         z-index: 100000;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
     }
-    .template-panel-header {
-        flex: 0 0 auto !important;
-        min-height: 0;
-    }
+    .template-panel-header,
     .template-search {
-        position: static !important;
         flex: 0 0 auto !important;
+        position: static !important;
     }
     .template-list {
-        flex: 1 1 0 !important;           /* FIX: basis 0 bukan auto */
-        min-height: 0 !important;         /* FIX KUNCI: tanpa ini flexbox gak scroll */
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
         max-height: none !important;
-        height: 100% !important;
-        overflow-y: scroll !important;    /* scroll paksa (bukan auto) */
+        overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
-        touch-action: pan-y;              /* pastiin touch scroll aktif */
-    }
-    .template-params,
-    .template-detail {
-        flex: 1 1 0 !important;
-        min-height: 0 !important;
-        overflow-y: scroll !important;
-        -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
+    }
+    .template-detail,
+    .template-params {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
     }
 }
 
