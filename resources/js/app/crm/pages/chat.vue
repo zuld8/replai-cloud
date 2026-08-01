@@ -2320,6 +2320,10 @@ export default {
                     takeover: status
                 });
                 this.detail.takeover = response.data.status;
+                    // Sync sidebar langsung
+                    window.dispatchEvent(new CustomEvent('local-takeover', {
+                        detail: { chatid: this.$route.params.chatid, takeover: response.data.status }
+                    }));
                 this.detail.handled = response.data.handled;
                 this.detail.detail.assignment_by = response.data.detail.assignment_by;
             } catch (error) {

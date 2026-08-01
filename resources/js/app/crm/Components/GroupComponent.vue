@@ -152,7 +152,12 @@
                                     <span class="ci-unread" v-if="list.not_read > 0">{{ list.not_read }}</span>
                                     <span class="ci-time">{{ list.last_message.time || list.last_message.date }}</span>
                                 </div>
-                                <span class="ci-status" :class="`st-${list.status}`">{{ getStatusText(list.status) }}</span>
+                                <div class="ci-status-row">
+                                    <i v-if="list.takeover === 'no' || list.takeover === false"
+                                       class="ci-bot bx bx-bot"
+                                       title="Bot aktif — balasan otomatis sedang jalan"></i>
+                                    <span class="ci-status" :class="`st-${list.status}`">{{ getStatusText(list.status) }}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -1448,6 +1453,7 @@ export default {
                     const updatedChat = {
                         ...currentChat,
                         not_read: newNotRead,
+                        takeover: newMessage.takeover ?? currentChat.takeover,
                         last_message: {
                             message: newMessage.message,
                             date: newMessage.date,
@@ -1469,12 +1475,19 @@ export default {
             } else {
             }
         });
+        // local-takeover: sidebar flip langsung saat agen klik Ambil Alih
+        this._localTakeoverHandler = (e) => {
+            const i = this.chats.list.findIndex(c => c.id === e.detail.chatid);
+            if (i !== -1) this.$set(this.chats.list[i], 'takeover', e.detail.takeover);
+        };
+        window.addEventListener('local-takeover', this._localTakeoverHandler);
     },
 
     beforeUnmount() {
         document.removeEventListener('click', this.closeDropdownOutside);
 
         socket.off("update-chat-list");
+        window.removeEventListener('local-takeover', this._localTakeoverHandler);
         window.removeEventListener("socket-reconnected");
     },
     watch: {
@@ -2495,6 +2508,9 @@ overflow:visible;}
 .ci-time{font-size:10px;color:#94A3B8;white-space:nowrap;}
 .ci-unread{font-size:9px;background:#16A34A;color:#fff;min-width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0 4px;font-weight:600;flex-shrink:0;}
 .ci-status{font-size:9.5px;padding:1px 7px;border-radius:10px;font-weight:500;white-space:nowrap;flex-shrink:0;}
+/* Bot aktif indicator */
+.ci-status-row { display:flex; align-items:center; gap:4px; justify-content:flex-end; }
+.ci-bot { font-size:13px; color:#2E8DE1; line-height:1; flex-shrink:0; }
 .st-open    {background:#FEF3C7;color:#B45309;}
 .st-resolved{background:#DCFCE7;color:#15803D;}
 .st-block   {background:#FEECEC;color:#B91C1C;}
