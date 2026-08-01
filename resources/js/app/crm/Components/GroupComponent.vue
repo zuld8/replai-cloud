@@ -119,6 +119,7 @@
                                     <template v-if="list.from === 'waba' && list.last_inbound_at">
                                         <span v-if="getWabaSessionStatus(list.last_inbound_at)"
                                               class="ci-24h"
+                                              :title="getWabaSessionStatus(list.last_inbound_at).status === 'expired' ? 'Sesi WhatsApp 24 jam habis — kirim template untuk memulai' : 'Sesi WhatsApp aktif — sisa waktu untuk kirim pesan biasa'"
                                               :class="{
                                                   'active': getWabaSessionStatus(list.last_inbound_at).status === 'active',
                                                   'soon':   getWabaSessionStatus(list.last_inbound_at).status === 'warning',
@@ -667,7 +668,7 @@ export default {
 
         /**
          * Hitung status sesi 24 jam WABA berdasarkan last_message_at.
-         * Returns: { status: 'active'|'warning'|'expired', label: '14j'|'1j 20m'|'Tutup', hours: number }
+         * Returns: { status: 'active'|'warning'|'expired', label: '14j'|'1j 20m'|'Sesi habis', hours: number }
          */
         getWabaSessionStatus(lastMessageAt) {
             if (!lastMessageAt) return null;
@@ -675,7 +676,7 @@ export default {
             const now  = new Date();
             const expiry = new Date(last.getTime() + 24 * 60 * 60 * 1000);
             const diffMs = expiry - now;
-            if (diffMs <= 0) return { status: 'expired', label: 'Tutup', hours: 0 };
+            if (diffMs <= 0) return { status: 'expired', label: 'Sesi habis', hours: 0 };
             const diffH = Math.floor(diffMs / 3600000);
             const diffM = Math.floor((diffMs % 3600000) / 60000);
             const label = diffH > 0 ? `${diffH}j${diffM > 0 ? ' ' + diffM + 'm' : ''}` : `${diffM}m`;
@@ -1242,7 +1243,7 @@ export default {
 
         getStatusText(status) {
             const statusMap = {
-                open:     "Terbuka",
+                open:     "Aktif",
                 resolved: "Selesai",
                 block:    "Diblokir"
             };
