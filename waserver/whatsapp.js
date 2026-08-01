@@ -998,51 +998,30 @@ async function getGroupMembers(session, dataid, business) {
         const group = groups[dataid];
         const metadata = await session.groupMetadata(dataid);
 
-        // Bangun peta LID → nomor HP dari contacts store session
-        // WhatsApp menyimpan mapping @lid ke @s.whatsapp.net di sini
-        const contacts = session.contacts || {};
-        const lidToPhone = {};
-        for (const [jid, contact] of Object.entries(contacts)) {
-            if (jid.endsWith('@s.whatsapp.net')) {
-                // contact.lid berisi @lid JID-nya
-                if (contact.lid) {
-                    lidToPhone[contact.lid] = jid.split('@')[0];
-                }
-            }
-        }
-
+        // Baileys 6.7+: setiap participant memiliki:
+        //   p.id  = @lid (Linked ID untuk privasi)
+        //   p.jid = @s.whatsapp.net (nomor HP asli) ← INI yang harus dipakai
+        //   p.lid = @lid (sama dengan id)
         const membersRaw = [];
         for (const p of metadata.participants) {
-            let waId = null;
+            // Gunakan p.jid sebagai sumber nomor HP (selalu @s.whatsapp.net)
+            // Fallback ke p.id jika p.jid tidak ada dan p.id sudah @s.whatsapp.net
+            const phoneJid = p.jid
+                ? p.jid
+                : (p.id && p.id.endsWith('@s.whatsapp.net') ? p.id : null);
 
-            if (p.id.endsWith('@s.whatsapp.net')) {
-                // Nomor HP langsung tersedia
-                waId = p.id.split('@')[0];
-            } else if (p.id.endsWith('@lid')) {
-                // Coba resolve dari contacts store
-                const resolved = lidToPhone[p.id];
-                if (resolved) {
-                    waId = resolved;
-                } else {
-                    // Tidak bisa resolve: anggota aktifkan privasi nomor HP
-                    continue;
-                }
-            } else {
-                continue; // Format tidak dikenal, skip
-            }
+            if (!phoneJid || !phoneJid.endsWith('@s.whatsapp.net')) continue;
 
-            // Validasi: nomor HP harus 7-15 digit murni angka
+            const waId = phoneJid.split('@')[0];
+
+            // Validasi: nomor HP 7-15 digit angka (format E.164 tanpa '+')
             if (!/^[0-9]{7,15}$/.test(waId)) continue;
 
-            const name = await getName(session, p.id);
+            const name = await getName(session, phoneJid);
             membersRaw.push({ wa_id: waId, name });
         }
 
-        if (membersRaw.length === 0) {
-            console.log(`[getGroupMembers] Grup ${dataid}: semua anggota @lid dengan privasi aktif, tidak ada nomor HP yang bisa diekstrak.`);
-        } else {
-            console.log(`[getGroupMembers] Grup ${dataid}: ${membersRaw.length} nomor HP ditemukan.`);
-        }
+        console.log(`[getGroupMembers] Grup ${dataid}: ${membersRaw.length} nomor HP valid dari ${metadata.participants.length} peserta.`);
 
         const chunkSize = 50;
         for (let i = 0; i < membersRaw.length; i += chunkSize) {
