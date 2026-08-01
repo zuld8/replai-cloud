@@ -164,15 +164,134 @@ small.text-muted {
 .card-divider{border:none;border-top:1px solid #F1F5F9;margin:.6rem 0 .4rem}
 
 /* ── USER CARD (inline) ───────────────────────────── */
-.user-card{border:1px solid #E0EEFF!important;border-radius:16px!important;box-shadow:0 4px 16px rgba(0,80,200,.09),0 1px 4px rgba(0,0,0,.05)!important;transition:transform .2s ease,box-shadow .2s ease!important;overflow:hidden!important}
-.user-card:hover{transform:translateY(-6px)!important;box-shadow:0 14px 36px rgba(0,102,204,.18),0 2px 8px rgba(0,0,0,.06)!important;border-color:#A8CAFF!important}
-.user-card::before{content:'';display:block;height:3px;background:linear-gradient(90deg,#0055CC,#00AAFF,#0055CC);background-size:200% 100%;animation:ua-shimmer 3s ease-in-out infinite}
-@keyframes ua-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.user-card h6{font-size:.93rem!important;font-weight:700!important;color:#1E293B!important}
-.user-card .btn-outline-primary{border-color:#0066CC!important;color:#0066CC!important;border-radius:10px!important;font-size:.79rem!important;font-weight:600!important;height:36px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0 .9rem!important;transition:all .15s!important}
-.user-card .btn-outline-primary:hover{background:linear-gradient(135deg,#0055CC,#0099FF)!important;color:#fff!important;border-color:transparent!important}
-.user-card .btn-outline-danger{border-radius:10px!important;height:36px!important;width:36px!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;font-size:.9rem!important;flex-shrink:0!important}
-.user-card .avatar-status{position:absolute!important;bottom:3px!important;right:3px!important;width:11px!important;height:11px!important;border-radius:50%!important;background:#22C55E!important;border:2px solid #fff!important}
+.user-card {
+    background: #fff;
+    border: 1px solid #E4EAF2;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+.user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(46,141,225,0.12);
+    border-color: #A8C8FF;
+}
+.uc-body {
+    padding: 16px;
+    flex: 1;
+}
+.uc-top {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+.uc-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.uc-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.uc-info {
+    flex: 1;
+    min-width: 0;
+}
+.uc-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1E2A4A;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+.uc-email {
+    font-size: 0.8rem;
+    color: #64748B;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.uc-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.uc-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.uc-owner {
+    background: #FEF3C7;
+    color: #D97706;
+}
+.uc-admin {
+    background: #E0F2FE;
+    color: #0369A1;
+}
+.uc-agent {
+    background: #F1F5F9;
+    color: #475569;
+}
+.uc-channels {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #E4EAF2;
+}
+.uc-chip-ch {
+    background: #DCFCE7;
+    color: #16A34A;
+    padding: 3px 10px;
+    border-radius: 16px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: inline-block;
+}
+.uc-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #F8FAFC;
+    border-top: 1px solid #E4EAF2;
+}
+.uc-actions form {
+    margin: 0;
+    flex: 1;
+    display: flex;
+}
+.uc-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 8px;
+    width: 100%;
+}
 
 /* ── MODAL (inline) ───────────────────────────────── */
 #addUserModal .modal-header,#editUserModal .modal-header{background:linear-gradient(135deg,#0055AA,#0099FF)!important;color:#fff!important}
@@ -372,98 +491,83 @@ small.text-muted {
     @php
         $words    = array_filter(explode(' ', $user->name));
         $initials = strtoupper(substr(array_values($words)[0], 0, 1) . (count($words) > 1 ? substr(array_values($words)[1], 0, 1) : ''));
-        $palette  = ['#0EA5E9','#8B5CF6','#EC4899','#10B981','#3B82F6','#F59E0B','#06B6D4','#EF4444','#14B8A6','#F97316'];
-        $bgClr    = $palette[ord($user->name[0]) % count($palette)];
+        // Deterministic gradient color based on name
+        $nameVal  = crc32($user->name);
+        $hue1     = $nameVal % 360;
+        $hue2     = ($hue1 + 40) % 360;
+        $bgGradient = "linear-gradient(135deg, hsl({$hue1}, 80%, 50%), hsl({$hue2}, 80%, 50%))";
+        
         $isOwner  = $user->merchant && optional($user->merchant->owner)->id === $user->id;
         $channels = $platformMap[$user->id] ?? [];
-        $chats7d  = $chatCount7d[$user->id] ?? 0;
-        $lastAct  = $user->updated_at ? \Carbon\Carbon::parse($user->updated_at)->diffForHumans() : '-';
         $hasPhoto = $user->image_data && !in_array($user->image_data, ['images/user.png','uploads/image.jpg','']);
-        $chIcons  = ['waba'=>'bxl-whatsapp','device'=>'bx-mobile','telegram'=>'bxl-telegram','instagram'=>'bxl-instagram','messenger'=>'bxl-messenger','livechat'=>'bx-chat'];
-        $chColors = ['waba'=>'#25D366','device'=>'#128C7E','telegram'=>'#2AABEE','instagram'=>'#C13584','messenger'=>'#0099FF','livechat'=>'#F97316'];
-        $chats7d  = 0; // placeholder — chat count per agent sedang dikembangkan
     @endphp
-    <div class="col-xl-4 col-lg-6 col-12 mb-3 user-item"
+    <div class="col-xl-4 col-lg-6 col-md-6 col-12 mb-3 user-item"
          data-name="{{ strtolower($user->name) }}"
          data-email="{{ strtolower($user->email) }}"
          data-user-id="{{ $user->id }}">
-        <div class="agt-card">
-            {{-- Top: avatar + info + menu --}}
-            <div class="agt-top">
-                <div class="agt-avatar" style="background:{{ $bgClr }};">
-                    @if($hasPhoto)
-                        <img src="{{ asset($user->image_data) }}" alt="{{ $user->name }}">
-                    @else
-                        {{ $initials }}
+        <div class="user-card">
+            <div class="uc-body">
+                <div class="uc-top">
+                    <div class="uc-avatar" style="background:{{ $bgGradient }};">
+                        @if($hasPhoto)
+                            <img src="{{ asset($user->image_data) }}" alt="{{ $user->name }}">
+                        @else
+                            {{ $initials }}
+                        @endif
+                    </div>
+                    <div class="uc-info">
+                        <div class="uc-name">{{ $user->name }}</div>
+                        <div class="uc-email" title="{{ $user->email }}">{{ $user->email }}</div>
+                        <div class="uc-badges">
+                            @if($isOwner)
+                                <span class="uc-badge uc-owner">Owner</span>
+                            @endif
+                            @if($user->role === 'admin')
+                                <span class="uc-badge uc-admin">Admin</span>
+                            @elseif($user->role_access)
+                                <span class="uc-badge uc-agent">{{ $user->role_access->name }}</span>
+                            @else
+                                <span class="uc-badge uc-agent">Agent</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="uc-channels">
+                    @if(!empty($channels))
+                        @foreach($channels as $ch)
+                            <span class="uc-chip-ch">{{ $ch['label'] }}</span>
+                        @endforeach
                     @endif
-                    <span class="agt-dot agt-dot-on"></span>
                 </div>
-                <div class="agt-info">
-                    <div class="agt-name-row">
-                        <span class="agt-name">{{ $user->name }}</span>
-                        @if($isOwner)<span class="agt-badge agt-badge-owner"><i class="bx bx-crown"></i> Owner</span>@endif
-                    </div>
-                    <div class="agt-email" title="{{ $user->email }}">{{ $user->email }}</div>
-                    <div class="agt-role">
-                        @if($user->role === 'admin')<i class="bx bx-shield me-1"></i>Administrator
-                        @elseif($user->role_access)<i class="bx bx-user-check me-1"></i>{{ $user->role_access->name }}
-                        @else<i class="bx bx-user me-1"></i>Agen
-                        @endif
-                    </div>
-                </div>
-                {{-- ⋮ kebab menu --}}
-                <div class="agt-menu dropdown">
-                    <button class="agt-menu-btn" data-bs-toggle="dropdown" aria-expanded="false" id="agtMenu-{{ $user->id }}">
-                        <i class="bx bx-dots-vertical-rounded" style="font-size:1.2rem;"></i>
+            </div>
+            
+            <div class="uc-actions">
+                @can('human-agents.edit')
+                <button class="btn btn-sm btn-outline-primary uc-btn" onclick="openEditModal('{{ $user->id }}'); return false;">
+                    <i class="bx bx-edit-alt"></i> Edit
+                </button>
+                @if(!$isOwner || auth()->id() === $user->id)
+                <button class="btn btn-sm btn-outline-secondary uc-btn" onclick="openPasswordModal('{{ $user->id }}'); return false;">
+                    <i class="bx bx-key"></i> Ubah PW
+                </button>
+                @endif
+                @endcan
+                
+                @can('human-agents.hapus')
+                @if(!$isOwner && my_user()->id !== $user->id)
+                <form action="{{ route('users.delete', $user->id) }}" method="POST" class="d-inline uc-form-delete" onsubmit="return confirm('Hapus pengguna ini?');">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-danger uc-btn">
+                        <i class="bx bx-trash"></i> Hapus
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="agtMenu-{{ $user->id }}">
-                        @can('human-agents.edit')
-                        <li><a class="dropdown-item" href="#" onclick="openEditModal('{{ $user->id }}'); return false;"><i class="bx bx-edit-alt me-2"></i>Edit</a></li>
-                        @if(!$isOwner || auth()->id() === $user->id)
-                        <li><a class="dropdown-item" href="#" onclick="openPasswordModal('{{ $user->id }}'); return false;"><i class="bx bx-key me-2"></i>Reset Password</a></li>
-                        @endif
-                        @endcan
-                        @can('human-agents.hapus')
-                        @if(!$isOwner && my_user()->id !== $user->id)
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger deletebutton" href="#"
-                               data-delete-url="{{ route('users.delete', $user->id) }}"
-                               data-delete-token="{{ csrf_token() }}"><i class="bx bx-trash me-2"></i>Hapus</a></li>
-                        @endif
-                        @endcan
-                    </ul>
-                </div>
-            </div>
-
-            {{-- Channels --}}
-            @if(!empty($channels))
-            <div class="agt-divider"></div>
-            <div class="agt-channels-label">KANAL YANG DIPEGANG</div>
-            @php $shownCh = array_slice($channels, 0, 3); $moreCh = count($channels) - 3; @endphp
-            @foreach($shownCh as $ch)
-            @php
-                $icon     = $chIcons[$ch['type']] ?? 'bx-plug';
-                $color    = $chColors[$ch['type']] ?? '#64748B';
-                $isActive = in_array($ch['status'] ?? '', ['active','CONNECTED','all','chatbot','ai']);
-            @endphp
-            <div class="agt-channel-row">
-                <div class="agt-ch-icon" style="background:{{ $color }}22;color:{{ $color }};"><i class="bx {{ $icon }}"></i></div>
-                <div class="agt-ch-body">
-                    <div class="agt-ch-name">{{ $ch['label'] }}</div>
-                    @if($ch['ident'])<div class="agt-ch-ident">{{ $ch['ident'] }}</div>@endif
-                </div>
-                <div class="agt-ch-status">
-                    <span class="agt-dot-inline {{ $isActive ? 'agt-dot-on' : 'agt-dot-off' }}"></span>
-                    <span class="agt-status-txt">{{ $isActive ? 'Aktif' : 'Nonaktif' }}</span>
-                </div>
-            </div>
-            @endforeach
-            @if($moreCh > 0)<div class="agt-ch-more">+{{ $moreCh }} kanal lainnya</div>@endif
-            @endif
-
-            {{-- Footer --}}
-            <div class="agt-footer">
-                <span><i class="bx bx-time-five me-1"></i>{{ $lastAct }}</span>
+                </form>
+                @else
+                <button type="button" class="btn btn-sm btn-outline-danger uc-btn" disabled>
+                    <i class="bx bx-trash"></i> Hapus
+                </button>
+                @endif
+                @endcan
             </div>
         </div>
     </div>
