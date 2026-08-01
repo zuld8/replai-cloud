@@ -175,7 +175,7 @@ class UserController extends Controller
     {
         $isAjax = request()->ajax();
 
-        if ($user->merchant && optional($user->merchant->owner)->id === $user->id) { // A6: null-safe
+        if ($user->merchant && (string)$user->merchant->owner_id === (string)$user->id) { // A6: cek owner_id langsung
             $msg = 'Pengguna ini merupakan owner bisnis dan tidak dapat di hapus';
             return $isAjax
                 ? response()->json(['success' => false, 'message' => $msg])
