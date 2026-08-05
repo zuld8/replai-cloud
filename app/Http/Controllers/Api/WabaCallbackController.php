@@ -557,6 +557,10 @@ class WabaCallbackController extends Controller
 
                     // Download media if needed (outside transaction is ideal, but keep here for now)
                     $mediaInfo = $this->handleMediaDownload($device, $messageContent, $messageData['messageType']);
+                    // Teruskan path media ke messageContent agar detectIntent kirim ke AI (vision/multimodal)
+                    if (!empty($mediaInfo['path'])) {
+                        $messageContent['path'] = $mediaInfo['path'];
+                    }
 
                     // Update chat status
                     $this->updateChatStatus($histories);
