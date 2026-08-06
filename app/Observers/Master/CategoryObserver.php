@@ -33,10 +33,9 @@ class CategoryObserver
     public function deleteData(Category $category)
     {
         DB::transaction(function () use ($category) {
-            // Safety: nullify category_id pada semua kontak di kategori ini (BUKAN hapus kontak).
-            // Kontak tetap ada, hanya kehilangan kategorinya → masuk "tanpa kategori".
-            Store::where('category_id', $category->id)
-                ->update(['category_id' => null]);
+            // Hapus semua kontak (stores) di dalam kategori ini secara permanen.
+            // User sudah konfirmasi via dialog peringatan di blade.
+            Store::where('category_id', $category->id)->delete();
 
             // Hapus kategori
             $category->delete();
