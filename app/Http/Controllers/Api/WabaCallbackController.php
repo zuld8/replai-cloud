@@ -1683,7 +1683,14 @@ class WabaCallbackController extends Controller
 
         $replyMessage = null;
 
-        switch ($intent->intent) {
+        // FIX: jika user kirim gambar dan AI keliru return intent=media
+        // (Gemini salah halusinasi URL media), paksa ke question agar balas teks.
+        $resolvedIntent = $intent->intent ?? 'question';
+        if (($messageContent['messageType'] ?? '') === 'image' && $resolvedIntent === 'media') {
+            $resolvedIntent = 'question';
+        }
+
+        switch ($resolvedIntent) {
             case 'media':
                 $replyMessage = $this->handleMediaIntent($intent, $histories, $device);
                 break;
@@ -1716,7 +1723,18 @@ class WabaCallbackController extends Controller
         $replyText = $intent->message ?? '';
         $lastReplyMessage = null;
 
+        $appUrl = rtrim(config('app.url'), '/');
+
         foreach ($mediaUrls as $mediaUrl) {
+            // Safety: skip URL eksternal / hallucinated — hanya proses file dari domain sendiri atau path relatif
+            $isLocal = str_starts_with($mediaUrl, $appUrl . '/uploads/')
+                    || str_starts_with($mediaUrl, '/uploads/')
+                    || str_starts_with($mediaUrl, 'uploads/');
+            if (!$isLocal) {
+                \Log::warning('handleMediaIntent: URL bukan dari library bot, skip', ['url' => $mediaUrl]);
+                continue;
+            }
+
             $mediaInfo = $this->getMediaInfo($mediaUrl);
             $typeMessage = $this->getMessageTypeFromMime($mediaInfo['type'] ?? '');
 

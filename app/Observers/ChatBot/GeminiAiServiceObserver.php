@@ -337,7 +337,7 @@ class GeminiAiServiceObserver
                         'type' => 'string',
                         'format' => 'uri'
                     ],
-                    'description' => 'Array of media URLs to send (for media intent)'
+                    'description' => 'Array of media URLs to send (for media intent only). ONLY use URLs that are explicitly provided in the knowledge base or documents. NEVER invent or hallucinate URLs. NEVER use URLs from external sources.'
                 ],
                 'message' => [
                     'type' => 'string',
