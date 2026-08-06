@@ -136,26 +136,24 @@ class OpenAiServiceObserver
             "required" => ["intent"]
         ];
 
-        if ($modeAi != 'standart' && $media != null) {
+        if ($media != null) {
+            // Ada gambar — kirim base64 data URI (aman, OpenAI tidak perlu fetch server kita)
             $content = [];
             if ($message != '') {
+                $content[] = ['type' => 'text', 'text' => $message];
+            }
+            $dataUri = $this->imageToDataUri($media);
+            if ($dataUri) {
                 $content[] = [
-                    'type' => 'text',
-                    'text' => $message,
+                    'type' => 'image_url',
+                    'image_url' => ['url' => $dataUri, 'detail' => 'auto'],
                 ];
             }
-
-            $content[] = [
-                'type' => 'image_url',
-                'image_url' => [
-                    'url' => asset($media),
-                ],
-            ];
-
-            $messages[] = [
-                'role'    => 'user',
-                'content' => $content,
-            ];
+            if (!empty($content)) {
+                $messages[] = ['role' => 'user', 'content' => $content];
+            } elseif ($message != '') {
+                $messages[] = ['role' => 'user', 'content' => $message];
+            }
         } else {
             if ($message != '') {
                 $messages[] = [
@@ -269,6 +267,36 @@ class OpenAiServiceObserver
 
 
 
+    /**
+     * Konversi file gambar lokal → data URI base64 (aman, gak butuh OpenAI fetch server kita)
+     */
+    private function imageToDataUri($mediaPath): ?string
+    {
+        try {
+            $publicPath = parse_url($mediaPath, PHP_URL_PATH);
+            $local = public_path($publicPath);
+            // Fallback: coba tanpa parse_url (kalau sudah relative path)
+            if (!file_exists($local)) {
+                $rel = ltrim($publicPath ?? $mediaPath, '/');
+                $local = public_path($rel);
+            }
+            if (!file_exists($local)) {
+                \Log::warning('VISION-OAI file tidak ada', ['path' => $mediaPath, 'local' => $local]);
+                return null;
+            }
+            $mime = mime_content_type($local);
+            if (!str_starts_with($mime, 'image/')) {
+                \Log::warning('VISION-OAI bukan image', ['local' => $local, 'mime' => $mime]);
+                return null;
+            }
+            \Log::info('VISION-OAI OK gambar dikirim ke OpenAI', ['local' => $local, 'mime' => $mime, 'bytes' => filesize($local)]);
+            return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($local));
+        } catch (\Throwable $e) {
+            \Log::error('VISION-OAI exception', ['err' => $e->getMessage(), 'path' => $mediaPath]);
+            return null;
+        }
+    }
+
     public function getQuestion(String $openAiKey, $message = '', $description, $conversations = null, String $modeAi = 'standart', $dataTraining = [], $checkOngkir, $media = null)
     {
 
@@ -299,26 +327,24 @@ class OpenAiServiceObserver
 
 
         if ($message != '' || $media !== null) {
-            if ($modeAi != 'standart' && $media != null) {
+            if ($media != null) {
+                // Ada gambar — kirim base64 data URI
                 $content = [];
                 if ($message != '') {
+                    $content[] = ['type' => 'text', 'text' => $message];
+                }
+                $dataUri = $this->imageToDataUri($media);
+                if ($dataUri) {
                     $content[] = [
-                        'type' => 'text',
-                        'text' => $message,
+                        'type' => 'image_url',
+                        'image_url' => ['url' => $dataUri, 'detail' => 'auto'],
                     ];
                 }
-
-                $content[] = [
-                    'type' => 'image_url',
-                    'image_url' => [
-                        'url' => asset($media),
-                    ],
-                ];
-
-                $messages[] = [
-                    'role'    => 'user',
-                    'content' => count($content) === 1 ? $content[0] : $content,
-                ];
+                if (!empty($content)) {
+                    $messages[] = ['role' => 'user', 'content' => $content];
+                } elseif ($message != '') {
+                    $messages[] = ['role' => 'user', 'content' => $message];
+                }
             } else {
                 $messages[] = [
                     'role'    => 'user',
