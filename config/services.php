@@ -47,4 +47,10 @@ return [
         'api_key' => env('TRIGGER_API_KEY'),
     ],
 
+    'meta' => [
+        'pixel_id'   => env('META_PIXEL_ID'),
+        'capi_token' => env('META_CAPI_TOKEN'),
+    ],
+
+
 ];

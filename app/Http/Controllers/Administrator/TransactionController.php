@@ -149,6 +149,22 @@ class TransactionController extends Controller
             }
 
             DB::commit();
+
+            // Meta CAPI: Purchase — admin approval transaksi berhasil (idempotent via trx id)
+            \App\Services\Meta\MetaCapi::send(
+                'Purchase',
+                [
+                    'email' => $transaction->merchant->owner->email ?? null,
+                    'phone' => $transaction->merchant->owner->phone ?? null,
+                ],
+                [
+                    'value'        => (float)($transaction->final_total ?? $transaction->price ?? 0),
+                    'currency'     => 'IDR',
+                    'content_name' => $transaction->package->name ?? 'Package',
+                ],
+                (string)$transaction->id  // event_id = trx id → dedup dengan pixel browser
+            );
+
             return redirect()->back()->with(['flash'    => __('transaction.received_payment')]);
         } catch (\Exception $e) {
             DB::rollBack();

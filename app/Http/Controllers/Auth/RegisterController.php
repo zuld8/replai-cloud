@@ -419,6 +419,14 @@ class RegisterController extends Controller
 
             DB::commit();
 
+            // Meta CAPI: CompleteRegistration (fire-and-forget, dedup via user->id)
+            \App\Services\Meta\MetaCapi::send(
+                'CompleteRegistration',
+                ['email' => $users->email, 'phone' => $users->phone ?? null],
+                [],
+                (string)$users->id
+            );
+
             app()[PermissionRegistrar::class]->forgetCachedPermissions();
             $users->refresh();
         // Save affiliate referral code
