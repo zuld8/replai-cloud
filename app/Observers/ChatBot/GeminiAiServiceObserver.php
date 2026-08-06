@@ -39,6 +39,7 @@ class GeminiAiServiceObserver
                           . "\n=== AKHIR INFORMASI ===\n\n";
         }
         $usingMedia = $media !== null;
+        \Log::info('VISION detectIntent', ['usingMedia' => $usingMedia, 'media_path' => $media]);
 
         if (!empty($ragContext)) {
             $description .= "\n=== INFORMASI DARI DOKUMEN ===\n" . $ragContext . "\n=== AKHIR DOKUMEN ===\n";
@@ -107,6 +108,7 @@ class GeminiAiServiceObserver
                           . "\n=== AKHIR INFORMASI ===\n\n";
         }
         $usingMedia = $media !== null;
+        \Log::info('VISION detectIntent', ['usingMedia' => $usingMedia, 'media_path' => $media]);
 
         if (!empty($ragContext)) {
             $description .= "\n=== INFORMASI DARI DOKUMEN ===\n" . $ragContext . "\n=== AKHIR DOKUMEN ===\n";
@@ -283,7 +285,8 @@ class GeminiAiServiceObserver
             $publicPath = parse_url($mediaPath, PHP_URL_PATH);
             $localPath = public_path($publicPath);
 
-            if (!file_exists($localPath)) { 
+            if (!file_exists($localPath)) {
+                \Log::warning('VISION prepareImageData: FILE TIDAK ADA', ['mediaPath' => $mediaPath, 'localPath' => $localPath]);
                 return null;
             }
 
@@ -291,15 +294,18 @@ class GeminiAiServiceObserver
             $mimeType = mime_content_type($localPath);
 
             // Validate image type
-            if (!str_starts_with($mimeType, 'image/')) { 
+            if (!str_starts_with($mimeType, 'image/')) {
+                \Log::warning('VISION prepareImageData: MIME bukan image', ['localPath' => $localPath, 'mime' => $mimeType]);
                 return null;
             }
 
+            \Log::info('VISION prepareImageData: OK gambar dikirim ke Gemini', ['localPath' => $localPath, 'mime' => $mimeType, 'bytes' => strlen($imageContent)]);
             return [
                 'mimeType' => $mimeType,
                 'data' => base64_encode($imageContent)
             ];
-        } catch (\Exception $e) { 
+        } catch (\Throwable $e) {
+            \Log::error('VISION prepareImageData: EXCEPTION', ['err' => $e->getMessage(), 'mediaPath' => $mediaPath]);
             return null;
         }
     }
