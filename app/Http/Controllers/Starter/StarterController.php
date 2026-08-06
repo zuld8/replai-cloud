@@ -554,6 +554,28 @@ class StarterController extends Controller
 
 
                     DB::commit();
+
+                    // Meta CAPI — Purchase via Duitku (auto-payment).
+                    // event_id = trx->id → dedup sama pixel browser di thank-you page.
+                    // Guard amount>0: trial Rp0 tidak kecount Purchase.
+                    // Idempotent: callback retry → $transaction=null (status sudah success) → di-skip.
+                    try {
+                        $capiAmount = (float) ($request->amount ?? $transaction->final_total ?? $transaction->price ?? 0);
+                        if ($capiAmount > 0) {
+                            \App\Services\Meta\MetaCapi::send(
+                                'Purchase',
+                                [
+                                    'email' => $transaction->merchant->owner->email ?? null,
+                                    'phone' => $transaction->merchant->owner->phone ?? null,
+                                ],
+                                ['value' => $capiAmount, 'currency' => 'IDR'],
+                                (string) $transaction->id
+                            );
+                        }
+                    } catch (\Throwable $capiEx) {
+                        \Log::warning('CAPI Purchase (duitku): ' . $capiEx->getMessage());
+                    }
+
                 }
 
 
