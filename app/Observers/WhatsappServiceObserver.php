@@ -343,9 +343,11 @@ class WhatsappServiceObserver
                     'mp4'  => 'video/mp4',   'ogg'  => 'audio/ogg',
                     'mp3'  => 'audio/mpeg',
                 ];
+                $originalName = $dataArray['original_name'] ?? pathinfo(parse_url($file, PHP_URL_PATH) ?? $file, PATHINFO_BASENAME);
                 $messageData[$__kind] = [
                     'url'      => $file,
-                    'title'    => rand(),
+                    'title'    => $originalName,
+                    'fileName' => $originalName,
                     'mimetype' => $__mimeMap[$file_type] ?? 'application/octet-stream',
                 ];
             }
