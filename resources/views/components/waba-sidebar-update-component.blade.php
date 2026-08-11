@@ -56,6 +56,7 @@
                     <i class="ti ti-refresh fs-14"></i> Refresh
                 </a>
                 <a href="{{ route('waba.delete',$idwaba) }}"
+                   onclick="return confirm('Yakin mau hapus integrasi WhatsApp ini?\n\nSemua koneksi, chatbot, & pengaturan nomor ini akan terputus. Tindakan ini TIDAK bisa dibatalkan.');"
                    class="list-group-item list-group-item-action text-danger deletebutton d-flex align-items-center gap-2">
                     <i class="ti ti-trash fs-14"></i> Hapus Integrasi
                 </a>
