@@ -817,9 +817,11 @@ class WabaCallbackController extends Controller
                 break;
 
             case 'document':
-                $mediaId = $rawMessage['document']['id'] ?? null;
+                $mediaId  = $rawMessage['document']['id'] ?? null;
                 $mimeType = $rawMessage['document']['mime_type'] ?? null;
-                $message = $rawMessage['document']['filename'] ?? 'dokumen.pdf';
+                $docName  = $rawMessage['document']['filename'] ?? 'dokumen.pdf';
+                $message  = $rawMessage['document']['caption'] ?? '';   // caption asli (biasanya kosong)
+                $extra    = json_encode(['original_name' => $docName]); // nama file asli di extra
                 break;
 
             case 'sticker':
@@ -1164,6 +1166,9 @@ class WabaCallbackController extends Controller
             'from'            => 'user',
             'message'         => $messageContent['message'],
             'extra'           => $messageContent['extra'] ?? null,
+            'original_name'   => $messageContent['messageType'] === 'document'
+                ? (json_decode($messageContent['extra'] ?? '{}', true)['original_name'] ?? null)
+                : null,
             'remotejid'       => $messageData['from'],
             'messageid'       => $messageData['messageId'],
             'reply_to'        => $quotedReplyTo,

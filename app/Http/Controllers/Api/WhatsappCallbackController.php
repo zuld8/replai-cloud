@@ -381,10 +381,11 @@ class WhatsappCallbackController extends Controller
         }
 
         return [
-            'status' => !is_null($file_path),
-            'type' => $fileType,
-            'size' => $fileSize,
-            'path' => $file_path
+            'status'        => !is_null($file_path),
+            'type'          => $fileType,
+            'size'          => $fileSize,
+            'path'          => $file_path,
+            'original_name' => $request->hasFile('file') ? $request->file('file')->getClientOriginalName() : null,
         ];
     }
 
@@ -425,17 +426,18 @@ class WhatsappCallbackController extends Controller
         }
 
         return $history->details()->create([
-            'file_path' => $context['file_data']['path'],
-            'file_type' => $context['file_data']['type'],
-            'file_size' => $context['file_data']['size'],
-            'type' => $context['message_type'],
+            'file_path'     => $context['file_data']['path'],
+            'file_type'     => $context['file_data']['type'],
+            'file_size'     => $context['file_data']['size'],
+            'type'          => $context['message_type'],
             'history_chat_id' => $history->id,
-            'from' => 'user',
-            'message' => $context['message'],
-            'remotejid' => $request->from,
-            'messageid' => $request->message_id,
-            'reply_to' => $reply_for_chat->id ?? null,
-            'reply_text' => $reply_for_chat->message ?? null,
+            'from'          => 'user',
+            'message'       => $context['message'],
+            'original_name' => $context['file_data']['original_name'] ?? null,
+            'remotejid'     => $request->from,
+            'messageid'     => $request->message_id,
+            'reply_to'      => $reply_for_chat->id ?? null,
+            'reply_text'    => $reply_for_chat->message ?? null,
             'quoted_message' => is_string($request->quoted_message)
                 ? $request->quoted_message
                 : (is_null($request->quoted_message) ? null : json_encode($request->quoted_message)),
@@ -615,10 +617,11 @@ class WhatsappCallbackController extends Controller
     private function initializeFileData(): array
     {
         return [
-            'status' => false,
-            'type' => null,
-            'size' => null,
-            'path' => null
+            'status'        => false,
+            'type'          => null,
+            'size'          => null,
+            'path'          => null,
+            'original_name' => null,
         ];
     }
 

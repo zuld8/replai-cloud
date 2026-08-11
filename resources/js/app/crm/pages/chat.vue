@@ -2741,6 +2741,7 @@ export default {
                     media_type: data.media_type,
                     media_url: data.media_url,
                     media_size: data.media_size,
+                    original_name: data.original_name || null,
                     datetime: {
                         date: data.datetime.date,
                         time: data.datetime.time,
