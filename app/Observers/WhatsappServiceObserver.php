@@ -142,13 +142,22 @@ class WhatsappServiceObserver
             //     $phone = explode("@", $phone)[0];
             // }
  
-            if ($file !== '' && str_starts_with($file, 'http') && str_ends_with($file, '.jpg')) {
+            // Fix: semua ekstensi gambar (bukan cuma .jpg) pakai jalur yang terbukti jalan
+            $__ext = strtolower(pathinfo(parse_url($file, PHP_URL_PATH) ?? $file, PATHINFO_EXTENSION));
+            $__imgMimes = [
+                'jpg'  => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png'  => 'image/png',
+                'webp' => 'image/webp',
+                'gif'  => 'image/gif',
+            ];
+            if ($file !== '' && str_starts_with($file, 'http') && isset($__imgMimes[$__ext])) {
                 $messageData = [
-                    'type' => 'image',
-                    'image' => ['url' => $file],
-                    'caption' => $message,
+                    'type'     => 'image',
+                    'image'    => ['url' => $file],
+                    'caption'  => $message,
                     'fileName' => pathinfo($file, PATHINFO_FILENAME),
-                    'mimetype' => 'image/jpeg'
+                    'mimetype' => $__imgMimes[$__ext],  // mimetype sesuai ekstensi
                 ];
 
                 $whatsappServerUrl = config('custom.whatsapp_server_url');
@@ -321,7 +330,25 @@ class WhatsappServiceObserver
                 'txt'       => 'documnt'
             ];
 
-            $messageData[$extentions[$file_type]] = ['url' => $file, 'title' => rand()];
+            // Pastikan key $file_type ada di map
+            $__kind = $extentions[$file_type] ?? null;
+            if ($__kind) {
+                $messageData['type']    = $__kind;  // WAJIB agar gateway tahu ini media
+                $__mimeMap = [
+                    'jpg'  => 'image/jpeg',  'jpeg' => 'image/jpeg',
+                    'png'  => 'image/png',   'webp' => 'image/webp',
+                    'gif'  => 'image/gif',   'pdf'  => 'application/pdf',
+                    'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'mp4'  => 'video/mp4',   'ogg'  => 'audio/ogg',
+                    'mp3'  => 'audio/mpeg',
+                ];
+                $messageData[$__kind] = [
+                    'url'      => $file,
+                    'title'    => rand(),
+                    'mimetype' => $__mimeMap[$file_type] ?? 'application/octet-stream',
+                ];
+            }
         }
 
         return $messageData;
