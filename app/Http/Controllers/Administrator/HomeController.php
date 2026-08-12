@@ -225,6 +225,20 @@ class HomeController extends Controller
                 ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('credit_using')
         );
 
+        // Token AI mentah per hari/bulan — dashboard admin saja, user tidak melihat
+        $aiTokens = Cache::remember("admin_ai_tokens_{$monthYear}", 900, function () use ($monthStart, $monthEnd) {
+            return [
+                'today' => HistoryChatDetail::whereDate('created_at', today())
+                    ->where('total_tokens', '>', 0)->sum('total_tokens'),
+                'bulan' => HistoryChatDetail::whereBetween('created_at', [$monthStart, $monthEnd])
+                    ->where('total_tokens', '>', 0)->sum('total_tokens'),
+                'chart' => HistoryChatDetail::where('total_tokens', '>', 0)
+                    ->where('created_at', '>=', now()->subDays(30))
+                    ->selectRaw('DATE(created_at) as tgl, SUM(total_tokens) as total')
+                    ->groupBy('tgl')->orderBy('tgl')->get(),
+            ];
+        });
+
         $aiTopRaw = Cache::remember("admin_ai_top_{$monthYear}", 900, fn () =>
             HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
                 ->whereBetween('history_chat_details.created_at', [$monthStart, $monthEnd])
@@ -247,6 +261,7 @@ class HomeController extends Controller
         return response()->json([
             'ai'     => $ai,
             'credit' => (int)$aiCreditTotal,
+            'aiTokens'  => $aiTokens,
             'top'    => $aiTop,
         ]);
     }

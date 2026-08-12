@@ -1710,7 +1710,7 @@ class WabaCallbackController extends Controller
         }
 
         if ($replyMessage && $creditUsed > 0) {
-            $replyMessage->update(['credit_using' => $this->calculateActualCredit($creditUsed, $fineTunnel->model_ai)]);
+            $replyMessage->update(['credit_using' => $this->calculateActualCredit($creditUsed, $fineTunnel->model_ai), 'total_tokens' => $creditUsed]);
         }
 
         $this->checkTransferConditions($device, $histories, $intent->message ?? '');
@@ -2043,7 +2043,7 @@ class WabaCallbackController extends Controller
         $this->deductCredits($device, $totalCreditUsing);
 
         if ($replyMessage) {
-            $replyMessage->update(['credit_using' => $totalCreditUsing]);
+            $replyMessage->update(['credit_using' => $totalCreditUsing, 'total_tokens' => $creditUsed]);
         }
     }
 

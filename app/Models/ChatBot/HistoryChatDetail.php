@@ -43,6 +43,7 @@ class HistoryChatDetail extends Model
         'billable',
         'pricing_model',
         'conversation_id',
+        'total_tokens',
     ];
 
     /**

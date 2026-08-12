@@ -1009,7 +1009,7 @@ class WhatsappCallbackController extends Controller
         $this->deductCredits($device, $total_credit_using);
 
         if ($reply_message) {
-            $reply_message->update(['credit_using' => $total_credit_using]);
+            $reply_message->update(['credit_using' => $total_credit_using, 'total_tokens' => $credit_used]);
         }
     }
 

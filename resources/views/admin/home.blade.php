@@ -158,6 +158,10 @@
                 <div class="row g-2 mb-3" id="ai-stats-row">
                     <div class="col-6 col-sm-3"><p class="text-muted mb-1 fs-11">AI Credit Terpakai</p>
                         <h5 class="mb-0 fw-bold" style="color:#6a5ad0" id="ai-credit"><span class="sk-pulse">...</span></h5></div>
+                    <div class="col-6 col-sm-3"><p class="text-muted mb-1 fs-11">Token AI Hari Ini</p>
+                        <h5 class="mb-0 fw-bold" style="color:#0ea5e9" id="ai-token-today"><span class="sk-pulse">...</span></h5></div>
+                    <div class="col-6 col-sm-3"><p class="text-muted mb-1 fs-11">Token AI Bulan Ini</p>
+                        <h5 class="mb-0 fw-bold" style="color:#0ea5e9" id="ai-token-bulan"><span class="sk-pulse">...</span></h5></div>
                     <div class="col-6 col-sm-3"><p class="text-muted mb-1 fs-11">Balasan AI</p>
                         <h5 class="mb-0 fw-bold" id="ai-replies"><span class="sk-pulse">...</span></h5></div>
                     <div class="col-6 col-sm-3"><p class="text-muted mb-1 fs-11">Otomatisasi</p>
@@ -167,6 +171,16 @@
                 </div>
                 <p class="text-muted fs-11 mb-1">Tren AI credit · bulan ini</p>
                 <div id="responseAiChart"></div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Token AI 30 hari --}}
+    <div class="col-lg-7 col-12">
+        <div class="card custom-card">
+            <div class="card-body p-3">
+                <p class="text-muted fs-11 mb-1">Tren Token AI · 30 hari terakhir</p>
+                <div id="tokenChart"></div>
             </div>
         </div>
     </div>
@@ -485,6 +499,27 @@ fetch('/administrator/dashboard/widgets/ai-stats')
         const ai = d.ai || {};
         const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
         setEl('ai-credit',     (d.credit || 0).toLocaleString('id-ID'));
+
+        // Token AI (raw token platform — admin only)
+        const fmtTok = n => n >= 1e6 ? (n/1e6).toFixed(1)+' jt' : n >= 1e3 ? (n/1e3).toFixed(1)+' rb' : n.toString();
+        if (d.aiTokens) {
+            setEl('ai-token-today', fmtTok(d.aiTokens.today || 0));
+            setEl('ai-token-bulan', fmtTok(d.aiTokens.bulan || 0));
+            // Render grafik 30 hari token (jika elemen chart ada)
+            if (document.getElementById('tokenChart') && d.aiTokens.chart) {
+                const tokLabels = d.aiTokens.chart.map(r => r.tgl);
+                const tokData   = d.aiTokens.chart.map(r => r.total);
+                new ApexCharts(document.getElementById('tokenChart'), {
+                    chart: { type: 'area', height: 100, sparkline: { enabled: true }, animations: { enabled: false } },
+                    series: [{ name: 'Token', data: tokData }],
+                    xaxis: { categories: tokLabels },
+                    stroke: { curve: 'smooth', width: 2 },
+                    colors: ['#0ea5e9'],
+                    fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0 } },
+                    tooltip: { y: { formatter: v => fmtTok(v) + ' token' } }
+                }).render();
+            }
+        }
         setEl('ai-replies',    (ai.ai_replies  || 0).toLocaleString('id-ID'));
         setEl('ai-automation', (ai.automation  || 0) + '%');
         setEl('ai-training',   (ai.training    || 0).toLocaleString('id-ID'));

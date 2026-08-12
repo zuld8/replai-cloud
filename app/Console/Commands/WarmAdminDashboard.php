@@ -236,6 +236,19 @@ class WarmAdminDashboard extends Command
                     ->whereBetween("created_at", [$monthStart, $monthEnd])
                     ->groupBy("date")->orderBy("date")->get(),
 
+
+            // ── 15. AI TOKEN TRACKING (total raw token platform) ──
+            "admin_ai_tokens_{$monthYear}" => fn () => [
+                'today' => HistoryChatDetail::whereDate('created_at', today())
+                    ->where('total_tokens', '>', 0)->sum('total_tokens'),
+                'bulan' => HistoryChatDetail::whereBetween('created_at', [$monthStart, $monthEnd])
+                    ->where('total_tokens', '>', 0)->sum('total_tokens'),
+                'chart' => HistoryChatDetail::where('total_tokens', '>', 0)
+                    ->where('created_at', '>=', now()->subDays(30))
+                    ->selectRaw('DATE(created_at) as tgl, SUM(total_tokens) as total')
+                    ->groupBy('tgl')->orderBy('tgl')->get(),
+            ],
+
         ]; // end ajaxJobs
 
         // ────────────────────────────────────────────────────────────

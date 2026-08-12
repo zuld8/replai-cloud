@@ -1396,7 +1396,7 @@ class MessengerController extends Controller
         $this->deductCredits($messengerAccount, $totalCreditUsing);
 
         if ($replyMessage) {
-            $replyMessage->update(['credit_using' => $totalCreditUsing]);
+            $replyMessage->update(['credit_using' => $totalCreditUsing, 'total_tokens' => $creditUsed]);
         }
     }
     /**

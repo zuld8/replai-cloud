@@ -1366,7 +1366,7 @@ class InstagramController extends Controller
         $this->deductCredits($instagramAccount, $totalCreditUsing);
 
         if ($replyMessage) {
-            $replyMessage->update(['credit_using' => $totalCreditUsing]);
+            $replyMessage->update(['credit_using' => $totalCreditUsing, 'total_tokens' => $creditUsed]);
         }
     }
 
