@@ -36,8 +36,9 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $setting        = $this->notificationSettingObserver->getData();
-        $watemplates    = $this->messageTemplateObserver->getData($request)->where('merchant_id', null)->where('type', 'whatsapp')->get(['id', 'name']);
-        $mailtemplates  = $this->messageTemplateObserver->getData($request)->where('merchant_id', null)->where('type', 'email')->get(['id', 'name']);
+        // withoutGlobalScopes() agar master template (merchant_id=NULL) ikut muncul di dropdown
+        $watemplates    = $this->messageTemplateObserver->getData($request)->withoutGlobalScopes()->where('merchant_id', null)->where('type', 'whatsapp')->where('master_type', 'yes')->orderBy('name')->get(['id', 'name']);
+        $mailtemplates  = $this->messageTemplateObserver->getData($request)->withoutGlobalScopes()->where('merchant_id', null)->where('type', 'email')->where('master_type', 'yes')->orderBy('name')->get(['id', 'name']);
         $devices        = $this->deviceObserver->getData($request)->where('merchant_id', null)->get(['id', 'name', 'phone']);
         $wabaDevices    = \App\Models\WhatsappKeyAccount::where('merchant_id', null)->where('status', 'active')->get(['id', 'phone', 'meta_data']);
         return view('admin.settings.notification', ['page'  => __('page.setting.notification'), 'breadcumb' => false], compact('setting', 'watemplates', 'mailtemplates', 'devices', 'wabaDevices'));
