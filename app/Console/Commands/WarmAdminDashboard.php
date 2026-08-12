@@ -237,17 +237,21 @@ class WarmAdminDashboard extends Command
                     ->groupBy("date")->orderBy("date")->get(),
 
 
-            // ── 15. AI TOKEN TRACKING (total raw token platform) ──
-            "admin_ai_tokens_{$monthYear}" => fn () => [
-                'today' => HistoryChatDetail::whereDate('created_at', today())
-                    ->where('total_tokens', '>', 0)->sum('total_tokens'),
-                'bulan' => HistoryChatDetail::whereBetween('created_at', [$monthStart, $monthEnd])
-                    ->where('total_tokens', '>', 0)->sum('total_tokens'),
-                'chart' => HistoryChatDetail::where('total_tokens', '>', 0)
-                    ->where('created_at', '>=', now()->subDays(30))
-                    ->selectRaw('DATE(created_at) as tgl, SUM(total_tokens) as total')
-                    ->groupBy('tgl')->orderBy('tgl')->get(),
-            ],
+            // ── 15. AI TOKEN TRACKING (raw token platform — pakai FORCE INDEX biar gak full-scan) ──
+            "admin_ai_tokens_{$monthYear}" => function () use ($monthStart, $monthEnd) {
+                // FORCE INDEX idx_hcd_created_source agar tidak full-scan 2.8M rows
+                $base = DB::table(DB::raw('`history_chat_details` FORCE INDEX (`idx_hcd_created_source`)'));
+                return [
+                    'today' => (clone $base)->whereDate('created_at', today())
+                        ->where('total_tokens', '>', 0)->sum('total_tokens'),
+                    'bulan' => (clone $base)->whereBetween('created_at', [$monthStart, $monthEnd])
+                        ->where('total_tokens', '>', 0)->sum('total_tokens'),
+                    'chart' => (clone $base)->where('total_tokens', '>', 0)
+                        ->where('created_at', '>=', now()->subDays(30))
+                        ->selectRaw('DATE(created_at) as tgl, SUM(total_tokens) as total')
+                        ->groupBy('tgl')->orderBy('tgl')->get(),
+                ];
+            },
 
         ]; // end ajaxJobs
 

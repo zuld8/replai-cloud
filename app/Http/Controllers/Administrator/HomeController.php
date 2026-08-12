@@ -225,8 +225,10 @@ class HomeController extends Controller
                 ->whereBetween('created_at', [$monthStart, $monthEnd])->sum('credit_using')
         );
 
+        // Token AI — try/catch agar 500 tidak terjadi jika DB query berat
+        try {
         // Token AI mentah per hari/bulan — dashboard admin saja, user tidak melihat
-        $aiTokens = Cache::remember("admin_ai_tokens_{$monthYear}", 900, function () use ($monthStart, $monthEnd) {
+            $aiTokens = Cache::remember("admin_ai_tokens_{$monthYear}", 900, function () use ($monthStart, $monthEnd) {
             return [
                 'today' => HistoryChatDetail::whereDate('created_at', today())
                     ->where('total_tokens', '>', 0)->sum('total_tokens'),
@@ -238,6 +240,9 @@ class HomeController extends Controller
                     ->groupBy('tgl')->orderBy('tgl')->get(),
             ];
         });
+        } catch (\Throwable $e) {
+            $aiTokens = ['today' => 0, 'bulan' => 0, 'chart' => collect()];
+        }
 
         $aiTopRaw = Cache::remember("admin_ai_top_{$monthYear}", 900, fn () =>
             HistoryChatDetail::join('history_chats', 'history_chat_details.history_chat_id', '=', 'history_chats.id')
