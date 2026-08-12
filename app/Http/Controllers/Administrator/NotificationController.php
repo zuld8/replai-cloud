@@ -74,6 +74,14 @@ class NotificationController extends Controller
             'email_package_user_template'           => 'required_if:email_package_user,yes|uuid',
             'email_approval_payment'                => 'required|in:yes,no',
             'email_approval_payment_template'       => 'required_if:email_approval_payment,yes|uuid',
+            'whatsapp_expiry_reminder'            => 'nullable|in:yes,no',
+            'whatsapp_expiry_reminder_template'   => 'nullable|uuid',
+            'whatsapp_expired_reminder'           => 'nullable|in:yes,no',
+            'whatsapp_expired_reminder_template'  => 'nullable|uuid',
+            'email_expiry_reminder'               => 'nullable|in:yes,no',
+            'email_expiry_reminder_template'      => 'nullable|uuid',
+            'email_expired_reminder'              => 'nullable|in:yes,no',
+            'email_expired_reminder_template'     => 'nullable|uuid',
         ]);
 
 

@@ -139,7 +139,13 @@ class StarterController extends Controller
                         $message
                     );
 
-                    $this->whatsappServiceObserver->sendEmail($this->notificationObserver->received_email_notification, $message, $this->notificationObserver->buy_package_template_email);
+                    // FIX: kirim ke email customer, bukan hanya admin
+                    $customerEmail = $transaction->merchant->owner->email ?? $this->notificationObserver->received_email_notification;
+                    $this->whatsappServiceObserver->sendEmail($customerEmail, $message, $this->notificationObserver->buy_package_template_email);
+                    // Juga kirim ke admin jika berbeda
+                    if ($this->notificationObserver->received_email_notification && $this->notificationObserver->received_email_notification !== $customerEmail) {
+                        $this->whatsappServiceObserver->sendEmail($this->notificationObserver->received_email_notification, $message, $this->notificationObserver->buy_package_template_email);
+                    }
                 }
             }
 
@@ -287,7 +293,13 @@ class StarterController extends Controller
                         $message
                     );
 
-                    $this->whatsappServiceObserver->sendEmail($this->notificationObserver->received_email_notification, $message, $this->notificationObserver->package_payment_template_email);
+                    // FIX: kirim ke email customer, bukan hanya admin
+                    $customerEmailPay = $transaction->merchant->owner->email ?? $this->notificationObserver->received_email_notification;
+                    $this->whatsappServiceObserver->sendEmail($customerEmailPay, $message, $this->notificationObserver->package_payment_template_email);
+                    // Juga kirim ke admin jika berbeda
+                    if ($this->notificationObserver->received_email_notification && $this->notificationObserver->received_email_notification !== $customerEmailPay) {
+                        $this->whatsappServiceObserver->sendEmail($this->notificationObserver->received_email_notification, $message, $this->notificationObserver->package_payment_template_email);
+                    }
                 }
             }
 

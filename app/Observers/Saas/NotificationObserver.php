@@ -27,6 +27,14 @@ class NotificationObserver
             $query->withoutGlobalScopes();
         }, 'approval_payment_template_email'  => function ($query) {
             $query->withoutGlobalScopes();
+        }, 'expiry_reminder_template_whatsapp' => function ($query) {
+            $query->withoutGlobalScopes();
+        }, 'expired_reminder_template_whatsapp' => function ($query) {
+            $query->withoutGlobalScopes();
+        }, 'expiry_reminder_template_email' => function ($query) {
+            $query->withoutGlobalScopes();
+        }, 'expired_reminder_template_email' => function ($query) {
+            $query->withoutGlobalScopes();
         }])->first();
     }
 
@@ -57,6 +65,14 @@ class NotificationObserver
             'email_package_user_template'        => $request->email_package_user_template,
             'email_approval_payment'             => $request->email_approval_payment,
             'email_approval_payment_template'    => $request->email_approval_payment_template,
+            'whatsapp_expiry_reminder'           => $request->whatsapp_expiry_reminder ?? 'no',
+            'whatsapp_expiry_reminder_template'  => $request->whatsapp_expiry_reminder_template ?: null,
+            'whatsapp_expired_reminder'          => $request->whatsapp_expired_reminder ?? 'no',
+            'whatsapp_expired_reminder_template' => $request->whatsapp_expired_reminder_template ?: null,
+            'email_expiry_reminder'              => $request->email_expiry_reminder ?? 'no',
+            'email_expiry_reminder_template'     => $request->email_expiry_reminder_template ?: null,
+            'email_expired_reminder'             => $request->email_expired_reminder ?? 'no',
+            'email_expired_reminder_template'    => $request->email_expired_reminder_template ?: null,
         ]);
     }
 }

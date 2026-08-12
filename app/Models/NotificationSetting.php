@@ -41,7 +41,16 @@ class NotificationSetting extends Model
         'email_package_user_template',
         'email_approval_payment',
         'email_approval_payment_template',
-        'received_notification'
+        'received_notification',
+        // Reminder paket akan/sudah berakhir
+        'whatsapp_expiry_reminder',
+        'whatsapp_expiry_reminder_template',
+        'whatsapp_expired_reminder',
+        'whatsapp_expired_reminder_template',
+        'email_expiry_reminder',
+        'email_expiry_reminder_template',
+        'email_expired_reminder',
+        'email_expired_reminder_template',
     ];
 
 
@@ -120,5 +129,26 @@ class NotificationSetting extends Model
     public function approval_payment_template_email()
     {
         return $this->belongsTo(MessageTemplate::class, 'email_approval_payment_template');
+    }
+
+    // === Reminder paket akan berakhir ===
+    public function expiry_reminder_template_whatsapp()
+    {
+        return $this->belongsTo(MessageTemplate::class, 'whatsapp_expiry_reminder_template', 'id');
+    }
+
+    public function expired_reminder_template_whatsapp()
+    {
+        return $this->belongsTo(MessageTemplate::class, 'whatsapp_expired_reminder_template', 'id');
+    }
+
+    public function expiry_reminder_template_email()
+    {
+        return $this->belongsTo(MessageTemplate::class, 'email_expiry_reminder_template', 'id');
+    }
+
+    public function expired_reminder_template_email()
+    {
+        return $this->belongsTo(MessageTemplate::class, 'email_expired_reminder_template', 'id');
     }
 }
