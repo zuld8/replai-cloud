@@ -71,7 +71,7 @@ class ExpiryReminderJob implements ShouldQueue
                 $expireDate    = Carbon::parse($trx->expire_date)->format('d F Y');
                 $sisaHari      = $days > 0 ? $days : 0;
                 $invoiceNo     = $trx->invoice ?? '-';
-                $renewUrl      = 'https://chat.replai.id/starter/packages';
+                $renewUrl      = 'https://chat.replai.id/app/starter/business/list';
 
                 // Template variables
                 $vars = [
