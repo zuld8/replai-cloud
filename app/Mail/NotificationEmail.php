@@ -4,32 +4,29 @@ namespace App\Mail;
 
 use App\Models\Master\MessageTemplate;
 use App\Models\Setting;
-use Illuminate\Bus\Queueable; 
+use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Config;
+use Symfony\Component\Mime\Part\DataPart;
 
 class NotificationEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    /**
-     * Create a new message instance.
-     */
-    public $message;
-    public $template;
-    public function __construct($message, MessageTemplate $template)
+    public string $htmlContent;
+    public MessageTemplate $template;
+    protected string $logoPath;
+    protected string $logoCid = 'logo@replai.id';
+
+    public function __construct(string $message, MessageTemplate $template)
     {
-        $this->message      = $message;
-        $this->template     = $template;
+        $this->htmlContent = $message;
+        $this->template    = $template;
+        $this->logoPath    = public_path('img/logo_email.png');
         $this->setEmailConfig();
     }
 
-    /**
-     * Set SMTP config dari DB settings (Brevo), bukan dari .env statis.
-     */
     protected function setEmailConfig(): void
     {
         $s = Setting::where('merchant_id', null)
@@ -40,41 +37,32 @@ class NotificationEmail extends Mailable
             Config::set('mail.mailers.smtp.username',   $s->mail_username);
             Config::set('mail.mailers.smtp.password',   $s->mail_password);
             Config::set('mail.mailers.smtp.encryption', $s->mail_encryption);
-            Config::set('mail.from.address',            $s->mail_from_address);
-            Config::set('mail.from.name',               $s->mail_from_name);
+            Config::set('mail.from.address',            $s->mail_from_address ?? 'noreply@replai.id');
+            Config::set('mail.from.name',               $s->mail_from_name ?? 'Replai.id');
         }
     }
 
-    /**
-     * Get the message envelope.
-     */
-    public function envelope(): Envelope
+    public function build(): static
     {
-        return new Envelope(
-            subject: $this->template->name,
-        );
-    }
+        // Ganti placeholder {{LOGO_SRC}} dengan cid: reference
+        $html = str_replace('{{LOGO_SRC}}', 'cid:' . $this->logoCid, $this->htmlContent);
 
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            view: 'mail.notification',
-            with: [
-                'messageContent' => $this->message
-            ]
-        );
-    }
+        $mail = $this->subject($this->template->name)->html($html);
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
+        // Embed logo sebagai inline CID attachment (bukan URL eksternal)
+        // → selalu muncul tanpa user perlu klik "tampilkan gambar"
+        if (file_exists($this->logoPath)) {
+            $logoData = file_get_contents($this->logoPath);
+            $logoCid  = $this->logoCid;
+
+            $this->withSymfonyMessage(function (\Symfony\Component\Mime\Email $message) use ($logoData, $logoCid) {
+                $part = new DataPart($logoData, 'logo.png', 'image/png');
+                $part->asInline();
+                $part->setContentId($logoCid);
+                $message->addPart($part);
+            });
+        }
+
+        return $mail;
     }
 }
