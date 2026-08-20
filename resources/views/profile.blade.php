@@ -214,7 +214,7 @@
 
     // Actual account counts – Platform
     $cntDevice   = $pkg ? \App\Models\WhatsappDevice::where('business_id', $bizId)->count() : 0;
-    $cntWaba     = $pkg ? \App\Models\MetaAccount::where('business_id', $bizId)->count() : 0;
+    $cntWaba     = $pkg ? \App\Models\MetaAccount::where('business_id', $bizId)->where('type', 'waba')->count() : 0;
     $cntTelegram = $pkg ? \App\Models\TelegramKey::where('business_id', $bizId)->count() : 0;
     $cntInsta    = $pkg ? \App\Models\Meta\InstagramAccount::where('business_id', $bizId)->count() : 0;
     $cntMsg      = $pkg ? \App\Models\Meta\MessengerAccount::where('business_id', $bizId)->count() : 0;

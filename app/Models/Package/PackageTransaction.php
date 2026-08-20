@@ -40,6 +40,8 @@ class PackageTransaction extends Model
         'scrapp_limit',
         'limit_device',
         'device_limit',
+        'limit_waba',      // FIX: WABA limit - sebelumnya hilang, bikin limit selalu ∞
+        'waba_limit',      // FIX: WABA limit count
         'limit_template',
         'template_limit',
         'limit_ai_training',
