@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Mail\NotificationEmail;
 use App\Models\Master\MessageTemplate;
 use App\Models\NotificationSetting;
-use App\Models\PackageTransaction;
+use App\Models\Package\PackageTransaction;
 use App\Observers\WhatsappServiceObserver;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
