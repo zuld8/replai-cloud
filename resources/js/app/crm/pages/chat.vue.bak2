@@ -1866,19 +1866,6 @@ export default {
                 this.detail = response.data;
                 this.getMessages();
                 this.markToRead();
-
-                // Auto-open template panel untuk WABA (via ?tpl=1)
-                // Cover WABA->WABA dimana watcher detail.from tidak fire
-                if (this.$route.query.tpl && this.detail.from === 'waba') {
-                    this.$nextTick(() => {
-                        if (!this.canFreeform) {
-                            this.openTemplatePanel();
-                        }
-                        const query = { ...this.$route.query };
-                        delete query.tpl;
-                        this.$router.replace({ query }).catch(() => {});
-                    });
-                }
             } catch (error) {
                 console.error(error);
             }

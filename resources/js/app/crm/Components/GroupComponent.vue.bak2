@@ -419,7 +419,6 @@
                                     <label class="form-label">{{ $t('contact.phone_number') || 'Nomor Telepon'
                                     }}</label>
                                     <input type="text" class="form-control" v-model="newContact.phone"
-                                        @input="validatePhoneInput"
                                         :placeholder="$t('contact.phone_placeholder') || 'Contoh: 628123456789'" />
                                     <small class="form-text text-muted">
                                         {{ $t('contact.phone_hint') || 'Awalan 0 akan diganti otomatis menjadi 62' }}
@@ -776,7 +775,7 @@ export default {
 
             try {
                 const device = this.deviceList.find(d => d.id === this.selectedDeviceId);
-                const type = this.mapDeviceType(device?.from);
+                const type = device?.from === 'unofficial' ? 'whatsapp' : 'waba';
 
                 const response = await this.$axios.post('/crm/contacts', {
                     name: this.selectedContact.name,
@@ -793,17 +792,12 @@ export default {
                     this.$showToast('Sesi chat berhasil dibuat', 'success', 2000);
                 }
 
-                const isWaba = type === 'waba';
                 setTimeout(() => {
                     this.$router.push({
                         name: "chat_room",
                         params: {
-                            id: this.$route.params.id,
-                            chatid: response.data.contact.id,
-                        },
-                        query: {
-                            ...(isWaba ? { tpl: '1' } : {}),
-                        },
+                            chatid: response.data.contact.id // HistoryChat ID
+                        }
                     });
                 }, 300);
 
@@ -835,7 +829,7 @@ export default {
             try {
                 // Determine device type
                 const device = this.deviceList.find(d => d.id === this.newContact.deviceId);
-                const type = this.mapDeviceType(device?.from);
+                const type = device?.from === 'unofficial' ? 'whatsapp' : 'waba';
 
                 // Hit endpoint yang sama dengan createChatSession
                 const response = await this.$axios.post("/crm/contacts", {
@@ -863,17 +857,12 @@ export default {
                 this.resetAddContact();
 
                 // Redirect to chat room
-                const isWaba = type === 'waba';
                 setTimeout(() => {
                     this.$router.push({
                         name: "chat_room",
                         params: {
-                            id: this.$route.params.id,
-                            chatid: response.data.contact.id,
-                        },
-                        query: {
-                            ...(isWaba ? { tpl: '1' } : {}),
-                        },
+                            chatid: response.data.contact.id // HistoryChat ID
+                        }
                     });
                 }, 300);
 
@@ -960,33 +949,50 @@ export default {
                 return;
             }
 
-            const device = this.deviceList.find(d => d.id === this.newContact.deviceId);
-            if (!device) {
-                const m = 'Device tidak valid';
-                this.$showToast ? this.$showToast(m, 'error', 3000) : alert(m);
-                return;
-            }
-
-            // Normalisasi nomor (jaga-jaga paste tanpa lewat @input)
-            let phone = String(this.newContact.phone).replace(/[^0-9]/g, '');
-            if (phone.startsWith('0'))   phone = '62' + phone.slice(1);
-            if (phone.startsWith('620')) phone = '62' + phone.slice(3);
-
             try {
-                const type = this.mapDeviceType(device.from);
+                let from = 'whatsapp';
+                let deviceId = null;
+                let wabaId = null;
 
-                const { data } = await this.$axios.post('/crm/contacts', {
-                    name:      this.newContact.name,
-                    phone:     phone,
-                    type:      type,
-                    device_id: device.id,
+                const deviceIndex = this.deviceList.findIndex(
+                    (c) => c.id === this.newContact.deviceId
+                );
+
+                if (deviceIndex !== -1) {
+                    const deviceDetail = this.deviceList[deviceIndex];
+                    from = deviceDetail.from === 'unofficial' ? 'whatsapp' : 'waba';
+                    deviceId = deviceDetail.from === 'unofficial' ? this.newContact.deviceId : null;
+                    wabaId = deviceDetail.from === 'unofficial' ? null : this.newContact.deviceId;
+                }
+
+                if (deviceId === null && wabaId === null) {
+                    if (this.$showToast) {
+                        this.$showToast('Device tidak valid', 'error', 3000);
+                    } else {
+                        alert('Device tidak valid');
+                    }
+                    return;
+                }
+
+                const response = await this.$axios.post("/crm/contacts", {
+                    name: this.newContact.name,
+                    phone: this.newContact.phone,
+                    from: from,
+                    waba_id: wabaId,
+                    device_id: deviceId
                 });
 
-                this.$showToast && this.$showToast('Kontak berhasil ditambahkan', 'success', 3000);
+                if (this.$showToast) {
+                    this.$showToast('Kontak berhasil ditambahkan', 'success', 3000);
+                }
 
+                // Add to modal contacts list
+                this.modalContacts.unshift(response.data.contact);
                 this.resetAddContact();
-                const isWaba = type === 'waba';
-                this.startChat(data.contact, isWaba);
+                this.startChat(response.data.contact);
+
+                // Optional: langsung buka chat dengan kontak baru
+                // this.newChatContact(response.data.contact);
             } catch (error) {
                 console.error('Error saving contact:', error);
                 if (this.$handleErrorResponse) {
@@ -1185,33 +1191,8 @@ export default {
             }
         },
 
+        startChat(detail) {
 
-        /**
-         * Normalisasi nomor: buang non-digit, 08xx -> 628xx
-         */
-        validatePhoneInput(event) {
-            let v = event.target.value.replace(/[^0-9]/g, '');
-            if (v.startsWith('0')) v = '62' + v.slice(1);
-            if (v.startsWith('620')) v = '62' + v.slice(3);
-            this.newContact.phone = v;
-        },
-
-        /**
-         * Mapping device type ke backend type (6 channel)
-         */
-        mapDeviceType(from) {
-            const map = {
-                unofficial: 'whatsapp',
-                waba:       'waba',
-                telegram:   'telegram',
-                instagram:  'instagram',
-                messanger:  'messanger',
-                livechat:   'livechat',
-            };
-            return map[from] || 'whatsapp';
-        },
-
-        startChat(detail, isWaba = false) {
             const modal = bootstrap.Modal.getInstance(this.$refs.contactModal);
             if (modal) modal.hide();
 
@@ -1219,12 +1200,11 @@ export default {
                 name: "chat_room",
                 params: {
                     id: this.$route.params.id,
-                    chatid: detail.id,
+                    chatid: detail.id || `${detail.phone}@s.whatsapp.net`,
                 },
                 query: {
                     name: detail.name,
                     photo: detail.photo || this.attribute.user,
-                    ...(isWaba ? { tpl: '1' } : {}),
                 },
             });
         },
