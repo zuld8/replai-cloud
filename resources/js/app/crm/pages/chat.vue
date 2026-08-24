@@ -2894,6 +2894,18 @@ export default {
     },
 
     watch: {
+        // Watch detail changes untuk auto-open template panel
+        'detail.from'(newVal) {
+            if (this.$route.query.tpl && newVal === 'waba' && !this.canFreeform) {
+                this.$nextTick(() => {
+                    this.openTemplatePanel();
+                    const query = { ...this.$route.query };
+                    delete query.tpl;
+                    this.$router.replace({ query }).catch(() => {});
+                });
+            }
+        },
+
         "$route.params.chatid": {
             handler(newChatId, oldChatId) {
                 if (this.$route.name === "chat_room" && newChatId) {

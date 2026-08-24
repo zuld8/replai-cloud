@@ -84,7 +84,16 @@
                         <div class="tab-content">
                             <!-- Contact Tab -->
                             <div class="tab-pane fade show active" id="contact-blank-pane" role="tabpanel" tabindex="0">
-                                <div class="mb-3">
+                                                                <!-- Device/Channel dropdown -->
+                                <div class="mb-2">
+                                    <select class="form-select form-select-sm" v-model="selectedModalDevice">
+                                        <option value="" disabled>Pilih Device / Channel</option>
+                                        <option v-for="device in deviceList" :key="device.id" :value="device.id">
+                                            {{ device.phone ? device.phone + ' (' + device.name + ')' : device.name }}
+                                        </option>
+                                    </select>
+                                </div>
+<div class="mb-3">
                                     <div class="search-input-group">
                                         <i class='bx bx-search'></i>
                                         <input type="text" class="form-control" v-model="modalContactSearch"
@@ -219,6 +228,7 @@ export default {
                 deviceId: "",
             },
             deviceList: [],
+            selectedModalDevice: "",
         };
     },
 
@@ -262,7 +272,7 @@ export default {
             }
 
             try {
-                const response = await this.$axios.get(`/crm/contacts`, {
+                const response = await this.$axios.get(`/crm/stores`, {
                     params: {
                         page: this.modalContactsPage,
                         limit: 10,
@@ -278,7 +288,7 @@ export default {
                     this.modalContacts = data;
                 }
 
-                this.modalContactsHasMore = data.length > 0;
+                this.modalContactsHasMore = data.length >= 10;
             } catch (error) {
                 console.error('Error fetching contacts:', error);
                 if (this.$handleErrorResponse) {
@@ -331,6 +341,7 @@ export default {
             this.modalContactsHasMore = true;
             this.modalContactsLoading = true;
             this.modalContactSearch = "";
+            this.selectedModalDevice = "";
 
             const modal = new bootstrap.Modal(this.$refs.newChatModal, {
                 backdrop: false,
@@ -376,23 +387,62 @@ export default {
             }
         },
 
+        
         /**
-         * Start chat from contact
+         * Start chat from contact — POST dulu bikin HistoryChat, baru navigate
          */
-        newChatContact(detail) {
-            this.closeModal();
+        async newChatContact(detail) {
+            // Kalau dari saveContact (sudah POST), langsung navigate
+            if (detail._ready) {
+                this.closeModal();
+                const isWaba = detail._type === 'waba';
+                return this.$router.push({
+                    name: "chat_room",
+                    params: { id: this.$route.params.id, chatid: detail.id },
+                    query: {
+                        name: detail.name,
+                        photo: detail.photo || this.attribute.user,
+                        ...(isWaba ? { tpl: '1' } : {}),
+                    },
+                });
+            }
 
-            return this.$router.push({
-                name: "chat_room",
-                params: {
-                    id: this.$route.params.id,
-                    chatid: detail.id || `${detail.phone}@s.whatsapp.net`,
-                },
-                query: {
-                    name: detail.name,
-                    photo: detail.photo || this.attribute.user,
-                },
-            });
+            // Tentukan device dari dropdown modal
+            const dev = this.getSelectedModalDevice();
+            if (!dev) {
+                const msg = 'Pilih device/channel terlebih dahulu';
+                this.$showToast ? this.$showToast(msg, 'error', 3000) : alert(msg);
+                return;
+            }
+
+            try {
+                const type = this.mapDeviceType(dev.from);
+                const { data } = await this.$axios.post('/crm/contacts', {
+                    name:      detail.name || detail.phone,
+                    phone:     detail.phone,
+                    type:      type,
+                    device_id: dev.id,
+                    store_id:  detail.id || null,
+                });
+
+                const history = data.contact;
+                this.closeModal();
+
+                const isWaba = type === 'waba';
+                this.$router.push({
+                    name: 'chat_room',
+                    params: { id: this.$route.params.id, chatid: history.id },
+                    query: {
+                        name: history.name || detail.name,
+                        photo: detail.photo || this.attribute.user,
+                        ...(isWaba ? { tpl: '1' } : {}),
+                    },
+                });
+            } catch (e) {
+                const msg = e.response?.data?.message || 'Gagal membuat percakapan';
+                this.$showToast ? this.$showToast(msg, 'error', 4000) : alert(msg);
+                console.error('newChatContact error', e.response?.data || e);
+            }
         },
 
         /**
@@ -409,49 +459,34 @@ export default {
             }
 
             try {
-                let from = 'whatsapp';
-                let deviceId = null;
-                let wabaId = null;
-
                 const deviceIndex = this.deviceList.findIndex(
                     (c) => c.id === this.newContact.deviceId
                 );
 
-                if (deviceIndex !== -1) {
-                    const deviceDetail = this.deviceList[deviceIndex];
-                    from = deviceDetail.from === 'unofficial' ? 'whatsapp' : 'waba';
-                    deviceId = deviceDetail.from === 'unofficial' ? this.newContact.deviceId : null;
-                    wabaId = deviceDetail.from === 'unofficial' ? null : this.newContact.deviceId;
-                }
-
-                if (deviceId === null && wabaId === null) {
-                    if (this.$showToast) {
-                        this.$showToast('Device tidak valid', 'error', 3000);
-                    } else {
-                        alert('Device tidak valid');
-                    }
+                if (deviceIndex === -1) {
+                    const msg = 'Device tidak valid';
+                    this.$showToast ? this.$showToast(msg, 'error', 3000) : alert(msg);
                     return;
                 }
 
+                const deviceDetail = this.deviceList[deviceIndex];
+                const type = this.mapDeviceType(deviceDetail.from);
+
                 const response = await this.$axios.post("/crm/contacts", {
-                    name: this.newContact.name,
-                    phone: this.newContact.phone,
-                    from: from,
-                    waba_id: wabaId,
-                    device_id: deviceId
+                    name:      this.newContact.name,
+                    phone:     this.newContact.phone,
+                    type:      type,
+                    device_id: deviceDetail.id,
                 });
 
                 if (this.$showToast) {
                     this.$showToast('Kontak berhasil ditambahkan', 'success', 3000);
                 }
 
-                // Add to modal contacts list
-                this.modalContacts.unshift(response.data.contact);
                 this.resetAddContact();
-                this.newChatContact(response.data.contact);
+                const contact = response.data.contact;
+                this.newChatContact({ ...contact, _ready: true, _type: type });
 
-                // Optional: langsung buka chat dengan kontak baru
-                // this.newChatContact(response.data.contact);
             } catch (error) {
                 console.error('Error saving contact:', error);
                 if (this.$handleErrorResponse) {
@@ -495,6 +530,33 @@ export default {
             }
             this.contact.phone = value;
         },
+
+        /**
+         * Mapping device type dari ComponentController ke backend type
+         */
+        mapDeviceType(from) {
+            const map = {
+                unofficial: 'whatsapp',
+                waba:       'waba',
+                telegram:   'telegram',
+                instagram:  'instagram',
+                messanger:  'messanger',
+                livechat:   'livechat',
+            };
+            return map[from] || 'whatsapp';
+        },
+
+        /**
+         * Dapatkan device terpilih di modal
+         */
+        getSelectedModalDevice() {
+            if (!this.selectedModalDevice) {
+                if (this.deviceList.length === 1) return this.deviceList[0];
+                return null;
+            }
+            return this.deviceList.find(d => d.id === this.selectedModalDevice) || null;
+        },
+
 
         /**
          * Close modal
