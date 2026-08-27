@@ -288,6 +288,33 @@ class StoreController extends Controller
     |--------------------------------------------------------------------------
     */
 
+
+    /**
+     * Kunci dedup meniru collation DB (utf8mb4_unicode_ci):
+     * case-insensitive + spasi ujung diabaikan.
+     * Tanpa ini, PHP bilang "beda" tapi MySQL bilang "duplikat" -> 1062.
+     */
+    private function phoneKey($phone): ?string
+    {
+        if ($phone === null) return null;
+        $p = trim((string) $phone);
+        if ($p === '') return null;
+        return mb_strtolower($p, 'UTF-8');
+    }
+
+    /**
+     * Pesan error import yang ramah (jangan tampilkan SQL mentah ke user)
+     */
+    private function importErrorMessage(\Throwable $e): string
+    {
+        if (str_contains($e->getMessage(), 'uq_stores_merchant_phone_cat')) {
+            return '⚠️ Import dibatalkan: ada nomor yang sama dipakai dua kali untuk kategori yang sama '
+                 . '(sering karena kolom nomor di file berisi nama/teks). Tidak ada data yang diubah. '
+                 . 'Rapikan kolom NOMOR di file lalu ulangi.';
+        }
+        return 'Import gagal: ' . Str::limit($e->getMessage(), 200);
+    }
+
     public function import(Request $request)
     {
         $this->validate($request, [
@@ -335,6 +362,7 @@ class StoreController extends Controller
         $totalRows   = count($rows); // only counts non-empty rows
 
         // Layer 2: Lock atomik per merchant — cegah double-submit race
+        $invalidPhone = 0;
         $lockKey = 'store-import:' . ($merchantId ?? $businessId ?? 'guest');
         $lock    = \Illuminate\Support\Facades\Cache::lock($lockKey, 600);
         if (!$lock->get()) {
@@ -342,6 +370,8 @@ class StoreController extends Controller
         }
 
         try {
+            DB::transaction(function () use ($rows, $chunkSize, $merchantId, $businessId, $request, &$inserted, &$updated, &$skipped, &$totalRows, &$invalidPhone) {
+
             // -----------------------------------------------
             // 1. Pre-cache semua categories (1 query saja)
             // -----------------------------------------------
@@ -386,17 +416,25 @@ class StoreController extends Controller
             } else {
                 $phoneCatQuery->where('business_id', $businessId);
             }
-            $phoneCatSet = $phoneCatQuery
-                ->select('phone', 'category_id')
-                ->get()
-                ->mapWithKeys(fn($s) => [$s->phone . '|' . $s->category_id => true])
-                ->toArray();
+            $phoneCatSet = [];
+            foreach ($phoneCatQuery->select('phone', 'category_id')->get() as $s) {
+                $k = $this->phoneKey($s->phone);
+                if ($k !== null) $phoneCatSet[$k . '|' . $s->category_id] = true;
+            }
 
             // phone => store_id map (biar bisa update kategori nanti)
-            $existingMap    = (clone $dupQuery)->whereNotNull('phone')->pluck('id', 'phone')->toArray();
-            $existingPhones = $existingMap; // compat alias (isset check)
+            // Kunci ternormalisasi (case-insensitive, trim) agar cocok dengan collation DB
+            $existingMap = [];
+            foreach ((clone $dupQuery)->whereNotNull('phone')->get(['id', 'phone']) as $s) {
+                $k = $this->phoneKey($s->phone);
+                if ($k !== null && !isset($existingMap[$k])) {
+                    $existingMap[$k] = $s->id;
+                }
+            }
+            $existingPhones = $existingMap;
             $updateExisting = $request->update_existing_category === 'yes';
             $updated        = 0;
+            $invalidPhone   = 0;
             $catUpdates     = []; // store_id => category_id
 
             $existingNames = array_flip(
@@ -417,20 +455,33 @@ class StoreController extends Controller
                         continue;
                     }
 
-                    $phone   = !empty($d['phone']) ? (string)$d['phone'] : null;
+                    $phone   = !empty($d['phone']) ? trim((string)$d['phone']) : null;
                     $catName = strtoupper($d['category'] ?? 'UMUM');
                     $catId   = $existingCats[$catName] ?? null;
 
+                    // FIX 4: Validasi nomor — buang non-digit, cek minimal 8 angka
+                    if ($phone !== null) {
+                        $digits = preg_replace('/[^0-9]/', '', $phone);
+                        if (strlen($digits) < 8) {
+                            $invalidPhone++;
+                            $phone = null; // simpan tanpa nomor (NULL selalu distinct di unique index)
+                        }
+                    }
+
+                    // Kunci dedup ternormalisasi (FIX 1)
+                    $pk = $this->phoneKey($phone);
+
                     // Dedup phone+kategori lintas akun WA (prioritas — cegah visual duplikat)
-                    if ($phone !== null && $catId !== null && isset($phoneCatSet[$phone . '|' . $catId])) {
+                    if ($pk !== null && $catId !== null && isset($phoneCatSet[$pk . '|' . $catId])) {
                         $skipped++;
                         continue;
                     }
 
                     // Duplikat phone: skip atau update kategori (scope per akun WA)
-                    if ($phone !== null && isset($existingMap[$phone])) {
+                    if ($pk !== null && isset($existingMap[$pk])) {
                         if ($updateExisting && $catId) {
-                            $catUpdates[$existingMap[$phone]] = $catId; // jadwalkan update
+                            $catUpdates[$existingMap[$pk]] = $catId;
+                            $phoneCatSet[$pk . '|' . $catId] = true; // FIX 4: tandai di jalur update
                             $updated++;
                         } else {
                             $skipped++;
@@ -464,10 +515,10 @@ class StoreController extends Controller
                     $inserted++;
 
                     // Update memory set supaya chunk berikutnya tidak duplikat dalam file
-                    if ($phone !== null) {
-                        $existingMap[$phone] = $uuid;
-                        $existingPhones[$phone] = $uuid;
-                        if ($catId !== null) $phoneCatSet[$phone . '|' . $catId] = true;
+                    if ($pk !== null) {
+                        $existingMap[$pk] = $uuid;
+                        $existingPhones[$pk] = $uuid;
+                        if ($catId !== null) $phoneCatSet[$pk . '|' . $catId] = true;
                     } else $existingNames[$d['name']] = true;
                 }
 
@@ -476,27 +527,33 @@ class StoreController extends Controller
                 }
             }
 
-            // Eksekusi bulk update kategori kontak existing
+            // Eksekusi bulk update kategori kontak existing (UPDATE IGNORE = jaring pengaman)
             if (!empty($catUpdates)) {
                 $byCat = [];
                 foreach ($catUpdates as $sid => $cid) { $byCat[$cid][] = $sid; }
                 foreach ($byCat as $cid => $ids) {
-                    \App\Models\Store\Store::whereIn('id', $ids)->update([
-                        'category_id' => $cid,
-                        'updated_at'  => now(),
-                    ]);
+                    foreach (array_chunk($ids, 300) as $part) {
+                        $ph = implode(',', array_fill(0, count($part), '?'));
+                        DB::statement(
+                            "UPDATE IGNORE `stores` SET `category_id` = ?, `updated_at` = ? WHERE `merchant_id` = ? AND `id` IN ($ph)",
+                            array_merge([$cid, now(), $merchantId], $part)
+                        );
+                    }
                 }
             }
+
+            }); // end DB::transaction
 
             $msg = "✅ Berhasil import {$inserted} kontak.";
             if ($updated > 0) $msg .= " Kategori diperbarui: {$updated}.";
             if ($skipped > 0) $msg .= " Dilewati: {$skipped}.";
+            if ($invalidPhone > 0) $msg .= " ⚠️ {$invalidPhone} baris nomornya tidak valid (disimpan tanpa nomor).";
             $msg .= " Total baris valid: {$totalRows}.";
 
             return redirect()->back()->with(['flash' => $msg]);
 
-        } catch (\Exception $e) {
-            return redirect()->back()->with(['gagal' => 'Import gagal: ' . $e->getMessage()]);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with(['gagal' => $this->importErrorMessage($e)]);
         } finally {
             // Layer 2: Selalu lepas lock (sukses maupun gagal)
             if (isset($lock)) $lock->release();
