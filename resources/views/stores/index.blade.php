@@ -506,11 +506,42 @@ $categories = \App\Models\Master\Category::select('id', 'name')->orderBy('name')
         const count = selectAllMode ? totalRecords : selectedIds.size;
         if (count === 0) { alert('Pilih minimal 1 data'); return; }
 
-        if (!confirm(`⚠️ Hapus ${count.toLocaleString('id-ID')} data kontak? Tindakan ini tidak bisa dibatalkan.`)) return;
+        let payload;
 
-        const payload = selectAllMode
-            ? { select_all: true }
-            : { ids: Array.from(selectedIds) };
+        if (selectAllMode) {
+            // Konfirmasi keras: user harus ketik jumlahnya
+            const jawab = prompt(
+                `⚠️ Anda akan menghapus ${count.toLocaleString('id-ID')} kontak yang sedang tampil (sesuai filter).\n` +
+                `Tindakan ini TIDAK BISA dibatalkan.\n\n` +
+                `Ketik angka ${count} untuk melanjutkan:`
+            );
+            if (jawab === null) return;
+            if (String(jawab).replace(/\D/g, '') !== String(count)) {
+                alert('Angka tidak cocok. Penghapusan dibatalkan.');
+                return;
+            }
+
+            // Kirim filter yang sama dengan yang dipakai tabel + jumlah konfirmasi
+            const filters = {};
+            new URLSearchParams(window.location.search).forEach((val, key) => {
+                if (!['draw', '_token', 'page'].includes(key)) filters[key] = val;
+            });
+            // meta_account_id dari dropdown WA filter
+            filters.meta_account_id = $('#currentMetaAccountId').val() || '';
+
+            // Pencarian bawaan DataTables
+            const dtSearch = store_table.search();
+
+            payload = {
+                select_all:     true,
+                expected_count: count,
+                filters:        filters,
+                dt_search:      dtSearch || '',
+            };
+        } else {
+            if (!confirm(`⚠️ Hapus ${count.toLocaleString('id-ID')} data kontak terpilih? Tindakan ini tidak bisa dibatalkan.`)) return;
+            payload = { ids: Array.from(selectedIds) };
+        }
 
         $.ajax({
             url: '{{ route("stores.deleteMultiple") }}',
@@ -528,7 +559,8 @@ $categories = \App\Models\Master\Category::select('id', 'name')->orderBy('name')
                 }
             },
             error: function(xhr) {
-                alert('Error: ' + (xhr.responseJSON?.message || 'Gagal menghapus'));
+                const msg = xhr.responseJSON?.message || 'Gagal menghapus';
+                toastr?.error(msg) || alert('Error: ' + msg);
             }
         });
     }

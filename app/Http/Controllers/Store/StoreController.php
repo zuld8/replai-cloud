@@ -581,22 +581,58 @@ class StoreController extends Controller
 
     public function deleteMultiple(Request $request)
     {
-        // Select All mode — hapus semua data merchant ini
+        // Select All mode — hapus sesuai FILTER yang aktif di layar
         if ($request->select_all) {
-            $authUser  = auth()->user();
-            $merchantId = $authUser->merchant_id ?? null;
-            $query = Store::query();
-            if ($merchantId) {
-                $query->where('merchant_id', $merchantId);
+            $expected = (int) $request->input('expected_count', -1);
+            if ($expected < 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permintaan tidak sah: jumlah konfirmasi tidak dikirim.'
+                ], 422);
             }
-            $deleted = $query->delete();
+
+            // Bangun ulang query SAMA dengan yang dipakai daftar di layar
+            // storeObserver->getData() menangani: name, category, district, status, meta_account_id
+            // + global scope FilterByBusinessScope otomatis
+            $filters = (array) $request->input('filters', []);
+            $filterRequest = new Request($filters);
+            $query = $this->storeObserver->getData($filterRequest);
+
+            // Pencarian bawaan DataTables (kotak search)
+            $dtSearch = trim((string) $request->input('dt_search', ''));
+            if ($dtSearch !== '') {
+                $query->where(function ($q) use ($dtSearch) {
+                    $q->where('name', 'like', '%' . $dtSearch . '%')
+                      ->orWhere('phone', 'like', '%' . $dtSearch . '%');
+                });
+            }
+
+            // KUNCI KEAMANAN: jumlah harus SAMA dengan yang dikonfirmasi user
+            $actual = (clone $query)->count();
+            if ($actual !== $expected) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Dibatalkan demi keamanan: data yang cocok filter ({$actual}) "
+                               . "tidak sama dengan yang Anda konfirmasi ({$expected}). "
+                               . "Muat ulang halaman lalu coba lagi."
+                ], 409);
+            }
+
+            // Hapus bertahap (jangan 1 DELETE raksasa — lock lama di tabel besar)
+            $deleted = 0;
+            do {
+                $ids = (clone $query)->limit(1000)->pluck('id')->all();
+                if (empty($ids)) break;
+                $deleted += Store::whereIn('id', $ids)->delete();
+            } while (count($ids) === 1000);
+
             return response()->json([
                 'success' => true,
-                'message' => "Berhasil menghapus {$deleted} kontak"
+                'message' => "Berhasil menghapus {$deleted} kontak (sesuai filter)."
             ]);
         }
 
-        // Normal mode — hapus berdasarkan IDs
+        // Normal mode — hapus berdasarkan IDs yang dicentang manual
         $ids = $request->ids;
         if (!empty($ids)) {
             $deleted = Store::whereIn('id', $ids)->delete();
