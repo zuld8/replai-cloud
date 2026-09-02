@@ -367,6 +367,10 @@ class WhatsappServiceObserver
 
             return true;
         } catch (\Exception $e) {
+            \Log::error('[mail] Gagal kirim email', [
+                'to'    => $email,
+                'error' => $e->getMessage(),
+            ]);
             $responseData['status']     = 403;
             $responseData['message']    = $e->getMessage();
             return $responseData;
