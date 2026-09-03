@@ -24,6 +24,21 @@ import { Readable } from "stream";
 const sessions = new Map();
 const retries = new Map();
 
+// Simpan isi pesan untuk melayani permintaan kirim-ulang (retry receipt) dari HP penerima.
+// Tanpa ini, pesan nyangkut di "Menunggu pesan ini" karena Baileys tidak punya isi aslinya.
+const messageStore = new Map();
+const MESSAGE_STORE_MAX = 3000;   // ~cukup untuk beberapa jam lalu lintas; jaga memori tetap aman
+
+function addToMessageStore(id, msg) {
+    if (!id || !msg) return;
+    if (messageStore.size >= MESSAGE_STORE_MAX) {
+        // Map menjaga urutan penyisipan → key pertama = paling lama
+        const oldest = messageStore.keys().next().value;
+        messageStore.delete(oldest);
+    }
+    messageStore.set(id, msg);
+}
+
 // ================================================================
 // Contacts Cache — Persist nama WA ke disk supaya bertahan setelah restart
 // ================================================================
@@ -181,7 +196,12 @@ const createSession = async (
         defaultQueryTimeoutMs: 60000,
         browser: getBrowserConfig(),
         getMessage: async (key) => {
-            const msg = messageStore.get(key.id); return msg || { conversation: "" };
+            const msg = messageStore.get(key.id);
+            if (!msg) {
+                console.log("[getMessage] isi pesan tidak ditemukan untuk id:", key.id);
+                return undefined;   // biarkan Baileys menangani; JANGAN { conversation: "" }
+            }
+            return msg;
         },
         patchMessageBeforeSending: (message) => {
             const requiresPatch = !!(
@@ -262,8 +282,15 @@ const createSession = async (
 
     sock.ev.on("messages.upsert", async (messageUpdate) => {
         try {
-            // Store messages for getMessage callback
-            try { const msgs = m.messages || []; msgs.forEach(msg => { if (msg.key && msg.key.id) { addToMessageStore(msg.key.id, msg.message); } }); } catch(e) {}
+            // Simpan SEMUA pesan (masuk & keluar) untuk callback getMessage
+            try {
+                const msgs = messageUpdate.messages || [];
+                msgs.forEach(msg => {
+                    if (msg?.key?.id && msg.message) addToMessageStore(msg.key.id, msg.message);
+                });
+            } catch (e) {
+                console.log("[messageStore] gagal menyimpan:", e.message);
+            }
             const message = messageUpdate.messages[0];
 
             if (!message) {
@@ -892,11 +919,14 @@ const sendMessage = async (
             }
         }
 
-        return await session.sendMessage(
+        const sent = await session.sendMessage(
             receiverId,
             messageContent,
             quotedOptions
         );
+        // Simpan pesan keluar ke store — penting untuk retry receipt
+        if (sent?.key?.id && sent.message) addToMessageStore(sent.key.id, sent.message);
+        return sent;
     } catch (error) {
         console.error("Error sending message:", error);
         return Promise.reject(error);
