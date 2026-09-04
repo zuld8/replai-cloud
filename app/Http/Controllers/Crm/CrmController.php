@@ -737,7 +737,7 @@ class CrmController extends Controller
                     ->first(['messageid', 'remotejid']);
             }
 
-            $responseData = $this->whatsappServiceObserver->sendMessage(($history->metadata ?? $history->from_number), $history->device_id, $message->message, ($image['path'] != null ? asset($image['path']) : ''), $messageType, ['original_name' => $image['original_name'] ?? null], false, $details);
+            $responseData = $this->whatsappServiceObserver->sendMessage(($history->metadata ?? $history->from_number), $history->device_id, $message->message, ($image['path'] != null ? asset($image['path']) : ''), $messageType, ['original_name' => $image['original_name'] ?? null], ($history->type === 'group'), $details);
 
             if ($responseData['status'] == 200) {
                 $message->update([
