@@ -19,7 +19,7 @@
         "node": ">=18.0.0"
     },
     "dependencies": {
-        "@whiskeysockets/baileys": "^6.7.24",
+        "@whiskeysockets/baileys": "^7.0.0-rc14",
         "axios": "^1.2.2",
         "bootstrap": "^5.3.3",
         "cors": "^2.8.5",
