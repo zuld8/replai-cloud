@@ -34,8 +34,9 @@ class ConversationReportController extends Controller
             $data = $this->conversationRateService->getConversationRate($year, $month, $agentId);
 
             // Get list of agents for filter dropdown
-            $agents = User::where('role', 'agent')
-                ->orWhere('role', 'admin')
+            $agents = User::where(function ($q) {
+                    $q->where('role', 'user')->orWhere('role', 'admin');
+                })
                 ->select('id', 'name', 'email')
                 ->orderBy('name')
                 ->get();
@@ -87,8 +88,11 @@ class ConversationReportController extends Controller
                 'page'  => 'Human Agent Performance Detail'
             ]);
         } catch (\Exception $e) {
-            dd($e->getMessage());
-            return back()->with('error', 'Failed to load agent details: ' . $e->getMessage());
+            \Log::error('[laporan] gagal memuat', [
+                'halaman' => 'conversation-agent-detail',
+                'error'   => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Gagal memuat laporan. Silakan coba lagi atau hubungi admin.');
         }
     }
 
@@ -106,8 +110,9 @@ class ConversationReportController extends Controller
             $agentIds = $request->input('agent_ids', []);
 
             // Get all agents for selection
-            $allAgents = User::where('role', 'agent')
-                ->orWhere('role', 'admin')
+            $allAgents = User::where(function ($q) {
+                    $q->where('role', 'user')->orWhere('role', 'admin');
+                })
                 ->select('id', 'name', 'email', 'photo')
                 ->orderBy('name')
                 ->get();

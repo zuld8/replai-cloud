@@ -174,8 +174,11 @@ class LeadPipelineController extends Controller
                 'page'      => 'Lead Pipeline Analytics'
             ]);
         } catch (\Exception $e) {
-            dd($e->getMessage());
-            return back()->with('error', 'Failed to load pipeline analytics: ' . $e->getMessage());
+            \Log::error('[laporan] gagal memuat', [
+                'halaman' => 'lead-pipeline',
+                'error'   => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Gagal memuat laporan. Silakan coba lagi atau hubungi admin.');
         }
     }
 

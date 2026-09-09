@@ -46,6 +46,7 @@
                         <tr>
                             <th scope="col">{{__('report.send_statistics.no')}}</th>
                             <th scope="col">{{__('report.send_statistics.device')}}</th>
+                            <th scope="col">Jenis</th>
                             <th scope="col">{{__('report.send_statistics.sent')}}</th>
                             <th scope="col">{{__('report.send_statistics.delivered')}}</th>
                             <th scope="col">{{__('report.send_statistics.not_delivered')}}</th>
@@ -59,7 +60,8 @@
                         @foreach ($devices as $device)
                         <tr>
                             <td><?= $no++; ?></td>
-                            <td><?= $device->device->name ?? ''; ?></td>
+                            <td><?= e($device->sender_name); ?></td>
+                            <td><?= e($device->sender_type); ?></td>
                             <td><?= number_format($device->sent); ?></td>
                             <td><?= number_format($device->delivered); ?></td>
                             <td><?= number_format($device->not_delivered); ?> </td>

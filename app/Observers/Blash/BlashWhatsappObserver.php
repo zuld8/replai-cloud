@@ -89,16 +89,21 @@ class BlashWhatsappObserver
     {
         $start = $request->start_date ?: now()->subDays(30)->toDateString();
         $end   = $request->end_date   ?: now()->toDateString();
+        $bid   = my_business();
 
-        // FIX perf: ambil device_id list dulu (ringan), ganti whereHas EXISTS yang lambat
-        $deviceIds = \App\Models\WhatsappDevice::where('business_id', my_business())
-            ->pluck('id')->all();
-        if (empty($deviceIds)) return collect();
+        // blash_details.device_id bisa berisi id WhatsappDevice (WA Personal) ATAU
+        // id WhatsappKeyAccount (WABA). Dua-duanya harus ikut dihitung.
+        $devices = \App\Models\WhatsappDevice::where('business_id', $bid)->pluck('name', 'id');
+        $wabas   = \App\Models\WhatsappKeyAccount::where('business_id', $bid)->pluck('phone', 'id');
 
-        // Cache 10 menit — query 2.3jt baris, gak perlu real-time
-        $cacheKey = 'stat_kirim_' . my_business() . '_' . $start . '_' . $end;
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($deviceIds, $start, $end, $request) {
-            return BlashDetail::selectRaw("
+        $allIds = array_merge($devices->keys()->all(), $wabas->keys()->all());
+        if (empty($allIds)) return collect();
+
+        // v2 = kunci cache baru, supaya hasil lama yang salah tidak ikut tampil setelah deploy
+        $cacheKey = 'stat_kirim_v2_' . $bid . '_' . $start . '_' . $end;
+
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($allIds, $devices, $wabas, $start, $end, $request) {
+            $rows = BlashDetail::selectRaw("
                     device_id,
                     COUNT(*) as sent,
                     SUM(CASE WHEN sending_status = 'yes' THEN 1 ELSE 0 END) as delivered,
@@ -107,7 +112,7 @@ class BlashWhatsappObserver
                         (SUM(CASE WHEN sending_status = 'yes' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2
                     ) as percent
                 ")
-                ->whereIn('device_id', $deviceIds)
+                ->whereIn('device_id', $allIds)
                 ->when(
                     $request->start_date && !$request->end_date,
                     fn($q) => $q->where('schedule', $request->start_date),
@@ -115,6 +120,21 @@ class BlashWhatsappObserver
                 )
                 ->groupBy('device_id')
                 ->get();
+
+            // Nama pengirim: mapping dari kedua tabel, bukan relasi
+            return $rows->map(function ($r) use ($devices, $wabas) {
+                if (isset($devices[$r->device_id])) {
+                    $r->sender_name = $devices[$r->device_id] ?: 'WA Personal';
+                    $r->sender_type = 'WA Personal';
+                } elseif (isset($wabas[$r->device_id])) {
+                    $r->sender_name = $wabas[$r->device_id] ?: 'WA Business';
+                    $r->sender_type = 'WA Business';
+                } else {
+                    $r->sender_name = '(perangkat sudah dihapus)';
+                    $r->sender_type = '-';
+                }
+                return $r;
+            });
         });
     }
 

@@ -24,6 +24,30 @@
 
 @section('content')
 <div class="row">
+    {{-- Filter tanggal --}}
+    <div class="col-xl-12 mb-2">
+        <div class="card custom-card">
+            <div class="card-header p-2">
+                <div class="card-title">Filter Data</div>
+            </div>
+            <div class="card-body p-2 row">
+                <div class="col-lg-5 col-sm-12">
+                    <label class="form-label">Tanggal Mulai</label>
+                    <input class="form-control" id="filterStartDate" type="date">
+                </div>
+                <div class="col-lg-5 col-sm-12">
+                    <label class="form-label">Tanggal Akhir</label>
+                    <input class="form-control" id="filterEndDate" type="date">
+                </div>
+                <div class="col-lg-2 col-sm-12 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" id="btnFilterLog">
+                        <i class="bx bx-search"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="col-xl-12">
         <div class="card custom-card">
             <x-validation-component></x-validation-component>
@@ -77,6 +101,8 @@
                 "url": '/app/logs/whatsapp',
                 "data": function(d) {
                     d = datatable_pasarsafe_callback(d);
+                    d.start_date = $('#filterStartDate').val();
+                    d.end_date   = $('#filterEndDate').val();
                 }
             },
             columnDefs: [{
@@ -114,6 +140,18 @@
                 },
             ],
 
+        });
+
+        // Default filter: 30 hari terakhir
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        $('#filterEndDate').val(today.toISOString().split('T')[0]);
+        $('#filterStartDate').val(thirtyDaysAgo.toISOString().split('T')[0]);
+
+        // Tombol filter
+        $('#btnFilterLog').on('click', function() {
+            result_blash_table.ajax.reload();
         });
 
         $("body").on("click", "#refresh_button", function() {
