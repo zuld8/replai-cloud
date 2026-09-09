@@ -54,7 +54,8 @@ class ConversationReportController extends Controller
                 'page'  => 'Conversation Rate Reports'
             ]);
         } catch (\Exception $e) { 
-            return back()->with('error', 'Failed to load conversation rate data: ' . $e->getMessage());
+            \Log::error('[laporan] gagal memuat', ['halaman' => 'conversation-rate', 'error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal memuat laporan. Silakan coba lagi atau hubungi admin.');
         }
     }
 
@@ -136,7 +137,8 @@ class ConversationReportController extends Controller
                 'selectedAgentIds' => $agentIds,
             ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to load comparison data: ' . $e->getMessage());
+            \Log::error('[laporan] gagal memuat', ['halaman' => 'conversation-comparison', 'error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal memuat laporan. Silakan coba lagi atau hubungi admin.');
         }
     }
 
