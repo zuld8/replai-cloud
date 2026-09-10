@@ -486,12 +486,13 @@ function main(int $argc, array $argv): void
     global $CONFIG;
 
     // --- Parse CLI arguments ---
-    $opts = getopt('', ['campaign:', 'video:', 'narasi:', 'narasi-file:', 'schedule:', 'dry-run']);
+    $opts = getopt('', ['campaign:', 'video:', 'narasi:', 'narasi-file:', 'schedule:', 'dry-run', 'templates-only']);
 
-    $campaign  = $opts['campaign'] ?? null;
-    $videoPath = $opts['video'] ?? null;
-    $schedule  = $opts['schedule'] ?? null;
-    $dryRun    = isset($opts['dry-run']);
+    $campaign      = $opts['campaign'] ?? null;
+    $videoPath     = $opts['video'] ?? null;
+    $schedule      = $opts['schedule'] ?? null;
+    $dryRun        = isset($opts['dry-run']);
+    $templatesOnly = isset($opts['templates-only']);
 
     // Narasi dari file atau langsung
     $narasi = null;
@@ -511,7 +512,7 @@ function main(int $argc, array $argv): void
     if (!$campaign)  $errors[] = "--campaign wajib diisi (contoh: hadirkanair)";
     if (!$videoPath) $errors[] = "--video wajib diisi (path video di server)";
     if (!$narasi)    $errors[] = "--narasi atau --narasi-file wajib diisi";
-    if (!$schedule)  $errors[] = "--schedule wajib diisi (contoh: '2026-09-11 10:00')";
+    if (!$schedule && !$templatesOnly) $errors[] = "--schedule wajib diisi (atau pakai --templates-only)";
 
     if (!empty($errors)) {
         log_error("Parameter tidak lengkap:");
@@ -534,11 +535,14 @@ function main(int $argc, array $argv): void
         exit(1);
     }
 
-    // Validasi schedule format
-    $scheduleTime = DateTime::createFromFormat('Y-m-d H:i', $schedule);
-    if (!$scheduleTime) {
-        log_error("Format schedule salah. Gunakan: 'YYYY-MM-DD HH:MM' (contoh: 2026-09-11 10:00)");
-        exit(1);
+    // Validasi schedule format (skip kalau templates-only)
+    $scheduleTime = null;
+    if (!$templatesOnly) {
+        $scheduleTime = DateTime::createFromFormat('Y-m-d H:i', $schedule);
+        if (!$scheduleTime) {
+            log_error("Format schedule salah. Gunakan: 'YYYY-MM-DD HH:MM' (contoh: 2026-09-11 10:00)");
+            exit(1);
+        }
     }
 
     // --- Header info ---
@@ -550,8 +554,11 @@ function main(int $argc, array $argv): void
     log_info("Campaign    : $campaign");
     log_info("Video       : $videoPath (" . formatBytes(filesize($videoPath)) . ")");
     log_info("Narasi      : " . mb_substr($narasi, 0, 80) . (mb_strlen($narasi) > 80 ? '...' : ''));
-    log_info("Schedule    : $schedule WIB");
-    log_info("Mode        : " . ($dryRun ? 'DRY RUN (tidak insert DB / call API)' : 'LIVE'));
+    if (!$templatesOnly) {
+        log_info("Schedule    : $schedule WIB");
+    }
+    $modeLabel = $dryRun ? 'DRY RUN' : ($templatesOnly ? 'TEMPLATES ONLY (tanpa broadcast)' : 'LIVE');
+    log_info("Mode        : $modeLabel");
     echo "\n";
 
     if ($dryRun) {
